@@ -1189,7 +1189,7 @@ function BrokerBar:GetPluginOptions()
     local options = { 
         name = "Brokers", 
         type = "group", 
-        childGroups = "tab",
+        childGroups = "tree",
         order = 3,
         args = {} 
     }
