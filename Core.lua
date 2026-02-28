@@ -1998,7 +1998,10 @@ function AbstractUI:ExportProfile()
     print("|cff00ff00AbstractUI:|r Use Ctrl+A to select all, then Ctrl+C to copy.")
     
     -- Refresh the options UI
-    
+    local optionsPanel = _G.AbstractUI_OptionsPanel
+    if optionsPanel and optionsPanel.selectedNode then
+        optionsPanel:RenderContent(optionsPanel.selectedNode)
+    end
 end
 
 -- Import Profile
