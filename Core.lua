@@ -59,9 +59,9 @@ function AbstractUI:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("AbstractUIDB", defaults, true)
     
     -- Register slash commands
-    self:RegisterChatCommand("mui", "SlashCommand")
+    self:RegisterChatCommand("aui", "SlashCommand")
     self:RegisterChatCommand("AbstractUI", "SlashCommand")
-    self:RegisterChatCommand("muimove", "ToggleMoveMode")
+    self:RegisterChatCommand("auimove", "ToggleMoveMode")
     self:RegisterChatCommand("demo", "OpenDemo")
 end
 

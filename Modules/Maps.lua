@@ -966,7 +966,7 @@ function Maps:GetOptions()
                 order = 4,
             },
             positionNote = {
-                name = "|cffaaaaaa(Use Blizzard Edit Mode to move MinimapCluster)\nThen hold CTRL+ALT and drag OR use /muimove to enable Move Mode\nUse nudge arrows for pixel-perfect positioning|r",
+                name = "|cffaaaaaa(Use Blizzard Edit Mode to move MinimapCluster)\nThen hold CTRL+ALT and drag OR use /auimove to enable Move Mode\nUse nudge arrows for pixel-perfect positioning|r",
                 type = "description",
                 order = 5,
                 fontSize = "medium",

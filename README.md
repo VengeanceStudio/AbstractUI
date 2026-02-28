@@ -9,7 +9,7 @@ Built for **WoW 12.0+** (Midnight expansion), it prioritizes readability, perfor
 
 ## ✨ Features
 
-AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/mui` or the AddOns settings panel.
+AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/aui` or the AddOns settings panel.
 
 ---
 
@@ -255,17 +255,17 @@ This addon includes the following libraries in the `libs` folder:
 3.  Place the folder into your WoW AddOns directory:
     * `World of Warcraft\_retail_\Interface\AddOns\`
 4.  Launch World of Warcraft.
-5.  Type `/mui` to open the configuration panel.
+5.  Type `/aui` to open the configuration panel.
 
 ## ⚙️ Configuration
 
 Access the full configuration menu via:
 
-* Type `/mui` in chat
+* Type `/aui` in chat
 * Press **Esc** → **Options** → **AddOns** → **AbstractUI**
 
 ### Quick Commands
-* `/mui` - Open main settings
+* `/aui` - Open main settings
 * Toggle Move Mode via the Movable module settings to reposition frames
 
 ## 📂 Directory Structure
@@ -334,7 +334,7 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 ## 📞 Support
 
 For support, questions, or feature requests:
-* Type `/mui` in-game to access settings
+* Type `/aui` in-game to access settings
 * Check the in-game Tag Help window in unit frame options for text formatting
 * Review module tooltips in the options panel for detailed feature descriptions
 

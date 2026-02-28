@@ -246,5 +246,5 @@ Quality of Life Features (Tweaks): 12
 
 ================================================================================
 For complete feature documentation, see README.md
-Configuration: Type /mui in-game or Esc → Options → AddOns → AbstractUI
+Configuration: Type /aui in-game or Esc → Options → AddOns → AbstractUI
 ================================================================================

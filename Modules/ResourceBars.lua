@@ -789,7 +789,7 @@ function ResourceBars:GetOptions()
             },
             desc = {
                 type = "description",
-                name = "Display primary and secondary resource bars for your class.\n\nHold CTRL+ALT to drag, or use /muimove to enable Move Mode.",
+                name = "Display primary and secondary resource bars for your class.\n\nHold CTRL+ALT to drag, or use /auimove to enable Move Mode.",
                 order = 2
             },
             

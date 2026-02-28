@@ -1477,7 +1477,7 @@ function AB:GetOptions()
                     },
                     spacer0 = { name = "", type = "header", order = 5},
                     moveNote = {
-                        name = "|cffaaaaaa(Use /muimove or click M button to enable Move Mode)\nThen hover over bars to see nudge controls|r",
+                        name = "|cffaaaaaa(Use /auimove or click M button to enable Move Mode)\nThen hover over bars to see nudge controls|r",
                         type = "description",
                         order = 5.5,
                         fontSize = "medium",
