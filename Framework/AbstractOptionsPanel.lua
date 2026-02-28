@@ -684,9 +684,7 @@ function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
     -- Create nested tree panel within content area
     if not panel.nestedTreePanel then
         panel.nestedTreePanel = CreateFrame("Frame", nil, panel, "BackdropTemplate")
-        panel.nestedTreePanel:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
         panel.nestedTreePanel:SetWidth(200)
-        panel.nestedTreePanel:SetPoint("BOTTOM", panel, "BOTTOM", 0, 8)
         
         panel.nestedTreePanel:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -707,6 +705,11 @@ function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
         panel.nestedTreeScrollChild:SetSize(192, 400)
         panel.nestedTreeScroll:SetScrollChild(panel.nestedTreeScrollChild)
     end
+    
+    -- Position nested tree panel below tabs (if they exist)
+    panel.nestedTreePanel:ClearAllPoints()
+    panel.nestedTreePanel:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -45) -- Start below tabs
+    panel.nestedTreePanel:SetPoint("BOTTOM", panel, "BOTTOM", 0, 8)
     
     panel.nestedTreePanel:Show()
     
