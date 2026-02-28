@@ -844,7 +844,7 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     valueInput:SetMaxLetters(10)
     valueInput:EnableMouse(true)
     valueInput:EnableKeyboard(true)
-    valueInput:SetFont("Fonts\\FRIZQT__.TTF", 11)
+    valueInput:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
     valueInput:SetTextColor(ColorPalette:GetColor('text-primary'))
     valueInput:SetJustifyH("CENTER")
     
