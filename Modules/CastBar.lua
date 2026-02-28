@@ -577,17 +577,6 @@ function CastBar:GetOptions()
         name = "Cast Bar",
         order = 12,
         args = {
-            header = {
-                type = "header",
-                name = "Player Cast Bar",
-                order = 1
-            },
-            desc = {
-                type = "description",
-                name = "Display a custom cast bar for your character.\n\n",
-                order = 2
-            },
-            
             headerPosition = { type = "header", name = "Position & Size", order = 10},
             width = {
                 name = "Width",
