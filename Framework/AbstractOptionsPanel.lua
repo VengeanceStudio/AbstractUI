@@ -522,6 +522,170 @@ function AbstractOptionsPanel:RenderTabGroup(node)
     self:SelectTab(1)
 end
 
+-- Render nested tabs (tabs within a selected tab)
+function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
+    local panel = self.frame.contentPanel
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    
+    -- Build sorted list of nested child groups
+    local nestedGroups = {}
+    for key, option in pairs(childGroup.args or {}) do
+        if option.type == "group" then
+            option.key = key
+            table.insert(nestedGroups, option)
+        end
+    end
+    table.sort(nestedGroups, function(a, b)
+        return (a.order or 100) < (b.order or 100)
+    end)
+    
+    if #nestedGroups == 0 then
+        return -- No nested groups to render as tabs
+    end
+    
+    -- Create nested tab buttons
+    panel.nestedTabs = {}
+    panel.activeNestedTab = nil
+    local xOffset = 10
+    
+    for i, nestedGroup in ipairs(nestedGroups) do
+        local tabButton = CreateFrame("Button", nil, panel, "BackdropTemplate")
+        
+        -- Create tab text first to measure width
+        local tabText = tabButton:CreateFontString(nil, "OVERLAY")
+        tabText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+        tabText:SetText(EvaluateValue(nestedGroup.name) or nestedGroup.key)
+        tabText:SetPoint("CENTER")
+        
+        -- Calculate tab width based on text width + padding
+        local textWidth = tabText:GetStringWidth()
+        local tabWidth = math.max(textWidth + 20, 70) -- Smaller than main tabs
+        
+        tabButton:SetSize(tabWidth, 28)
+        tabButton:SetPoint("TOPLEFT", panel, "TOPLEFT", xOffset, -(yOffset))
+        tabButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        
+        tabButton.nestedGroup = nestedGroup
+        tabButton.text = tabText
+        tabButton.index = i
+        
+        tabButton:SetScript("OnClick", function(self)
+            AbstractOptionsPanel:SelectNestedTab(self.index)
+        end)
+        
+        table.insert(panel.nestedTabs, tabButton)
+        xOffset = xOffset + tabWidth + 5
+    end
+    
+    -- Select first nested tab by default
+    self:SelectNestedTab(1)
+end
+
+-- Select and render a specific nested tab
+function AbstractOptionsPanel:SelectNestedTab(tabIndex)
+    local panel = self.frame.contentPanel
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    
+    if not panel.nestedTabs or not panel.nestedTabs[tabIndex] then
+        return
+    end
+    
+    -- Update nested tab appearance
+    for i, tab in ipairs(panel.nestedTabs) do
+        if i == tabIndex then
+            tab:SetBackdropColor(ColorPalette:GetColor('tab-active'))
+            tab:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
+            tab.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+        else
+            tab:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+            tab:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+            tab.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+        end
+    end
+    
+    panel.activeNestedTab = tabIndex
+    
+    -- Clear existing widgets
+    for _, widget in ipairs(panel.widgets) do
+        widget:Hide()
+        widget:SetParent(nil)
+    end
+    panel.widgets = {}
+    
+    -- Render the selected nested tab's content
+    local selectedTab = panel.nestedTabs[tabIndex]
+    local nestedGroup = selectedTab.nestedGroup
+    
+    -- Sort nested group's options
+    local sortedOptions = {}
+    for key, option in pairs(nestedGroup.args or {}) do
+        option.key = key
+        table.insert(sortedOptions, option)
+    end
+    table.sort(sortedOptions, function(a, b)
+        return (a.order or 100) < (b.order or 100)
+    end)
+    
+    -- Render widgets (starting below both tab rows) with inline layout support
+    local xOffset = 0
+    local yOffset = 90 -- Space for main tabs + nested tabs
+    local rowHeight = 0
+    local maxWidth = panel.scrollChild:GetWidth() - 20
+    
+    for _, option in ipairs(sortedOptions) do
+        -- Skip group types
+        if option.type ~= "group" then
+            local isFullWidth = (option.width == "full" or not option.width)
+            
+            -- Check if we need to wrap to next row
+            if isFullWidth and xOffset > 0 then
+                -- Move to next row
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+            end
+            
+            local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
+            if widget then
+                table.insert(panel.widgets, widget)
+                rowHeight = math.max(rowHeight, height)
+                
+                if isFullWidth then
+                    -- Full width widget - move to next row
+                    yOffset = yOffset + height + 10
+                    xOffset = 0
+                    rowHeight = 0
+                else
+                    -- Inline widget - advance horizontally
+                    xOffset = xOffset + width + 20
+                    
+                    -- If we exceed max width, wrap to next row
+                    if xOffset >= maxWidth then
+                        yOffset = yOffset + rowHeight + 10
+                        xOffset = 0
+                        rowHeight = 0
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Add final row height
+    if rowHeight > 0 then
+        yOffset = yOffset + rowHeight
+    end
+    
+    -- Update scroll child height
+    panel.scrollChild:SetHeight(math.max(yOffset + 20, panel.scrollFrame:GetHeight()))
+    panel.scrollFrame:UpdateScroll()
+end
+
 -- Select and render a specific tab
 function AbstractOptionsPanel:SelectTab(tabIndex)
     local panel = self.frame.contentPanel
@@ -553,9 +717,25 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     end
     panel.widgets = {}
     
+    -- Clear any nested tabs
+    if panel.nestedTabs then
+        for _, tab in ipairs(panel.nestedTabs) do
+            tab:Hide()
+            tab:SetParent(nil)
+        end
+        panel.nestedTabs = nil
+        panel.activeNestedTab = nil
+    end
+    
     -- Render the selected tab's content
     local selectedTab = panel.tabs[tabIndex]
     local childGroup = selectedTab.childGroup
+    
+    -- Check if this child group also uses tabs
+    if childGroup.childGroups == "tab" then
+        self:RenderNestedTabGroup(childGroup, 50) -- 50px offset for parent tabs
+        return
+    end
     
     -- Sort child group's options
     local sortedOptions = {}
