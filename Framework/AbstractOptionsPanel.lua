@@ -1339,7 +1339,9 @@ function AbstractOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
     -- Get/Set value function
     local function GetValue()
         if option.get then
-            return option.get(self.addonRef.db.profile)
+            -- Build info table for AceConfig-style get/set functions
+            local info = {option.key}
+            return option.get(info)
         end
         return false
     end
@@ -1360,7 +1362,9 @@ function AbstractOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
     
     local function SetValue(value)
         if option.set then
-            option.set(self.addonRef.db.profile, value)
+            -- Build info table for AceConfig-style get/set functions
+            local info = {option.key}
+            option.set(info, value)
         end
         
         -- Update visual
@@ -1470,7 +1474,8 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     -- Get/Set value functions
     local function GetValue()
         if option.get then
-            return option.get(self.addonRef.db.profile)
+            local info = {option.key}
+            return option.get(info)
         end
         return option.min or 0
     end
@@ -1498,7 +1503,8 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
         value = math.max(min, math.min(max, value))
         
         if option.set then
-            option.set(self.addonRef.db.profile, value)
+            local info = {option.key}
+            option.set(info, value)
         end
         UpdateVisual(value)
     end
@@ -1614,7 +1620,8 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
     -- Get/Set value functions
     local function GetValue()
         if option.get then
-            return option.get(self.addonRef.db.profile)
+            local info = {option.key}
+            return option.get(info)
         end
         return nil
     end
@@ -1631,7 +1638,8 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
     
     local function SetValue(value)
         if option.set then
-            option.set(self.addonRef.db.profile, value)
+            local info = {option.key}
+            option.set(info, value)
         end
         UpdateVisual(value)
     end
@@ -1826,7 +1834,8 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     -- Get/Set value functions (defined early so they can be used by handlers)
     local function GetValue()
         if option.get then
-            return option.get(self.addonRef.db.profile)
+            local info = {option.key}
+            return option.get(info)
         end
         return ""
     end
@@ -1837,7 +1846,8 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     
     local function SetValue(value)
         if option.set then
-            option.set(self.addonRef.db.profile, value)
+            local info = {option.key}
+            option.set(info, value)
         end
         UpdateVisual(value)
     end
@@ -2003,7 +2013,8 @@ function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
     -- Get/Set value functions
     local function GetValue()
         if option.get then
-            local color = option.get(self.addonRef.db.profile)
+            local info = {option.key}
+            local color = option.get(info)
             if type(color) == "table" then
                 return color[1] or 1, color[2] or 1, color[3] or 1, color[4] or 1
             end
@@ -2017,7 +2028,8 @@ function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
     
     local function SetValue(r, g, b, a)
         if option.set then
-            option.set(self.addonRef.db.profile, {r, g, b, a or 1})
+            local info = {option.key}
+            option.set(info, {r, g, b, a or 1})
         end
         UpdateVisual(r, g, b, a)
     end
