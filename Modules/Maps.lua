@@ -471,10 +471,6 @@ end
 -- LAYOUT UPDATE
 -- -----------------------------------------------------------------------------
 function Maps:UpdateLayout()
-    if self.layoutInitialized then
-        return
-    end
-    
     local db = self.db.profile
 
     -- ONLY SET SHAPE ONCE - Never call SetMaskTexture again after this
@@ -487,8 +483,10 @@ function Maps:UpdateLayout()
         self.shapeInitialized = true
     end
     
-    -- Apply position offset
-    self:ApplyMinimapOffset()
+    -- Apply position offset only on first layout
+    if not self.layoutInitialized then
+        self:ApplyMinimapOffset()
+    end
 
     -- TEXT ELEMENTS
     if self.clock then
@@ -959,6 +957,8 @@ function Maps:GetOptions()
                 type = "select",
                 order = 2,
                 values = {SQUARE = "Square", ROUND = "Round"},
+                get = function() return self.db.profile.shape end,
+                set = function(_, v) self.db.profile.shape = v end,
             },
             autoZoom = {
                 name = "Auto Zoom Out",
