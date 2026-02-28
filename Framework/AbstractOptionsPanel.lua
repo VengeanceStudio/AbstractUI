@@ -501,6 +501,8 @@ function AbstractOptionsPanel:RenderTabGroup(node)
     
     for i, childGroup in ipairs(childGroups) do
         local tabButton = CreateFrame("Button", nil, panel, "BackdropTemplate")
+        tabButton:SetFrameStrata("HIGH")
+        tabButton:SetFrameLevel(100)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
@@ -566,6 +568,8 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
     
     for i, nestedGroup in ipairs(nestedGroups) do
         local tabButton = CreateFrame("Button", nil, panel, "BackdropTemplate")
+        tabButton:SetFrameStrata("HIGH")
+        tabButton:SetFrameLevel(100)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
