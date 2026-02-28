@@ -1124,6 +1124,25 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     editBox:SetTextColor(ColorPalette:GetColor('text-primary'))
     editBox:SetTextInsets(6, 6, 2, 2)
     
+    -- Get/Set value functions (defined early so they can be used by handlers)
+    local function GetValue()
+        if option.get then
+            return option.get(self.addonRef.db.profile)
+        end
+        return ""
+    end
+    
+    local function UpdateVisual(value)
+        editBox:SetText(value or "")
+    end
+    
+    local function SetValue(value)
+        if option.set then
+            option.set(self.addonRef.db.profile, value)
+        end
+        UpdateVisual(value)
+    end
+    
     -- Add confirmation button for single-line inputs (positioned inside editbox at right)
     local confirmButton
     if not isMultiline then
@@ -1164,25 +1183,6 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         editBox:SetScript("OnTextChanged", function()
             UpdateButtonVisibility()
         end)
-    end
-    
-    -- Get/Set value functions
-    local function GetValue()
-        if option.get then
-            return option.get(self.addonRef.db.profile)
-        end
-        return ""
-    end
-    
-    local function UpdateVisual(value)
-        editBox:SetText(value or "")
-    end
-    
-    local function SetValue(value)
-        if option.set then
-            option.set(self.addonRef.db.profile, value)
-        end
-        UpdateVisual(value)
     end
     
     -- Enable paste for multiline editboxes
