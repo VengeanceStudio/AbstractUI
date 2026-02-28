@@ -424,7 +424,7 @@ function AbstractOptionsPanel:RenderContent(node)
     local yOffset = 0
     local rowHeight = 0
     local inlineCount = 0
-    local maxInlinePerRow = 4
+    local currentRowType = nil
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -439,6 +439,16 @@ function AbstractOptionsPanel:RenderContent(node)
                 xOffset = 0
                 rowHeight = 0
                 inlineCount = 0
+                currentRowType = nil
+            end
+            
+            -- Wrap if widget type changes (don't mix toggles with other types)
+            if not isFullWidth and currentRowType and currentRowType ~= option.type and xOffset > 0 then
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+                inlineCount = 0
+                currentRowType = nil
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -452,17 +462,23 @@ function AbstractOptionsPanel:RenderContent(node)
                     xOffset = 0
                     rowHeight = 0
                     inlineCount = 0
+                    currentRowType = nil
                 else
                     -- Inline widget - advance horizontally
+                    if not currentRowType then
+                        currentRowType = option.type
+                    end
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after 3 inline items or if we exceed max width
+                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
                         inlineCount = 0
+                        currentRowType = nil
                     end
                 end
             end
@@ -671,7 +687,7 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     local yOffset = 0 -- Scroll frame now starts below nested tabs
     local rowHeight = 0
     local inlineCount = 0
-    local maxInlinePerRow = 4
+    local currentRowType = nil
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -686,6 +702,16 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                 xOffset = 0
                 rowHeight = 0
                 inlineCount = 0
+                currentRowType = nil
+            end
+            
+            -- Wrap if widget type changes (don't mix toggles with other types)
+            if not isFullWidth and currentRowType and currentRowType ~= option.type and xOffset > 0 then
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+                inlineCount = 0
+                currentRowType = nil
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -699,17 +725,23 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                     xOffset = 0
                     rowHeight = 0
                     inlineCount = 0
+                    currentRowType = nil
                 else
                     -- Inline widget - advance horizontally
+                    if not currentRowType then
+                        currentRowType = option.type
+                    end
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after 3 inline items or if we exceed max width
+                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
                         inlineCount = 0
+                        currentRowType = nil
                     end
                 end
             end
@@ -792,7 +824,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     local yOffset = 0 -- Scroll frame now starts below tabs
     local rowHeight = 0
     local inlineCount = 0
-    local maxInlinePerRow = 4
+    local currentRowType = nil
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -807,6 +839,16 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                 xOffset = 0
                 rowHeight = 0
                 inlineCount = 0
+                currentRowType = nil
+            end
+            
+            -- Wrap if widget type changes (don't mix toggles with other types)
+            if not isFullWidth and currentRowType and currentRowType ~= option.type and xOffset > 0 then
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+                inlineCount = 0
+                currentRowType = nil
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -820,17 +862,23 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                     xOffset = 0
                     rowHeight = 0
                     inlineCount = 0
+                    currentRowType = nil
                 else
                     -- Inline widget - advance horizontally
+                    if not currentRowType then
+                        currentRowType = option.type
+                    end
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after 3 inline items or if we exceed max width
+                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
                         inlineCount = 0
+                        currentRowType = nil
                     end
                 end
             end
