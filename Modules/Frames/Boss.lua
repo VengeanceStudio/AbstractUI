@@ -204,35 +204,8 @@ end
 function UnitFrames:GetBossOptions_Real()
     local options = self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "AbstractUI_Boss1Frame")
     
-    -- Add boss-specific options at the top
-    options.args.enable = {
-        type = "toggle",
-        name = "Show Boss Frames",
-        desc = "Enable custom boss frames",
-        order = 0.5,
-        get = function() return self.db and self.db.profile and self.db.profile.showBoss end,
-        set = function(_, v)
-            if not self.db or not self.db.profile then return end
-            self.db.profile.showBoss = v
-            if v then
-                self:CreateBossFrames()
-            else
-                for i = 1, 5 do
-                    local frame = _G["AbstractUI_Boss" .. i .. "Frame"]
-                    if frame then
-                        frame:Hide()
-                        frame:SetParent(nil)
-                    end
-                end
-            end
-        end,
-    }
-    
-    options.args.description = {
-        type = "description",
-        name = "Settings below apply to all 5 boss frames.",
-        order = 0.6,
-    }
+    -- Boss Frames are always enabled when UnitFrames module is enabled
+    -- No toggle needed - they show automatically when boss encounters are active
     
     return options
 end

@@ -949,6 +949,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "range",
                 name = "Bar Spacing",
                 desc = "Vertical space between bars.",
+                width = "inline",
                 min = 0, max = 32, step = 1,
                 order = 0.9,
                 get = function() return self.db and self.db.profile and self.db.profile.spacing or 2 end,
@@ -958,6 +959,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "range",
                 name = "Boss Frame Spacing",
                 desc = "Vertical space between each boss frame.",
+                width = "inline",
                 min = 40, max = 200, step = 1,
                 order = 0.91,
                 get = function() return self.db and self.db.profile and self.db.profile.boss and self.db.profile.boss.spacing or 80 end,
@@ -972,7 +974,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "select",
                 name = "Copy From",
                 desc = "Copy all settings from another frame to this frame.",
-                order = 0.91,
+                order = frameKey == "boss" and 0.91 or 0.01,
                 values = function()
                     local frames = {
                         [""] = "-- Select Frame --",
@@ -1107,6 +1109,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             type = "toggle",
             name = "Show",
             order = 1,
+            width = "inline",
             get = function() local db = getDB(); return db[barType] and db[barType].enabled end,
             set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].enabled = v; update() end,
         },
@@ -1204,6 +1207,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             name = "Attach To",
             desc = "Attach the " .. barType:gsub("^%l", string.upper) .. " Bar to another bar.",
             order = 1.5,
+            width = "inline",
             values = { health = "Health Bar", power = "Power Bar", info = "Info Bar", none = "None" },
             get = function() local db = getDB(); return db[barType] and db[barType].attachTo or "health" end,
             set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].attachTo = v; update() end,
@@ -1216,6 +1220,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         name = "Class Colored Bar",
         desc = "Use class color for the " .. barType .. " bar.",
         order = 3.9,
+        width = "inline",
         get = function() local db = getDB(); return db[barType] and db[barType].classColor end,
         set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].classColor = v; update() end,
     }
@@ -1227,6 +1232,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             name = "Hostility Colored Bar",
             desc = "Use reaction colors (green=friendly, yellow=neutral, red=hostile) for the " .. barType .. " bar.",
             order = 3.91,
+            width = "inline",
             get = function() local db = getDB(); return db[barType] and db[barType].hostilityColor end,
             set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].hostilityColor = v; update() end,
         }
@@ -1249,6 +1255,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         type = "range",
         name = "Bar Transparency",
         desc = "Set the transparency of the " .. barType .. " bar.",
+        width = "inline",
         min = 0, max = 100, step = 1, order = 4.1,
         get = function() 
             local db = getDB()
@@ -1275,6 +1282,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         name = "Class Colored Font",
         desc = "Use class color for the " .. barType .. " bar text.",
         order = 9.5,
+        width = "inline",
         get = function() local db = getDB(); return db[barType] and db[barType].fontClassColor end,
         set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontClassColor = v; update() end,
     }
@@ -1292,6 +1300,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         type = "select",
         name = "Font",
         order = 6,
+        width = "inline",
         values = function()
             local fonts = self.LSM and self.LSM:List("font") or (LibStub and LibStub("LibSharedMedia-3.0"):List("font")) or {}
             local out = {}
@@ -1305,6 +1314,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
     options.fontSize = {
         type = "range",
         name = "Font Size",
+        width = "inline",
         min = 6, max = 32, step = 1,
         order = 7,
         get = function() 
@@ -1319,6 +1329,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         type = "select",
         name = "Font Outline",
         order = 8,
+        width = "inline",
         values = { NONE = "None", OUTLINE = "Outline", THICKOUTLINE = "Thick Outline" },
         get = function() local db = getDB(); return db[barType] and db[barType].fontOutline or "OUTLINE" end,
         set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontOutline = v; update() end,
@@ -1337,6 +1348,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         type = "select",
         name = "Text Position",
         order = 11,
+        width = "inline",
         values = { LEFT = "Left", CENTER = "Center", RIGHT = "Right" },
         get = function() local db = getDB(); return db[barType] and db[barType].textPos or "CENTER" end,
         set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textPos = v; update() end,
@@ -1346,6 +1358,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         type = "select",
         name = "Texture",
         order = 12,
+        width = "inline",
         values = function()
             local LSM = self.LSM or (LibStub and LibStub("LibSharedMedia-3.0"))
             local textures = LSM and LSM:List("statusbar") or {}
