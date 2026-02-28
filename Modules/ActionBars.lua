@@ -1576,6 +1576,7 @@ function AB:GetOptions()
             bars = {
                 name = "Bars",
                 type = "group",
+                childGroups = "tab",
                 order = 2,
                 args = {}
             }
