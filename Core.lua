@@ -416,7 +416,10 @@ function AbstractUI:GetThemeOptions()
             order = 6,
             width = "full",
             get = function() return self.customThemeName or "" end,
-            set = function(_, v) self.customThemeName = v end,
+            set = function(_, v) 
+                self.customThemeName = v
+                print("Custom theme name set to: " .. tostring(v))
+            end,
         },
         saveCustomTheme = {
             type = "execute",
@@ -1323,6 +1326,7 @@ end
 
 function AbstractUI:SaveCustomTheme()
     local themeName = self.customThemeName
+    print("SaveCustomTheme called, themeName: " .. tostring(themeName))
     if not themeName or themeName == "" then
         self:Print("|cffff0000Error:|r Please enter a name for your custom theme.")
         return
