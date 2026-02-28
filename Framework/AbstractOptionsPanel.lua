@@ -112,7 +112,7 @@ function AbstractOptionsPanel:CreateFrame(addonRef)
     
     -- Add logo
     frame.logo = frame:CreateTexture(nil, "ARTWORK")
-    frame.logo:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\AbstractUI_icon.tga")
+    frame.logo:SetTexture("Interface\\AddOns\\AbstractUI\\icon.png")
     frame.logo:SetSize(80, 80)
     frame.logo:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -18)
     
