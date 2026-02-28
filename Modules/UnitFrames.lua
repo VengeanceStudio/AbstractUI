@@ -940,7 +940,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         if self and self[createFunc] then self[createFunc](self) end
     end
     
-    return {
+    local result = {
         type = "group",
         name = frameName,
         args = {
@@ -1050,7 +1050,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 get = function() local db = getDB(); return db.raidTargetIconOffsetY or 0 end,
                 set = function(_, v) local db = getDB(); db.raidTargetIconOffsetY = v; update() end,
             },
-        },
+        }
     }
     
     -- Add Health Bar options with header
