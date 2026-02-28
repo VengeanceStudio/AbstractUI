@@ -1079,10 +1079,21 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         })
         container:SetBackdropColor(ColorPalette:GetColor('button-bg'))
         container:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        container:EnableMouse(true)
+        container:SetScript("OnMouseDown", function(self)
+            -- Click on container focuses the editbox
+            if editBox then editBox:SetFocus() end
+        end)
         
         local scroll = ScrollFrame:Create(container)
         scroll:SetPoint("TOPLEFT", container, "TOPLEFT", 4, -4)
         scroll:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -4, 4)
+        
+        -- Make scroll areas clickable to focus the editbox
+        scroll.scrollArea:EnableMouse(true)
+        scroll.scrollArea:SetScript("OnMouseDown", function()
+            if editBox then editBox:SetFocus() end
+        end)
         
         editBox = CreateFrame("EditBox", nil, scroll.scrollArea)
         editBox:SetMultiLine(true)
@@ -1095,6 +1106,11 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         
         -- Enable word wrap for better readability
         editBox:SetSpacing(2)
+        
+        -- Make sure editbox receives focus when clicked
+        editBox:SetScript("OnMouseDown", function(self)
+            self:SetFocus()
+        end)
         
         scroll:SetScrollChild(editBox)
         
@@ -1151,6 +1167,8 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         confirmButton = CreateFrame("Button", nil, editBox)
         confirmButton:SetPoint("RIGHT", editBox, "RIGHT", -4, 0)
         confirmButton:SetSize(20, 16)
+        confirmButton:EnableMouse(true)
+        confirmButton:RegisterForClicks("LeftButtonUp")
         confirmButton:Hide()  -- Start hidden
         
         -- OK text
@@ -1167,9 +1185,11 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         confirmButton:SetScript("OnLeave", function(self)
             self.text:SetTextColor(0.5, 0.8, 1.0, 1)
         end)
-        confirmButton:SetScript("OnClick", function()
-            SetValue(editBox:GetText())  -- Explicitly save the value
-            editBox:ClearFocus()
+        confirmButton:SetScript("OnClick", function(self, button)
+            if button == "LeftButton" then
+                SetValue(editBox:GetText())  -- Explicitly save the value
+                editBox:ClearFocus()
+            end
         end)
         
         -- Show/hide button based on text content
