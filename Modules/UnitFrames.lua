@@ -1431,10 +1431,6 @@ function UnitFrames:GetPlayerOptions()
     return nil
 end
 
-function UnitFrames:GetPetOptions_Real()
-    return self:GenerateFrameOptions("Pet", "pet", "CreatePetFrame", "AbstractUI_PetFrame")
-end
-
 function UnitFrames:GetBossOptions_Real()
     local options = self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "AbstractUI_Boss1Frame")
     
