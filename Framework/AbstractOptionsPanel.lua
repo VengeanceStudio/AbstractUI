@@ -1195,11 +1195,18 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
             self:SetBackdropColor(0, 0, 0, 0)
             self.text:SetTextColor(0.5, 0.8, 1.0, 1)
         end)
-        confirmButton:SetScript("OnMouseUp", function(self, button)
+        confirmButton:SetScript("OnMouseUp", function(btn, button)
             if button == "LeftButton" then
                 local value = editBox:GetText()
                 SetValue(value)
-                print("OK clicked - saved value: " .. tostring(value))
+                confirmButton:Hide()
+                
+                -- Refresh the options panel to update dynamic content (like warnings)
+                C_Timer.After(0.05, function()
+                    if self.RenderContent and self.selectedNode then
+                        self:RenderContent(self.selectedNode)
+                    end
+                end)
             end
         end)
         
