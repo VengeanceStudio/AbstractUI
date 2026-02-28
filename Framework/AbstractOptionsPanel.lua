@@ -394,6 +394,11 @@ function AbstractOptionsPanel:RenderContent(node)
         panel.activeNestedTab = nil
     end
     
+    -- Reset scroll frame position to default (no tabs)
+    panel.scrollFrame:ClearAllPoints()
+    panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
+    panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
+    
     if not node or not node.options then
         return
     end
@@ -536,6 +541,11 @@ function AbstractOptionsPanel:RenderTabGroup(node)
         xOffset = xOffset + tabWidth + 3
     end
     
+    -- Adjust scroll frame to start below main tabs
+    panel.scrollFrame:ClearAllPoints()
+    panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -45)
+    panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
+    
     -- Select first tab by default
     self:SelectTab(1)
 end
@@ -602,6 +612,11 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
         xOffset = xOffset + tabWidth + 2
     end
     
+    -- Adjust scroll frame to start below both main and nested tabs
+    panel.scrollFrame:ClearAllPoints()
+    panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -79)
+    panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
+    
     -- Select first nested tab by default
     self:SelectNestedTab(1)
 end
@@ -653,7 +668,7 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     
     -- Render widgets (starting below both tab rows) with inline layout support
     local xOffset = 0
-    local yOffset = 74 -- Space for main tabs (40px) + nested tabs (34px)
+    local yOffset = 0 -- Scroll frame now starts below nested tabs
     local rowHeight = 0
     local inlineCount = 0
     local maxInlinePerRow = 4
@@ -774,7 +789,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     -- Render widgets (starting below tabs) with inline layout support
     local xOffset = 0
-    local yOffset = 45 -- Space for tabs (30px height + 15px spacing)
+    local yOffset = 0 -- Scroll frame now starts below tabs
     local rowHeight = 0
     local inlineCount = 0
     local maxInlinePerRow = 4
