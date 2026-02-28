@@ -782,17 +782,6 @@ function ResourceBars:GetOptions()
         name = "Resource Bars",
         order = 11,
         args = {
-            header = {
-                type = "header",
-                name = "Resource Bars",
-                order = 1
-            },
-            desc = {
-                type = "description",
-                name = "Display primary and secondary resource bars for your class.\n\nHold CTRL+ALT to drag, or use /auimove to enable Move Mode.",
-                order = 2
-            },
-            
             -- Primary Resource Bar
             primaryHeader = { type = "header", name = "Primary Resource Bar", order = 10},
             primaryEnabled = {
