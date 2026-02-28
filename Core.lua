@@ -2108,7 +2108,7 @@ function AbstractUI:ExportProfile()
     local encoded = EncodeHex(compressed)
     
     -- Add version header
-    local exportString = "MUIV2:" .. encoded
+    local exportString = "AUIV2:" .. encoded
     
     -- Store for display
     self.exportString = exportString
@@ -2197,13 +2197,13 @@ function AbstractUI:DoImport(importString, newProfileName, suppressDialog)
     end
     
     -- Check for version header
-    if not importString:match("^MUIV2:") then
+    if not importString:match("^AUIV2:") then
         print("|cffff0000AbstractUI Error:|r Invalid import string format.")
         return
     end
     
     -- Remove version header
-    local encoded = importString:sub(7) -- Remove "MUIV2:"
+    local encoded = importString:sub(7) -- Remove "AUIV2:"
     
     -- Decode from hex
     local success, compressed = pcall(DecodeHex, encoded)
