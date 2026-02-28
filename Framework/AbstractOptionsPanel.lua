@@ -1164,12 +1164,20 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     -- Add confirmation button for single-line inputs (positioned inside editbox at right)
     local confirmButton
     if not isMultiline then
-        confirmButton = CreateFrame("Button", nil, editBox)
+        confirmButton = CreateFrame("Button", nil, editBox, "BackdropTemplate")
         confirmButton:SetPoint("RIGHT", editBox, "RIGHT", -4, 0)
         confirmButton:SetSize(20, 16)
         confirmButton:EnableMouse(true)
-        confirmButton:RegisterForClicks("LeftButtonUp")
+        confirmButton:SetFrameLevel(editBox:GetFrameLevel() + 1)
         confirmButton:Hide()  -- Start hidden
+        
+        -- Add a backdrop to make it more visible and clickable
+        confirmButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = nil,
+            tile = false
+        })
+        confirmButton:SetBackdropColor(0, 0, 0, 0)  -- Transparent by default
         
         -- OK text
         confirmButton.text = confirmButton:CreateFontString(nil, "OVERLAY")
@@ -1180,15 +1188,18 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         
         -- Hover effects
         confirmButton:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(0.3, 0.5, 0.7, 0.3)
             self.text:SetTextColor(0.7, 1.0, 1.0, 1)
         end)
         confirmButton:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(0, 0, 0, 0)
             self.text:SetTextColor(0.5, 0.8, 1.0, 1)
         end)
-        confirmButton:SetScript("OnClick", function(self, button)
+        confirmButton:SetScript("OnMouseUp", function(self, button)
             if button == "LeftButton" then
-                SetValue(editBox:GetText())  -- Explicitly save the value
-                editBox:ClearFocus()
+                local value = editBox:GetText()
+                SetValue(value)
+                print("OK clicked - saved value: " .. tostring(value))
             end
         end)
         
@@ -1219,7 +1230,7 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
             if IsControlKeyDown() then
                 if key == "V" then
                     -- Ctrl+V paste functionality
-                    local pasteText = GetClipboardText()
+                    local pasteText = C_Clipboard.GetText()
                     if pasteText and pasteText ~= "" then
                         local currentText = self:GetText() or ""
                         local cursorPos = self:GetCursorPosition() or 0
