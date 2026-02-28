@@ -483,10 +483,8 @@ function Maps:UpdateLayout()
         self.shapeInitialized = true
     end
     
-    -- Apply position offset only on first layout
-    if not self.layoutInitialized then
-        self:ApplyMinimapOffset()
-    end
+    -- Always apply position offset to maintain user's saved position
+    self:ApplyMinimapOffset()
 
     -- TEXT ELEMENTS
     if self.clock then
@@ -964,6 +962,8 @@ function Maps:GetOptions()
                 name = "Auto Zoom Out",
                 type = "toggle",
                 order = 4,
+                get = function() return self.db.profile.autoZoom end,
+                set = function(_, v) self.db.profile.autoZoom = v end,
             },
             positionNote = {
                 name = "|cffaaaaaa(Use Blizzard Edit Mode to move MinimapCluster)\nThen hold CTRL+ALT and drag OR use /auimove to enable Move Mode\nUse nudge arrows for pixel-perfect positioning|r",
@@ -1019,18 +1019,21 @@ function Maps:GetOptions()
                 name = "Show Clock", 
                 type = "toggle", 
                 order = 11,
+                get = function() return self.db.profile.showClock end,
                 set = function(_, v) self.db.profile.showClock = v; self:UpdateLayout() end
             },
             showZone = { 
                 name = "Show Zone Text", 
                 type = "toggle", 
                 order = 12,
+                get = function() return self.db.profile.showZone end,
                 set = function(_, v) self.db.profile.showZone = v; self:UpdateLayout() end
             },
             showCoords = { 
                 name = "Show Coordinates", 
                 type = "toggle", 
                 order = 13,
+                get = function() return self.db.profile.showCoords end,
                 set = function(_, v) self.db.profile.showCoords = v; self:UpdateLayout() end
             },
             
@@ -1039,18 +1042,21 @@ function Maps:GetOptions()
                 name = "Calendar", 
                 type = "toggle", 
                 order = 21,
+                get = function() return self.db.profile.showCalendar end,
                 set = function(_, v) self.db.profile.showCalendar = v; self:UpdateLayout() end
             },
             showTracking = { 
                 name = "Tracking", 
                 type = "toggle", 
                 order = 22,
+                get = function() return self.db.profile.showTracking end,
                 set = function(_, v) self.db.profile.showTracking = v; self:UpdateLayout() end
             },
             showMail = { 
                 name = "Mail", 
                 type = "toggle", 
                 order = 23,
+                get = function() return self.db.profile.showMail end,
                 set = function(_, v) self.db.profile.showMail = v; self:UpdateLayout() end
             },
             mailOffsetX = {
@@ -1075,18 +1081,21 @@ function Maps:GetOptions()
                 name = "Missions / Landing Page", 
                 type = "toggle", 
                 order = 24,
+                get = function() return self.db.profile.showMissions end,
                 set = function(_, v) self.db.profile.showMissions = v; self:UpdateLayout() end
             },
             showQueue = { 
                 name = "LFG / PvP Queue", 
                 type = "toggle", 
                 order = 25,
+                get = function() return self.db.profile.showQueue end,
                 set = function(_, v) self.db.profile.showQueue = v; self:UpdateLayout() end
             },
             showDifficulty = { 
                 name = "Instance Difficulty", 
                 type = "toggle", 
                 order = 26,
+                get = function() return self.db.profile.showDifficulty end,
                 set = function(_, v) self.db.profile.showDifficulty = v; self:UpdateLayout() end
             },
             difficultyOffsetX = {
