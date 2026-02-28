@@ -1285,10 +1285,10 @@ function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
-    local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
+    local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 180
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, -yOffset)
-    frame:SetSize(frameWidth, 40)
+    frame:SetSize(frameWidth, 85)
     
     -- Create label
     local label = frame:CreateFontString(nil, "OVERLAY")
@@ -1302,7 +1302,7 @@ function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
     -- Create color swatch button
     local swatch = CreateFrame("Button", nil, frame, "BackdropTemplate")
     swatch:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-    swatch:SetSize(32, 32)
+    swatch:SetSize(64, 48)
     
     -- Swatch border
     swatch:SetBackdrop({
@@ -1370,7 +1370,7 @@ function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
     -- Set initial color (visual only)
     UpdateVisual(GetValue())
     
-    return frame, 40, frameWidth
+    return frame, 85, frameWidth
 end
 
 -- ============================================================================

@@ -479,6 +479,7 @@ function AbstractUI:GetThemeOptions()
             name = "Panel Background",
             desc = "Main background color for panels and frames",
             order = 11,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('panel-bg')
@@ -493,6 +494,7 @@ function AbstractUI:GetThemeOptions()
             name = "Panel Border",
             desc = "Border color for panels and frames",
             order = 12,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('panel-border')
@@ -507,6 +509,7 @@ function AbstractUI:GetThemeOptions()
             name = "Accent Primary",
             desc = "Primary accent color for highlights and emphasis",
             order = 13,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('accent-primary')
@@ -521,6 +524,7 @@ function AbstractUI:GetThemeOptions()
             name = "Button Background",
             desc = "Background color for buttons",
             order = 14,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('button-bg')
@@ -535,6 +539,7 @@ function AbstractUI:GetThemeOptions()
             name = "Button Hover",
             desc = "Button color when hovering with mouse",
             order = 15,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('button-hover')
@@ -549,6 +554,7 @@ function AbstractUI:GetThemeOptions()
             name = "Text Primary",
             desc = "Primary text color",
             order = 16,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('text-primary')
@@ -563,6 +569,7 @@ function AbstractUI:GetThemeOptions()
             name = "Text Secondary",
             desc = "Secondary text color for less prominent text",
             order = 17,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('text-secondary')
@@ -577,6 +584,7 @@ function AbstractUI:GetThemeOptions()
             name = "Tab Active",
             desc = "Color for active/selected tabs",
             order = 18,
+            width = "inline",
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('tab-active')
