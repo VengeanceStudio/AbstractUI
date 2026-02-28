@@ -753,15 +753,6 @@ function AbstractOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
         return false
     end
     
-    local function SetValue(value)
-        if option.set then
-            option.set(self.addonRef.db.profile, value)
-        end
-        
-        -- Update visual
-        UpdateVisual(value)
-    end
-    
     local function UpdateVisual(value)
         if value then
             -- ON state: accent color with knob on right
@@ -774,6 +765,15 @@ function AbstractOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
             toggleBg:SetVertexColor(ColorPalette:GetColor('toggle-off-bg'))
             toggleBorder:SetVertexColor(ColorPalette:GetColor('toggle-off-border'))
         end
+    end
+    
+    local function SetValue(value)
+        if option.set then
+            option.set(self.addonRef.db.profile, value)
+        end
+        
+        -- Update visual
+        UpdateVisual(value)
     end
     
     -- Click handler
