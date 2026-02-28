@@ -407,6 +407,8 @@ function AbstractOptionsPanel:RenderContent(node)
     local xOffset = 0
     local yOffset = 0
     local rowHeight = 0
+    local inlineCount = 0
+    local maxInlinePerRow = 4
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -420,6 +422,7 @@ function AbstractOptionsPanel:RenderContent(node)
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
                 rowHeight = 0
+                inlineCount = 0
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -432,15 +435,18 @@ function AbstractOptionsPanel:RenderContent(node)
                     yOffset = yOffset + height + 10
                     xOffset = 0
                     rowHeight = 0
+                    inlineCount = 0
                 else
                     -- Inline widget - advance horizontally
                     xOffset = xOffset + width + 20
+                    inlineCount = inlineCount + 1
                     
-                    -- If we exceed max width, wrap to next row
-                    if xOffset >= maxWidth then
+                    -- Wrap after 3 inline items or if we exceed max width
+                    if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
+                        inlineCount = 0
                     end
                 end
             end
@@ -488,15 +494,15 @@ function AbstractOptionsPanel:RenderTabGroup(node)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
-        tabText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+        tabText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
         tabText:SetText(EvaluateValue(childGroup.name) or childGroup.key)
         tabText:SetPoint("CENTER")
         
         -- Calculate tab width based on text width + padding
         local textWidth = tabText:GetStringWidth()
-        local tabWidth = math.max(textWidth + 30, 80) -- Min 80px, 15px padding each side
+        local tabWidth = math.max(textWidth + 20, 60) -- Compact: 10px padding each side
         
-        tabButton:SetSize(tabWidth, 32)
+        tabButton:SetSize(tabWidth, 30)
         tabButton:SetPoint("TOPLEFT", panel, "TOPLEFT", xOffset, -10)
         tabButton:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -515,7 +521,7 @@ function AbstractOptionsPanel:RenderTabGroup(node)
         end)
         
         table.insert(panel.tabs, tabButton)
-        xOffset = xOffset + tabWidth + 5
+        xOffset = xOffset + tabWidth + 3
     end
     
     -- Select first tab by default
@@ -553,15 +559,15 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
-        tabText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+        tabText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
         tabText:SetText(EvaluateValue(nestedGroup.name) or nestedGroup.key)
         tabText:SetPoint("CENTER")
         
         -- Calculate tab width based on text width + padding
         local textWidth = tabText:GetStringWidth()
-        local tabWidth = math.max(textWidth + 20, 70) -- Smaller than main tabs
+        local tabWidth = math.max(textWidth + 14, 50) -- Very compact: 7px padding each side
         
-        tabButton:SetSize(tabWidth, 28)
+        tabButton:SetSize(tabWidth, 24)
         tabButton:SetPoint("TOPLEFT", panel, "TOPLEFT", xOffset, -(yOffset))
         tabButton:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -580,7 +586,7 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
         end)
         
         table.insert(panel.nestedTabs, tabButton)
-        xOffset = xOffset + tabWidth + 5
+        xOffset = xOffset + tabWidth + 2
     end
     
     -- Select first nested tab by default
@@ -634,8 +640,10 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     
     -- Render widgets (starting below both tab rows) with inline layout support
     local xOffset = 0
-    local yOffset = 90 -- Space for main tabs + nested tabs
+    local yOffset = 74 -- Space for main tabs (40px) + nested tabs (34px)
     local rowHeight = 0
+    local inlineCount = 0
+    local maxInlinePerRow = 4
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -649,6 +657,7 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
                 rowHeight = 0
+                inlineCount = 0
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -661,15 +670,18 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                     yOffset = yOffset + height + 10
                     xOffset = 0
                     rowHeight = 0
+                    inlineCount = 0
                 else
                     -- Inline widget - advance horizontally
                     xOffset = xOffset + width + 20
+                    inlineCount = inlineCount + 1
                     
-                    -- If we exceed max width, wrap to next row
-                    if xOffset >= maxWidth then
+                    -- Wrap after 3 inline items or if we exceed max width
+                    if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
+                        inlineCount = 0
                     end
                 end
             end
@@ -733,7 +745,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     -- Check if this child group also uses tabs
     if childGroup.childGroups == "tab" then
-        self:RenderNestedTabGroup(childGroup, 50) -- 50px offset for parent tabs
+        self:RenderNestedTabGroup(childGroup, 40) -- 40px offset for parent tabs (30px height + 10px spacing)
         return
     end
     
@@ -749,8 +761,10 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     -- Render widgets (starting below tabs) with inline layout support
     local xOffset = 0
-    local yOffset = 50 -- Space for tabs
+    local yOffset = 45 -- Space for tabs (30px height + 15px spacing)
     local rowHeight = 0
+    local inlineCount = 0
+    local maxInlinePerRow = 4
     local maxWidth = panel.scrollChild:GetWidth() - 20
     
     for _, option in ipairs(sortedOptions) do
@@ -764,6 +778,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
                 rowHeight = 0
+                inlineCount = 0
             end
             
             local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
@@ -776,15 +791,18 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                     yOffset = yOffset + height + 10
                     xOffset = 0
                     rowHeight = 0
+                    inlineCount = 0
                 else
                     -- Inline widget - advance horizontally
                     xOffset = xOffset + width + 20
+                    inlineCount = inlineCount + 1
                     
-                    -- If we exceed max width, wrap to next row
-                    if xOffset >= maxWidth then
+                    -- Wrap after 3 inline items or if we exceed max width
+                    if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
                         rowHeight = 0
+                        inlineCount = 0
                     end
                 end
             end
@@ -976,7 +994,7 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
-    local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
+    local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 160
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, -yOffset)
     frame:SetSize(frameWidth, 70)
@@ -992,7 +1010,7 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     
     -- Create slider
     local slider = CreateFrame("Slider", nil, frame, "BackdropTemplate")
-    slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -10)
+    slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 5, -10)
     slider:SetSize(150, 4)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(option.min or 0, option.max or 100)
@@ -1016,15 +1034,15 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     thumb:SetVertexColor(ColorPalette:GetColor('text-primary'))
     thumb:SetSize(6, 10)
     
-    -- Create value input box (editable)
+    -- Create value input box (editable) - centered below slider
     local valueInput = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
-    valueInput:SetPoint("LEFT", slider, "RIGHT", 10, 0)
-    valueInput:SetSize(50, 20)
+    valueInput:SetPoint("TOP", slider, "BOTTOM", 0, -6)
+    valueInput:SetSize(45, 18)
     valueInput:SetAutoFocus(false)
     valueInput:SetMaxLetters(10)
     valueInput:EnableMouse(true)
     valueInput:EnableKeyboard(true)
-    valueInput:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+    valueInput:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
     valueInput:SetTextColor(ColorPalette:GetColor('text-primary'))
     valueInput:SetJustifyH("CENTER")
     
