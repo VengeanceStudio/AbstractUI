@@ -749,10 +749,10 @@ function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, panel)
         btn:SetPoint("TOPLEFT", panel.nestedTreeScrollChild, "TOPLEFT", 4, yOffset)
         
         local text = btn:CreateFontString(nil, "OVERLAY")
-        text:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         text:SetText(node.name)
         text:SetPoint("LEFT", btn, "LEFT", 8, 0)
-        text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+        text:SetTextColor(ColorPalette:GetColor('text-primary'))
         text:SetJustifyH("LEFT")
         text:SetWordWrap(false)
         
@@ -765,13 +765,19 @@ function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, panel)
         
         btn:SetScript("OnEnter", function(self)
             if AbstractOptionsPanel.selectedNestedNode ~= self.node then
-                self.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+                self:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = nil,
+                    tile = false
+                })
+                local r, g, b = ColorPalette:GetColor('accent-primary')
+                self:SetBackdropColor(r, g, b, 0.15)
             end
         end)
         
         btn:SetScript("OnLeave", function(self)
             if AbstractOptionsPanel.selectedNestedNode ~= self.node then
-                self.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+                self:SetBackdrop(nil)
             end
         end)
         
@@ -795,7 +801,6 @@ function AbstractOptionsPanel:SelectNestedTreeNode(node)
         for _, btn in ipairs(panel.nestedTreeButtons or {}) do
             if btn.node == self.selectedNestedNode then
                 btn:SetBackdrop(nil)
-                btn.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
             end
         end
     end
@@ -813,7 +818,6 @@ function AbstractOptionsPanel:SelectNestedTreeNode(node)
             })
             local r, g, b = ColorPalette:GetColor('accent-primary')
             btn:SetBackdropColor(r, g, b, 0.3)
-            btn.text:SetTextColor(ColorPalette:GetColor('text-primary'))
         end
     end
     
