@@ -1230,13 +1230,12 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         end)
     end
     
-    -- Enable paste for multiline editboxes
+    -- Enable paste for multiline editboxes (WoW 12.0+ only)
     if isMultiline then
-        -- Only intercept specific key combinations, allow normal typing
         editBox:SetScript("OnKeyDown", function(self, key)
             if IsControlKeyDown() then
-                if key == "V" and C_Clipboard and C_Clipboard.GetText then
-                    -- Ctrl+V paste functionality (only if C_Clipboard API is available)
+                if key == "V" then
+                    -- Ctrl+V paste functionality using C_Clipboard API
                     local pasteText = C_Clipboard.GetText()
                     if pasteText and pasteText ~= "" then
                         local currentText = self:GetText() or ""
@@ -1256,19 +1255,6 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
                 end
             end
         end)
-        
-        -- For versions without C_Clipboard API, use OnTextChanged to save pasted content
-        if not C_Clipboard or not C_Clipboard.GetText then
-            editBox:SetScript("OnTextChanged", function(self, userInput)
-                if userInput then
-                    -- User typed or pasted, save the value after a short delay
-                    C_Timer.After(0.1, function()
-                        local text = self:GetText()
-                        SetValue(text)
-                    end)
-                end
-            end)
-        end
     end
     
     -- Save on focus lost
