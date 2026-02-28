@@ -1063,7 +1063,8 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     if isMultiline then
         local scroll = ScrollFrame:Create(frame)
         scroll:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        scroll:SetSize(frameWidth - 20, option.multiline * 3 or 60)
+        local multilineHeight = (option.multiline and option.multiline * 10 or 200)
+        scroll:SetSize(frameWidth - 20, multilineHeight)
         
         editBox = CreateFrame("EditBox", nil, scroll.scrollArea, "BackdropTemplate")
         editBox:SetMultiLine(true)
@@ -1083,11 +1084,11 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         scroll:SetScrollChild(editBox)
         
         -- Adjust frame height for multiline
-        frameHeight = (option.multiline * 3 or 60) + 30
+        frameHeight = (option.multiline and option.multiline * 10 or 200) + 30
     else
         editBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
         editBox:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        editBox:SetSize(frameWidth - 50, 24)
+        editBox:SetSize(frameWidth - 20, 24)
         editBox:SetAutoFocus(false)
         
         -- Style edit box
@@ -1110,40 +1111,44 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     editBox:SetTextColor(ColorPalette:GetColor('text-primary'))
     editBox:SetTextInsets(6, 6, 2, 2)
     
-    -- Add confirmation button for single-line inputs
+    -- Add confirmation button for single-line inputs (positioned inside editbox at right)
     local confirmButton
     if not isMultiline then
-        confirmButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
-        confirmButton:SetPoint("LEFT", editBox, "RIGHT", 4, 0)
-        confirmButton:SetSize(24, 24)
-        confirmButton:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            tile = false, edgeSize = 1,
-            insets = { left = 1, right = 1, top = 1, bottom = 1 }
-        })
-        confirmButton:SetBackdropColor(ColorPalette:GetColor('button-bg'))
-        confirmButton:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        confirmButton = CreateFrame("Button", nil, editBox)
+        confirmButton:SetPoint("RIGHT", editBox, "RIGHT", -4, 0)
+        confirmButton:SetSize(20, 16)
+        confirmButton:Hide()  -- Start hidden
         
-        -- Checkmark text
+        -- OK text
         confirmButton.text = confirmButton:CreateFontString(nil, "OVERLAY")
-        confirmButton.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
-        confirmButton.text:SetText("✓")
+        confirmButton.text:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        confirmButton.text:SetText("OK")
         confirmButton.text:SetPoint("CENTER", 0, 0)
-        confirmButton.text:SetTextColor(0.4, 0.8, 0.4, 1)
+        confirmButton.text:SetTextColor(0.5, 0.8, 1.0, 1)
         
         -- Hover effects
         confirmButton:SetScript("OnEnter", function(self)
-            local r, g, b = ColorPalette:GetColor('accent-primary')
-            self:SetBackdropColor(r, g, b, 0.15)
-            self.text:SetTextColor(0.5, 1, 0.5, 1)
+            self.text:SetTextColor(0.7, 1.0, 1.0, 1)
         end)
         confirmButton:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
-            self.text:SetTextColor(0.4, 0.8, 0.4, 1)
+            self.text:SetTextColor(0.5, 0.8, 1.0, 1)
         end)
         confirmButton:SetScript("OnClick", function()
             editBox:ClearFocus()
+        end)
+        
+        -- Show/hide button based on text content
+        local function UpdateButtonVisibility()
+            local text = editBox:GetText()
+            if text and text ~= "" then
+                confirmButton:Show()
+            else
+                confirmButton:Hide()
+            end
+        end
+        
+        editBox:SetScript("OnTextChanged", function()
+            UpdateButtonVisibility()
         end)
     end
     
