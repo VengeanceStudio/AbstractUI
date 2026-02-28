@@ -1,0 +1,100 @@
+## Interface: 120001
+## Title: Midnight UI
+## Notes: Complete Modern UI Replacement.
+## Author: Vengeance
+## Version: 12.0.1.2
+## IconTexture: Interface\AddOns\MidnightUI\icon.png
+## SavedVariables: MidnightUIDB
+## OptionalDeps: Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, Masque
+
+# ------------------------------------------------------------------------------
+# LIBRARIES
+# ------------------------------------------------------------------------------
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+libs\LibSharedMedia-3.0\lib.xml
+
+# ------------------------------------------------------------------------------
+# ACE3 FRAMEWORK
+# ------------------------------------------------------------------------------
+libs\AceAddon-3.0\AceAddon-3.0.xml
+libs\AceConsole-3.0\AceConsole-3.0.xml
+libs\AceEvent-3.0\AceEvent-3.0.xml
+libs\AceHook-3.0\AceHook-3.0.xml
+libs\AceDB-3.0\AceDB-3.0.xml
+libs\AceSerializer-3.0\AceSerializer-3.0.lua
+libs\LibCompress\lib.xml
+
+# ------------------------------------------------------------------------------
+# CORE ENGINE
+# ------------------------------------------------------------------------------
+Core.lua
+
+# ------------------------------------------------------------------------------
+# FRAMEWORK & THEMES
+# ------------------------------------------------------------------------------
+Framework\Atlas.lua
+Framework\ColorPalette.lua
+Framework\FontKit.lua
+Framework\LayoutHelper.lua
+Framework\FrameFactory.lua
+Framework\ScrollFrame.lua
+Framework\MidnightOptionsPanel.lua
+Themes\MidnightUIDefault.lua
+Themes\MidnightGlass.lua
+Themes\MidnightGreen.lua
+Themes\MidnightTransparent.lua
+Themes\MidnightTransparentGold.lua
+Themes\MidnightDeathKnight.lua
+Themes\MidnightDemonHunter.lua
+Themes\MidnightDruid.lua
+Themes\MidnightEvoker.lua
+Themes\MidnightHunter.lua
+Themes\MidnightMage.lua
+Themes\MidnightMonk.lua
+Themes\MidnightPaladin.lua
+Themes\MidnightPriest.lua
+Themes\MidnightRogue.lua
+Themes\MidnightShaman.lua
+Themes\MidnightWarlock.lua
+Themes\MidnightWarrior.lua
+Themes\NeonSciFi.lua
+
+# ------------------------------------------------------------------------------
+# MODULES
+# ------------------------------------------------------------------------------
+Modules\Chat.lua
+Modules\Skins.lua
+Modules\Movable.lua
+Modules\BrokerBar.lua
+Modules\Brokers\Friends.lua
+Modules\Brokers\Guild.lua
+Modules\Brokers\Gold.lua
+Modules\Brokers\System.lua
+Modules\Brokers\Bags.lua
+Modules\Brokers\Token.lua
+Modules\Brokers\Volume.lua
+Modules\Brokers\Durability.lua
+Modules\Brokers\Location.lua
+Modules\Brokers\Difficulty.lua
+Modules\Brokers\ItemLevel.lua
+Modules\Brokers\Clock.lua
+Modules\UIButtons.lua
+Modules\Tooltips.lua
+Modules\Mailbox.lua
+Modules\Tweaks.lua
+Modules\Maps.lua
+Modules\ActionBars.lua
+Modules\UnitFrames.lua
+Modules\Frames\Player.lua
+Modules\Frames\Target.lua
+Modules\Frames\TargetTarget.lua
+Modules\Frames\Pet.lua
+Modules\Frames\Focus.lua
+Modules\Frames\Boss.lua
+Modules\Setup.lua
+Modules\CooldownManager.lua
+Modules\ResourceBars.lua
+Modules\CastBar.lua
+Modules\FrameworkDemo.lua

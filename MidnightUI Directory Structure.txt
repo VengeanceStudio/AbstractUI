@@ -1,0 +1,250 @@
+MidnightUI/
+│
+├── MidnightUI.toc                          # Addon metadata & load order (Interface 12.0+)
+├── Core.lua                                # Main engine, database, & module loader
+├── icon.png                                # Addon icon
+├── LICENSE.txt                             # MIT License
+├── README.md                               # Complete documentation & feature list
+├── FRAMEWORK_ARCHITECTURE.md               # Framework documentation
+├── MidnightUI Directory Structure.txt      # This file
+│
+├── Media/                                  # Textures, fonts, and sounds
+│   ├── Skull.tga                           # Skull texture asset
+│   └── Textures/                           # Additional texture assets
+│       └── Atlas/                          # Atlas texture files
+│
+├── Framework/                              # Core framework systems
+│   ├── Atlas.lua                           # Texture atlas management
+│   ├── ColorPalette.lua                    # Theme color system
+│   ├── FontKit.lua                         # Font management system
+│   ├── FrameFactory.lua                    # Frame creation utilities
+│   ├── LayoutHelper.lua                    # Layout positioning helpers
+│   └── README.md                           # Framework documentation
+│
+├── Themes/                                 # Color theme definitions
+│   ├── MidnightUIDefault.lua               # Default theme (purple/blue)
+│   ├── MidnightGlass.lua                   # Glass theme (transparent blue)
+│   ├── MidnightGreen.lua                   # Green theme
+│   ├── MidnightTransparent.lua             # Transparent blue theme (new default)
+│   ├── MidnightTransparentGold.lua         # Transparent gold theme
+│   ├── NeonSciFi.lua                       # Neon sci-fi theme (cyan/magenta)
+│   ├── MidnightDeathKnight.lua             # Death Knight class theme (crimson)
+│   ├── MidnightDemonHunter.lua             # Demon Hunter class theme (purple)
+│   ├── MidnightDruid.lua                   # Druid class theme (orange)
+│   ├── MidnightEvoker.lua                  # Evoker class theme (teal)
+│   ├── MidnightHunter.lua                  # Hunter class theme (lime)
+│   ├── MidnightMage.lua                    # Mage class theme (cyan)
+│   ├── MidnightMonk.lua                    # Monk class theme (jade)
+│   ├── MidnightPaladin.lua                 # Paladin class theme (pink)
+│   ├── MidnightPriest.lua                  # Priest class theme (white)
+│   ├── MidnightRogue.lua                   # Rogue class theme (yellow)
+│   ├── MidnightShaman.lua                  # Shaman class theme (blue)
+│   ├── MidnightWarlock.lua                 # Warlock class theme (lavender)
+│   ├── MidnightWarrior.lua                 # Warrior class theme (tan)
+│   └── README.md                           # Theme documentation
+│
+├── Widgets/                                # Custom AceGUI widgets
+│   ├── MidnightButton.lua                  # Styled button widget
+│   ├── MidnightCheckBox.lua                # Styled checkbox widget
+│   ├── MidnightColorPicker.lua             # Color picker widget
+│   ├── MidnightDropdown.lua                # Styled dropdown widget
+│   ├── MidnightDropdown-Pullout.lua        # Dropdown pullout menu
+│   ├── MidnightEditBox.lua                 # Styled text input widget
+│   ├── MidnightHeading.lua                 # Heading text widget
+│   ├── MidnightInlineGroup.lua             # Inline group container
+│   ├── MidnightMultiLineEditBox.lua        # Multi-line text input widget
+│   ├── MidnightSlider.lua                  # Styled slider widget
+│   └── MidnightTabGroup.lua                # Tab group container
+│
+├── Modules/                                # Core addon modules
+│   ├── ActionBars.lua                      # Action bar customization & skinning
+│   ├── BrokerBar.lua                       # Info bars & LibDataBroker widgets system
+│   ├── Chat.lua                            # Chat frame enhancements
+│   ├── Cooldowns.lua                       # Cooldown timer manager (WIP)
+│   ├── FrameworkDemo.lua                   # Framework demo module
+│   ├── Maps.lua                            # Minimap customization
+│   ├── Movable.lua                         # Frame positioning & movement system
+│   ├── Setup.lua                           # First-time setup wizard
+│   ├── Skins.lua                           # Skin system (Midnight/Blizzard/Glass/Flat)
+│   ├── Tooltips.lua                        # Tooltip styling & customization
+│   ├── Tweaks.lua                          # Quality of life features & automation
+│   ├── UIButtons.lua                       # Menu & bag button styling
+│   ├── UnitFrames.lua                      # Unit frame core engine
+│   │
+│   ├── Brokers/                            # Data broker widget implementations
+│   │   ├── Bags.lua                        # Bag space tracker
+│   │   ├── Clock.lua                       # Time & date display
+│   │   ├── Difficulty.lua                  # Instance difficulty indicator
+│   │   ├── Durability.lua                  # Equipment durability monitor
+│   │   ├── Friends.lua                     # Friends list status
+│   │   ├── Gold.lua                        # Gold tracker
+│   │   ├── Guild.lua                       # Guild roster info
+│   │   ├── ItemLevel.lua                   # Character item level display
+│   │   ├── Location.lua                    # Zone & coordinates display
+│   │   ├── System.lua                      # System performance monitor
+│   │   ├── Token.lua                       # WoW Token pricing
+│   │   └── Volume.lua                      # Volume mixer control
+│   │
+│   └── Frames/                             # Individual unit frame implementations
+│       ├── Boss.lua                        # Boss frames 1-5 (unified settings)
+│       ├── Focus.lua                       # Focus target frame
+│       ├── Pet.lua                         # Pet frame (hunter/warlock/DK)
+│       ├── Player.lua                      # Player frame
+│       ├── Target.lua                      # Target frame
+│       └── TargetTarget.lua                # Target of target frame
+│
+├── libs/                                   # Embedded third-party libraries
+│   │
+│   ├── LibStub/                            # Library loading framework
+│   │   └── LibStub.lua
+│   │
+│   ├── CallbackHandler-1.0/                # Event callback management
+│   │   ├── CallbackHandler-1.0.lua
+│   │   └── CallbackHandler-1.0.xml
+│   │
+│   ├── LibDataBroker-1.1/                  # Data display plugin framework
+│   │   └── LibDataBroker-1.1.lua
+│   │
+│   ├── LibSharedMedia-3.0/                 # Shared fonts/textures/sounds
+│   │   ├── lib.xml
+│   │   └── LibSharedMedia-3.0.lua
+│   │
+│   ├── LibCompress/                        # Data compression utilities
+│   │   ├── lib.xml
+│   │   ├── LibCompress.lua
+│   │   └── LibCompress.toc
+│   │
+│   ├── AceAddon-3.0/                       # Addon framework base
+│   │   ├── AceAddon-3.0.lua
+│   │   └── AceAddon-3.0.xml
+│   │
+│   ├── AceConsole-3.0/                     # Slash command handling
+│   │   ├── AceConsole-3.0.lua
+│   │   └── AceConsole-3.0.xml
+│   │
+│   ├── AceEvent-3.0/                       # Event registration system
+│   │   ├── AceEvent-3.0.lua
+│   │   └── AceEvent-3.0.xml
+│   │
+│   ├── AceHook-3.0/                        # Function hooking framework
+│   │   ├── AceHook-3.0.lua
+│   │   └── AceHook-3.0.xml
+│   │
+│   ├── AceDB-3.0/                          # Database & profile management
+│   │   ├── AceDB-3.0.lua
+│   │   └── AceDB-3.0.xml
+│   │
+│   ├── AceDBOptions-3.0/                   # Database configuration GUI
+│   │   ├── AceDBOptions-3.0.lua
+│   │   └── AceDBOptions-3.0.xml
+│   │
+│   ├── AceSerializer-3.0/                  # Data serialization utilities
+│   │   ├── AceSerializer-3.0.lua
+│   │   └── AceSerializer-3.0.xml
+│   │
+│   ├── AceConfig-3.0/                      # Configuration system core
+│   │   ├── AceConfig-3.0.lua
+│   │   ├── AceConfig-3.0.xml
+│   │   │
+│   │   ├── AceConfigCmd-3.0/               # Command-line config interface
+│   │   │   ├── AceConfigCmd-3.0.lua
+│   │   │   └── AceConfigCmd-3.0.xml
+│   │   │
+│   │   ├── AceConfigDialog-3.0/            # GUI config dialog system
+│   │   │   ├── AceConfigDialog-3.0.lua
+│   │   │   └── AceConfigDialog-3.0.xml
+│   │   │
+│   │   └── AceConfigRegistry-3.0/          # Config option registry
+│   │       ├── AceConfigRegistry-3.0.lua
+│   │       └── AceConfigRegistry-3.0.xml
+│   │
+│   ├── AceConfigDialog-3.0/                # Duplicate config dialog (compatibility)
+│   │   ├── AceConfigDialog-3.0.lua
+│   │   └── AceConfigDialog-3.0.xml
+│   │
+│   ├── AceGUI-3.0/                         # Widget framework for options GUI
+│   │   ├── AceGUI-3.0.lua
+│   │   ├── AceGUI-3.0.xml
+│   │   │
+│   │   └── widgets/                        # GUI widget library
+│   │       ├── AceGUIContainer-BlizOptionsGroup.lua
+│   │       ├── AceGUIContainer-DropDownGroup.lua
+│   │       ├── AceGUIContainer-Frame.lua
+│   │       ├── AceGUIContainer-InlineGroup.lua
+│   │       ├── AceGUIContainer-ScrollFrame.lua
+│   │       ├── AceGUIContainer-SimpleGroup.lua
+│   │       ├── AceGUIContainer-TabGroup.lua
+│   │       ├── AceGUIContainer-TreeGroup.lua
+│   │       ├── AceGUIContainer-Window.lua
+│   │       ├── AceGUIWidget-Button.lua
+│   │       ├── AceGUIWidget-CheckBox.lua
+│   │       ├── AceGUIWidget-ColorPicker.lua
+│   │       ├── AceGUIWidget-DropDown-Items.lua
+│   │       ├── AceGUIWidget-DropDown.lua
+│   │       ├── AceGUIWidget-EditBox.lua
+│   │       ├── AceGUIWidget-Heading.lua
+│   │       ├── AceGUIWidget-Icon.lua
+│   │       ├── AceGUIWidget-InteractiveLabel.lua
+│   │       ├── AceGUIWidget-Keybinding.lua
+│   │       ├── AceGUIWidget-Label.lua
+│   │       ├── AceGUIWidget-MultiLineEditBox.lua
+│   │       └── AceGUIWidget-Slider.lua
+│   │
+│   └── AceGUI-3.0-SharedMediaWidgets/      # LibSharedMedia widget extensions
+│       ├── BackgroundWidget.lua
+│       ├── BorderWidget.lua
+│       ├── FontWidget.lua
+│       ├── prototypes.lua
+│       ├── SoundWidget.lua
+│       ├── StatusbarWidget.lua
+│       └── widget.xml
+
+================================================================================
+SUMMARY
+================================================================================
+
+Total Modules: 13
+  - ActionBars, BrokerBar (Info Bars), Chat, Cooldowns, FrameworkDemo, Maps, 
+    Movable, Setup, Skins, Tooltips, Tweaks, UIButtons, UnitFrames
+
+Total Unit Frame Types: 6
+  - Player, Target, Target of Target, Pet, Focus, Boss (1-5)
+
+Total Libraries: 12
+  - LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibSharedMedia-3.0,
+    LibCompress, AceAddon-3.0, AceConsole-3.0, AceEvent-3.0, AceHook-3.0,
+    AceDB-3.0, AceDBOptions-3.0, AceSerializer-3.0, AceConfig-3.0,
+    AceConfigDialog-3.0, AceGUI-3.0, AceGUI-3.0-SharedMediaWidgets
+
+Built-in Data Widgets (12):
+  - System Info, Volume Mixer, Gold Tracker, Clock, Bag Space, Durability,
+    Friends, Guild, Location, Difficulty, WoW Token, Item Level
+
+Built-in Themes (19):
+  - MidnightUIDefault, MidnightGlass, MidnightGreen, MidnightTransparent (default),
+    MidnightTransparentGold, NeonSciFi, MidnightDeathKnight, MidnightDemonHunter, 
+    MidnightDruid, MidnightEvoker, MidnightHunter, MidnightMage, MidnightMonk, 
+    MidnightPaladin, MidnightPriest, MidnightRogue, MidnightShaman, MidnightWarlock,
+    MidnightWarrior
+
+Custom Widgets (11):
+  - MidnightButton, MidnightCheckBox, MidnightColorPicker, MidnightDropdown,
+    MidnightEditBox, MidnightHeading, MidnightInlineGroup, MidnightMultiLineEditBox,
+    MidnightSlider, MidnightTabGroup
+
+Framework Systems (5):
+  - Atlas (texture management), ColorPalette (theme colors), FontKit (fonts),
+    FrameFactory (frame creation), LayoutHelper (positioning)
+
+Supported Skins: 4
+  - Midnight (default), Blizzard, Glass, Flat
+
+Quality of Life Features (Tweaks): 12
+  - Fast Loot, Hide Gryphons, Hide Bag Bar, Auto-Repair, Auto-Repair (Guild),
+    Auto-Sell Junk, Auto-Insert Keystone, Auto-Delete Confirmation, Reveal Map,
+    Auto Screenshot, Skip Cutscenes, Talent Import Overwrite
+
+================================================================================
+For complete feature documentation, see README.md
+Configuration: Type /mui in-game or Esc → Options → AddOns → MidnightUI
+================================================================================
