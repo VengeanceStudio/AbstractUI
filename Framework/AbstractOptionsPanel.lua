@@ -1147,6 +1147,7 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
             self.text:SetTextColor(0.5, 0.8, 1.0, 1)
         end)
         confirmButton:SetScript("OnClick", function()
+            SetValue(editBox:GetText())  -- Explicitly save the value
             editBox:ClearFocus()
         end)
         
@@ -1182,6 +1183,31 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
             option.set(self.addonRef.db.profile, value)
         end
         UpdateVisual(value)
+    end
+    
+    -- Enable paste for multiline editboxes
+    if isMultiline then
+        -- Enable Ctrl+V paste functionality
+        editBox:SetScript("OnKeyDown", function(self, key)
+            if key == "V" and IsControlKeyDown() then
+                local pasteText = GetClipboardText()
+                if pasteText and pasteText ~= "" then
+                    local currentText = self:GetText() or ""
+                    local cursorPos = self:GetCursorPosition() or 0
+                    local beforeCursor = currentText:sub(1, cursorPos)
+                    local afterCursor = currentText:sub(cursorPos + 1)
+                    local newText = beforeCursor .. pasteText .. afterCursor
+                    self:SetText(newText)
+                    self:SetCursorPosition(cursorPos + #pasteText)
+                    
+                    -- Save the pasted value
+                    SetValue(newText)
+                end
+            elseif key == "A" and IsControlKeyDown() then
+                -- Ctrl+A to select all
+                self:HighlightText(0, #self:GetText())
+            end
+        end)
     end
     
     -- Save on focus lost
