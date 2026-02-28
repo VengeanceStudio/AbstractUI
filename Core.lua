@@ -418,7 +418,6 @@ function AbstractUI:GetThemeOptions()
             get = function() return self.customThemeName or "" end,
             set = function(_, v) 
                 self.customThemeName = v
-                print("Custom theme name set to: " .. tostring(v))
             end,
         },
         saveCustomTheme = {
@@ -475,30 +474,117 @@ function AbstractUI:GetThemeOptions()
             name = "Click any color rectangle below to change its color.",
             order = 10,
         },
-        spacer3 = {
-            type = "description",
-            name = " ",
+        colorPanelBg = {
+            type = "color",
+            name = "Panel Background",
+            desc = "Main background color for panels and frames",
+            order = 11,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('panel-bg')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('panel-bg', value[1], value[2], value[3], value[4])
+            end,
+        },
+        colorPanelBorder = {
+            type = "color",
+            name = "Panel Border",
+            desc = "Border color for panels and frames",
             order = 12,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('panel-border')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('panel-border', value[1], value[2], value[3], value[4])
+            end,
         },
-        spacer4 = {
-            type = "description",
-            name = " ",
+        colorAccentPrimary = {
+            type = "color",
+            name = "Accent Primary",
+            desc = "Primary accent color for highlights and emphasis",
             order = 13,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('accent-primary')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('accent-primary', value[1], value[2], value[3], value[4])
+            end,
         },
-        spacer5 = {
-            type = "description",
-            name = " ",
+        colorButtonBg = {
+            type = "color",
+            name = "Button Background",
+            desc = "Background color for buttons",
             order = 14,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('button-bg')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('button-bg', value[1], value[2], value[3], value[4])
+            end,
         },
-        spacer6 = {
-            type = "description",
-            name = " ",
+        colorButtonHover = {
+            type = "color",
+            name = "Button Hover",
+            desc = "Button color when hovering with mouse",
             order = 15,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('button-hover')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('button-hover', value[1], value[2], value[3], value[4])
+            end,
         },
-        spacer7 = {
-            type = "description",
-            name = " ",
+        colorTextPrimary = {
+            type = "color",
+            name = "Text Primary",
+            desc = "Primary text color",
             order = 16,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('text-primary')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('text-primary', value[1], value[2], value[3], value[4])
+            end,
+        },
+        colorTextSecondary = {
+            type = "color",
+            name = "Text Secondary",
+            desc = "Secondary text color for less prominent text",
+            order = 17,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('text-secondary')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('text-secondary', value[1], value[2], value[3], value[4])
+            end,
+        },
+        colorTabActive = {
+            type = "color",
+            name = "Tab Active",
+            desc = "Color for active/selected tabs",
+            order = 18,
+            hasAlpha = true,
+            get = function()
+                local r, g, b, a = ColorPalette:GetColor('tab-active')
+                return {r, g, b, a}
+            end,
+            set = function(_, value)
+                self:SetThemeColor('tab-active', value[1], value[2], value[3], value[4])
+            end,
         },
         spacer2 = {
             type = "description",
@@ -543,6 +629,36 @@ function AbstractUI:GetThemeOptions()
     }
     
     return options
+end
+
+function AbstractUI:SetThemeColor(colorKey, r, g, b, a)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    if not ColorPalette then return end
+    
+    -- Store in temp colors
+    if not self.tempThemeColors then
+        self.tempThemeColors = {}
+    end
+    self.tempThemeColors[colorKey] = {r = r, g = g, b = b, a = a}
+    
+    -- Apply the color immediately to preview
+    local activeTheme = self.db.profile.theme.active
+    local fullPalette = ColorPalette.palettes[activeTheme]
+    if fullPalette then
+        -- Create a copy and update with temp colors
+        local updatedPalette = {}
+        for k, v in pairs(fullPalette) do
+            updatedPalette[k] = v
+        end
+        for tempKey, tempColor in pairs(self.tempThemeColors) do
+            updatedPalette[tempKey] = tempColor
+        end
+        -- Re-register the theme with updated colors
+        ColorPalette:RegisterPalette(activeTheme, updatedPalette)
+    end
+    
+    -- Update color swatch frames if they exist
+    self:UpdateThemeColorSwatches()
 end
 
 function AbstractUI:OpenColorPickerForThemeColor(colorKey, colorName)
@@ -1326,7 +1442,6 @@ end
 
 function AbstractUI:SaveCustomTheme()
     local themeName = self.customThemeName
-    print("SaveCustomTheme called, themeName: " .. tostring(themeName))
     if not themeName or themeName == "" then
         self:Print("|cffff0000Error:|r Please enter a name for your custom theme.")
         return
@@ -1365,12 +1480,6 @@ function AbstractUI:SaveCustomTheme()
     local isOverwrite = false
     if self.db.profile.theme.customThemes and self.db.profile.theme.customThemes[themeName] then
         isOverwrite = true
-    end
-    
-    -- Only require color changes for NEW themes, allow overwrites without changes
-    if not isOverwrite and (not self.tempThemeColors or next(self.tempThemeColors) == nil) then
-        self:Print("|cffff0000Error:|r No color changes detected. Please modify at least one color before saving a new theme.")
-        return
     end
     
     -- Get full theme palette from current theme as base
