@@ -1470,7 +1470,10 @@ function BrokerBar:GetOptions()
                         self:CreateBarFrame(v)
                         self:ApplyBarSettings(v)
                         -- Refresh options to show new bar
-                        
+                        local optionsPanel = _G.AbstractUI_OptionsPanel
+                        if optionsPanel and optionsPanel.addonRef then
+                            optionsPanel:Open(optionsPanel.addonRef)
+                        end
                     end 
                 end 
             }

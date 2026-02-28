@@ -630,7 +630,7 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
     
     -- Adjust scroll frame to start below both main and nested tabs
     panel.scrollFrame:ClearAllPoints()
-    panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -79)
+    panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -84)
     panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
     
     -- Select first nested tab by default
@@ -805,7 +805,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     -- Check if this child group also uses tabs
     if childGroup.childGroups == "tab" then
-        self:RenderNestedTabGroup(childGroup, 40) -- 40px offset for parent tabs (30px height + 10px spacing)
+        self:RenderNestedTabGroup(childGroup, 45) -- 45px offset for parent tabs (30px height + 15px spacing)
         return
     end
     
