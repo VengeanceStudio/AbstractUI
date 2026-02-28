@@ -1061,14 +1061,19 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     -- Create edit box
     local editBox
     if isMultiline then
+        -- Calculate height based on multiline value (lines * pixels per line)
+        local multilineHeight = 300  -- Default height
+        if option.multiline and type(option.multiline) == "number" then
+            multilineHeight = option.multiline * 15  -- 15 pixels per line
+        end
+        
         local scroll = ScrollFrame:Create(frame)
         scroll:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        local multilineHeight = (option.multiline and option.multiline * 10 or 200)
         scroll:SetSize(frameWidth - 20, multilineHeight)
         
         editBox = CreateFrame("EditBox", nil, scroll.scrollArea, "BackdropTemplate")
         editBox:SetMultiLine(true)
-        editBox:SetSize(scroll.scrollArea:GetWidth() - 10, 500)
+        editBox:SetSize(scroll.scrollArea:GetWidth() - 10, 1000)
         editBox:SetAutoFocus(false)
         
         -- Style multiline edit box
@@ -1084,7 +1089,7 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         scroll:SetScrollChild(editBox)
         
         -- Adjust frame height for multiline
-        frameHeight = (option.multiline and option.multiline * 10 or 200) + 30
+        frameHeight = multilineHeight + 30
     else
         editBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
         editBox:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
