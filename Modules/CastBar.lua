@@ -1,10 +1,10 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local CastBar = MidnightUI:NewModule("CastBar", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local CastBar = AbstractUI:NewModule("CastBar", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Get ColorPalette and FontKit from Framework
-local ColorPalette = MidnightUI.ColorPalette
-local FontKit = MidnightUI.FontKit
+local ColorPalette = AbstractUI.ColorPalette
+local FontKit = AbstractUI.FontKit
 
 -- -----------------------------------------------------------------------------
 -- DATABASE DEFAULTS
@@ -54,16 +54,16 @@ local defaults = {
 -- INITIALIZATION
 -- -----------------------------------------------------------------------------
 function CastBar:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function CastBar:OnDBReady()
-    if not MidnightUI.db or not MidnightUI.db.profile or not MidnightUI.db.profile.modules.castBar then
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules.castBar then
         self:Disable()
         return
     end
     
-    self.db = MidnightUI.db:RegisterNamespace("CastBar", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("CastBar", defaults)
     
     -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -79,7 +79,7 @@ function CastBar:OnDBReady()
     self:RegisterEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE")
     
     -- Register for Move Mode changes
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
     
     -- If player is already in world, set up immediately
     if IsPlayerInWorld and IsPlayerInWorld() then
@@ -106,7 +106,7 @@ function CastBar:SetupCastBar()
     local db = self.db.profile
     
     -- Create main frame
-    local frame = CreateFrame("Frame", "MidnightUI_CastBar", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "AbstractUI_CastBar", UIParent, "BackdropTemplate")
     frame:SetSize(db.width, db.height)
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
     frame:SetMovable(true)
@@ -503,7 +503,7 @@ function CastBar:SetupDragging()
     local frame = self.castBar
     if not frame then return end
     
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     Movable:MakeFrameDraggable(
         frame,

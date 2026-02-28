@@ -1,5 +1,5 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Maps = MidnightUI:NewModule("Maps", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Maps = AbstractUI:NewModule("Maps", "AceEvent-3.0", "AceHook-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 local ColorPalette, FontKit
 
@@ -63,28 +63,28 @@ local defaults = {
 -- INITIALIZATION
 -- -----------------------------------------------------------------------------
 function Maps:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function Maps:OnDBReady()
-    if not MidnightUI.db or not MidnightUI.db.profile or not MidnightUI.db.profile.modules then
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules then
         self:Disable()
         return
     end
     
-    if not MidnightUI.db.profile.modules.maps then 
+    if not AbstractUI.db.profile.modules.maps then 
         self:Disable()
         return 
     end
     
     -- Get framework systems
-    ColorPalette = _G.MidnightUI_ColorPalette
-    FontKit = _G.MidnightUI_FontKit
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = _G.AbstractUI_FontKit
     
-    self.db = MidnightUI.db:RegisterNamespace("Maps", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("Maps", defaults)
     
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
     
     -- Manually call setup since PLAYER_ENTERING_WORLD already fired
     C_Timer.After(0.1, function()
@@ -119,7 +119,7 @@ function Maps:SetupMinimapBorder()
     
     -- Create a frame to hold the border
     if not self.minimapBorder then
-        self.minimapBorder = CreateFrame("Frame", "MidnightUI_MinimapBorder", Minimap, "BackdropTemplate")
+        self.minimapBorder = CreateFrame("Frame", "AbstractUI_MinimapBorder", Minimap, "BackdropTemplate")
         self.minimapBorder:SetAllPoints(Minimap)
         self.minimapBorder:SetFrameLevel(Minimap:GetFrameLevel() + 1)
         
@@ -181,7 +181,7 @@ end
 -- MINIMAP DRAGGING (CTRL+ALT OR MOVE MODE)
 -- -----------------------------------------------------------------------------
 function Maps:SetupMinimapDragging()
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     -- Only set up once - prevent multiple OnUpdate scripts on zone changes
     if Maps.dragOverlay and Maps.dragOverlayInitialized then
@@ -190,7 +190,7 @@ function Maps:SetupMinimapDragging()
     
     -- Create invisible overlay frame to capture drag events
     if not Maps.dragOverlay then
-        Maps.dragOverlay = CreateFrame("Frame", "MidnightUI_MinimapDragOverlay", Minimap)
+        Maps.dragOverlay = CreateFrame("Frame", "AbstractUI_MinimapDragOverlay", Minimap)
         Maps.dragOverlay:SetAllPoints(Minimap)
         Maps.dragOverlay:SetFrameLevel(Minimap:GetFrameLevel() + 100)
         Maps.dragOverlay:EnableMouse(false) -- Only enable when needed
@@ -206,7 +206,7 @@ function Maps:SetupMinimapDragging()
     -- Check on every frame if we should enable mouse on the overlay
     Maps.dragOverlay:SetScript("OnUpdate", function(self)
         -- Enable mouse on overlay if CTRL+ALT held or Move Mode active
-        local shouldEnable = (IsControlKeyDown() and IsAltKeyDown()) or MidnightUI.moveMode
+        local shouldEnable = (IsControlKeyDown() and IsAltKeyDown()) or AbstractUI.moveMode
         
         if shouldEnable and not self:IsMouseEnabled() then
             self:EnableMouse(true)
@@ -260,7 +260,7 @@ function Maps:SetupMinimapDragging()
     
     -- Show nudge controls on hover in Move Mode
     Minimap:HookScript("OnEnter", function(self)
-        if MidnightUI.moveMode and Maps.nudgeFrame then
+        if AbstractUI.moveMode and Maps.nudgeFrame then
             Movable:ShowNudgeControls(Maps.nudgeFrame, Minimap)
         end
     end)
@@ -274,7 +274,7 @@ function Maps:SetupNudgeControls()
         return
     end
     
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     self.nudgeFrame = Movable:CreateNudgeControls(
         Minimap,
@@ -304,7 +304,7 @@ function Maps:SetupNudgeControls()
 end
 
 function Maps:UpdateNudgeDisplay()
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     if self.nudgeFrame then
         Movable:UpdateNudgeDisplay(self.nudgeFrame, self.db.profile)
         -- Also reposition it to stay centered on minimap
@@ -315,7 +315,7 @@ function Maps:UpdateNudgeDisplay()
 end
 
 function Maps:OnMoveModeChanged(event, enabled)
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     if enabled then
         -- Always show nudge controls immediately when Move Mode is enabled
@@ -551,7 +551,7 @@ function Maps:SetupButtonBar()
     
     -- Create button bar frame if it doesn't exist
     if not self.buttonBar then
-        self.buttonBar = CreateFrame("Frame", "MidnightUI_MinimapButtonBar", UIParent, "BackdropTemplate")
+        self.buttonBar = CreateFrame("Frame", "AbstractUI_MinimapButtonBar", UIParent, "BackdropTemplate")
         self.buttonBar:SetFrameStrata("MEDIUM")
         self.buttonBar:SetFrameLevel(50)
         
@@ -662,7 +662,7 @@ function Maps:SetupButtonBar()
     self.buttonBar.collapsedPoint = nil
     
     -- Make it draggable with CTRL+ALT or Move Mode
-    local Movable = MidnightUI:GetModule("Movable", true)
+    local Movable = AbstractUI:GetModule("Movable", true)
     if Movable then
         -- Create wrapper database structure for arrow controls
         local arrowDB = {
@@ -749,8 +749,8 @@ function Maps:CollectMinimapButtons()
         ["QueueStatusMinimapButton"] = true,
         ["ExpansionLandingPageMinimapButton"] = true,
         ["GarrisonLandingPageMinimapButton"] = true,
-        ["MidnightUI_MinimapButtonBar"] = true,
-        ["MidnightUI_MinimapDragOverlay"] = true,
+        ["AbstractUI_MinimapButtonBar"] = true,
+        ["AbstractUI_MinimapDragOverlay"] = true,
     }
     
     -- Collect all frames parented to Minimap
@@ -827,7 +827,7 @@ function Maps:CollectMinimapButtons()
         button:SetAlpha(1)
         
         -- Add OnEnter/OnLeave to buttons to prevent collapse (only once per button)
-        if not button._midnightUIButtonBarHooked then
+        if not button._AbstractUIButtonBarHooked then
             button:HookScript("OnEnter", function()
                 if Maps.buttonBar and Maps.buttonBar.collapseTimer then
                     Maps.buttonBar.collapseTimer:Cancel()
@@ -848,7 +848,7 @@ function Maps:CollectMinimapButtons()
                     end)
                 end
             end)
-            button._midnightUIButtonBarHooked = true
+            button._AbstractUIButtonBarHooked = true
         end
     end
     

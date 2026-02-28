@@ -1,6 +1,6 @@
-# MidnightUI Framework
+# AbstractUI Framework
 
-The MidnightUI Framework provides a complete UI component system with theme support.
+The AbstractUI Framework provides a complete UI component system with theme support.
 
 ## Components
 
@@ -40,14 +40,14 @@ Component factory for creating themed UI elements.
 ## Usage Example
 
 ```lua
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local FrameFactory = MidnightUI.FrameFactory
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local FrameFactory = AbstractUI.FrameFactory
 
 -- Initialize after addon load
 FrameFactory:Initialize()
 
 -- Set active theme
-FrameFactory:SetTheme("MidnightGlass")
+FrameFactory:SetTheme("AbstractGlass")
 
 -- Create a themed button
 local button = FrameFactory:CreateButton(parent, 120, 32, "Click Me")

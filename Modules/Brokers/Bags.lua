@@ -1,4 +1,4 @@
--- MidnightUI Bags Broker
+-- AbstractUI Bags Broker
 -- Displays bag space usage and provides detailed tooltip with per-bag breakdown
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local bagObj
 
 -- Register the broker
-bagObj = LDB:NewDataObject("MidnightBags", {
+bagObj = LDB:NewDataObject("AbstractBags", {
     type = "data source", text = "0/0", icon = "Interface\\Icons\\INV_Misc_Bag_08", OnClick = function() ToggleAllBags() end,
     OnTooltipShow = function(tip)
         local r, g, b = GetColor()

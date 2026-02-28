@@ -1,10 +1,10 @@
-local MidnightUI = LibStub("AceAddon-3.0"):NewAddon("MidnightUI", "AceConsole-3.0", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):NewAddon("AbstractUI", "AceConsole-3.0", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
-MidnightUI.version = "1.0.0"
+AbstractUI.version = "1.0.0"
 
 -- Define reload confirmation dialog
-StaticPopupDialogs["MIDNIGHTUI_RELOAD_CONFIRM"] = {
+StaticPopupDialogs["AbstractUI_RELOAD_CONFIRM"] = {
     text = "This action requires a UI reload. Reload now?",
     button1 = "Yes",
     button2 = "No",
@@ -12,7 +12,7 @@ StaticPopupDialogs["MIDNIGHTUI_RELOAD_CONFIRM"] = {
         if not InCombatLockdown() then
             C_UI.Reload()
         else
-            print("|cffff0000MidnightUI:|r Cannot reload UI while in combat. Please leave combat and run /reload.")
+            print("|cffff0000AbstractUI:|r Cannot reload UI while in combat. Please leave combat and run /reload.")
         end
     end,
     timeout = 0,
@@ -27,7 +27,7 @@ StaticPopupDialogs["MIDNIGHTUI_RELOAD_CONFIRM"] = {
 local defaults = {
     profile = {
         theme = {
-            active = "MidnightTransparent",  -- Active framework theme
+            active = "AbstractTransparent",  -- Active framework theme
             font = "Friz Quadrata TT",
             fontSize = 12,
             bgColor = {0.1, 0.1, 0.1, 0.8},
@@ -55,29 +55,29 @@ local defaults = {
 -- ============================================================================
 -- 2. INITIALIZATION
 -- ============================================================================
-function MidnightUI:OnInitialize()
-    self.db = LibStub("AceDB-3.0"):New("MidnightUIDB", defaults, true)
+function AbstractUI:OnInitialize()
+    self.db = LibStub("AceDB-3.0"):New("AbstractUIDB", defaults, true)
     
     -- Register slash commands
     self:RegisterChatCommand("mui", "SlashCommand")
-    self:RegisterChatCommand("midnightui", "SlashCommand")
+    self:RegisterChatCommand("AbstractUI", "SlashCommand")
     self:RegisterChatCommand("muimove", "ToggleMoveMode")
     self:RegisterChatCommand("demo", "OpenDemo")
 end
 
-function MidnightUI:OnEnable()
+function AbstractUI:OnEnable()
     -- Load custom themes FIRST before validating
     self:LoadCustomThemes()
     
     -- Validate and migrate theme setting
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette and self.db.profile.theme.active then
         local currentTheme = self.db.profile.theme.active
         -- Check if the current theme exists in the palette
         if not ColorPalette.palettes[currentTheme] then
-            -- Theme doesn't exist, fall back to MidnightUIDefault
-            self.db.profile.theme.active = "MidnightUIDefault"
-            self:Print("Previous theme not found. Switched to MidnightUI Default theme.")
+            -- Theme doesn't exist, fall back to AbstractUIDefault
+            self.db.profile.theme.active = "AbstractUIDefault"
+            self:Print("Previous theme not found. Switched to AbstractUI Default theme.")
         end
         -- Set the active theme in ColorPalette
         ColorPalette:SetActiveTheme(self.db.profile.theme.active)
@@ -85,22 +85,22 @@ function MidnightUI:OnEnable()
     
     -- Send the message after all modules have registered
     C_Timer.After(0.1, function()
-        self:SendMessage("MIDNIGHTUI_DB_READY")
+        self:SendMessage("AbstractUI_DB_READY")
     end)
     
     -- Register options after modules load
     -- NOTE: No longer using AceConfig/AceConfigDialog - we have our own custom framework now!
-    -- Options panel is opened via MidnightUI:OpenConfig() which uses Framework/MidnightOptionsPanel.lua
+    -- Options panel is opened via AbstractUI:OpenConfig() which uses Framework/AbstractOptionsPanel.lua
     
     -- C_Timer.After(0.2, function()
-    --     AceConfig:RegisterOptionsTable("MidnightUI", function() return self:GetOptions() end)
-    --     AceConfigDialog:AddToBlizOptions("MidnightUI", "Midnight UI")
+    --     AceConfig:RegisterOptionsTable("AbstractUI", function() return self:GetOptions() end)
+    --     AceConfigDialog:AddToBlizOptions("AbstractUI", "Abstract UI")
     --     ... (commented out old AceGUI code)
     -- end)
     
     -- Initialize Framework
-    if _G.MidnightUI_FrameFactory then
-        _G.MidnightUI_FrameFactory:Initialize(self)
+    if _G.AbstractUI_FrameFactory then
+        _G.AbstractUI_FrameFactory:Initialize(self)
         
         -- Apply saved theme
         local savedTheme = self.db.profile.theme.active
@@ -115,7 +115,7 @@ function MidnightUI:OnEnable()
     end
 end
 
-function MidnightUI:SlashCommand(input)
+function AbstractUI:SlashCommand(input)
     if not input or input:trim() == "" then
         self:OpenConfig()
     elseif input:lower() == "move" then
@@ -125,7 +125,7 @@ function MidnightUI:SlashCommand(input)
     end
 end
 
-function MidnightUI:OpenDemo()
+function AbstractUI:OpenDemo()
     local demo = self:GetModule("FrameworkDemo", true)
     if demo then
         demo:Toggle()
@@ -139,11 +139,11 @@ end
 -- ============================================================================
 
 -- Reference resolution for default layouts (effective UI resolution at 2560x1440 with auto-scaling)
-MidnightUI.REFERENCE_WIDTH = 2133
-MidnightUI.REFERENCE_HEIGHT = 1200
+AbstractUI.REFERENCE_WIDTH = 2133
+AbstractUI.REFERENCE_HEIGHT = 1200
 
 -- Scale position from reference resolution to current resolution
-function MidnightUI:ScalePosition(x, y)
+function AbstractUI:ScalePosition(x, y)
     local screenWidth = GetScreenWidth()
     local screenHeight = GetScreenHeight()
     
@@ -154,14 +154,14 @@ function MidnightUI:ScalePosition(x, y)
 end
 
 -- Scale all movable frames to current resolution
-function MidnightUI:ScaleLayoutToResolution()
+function AbstractUI:ScaleLayoutToResolution()
     local screenWidth = GetScreenWidth()
     local screenHeight = GetScreenHeight()
     
     local scaleX = screenWidth / self.REFERENCE_WIDTH
     local scaleY = screenHeight / self.REFERENCE_HEIGHT
     
-    print("|cff00ff00MidnightUI:|r Scaling layout from " .. self.REFERENCE_WIDTH .. "x" .. self.REFERENCE_HEIGHT .. " to " .. math.floor(screenWidth) .. "x" .. math.floor(screenHeight))
+    print("|cff00ff00AbstractUI:|r Scaling layout from " .. self.REFERENCE_WIDTH .. "x" .. self.REFERENCE_HEIGHT .. " to " .. math.floor(screenWidth) .. "x" .. math.floor(screenHeight))
     print("|cff00ff00Scale factors:|r X=" .. string.format("%.2f", scaleX) .. " Y=" .. string.format("%.2f", scaleY))
     
     -- Scale Bar module positions
@@ -222,13 +222,13 @@ function MidnightUI:ScaleLayoutToResolution()
         end
     end
     
-    print("|cff00ff00MidnightUI:|r Layout scaled to your resolution!")
-    StaticPopup_Show("MIDNIGHTUI_RELOAD_CONFIRM")
+    print("|cff00ff00AbstractUI:|r Layout scaled to your resolution!")
+    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
 end
 
-function MidnightUI:OpenConfig()
-    -- Use custom MidnightUI Options Panel (zero AceGUI dependency)
-    local optionsPanel = _G.MidnightUI_OptionsPanel
+function AbstractUI:OpenConfig()
+    -- Use custom AbstractUI Options Panel (zero AceGUI dependency)
+    local optionsPanel = _G.AbstractUI_OptionsPanel
     if optionsPanel then
         local success, err = pcall(function()
             optionsPanel:Toggle(self)
@@ -242,7 +242,7 @@ function MidnightUI:OpenConfig()
 end
 
 -- Apply themed backdrop to a frame using ColorPalette
-function MidnightUI:ApplyThemedBackdrop(frame)
+function AbstractUI:ApplyThemedBackdrop(frame)
     if not frame then return end
     
     -- Clear any backdrop on the parent frame itself
@@ -272,7 +272,7 @@ function MidnightUI:ApplyThemedBackdrop(frame)
     })
     
     -- Use framework colors if available
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette then
         local r, g, b, a = ColorPalette:GetColor('panel-bg')
         frame.muiBackdrop:SetBackdropColor(r, g, b, a)
@@ -290,8 +290,8 @@ end
 -- ============================================================================
 -- 4. OPTIONS TABLE
 -- ============================================================================
-function MidnightUI:GetThemeOptions()
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractUI:GetThemeOptions()
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if not ColorPalette then
         return {
             header = {
@@ -354,7 +354,7 @@ function MidnightUI:GetThemeOptions()
         activeTheme = {
             type = "select",
             name = "Active Theme",
-            desc = "Select which theme to use for the MidnightUI framework.",
+            desc = "Select which theme to use for the AbstractUI framework.",
             order = 3,
             values = themeValues,
             get = function() return self.db.profile.theme.active end,
@@ -385,7 +385,7 @@ function MidnightUI:GetThemeOptions()
                 self:UpdateThemeColorSwatches()
                 
                 -- Notify modules that theme has changed
-                self:SendMessage("MIDNIGHTUI_THEME_CHANGED", value)
+                self:SendMessage("AbstractUI_THEME_CHANGED", value)
                 
                 self:Print("Theme changed to " .. value .. ". Some changes may require a /reload to take full effect.")
                 
@@ -435,13 +435,13 @@ function MidnightUI:GetThemeOptions()
             disabled = function()
                 local active = self.db.profile.theme.active
                 local builtInThemes = {
-                    "MidnightUIDefault", "MidnightGlass", "MidnightGreen",
-                    "MidnightTransparent", "MidnightTransparentGold",
-                    "MidnightDeathKnight", "MidnightDemonHunter", "MidnightDruid",
-                    "MidnightEvoker", "MidnightHunter", "MidnightMage",
-                    "MidnightMonk", "MidnightPaladin", "MidnightPriest",
-                    "MidnightRogue", "MidnightShaman", "MidnightWarlock",
-                    "MidnightWarrior", "NeonSciFi"
+                    "AbstractUIDefault", "AbstractGlass", "AbstractGreen",
+                    "AbstractTransparent", "AbstractTransparentGold",
+                    "AbstractDeathKnight", "AbstractDemonHunter", "AbstractDruid",
+                    "AbstractEvoker", "AbstractHunter", "AbstractMage",
+                    "AbstractMonk", "AbstractPaladin", "AbstractPriest",
+                    "AbstractRogue", "AbstractShaman", "AbstractWarlock",
+                    "AbstractWarrior", "NeonSciFi"
                 }
                 for _, themeName in ipairs(builtInThemes) do
                     if active == themeName then
@@ -512,7 +512,7 @@ function MidnightUI:GetThemeOptions()
                 self.tempThemeColors = nil
                 
                 -- Reload the original palette for the active theme
-                local ColorPalette = _G.MidnightUI_ColorPalette
+                local ColorPalette = _G.AbstractUI_ColorPalette
                 if ColorPalette then
                     local activeTheme = self.db.profile.theme.active
                     -- Force re-registration from the theme file
@@ -542,8 +542,8 @@ function MidnightUI:GetThemeOptions()
     return options
 end
 
-function MidnightUI:OpenColorPickerForThemeColor(colorKey, colorName)
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractUI:OpenColorPickerForThemeColor(colorKey, colorName)
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if not ColorPalette then
         self:Print("Color system not initialized.")
         return
@@ -601,10 +601,10 @@ function MidnightUI:OpenColorPickerForThemeColor(colorKey, colorName)
     })
 end
 
-function MidnightUI:UpdateThemeColorSwatches()
+function AbstractUI:UpdateThemeColorSwatches()
     -- This will update the color swatch frames when they're created
     if self.themeColorSwatches then
-        local ColorPalette = _G.MidnightUI_ColorPalette
+        local ColorPalette = _G.AbstractUI_ColorPalette
         if not ColorPalette then return end
         
         for colorKey, swatchData in pairs(self.themeColorSwatches) do
@@ -624,22 +624,22 @@ function MidnightUI:UpdateThemeColorSwatches()
     end
 end
 
-function MidnightUI:OpenColorEditorFrame()
+function AbstractUI:OpenColorEditorFrame()
     -- Create or show the color editor frame
     if self.colorEditorFrame then
         self.colorEditorFrame:Show()
         return
     end
     
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     if not ColorPalette or not FontKit then
         self:Print("Framework not initialized.")
         return
     end
     
-    -- Create main frame styled like a real MidnightUI window
-    local frame = CreateFrame("Frame", "MidnightUI_ColorEditorFrame", UIParent, "BackdropTemplate")
+    -- Create main frame styled like a real AbstractUI window
+    local frame = CreateFrame("Frame", "AbstractUI_ColorEditorFrame", UIParent, "BackdropTemplate")
     frame:SetSize(800, 600)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
@@ -781,14 +781,14 @@ function MidnightUI:OpenColorEditorFrame()
     end)
     closeBtn:SetScript("OnClick", function()
         -- Check if there are any color changes
-        if MidnightUI.tempThemeColors and next(MidnightUI.tempThemeColors) ~= nil then
-            StaticPopupDialogs["MIDNIGHTUI_THEME_CLOSE_CONFIRM"] = {
+        if AbstractUI.tempThemeColors and next(AbstractUI.tempThemeColors) ~= nil then
+            StaticPopupDialogs["AbstractUI_THEME_CLOSE_CONFIRM"] = {
                 text = "You have unsaved color changes that will be lost. Close anyway?",
                 button1 = "Close",
                 button2 = "Cancel",
                 OnAccept = function()
                     -- Discard changes and close
-                    MidnightUI.tempThemeColors = nil
+                    AbstractUI.tempThemeColors = nil
                     frame:Hide()
                 end,
                 OnCancel = function()
@@ -799,7 +799,7 @@ function MidnightUI:OpenColorEditorFrame()
                 hideOnEscape = true,
                 preferredIndex = 3,
             }
-            StaticPopup_Show("MIDNIGHTUI_THEME_CLOSE_CONFIRM")
+            StaticPopup_Show("AbstractUI_THEME_CLOSE_CONFIRM")
         else
             -- No changes, just close
             frame:Hide()
@@ -839,17 +839,17 @@ function MidnightUI:OpenColorEditorFrame()
                 swatchFunc = function()
                     local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                     local na = ColorPickerFrame:GetColorAlpha()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["panel-border"] = {r = nr, g = ng, b = nb, a = na}
+                    AbstractUI.tempThemeColors["panel-border"] = {r = nr, g = ng, b = nb, a = na}
                     UpdateFrameColors()
                 end,
                 cancelFunc = function()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["panel-border"] = {r = r, g = g, b = b, a = a}
+                    AbstractUI.tempThemeColors["panel-border"] = {r = r, g = g, b = b, a = a}
                     UpdateFrameColors()
                 end,
             })
@@ -863,17 +863,17 @@ function MidnightUI:OpenColorEditorFrame()
                 swatchFunc = function()
                     local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                     local na = ColorPickerFrame:GetColorAlpha()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["panel-bg"] = {r = nr, g = ng, b = nb, a = na}
+                    AbstractUI.tempThemeColors["panel-bg"] = {r = nr, g = ng, b = nb, a = na}
                     UpdateFrameColors()
                 end,
                 cancelFunc = function()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["panel-bg"] = {r = r, g = g, b = b, a = a}
+                    AbstractUI.tempThemeColors["panel-bg"] = {r = r, g = g, b = b, a = a}
                     UpdateFrameColors()
                 end,
             })
@@ -983,17 +983,17 @@ function MidnightUI:OpenColorEditorFrame()
                 swatchFunc = function()
                     local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                     local na = ColorPickerFrame:GetColorAlpha()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["accent-primary"] = {r = nr, g = ng, b = nb, a = na}
+                    AbstractUI.tempThemeColors["accent-primary"] = {r = nr, g = ng, b = nb, a = na}
                     UpdateFrameColors()
                 end,
                 cancelFunc = function()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors["accent-primary"] = {r = r, g = g, b = b, a = a}
+                    AbstractUI.tempThemeColors["accent-primary"] = {r = r, g = g, b = b, a = a}
                     UpdateFrameColors()
                 end,
             })
@@ -1052,17 +1052,17 @@ function MidnightUI:OpenColorEditorFrame()
                 swatchFunc = function()
                     local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                     local na = ColorPickerFrame:GetColorAlpha()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors[colorKey] = {r = nr, g = ng, b = nb, a = na}
+                    AbstractUI.tempThemeColors[colorKey] = {r = nr, g = ng, b = nb, a = na}
                     UpdateFrameColors()
                 end,
                 cancelFunc = function()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors[colorKey] = {r = r, g = g, b = b, a = a}
+                    AbstractUI.tempThemeColors[colorKey] = {r = r, g = g, b = b, a = a}
                     UpdateFrameColors()
                 end,
             })
@@ -1101,17 +1101,17 @@ function MidnightUI:OpenColorEditorFrame()
             swatchFunc = function()
                 local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                 local na = ColorPickerFrame:GetColorAlpha()
-                if not MidnightUI.tempThemeColors then
-                    MidnightUI.tempThemeColors = {}
+                if not AbstractUI.tempThemeColors then
+                    AbstractUI.tempThemeColors = {}
                 end
-                MidnightUI.tempThemeColors["text-primary"] = {r = nr, g = ng, b = nb, a = na}
+                AbstractUI.tempThemeColors["text-primary"] = {r = nr, g = ng, b = nb, a = na}
                 UpdateFrameColors()
             end,
             cancelFunc = function()
-                if not MidnightUI.tempThemeColors then
-                    MidnightUI.tempThemeColors = {}
+                if not AbstractUI.tempThemeColors then
+                    AbstractUI.tempThemeColors = {}
                 end
-                MidnightUI.tempThemeColors["text-primary"] = {r = r, g = g, b = b, a = a}
+                AbstractUI.tempThemeColors["text-primary"] = {r = r, g = g, b = b, a = a}
                 UpdateFrameColors()
             end,
         })
@@ -1145,17 +1145,17 @@ function MidnightUI:OpenColorEditorFrame()
             swatchFunc = function()
                 local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                 local na = ColorPickerFrame:GetColorAlpha()
-                if not MidnightUI.tempThemeColors then
-                    MidnightUI.tempThemeColors = {}
+                if not AbstractUI.tempThemeColors then
+                    AbstractUI.tempThemeColors = {}
                 end
-                MidnightUI.tempThemeColors["text-secondary"] = {r = nr, g = ng, b = nb, a = na}
+                AbstractUI.tempThemeColors["text-secondary"] = {r = nr, g = ng, b = nb, a = na}
                 UpdateFrameColors()
             end,
             cancelFunc = function()
-                if not MidnightUI.tempThemeColors then
-                    MidnightUI.tempThemeColors = {}
+                if not AbstractUI.tempThemeColors then
+                    AbstractUI.tempThemeColors = {}
                 end
-                MidnightUI.tempThemeColors["text-secondary"] = {r = r, g = g, b = b, a = a}
+                AbstractUI.tempThemeColors["text-secondary"] = {r = r, g = g, b = b, a = a}
                 UpdateFrameColors()
             end,
         })
@@ -1207,17 +1207,17 @@ function MidnightUI:OpenColorEditorFrame()
                 swatchFunc = function()
                     local nr, ng, nb = ColorPickerFrame:GetColorRGB()
                     local na = ColorPickerFrame:GetColorAlpha()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors[colorKey] = {r = nr, g = ng, b = nb, a = na}
+                    AbstractUI.tempThemeColors[colorKey] = {r = nr, g = ng, b = nb, a = na}
                     UpdateFrameColors()
                 end,
                 cancelFunc = function()
-                    if not MidnightUI.tempThemeColors then
-                        MidnightUI.tempThemeColors = {}
+                    if not AbstractUI.tempThemeColors then
+                        AbstractUI.tempThemeColors = {}
                     end
-                    MidnightUI.tempThemeColors[colorKey] = {r = r, g = g, b = b, a = a}
+                    AbstractUI.tempThemeColors[colorKey] = {r = r, g = g, b = b, a = a}
                     UpdateFrameColors()
                 end,
             })
@@ -1254,25 +1254,25 @@ function MidnightUI:OpenColorEditorFrame()
     end)
     saveBtn:SetScript("OnClick", function()
         -- Check if there are any color changes
-        if not MidnightUI.tempThemeColors or next(MidnightUI.tempThemeColors) == nil then
-            MidnightUI:Print("|cffff8800Warning:|r No color changes detected. Please modify at least one color first.")
+        if not AbstractUI.tempThemeColors or next(AbstractUI.tempThemeColors) == nil then
+            AbstractUI:Print("|cffff8800Warning:|r No color changes detected. Please modify at least one color first.")
             return
         end
         
         -- Show save dialog
-        StaticPopupDialogs["MIDNIGHTUI_THEME_SAVE_CONFIRM"] = {
+        StaticPopupDialogs["AbstractUI_THEME_SAVE_CONFIRM"] = {
             text = "Ready to save your custom theme. The editor will close and the Themes settings page will open where you can enter a name and save.",
             button1 = "Continue",
             button2 = "Cancel",
             OnAccept = function()
                 -- Open settings to Themes page so user can enter a name and save
                 frame:Hide()
-                if MidnightUI and type(MidnightUI.OpenConfig) == "function" then
-                    MidnightUI:OpenConfig()
+                if AbstractUI and type(AbstractUI.OpenConfig) == "function" then
+                    AbstractUI:OpenConfig()
                     -- TODO: Navigate to Themes section in custom panel
                     -- For now, user will need to click Themes in the tree
                 end
-                MidnightUI:Print("Click 'Themes' in the options panel, then enter a theme name and click 'Save Custom Theme' to save your changes.")
+                AbstractUI:Print("Click 'Themes' in the options panel, then enter a theme name and click 'Save Custom Theme' to save your changes.")
             end,
             OnCancel = function()
                 -- Cancel - keep window open
@@ -1282,7 +1282,7 @@ function MidnightUI:OpenColorEditorFrame()
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show("MIDNIGHTUI_THEME_SAVE_CONFIRM")
+        StaticPopup_Show("AbstractUI_THEME_SAVE_CONFIRM")
     end)
     
     -- Reset button at bottom
@@ -1311,9 +1311,9 @@ function MidnightUI:OpenColorEditorFrame()
         self:SetBackdropColor(GetCurrentColor("button-bg"))
     end)
     resetBtn:SetScript("OnClick", function()
-        MidnightUI.tempThemeColors = nil
+        AbstractUI.tempThemeColors = nil
         UpdateFrameColors()
-        MidnightUI:Print("Colors reset to theme defaults.")
+        AbstractUI:Print("Colors reset to theme defaults.")
     end)
     
     UpdateFrameColors()
@@ -1321,7 +1321,7 @@ function MidnightUI:OpenColorEditorFrame()
     frame:Show()
 end
 
-function MidnightUI:SaveCustomTheme()
+function AbstractUI:SaveCustomTheme()
     local themeName = self.customThemeName
     if not themeName or themeName == "" then
         self:Print("|cffff0000Error:|r Please enter a name for your custom theme.")
@@ -1330,24 +1330,24 @@ function MidnightUI:SaveCustomTheme()
     
     -- Don't allow overwriting built-in themes
     local builtInThemes = {
-        "MidnightUIDefault",
-        "MidnightGlass",
-        "MidnightGreen",
-        "MidnightTransparent",
-        "MidnightTransparentGold",
-        "MidnightDeathKnight",
-        "MidnightDemonHunter",
-        "MidnightDruid",
-        "MidnightEvoker",
-        "MidnightHunter",
-        "MidnightMage",
-        "MidnightMonk",
-        "MidnightPaladin",
-        "MidnightPriest",
-        "MidnightRogue",
-        "MidnightShaman",
-        "MidnightWarlock",
-        "MidnightWarrior",
+        "AbstractUIDefault",
+        "AbstractGlass",
+        "AbstractGreen",
+        "AbstractTransparent",
+        "AbstractTransparentGold",
+        "AbstractDeathKnight",
+        "AbstractDemonHunter",
+        "AbstractDruid",
+        "AbstractEvoker",
+        "AbstractHunter",
+        "AbstractMage",
+        "AbstractMonk",
+        "AbstractPaladin",
+        "AbstractPriest",
+        "AbstractRogue",
+        "AbstractShaman",
+        "AbstractWarlock",
+        "AbstractWarrior",
         "NeonSciFi"
     }
     for _, builtInName in ipairs(builtInThemes) do
@@ -1370,7 +1370,7 @@ function MidnightUI:SaveCustomTheme()
     end
     
     -- Get full theme palette from current theme as base
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     local fullTheme = {}
     
     -- Copy all colors from current active theme
@@ -1429,7 +1429,7 @@ function MidnightUI:SaveCustomTheme()
     
 end
 
-function MidnightUI:DeleteCustomTheme()
+function AbstractUI:DeleteCustomTheme()
     local themeName = self.db.profile.theme.active
     
     if not self.db.profile.theme.customThemes or not self.db.profile.theme.customThemes[themeName] then
@@ -1441,26 +1441,26 @@ function MidnightUI:DeleteCustomTheme()
     self.db.profile.theme.customThemes[themeName] = nil
     
     -- Switch to default theme
-    self.db.profile.theme.active = "MidnightTransparent"
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    self.db.profile.theme.active = "AbstractTransparent"
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette then
-        ColorPalette:SetActiveTheme("MidnightTransparent")
+        ColorPalette:SetActiveTheme("AbstractTransparent")
     end
     if self.FrameFactory then
-        self.FrameFactory:SetTheme("MidnightTransparent")
+        self.FrameFactory:SetTheme("AbstractTransparent")
     end
     if self.FontKit then
-        self.FontKit:SetActiveTheme("MidnightTransparent")
+        self.FontKit:SetActiveTheme("AbstractTransparent")
     end
     
-    self:Print("|cff00ff00Success:|r Theme '" .. themeName .. "' deleted. Switched to Midnight Transparent.")
+    self:Print("|cff00ff00Success:|r Theme '" .. themeName .. "' deleted. Switched to Abstract Transparent.")
     
     -- Refresh options
     
 end
 
-function MidnightUI:LoadCustomThemes()
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractUI:LoadCustomThemes()
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if not ColorPalette then return end
     
     local customThemes = self.db.profile.theme.customThemes
@@ -1471,8 +1471,8 @@ function MidnightUI:LoadCustomThemes()
     end
 end
 
-function MidnightUI:GetOptions()
-    -- Note: Using custom MidnightOptionsPanel now, no AceConfig dependency
+function AbstractUI:GetOptions()
+    -- Note: Using custom AbstractOptionsPanel now, no AceConfig dependency
     -- Cleanup theme color swatch container if needed
     if self.colorSwatchContainer and not self.colorSwatchContainer:IsShown() then
         self.colorSwatchContainer:SetParent(nil)
@@ -1481,7 +1481,7 @@ function MidnightUI:GetOptions()
     end
     
     local options = {
-        name = "Midnight UI",
+        name = "Abstract UI",
         type = "group",
         childGroups = "tree",
         args = {
@@ -1493,7 +1493,7 @@ function MidnightUI:GetOptions()
                     versionInfo = {
                         type = "description",
                         name = function()
-                            return "|cff00ccff MidnightUI|r version |cffffaa00" .. (C_AddOns.GetAddOnMetadata("MidnightUI", "Version") or "Unknown") .. "|r"
+                            return "|cff00ccff AbstractUI|r version |cffffaa00" .. (C_AddOns.GetAddOnMetadata("AbstractUI", "Version") or "Unknown") .. "|r"
                         end,
                         order = 0.5,
                         fontSize = "large",
@@ -1511,8 +1511,8 @@ function MidnightUI:GetOptions()
                             local physicalWidth = math.floor(GetScreenWidth() * UIParent:GetEffectiveScale())
                             local physicalHeight = math.floor(GetScreenHeight() * UIParent:GetEffectiveScale())
                             local uiScale = UIParent:GetEffectiveScale()
-                            local refWidth = MidnightUI.REFERENCE_WIDTH
-                            local refHeight = MidnightUI.REFERENCE_HEIGHT
+                            local refWidth = AbstractUI.REFERENCE_WIDTH
+                            local refHeight = AbstractUI.REFERENCE_HEIGHT
                             
                             local resInfo = "UI Resolution (effective): |cffffaa00" .. screenWidth .. "x" .. screenHeight .. "|r\n"
                             if physicalWidth ~= screenWidth or physicalHeight ~= screenHeight then
@@ -1538,12 +1538,12 @@ function MidnightUI:GetOptions()
                         desc = "Automatically adjusts all element positions from 2133x1200 to your current resolution",
                         order = 1.02,
                         func = function()
-                            MidnightUI:ScaleLayoutToResolution()
+                            AbstractUI:ScaleLayoutToResolution()
                         end,
                         confirm = function()
                             local screenWidth = math.floor(GetScreenWidth())
                             local screenHeight = math.floor(GetScreenHeight())
-                            return "This will scale all UI element positions from " .. MidnightUI.REFERENCE_WIDTH .. "x" .. MidnightUI.REFERENCE_HEIGHT .. " to " .. screenWidth .. "x" .. screenHeight .. " and reload your UI. Continue?"
+                            return "This will scale all UI element positions from " .. AbstractUI.REFERENCE_WIDTH .. "x" .. AbstractUI.REFERENCE_HEIGHT .. " to " .. screenWidth .. "x" .. screenHeight .. " and reload your UI. Continue?"
                         end,
                     },
                     fontHeaderSpacer = {
@@ -1559,7 +1559,7 @@ function MidnightUI:GetOptions()
                     globalFont = {
                         type = "select",
                         name = "Global Font",
-                        desc = "Select a font to apply to all MidnightUI elements.",
+                        desc = "Select a font to apply to all AbstractUI elements.",
                         order = 1.11,
                         values = function()
                             local fonts = LSM:List("font")
@@ -1573,10 +1573,10 @@ function MidnightUI:GetOptions()
                     applyGlobalFont = {
                         type = "execute",
                         name = "Apply to All",
-                        desc = "Apply the selected global font to all MidnightUI modules and bars.",
+                        desc = "Apply the selected global font to all AbstractUI modules and bars.",
                         order = 1.12,
                         func = function()
-                            local font = MidnightUI.db.profile.theme.font or "Friz Quadrata TT"
+                            local font = AbstractUI.db.profile.theme.font or "Friz Quadrata TT"
                             -- UnitFrames
                             if _G.UnitFrames and _G.UnitFrames.db and _G.UnitFrames.db.profile then
                                 local uf = _G.UnitFrames.db.profile
@@ -1705,7 +1705,7 @@ function MidnightUI:GetOptions()
                     },
                     description = {
                         type = "description",
-                        name = "Export your entire MidnightUI configuration to a string that can be shared with others or saved as a backup.",
+                        name = "Export your entire AbstractUI configuration to a string that can be shared with others or saved as a backup.",
                         order = 2,
                         fontSize = "medium",
                     },
@@ -1715,7 +1715,7 @@ function MidnightUI:GetOptions()
                         desc = "Creates an export string of your current profile",
                         order = 3,
                         func = function()
-                            MidnightUI:ExportProfile()
+                            AbstractUI:ExportProfile()
                         end,
                     },
                     spacer = {
@@ -1731,7 +1731,7 @@ function MidnightUI:GetOptions()
                         width = "full",
                         multiline = 25,
                         get = function() 
-                            return MidnightUI.exportString or ""
+                            return AbstractUI.exportString or ""
                         end,
                         set = function() end,
                     },
@@ -1749,7 +1749,7 @@ function MidnightUI:GetOptions()
                     },
                     description = {
                         type = "description",
-                        name = "Import a MidnightUI configuration string.",
+                        name = "Import a AbstractUI configuration string.",
                         order = 2,
                         fontSize = "medium",
                     },
@@ -1761,23 +1761,23 @@ function MidnightUI:GetOptions()
                         width = "full",
                         get = function() 
                             -- Store in both places to prevent clearing
-                            if not MidnightUI.importNewProfileName then
-                                MidnightUI.importNewProfileName = ""
+                            if not AbstractUI.importNewProfileName then
+                                AbstractUI.importNewProfileName = ""
                             end
-                            return MidnightUI.importNewProfileName 
+                            return AbstractUI.importNewProfileName 
                         end,
                         set = function(_, v) 
-                            MidnightUI.importNewProfileName = v 
+                            AbstractUI.importNewProfileName = v 
                         end,
                     },
                     warning = {
                         type = "description",
                         name = function()
-                            local name = MidnightUI.importNewProfileName
+                            local name = AbstractUI.importNewProfileName
                             if name and name ~= "" then
                                 return "|cff00ff00Profile will be imported as: '|r" .. name .. "|cff00ff00'|r"
                             else
-                                local currentProfile = MidnightUI.db and MidnightUI.db:GetCurrentProfile() or "Default"
+                                local currentProfile = AbstractUI.db and AbstractUI.db:GetCurrentProfile() or "Default"
                                 return "|cffff8800WARNING: This will overwrite your current profile '|r" .. currentProfile .. "|cffff8800'|r"
                             end
                         end,
@@ -1787,19 +1787,19 @@ function MidnightUI:GetOptions()
                     importString = {
                         type = "input",
                         name = "Import String",
-                        desc = "Paste the export string here (Ctrl+V to paste)\n|cffaaaaaa" .. (MidnightUI.importString and "Current length: " .. #MidnightUI.importString .. " characters" or "") .. "|r",
+                        desc = "Paste the export string here (Ctrl+V to paste)\n|cffaaaaaa" .. (AbstractUI.importString and "Current length: " .. #AbstractUI.importString .. " characters" or "") .. "|r",
                         order = 4,
                         width = "full",
                         multiline = 20,
                         get = function() 
-                            if not MidnightUI.importString then
-                                MidnightUI.importString = ""
+                            if not AbstractUI.importString then
+                                AbstractUI.importString = ""
                             end
-                            return MidnightUI.importString 
+                            return AbstractUI.importString 
                         end,
                         set = function(_, v) 
                             -- Store the full string value
-                            MidnightUI.importString = v
+                            AbstractUI.importString = v
                             -- Delayed refresh to avoid interrupting the input
                             C_Timer.After(0.1, function()
                                 
@@ -1809,7 +1809,7 @@ function MidnightUI:GetOptions()
                     stringInfo = {
                         type = "description",
                         name = function()
-                            local str = MidnightUI.importString
+                            local str = AbstractUI.importString
                             if str and #str > 0 then
                                 return "|cffaaaaaa" .. #str .. " characters stored|r"
                             else
@@ -1825,7 +1825,7 @@ function MidnightUI:GetOptions()
                         desc = "Import the profile from the string above. Requires UI reload.",
                         order = 5,
                         func = function()
-                            MidnightUI:ImportProfile()
+                            AbstractUI:ImportProfile()
                         end,
                     },
                 },
@@ -1898,27 +1898,27 @@ function MidnightUI:GetOptions()
 end
 
 -- Add Move Mode property
-MidnightUI.moveMode = false
+AbstractUI.moveMode = false
 
 -- Add Move Mode toggle function
-function MidnightUI:ToggleMoveMode()
+function AbstractUI:ToggleMoveMode()
     self.moveMode = not self.moveMode
     
     if self.moveMode then
-        print("|cff00ff00MidnightUI:|r Move Mode |cff00ff00ENABLED|r - Hover over elements to move them")
+        print("|cff00ff00AbstractUI:|r Move Mode |cff00ff00ENABLED|r - Hover over elements to move them")
     else
-        print("|cff00ff00MidnightUI:|r Move Mode |cffff0000DISABLED|r")
+        print("|cff00ff00AbstractUI:|r Move Mode |cffff0000DISABLED|r")
     end
     
     -- Use AceEvent's SendMessage (already loaded)
-    self:SendMessage("MIDNIGHTUI_MOVEMODE_CHANGED", self.moveMode)
+    self:SendMessage("AbstractUI_MOVEMODE_CHANGED", self.moveMode)
     -- Directly call Movable:OnMoveModeChanged for reliability
     local Movable
     if self.GetModule then
         Movable = self:GetModule("Movable", true)
     end
     if Movable and Movable.OnMoveModeChanged then
-        Movable:OnMoveModeChanged("MIDNIGHTUI_MOVEMODE_CHANGED", self.moveMode)
+        Movable:OnMoveModeChanged("AbstractUI_MOVEMODE_CHANGED", self.moveMode)
     end
     
 end
@@ -1941,12 +1941,12 @@ local function DecodeHex(hex)
 end
 
 -- Export Profile
-function MidnightUI:ExportProfile()
+function AbstractUI:ExportProfile()
     local AceSerializer = LibStub("AceSerializer-3.0")
     local LibCompress = LibStub("LibCompress")
     
     if not AceSerializer or not LibCompress then
-        print("|cffff0000MidnightUI Error:|r Required libraries not found for export.")
+        print("|cffff0000AbstractUI Error:|r Required libraries not found for export.")
         return
     end
     
@@ -1965,12 +1965,12 @@ function MidnightUI:ExportProfile()
             if namespaceDB and namespaceDB.profile then
                 exportData.namespaces[namespaceName] = namespaceDB.profile
                 namespaceCount = namespaceCount + 1
-                print("|cff00ff00MidnightUI:|r   - Exporting: " .. namespaceName)
+                print("|cff00ff00AbstractUI:|r   - Exporting: " .. namespaceName)
             end
         end
-        print("|cff00ff00MidnightUI:|r Exported " .. namespaceCount .. " module namespaces")
+        print("|cff00ff00AbstractUI:|r Exported " .. namespaceCount .. " module namespaces")
     else
-        print("|cffff8800MidnightUI Warning:|r No namespace objects found to export")
+        print("|cffff8800AbstractUI Warning:|r No namespace objects found to export")
     end
     
     -- Serialize the data
@@ -1979,7 +1979,7 @@ function MidnightUI:ExportProfile()
     -- Compress the serialized data
     local compressed = LibCompress:Compress(serialized)
     if not compressed then
-        print("|cffff0000MidnightUI Error:|r Failed to compress export data.")
+        print("|cffff0000AbstractUI Error:|r Failed to compress export data.")
         return
     end
     
@@ -1991,35 +1991,35 @@ function MidnightUI:ExportProfile()
     
     -- Store for display
     self.exportString = exportString
-    MidnightUI.exportString = exportString
+    AbstractUI.exportString = exportString
     
-    print("|cff00ff00MidnightUI:|r Export string generated!")
-    print("|cff00ff00MidnightUI:|r String length: " .. #exportString .. " characters")
-    print("|cff00ff00MidnightUI:|r Use Ctrl+A to select all, then Ctrl+C to copy.")
+    print("|cff00ff00AbstractUI:|r Export string generated!")
+    print("|cff00ff00AbstractUI:|r String length: " .. #exportString .. " characters")
+    print("|cff00ff00AbstractUI:|r Use Ctrl+A to select all, then Ctrl+C to copy.")
     
     -- Refresh the options UI
     
 end
 
 -- Import Profile
-function MidnightUI:ImportProfile()
+function AbstractUI:ImportProfile()
     local AceSerializer = LibStub("AceSerializer-3.0")
     local LibCompress = LibStub("LibCompress")
     
     if not AceSerializer or not LibCompress then
-        print("|cffff0000MidnightUI Error:|r Required libraries not found for import.")
+        print("|cffff0000AbstractUI Error:|r Required libraries not found for import.")
         return
     end
     
     local importString = self.importString
     
     if not importString or importString == "" then
-        print("|cffff0000MidnightUI Error:|r No import string provided.")
+        print("|cffff0000AbstractUI Error:|r No import string provided.")
         return
     end
     
     -- Show length for debugging
-    print("|cff00ff00MidnightUI:|r Processing import string (" .. #importString .. " characters)")
+    print("|cff00ff00AbstractUI:|r Processing import string (" .. #importString .. " characters)")
     
     -- Check if user wants to create a new profile
     local newProfileName = self.importNewProfileName
@@ -2031,50 +2031,50 @@ function MidnightUI:ImportProfile()
     if not newProfileName or newProfileName == "" then
         -- Show confirmation dialog before overwriting current profile
         local currentProfileName = self.db:GetCurrentProfile()
-        StaticPopupDialogs["MIDNIGHTUI_IMPORT_CONFIRM"] = {
+        StaticPopupDialogs["AbstractUI_IMPORT_CONFIRM"] = {
             text = "This will OVERWRITE your current profile '" .. currentProfileName .. "'!\n\nAre you sure you want to continue?",
             button1 = "Yes, Import",
             button2 = "Cancel",
             OnAccept = function()
-                MidnightUI:DoImport(importString, nil)
+                AbstractUI:DoImport(importString, nil)
             end,
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show("MIDNIGHTUI_IMPORT_CONFIRM")
+        StaticPopup_Show("AbstractUI_IMPORT_CONFIRM")
     else
         -- Creating new profile - show confirmation with profile name
-        StaticPopupDialogs["MIDNIGHTUI_IMPORT_NEW"] = {
+        StaticPopupDialogs["AbstractUI_IMPORT_NEW"] = {
             text = "This will create a new profile '" .. newProfileName .. "' and switch to it.\n\nAre you sure you want to continue?",
             button1 = "Yes, Import",
             button2 = "Cancel",
             OnAccept = function()
-                MidnightUI:DoImport(importString, newProfileName)
+                AbstractUI:DoImport(importString, newProfileName)
             end,
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show("MIDNIGHTUI_IMPORT_NEW")
+        StaticPopup_Show("AbstractUI_IMPORT_NEW")
     end
 end
 
 -- Actually perform the import
-function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
+function AbstractUI:DoImport(importString, newProfileName, suppressDialog)
     local AceSerializer = LibStub("AceSerializer-3.0")
     local LibCompress = LibStub("LibCompress")
     
     if not AceSerializer or not LibCompress then
-        print("|cffff0000MidnightUI Error:|r Required libraries not found for import.")
+        print("|cffff0000AbstractUI Error:|r Required libraries not found for import.")
         return
     end
     
     -- Check for version header
     if not importString:match("^MUIV2:") then
-        print("|cffff0000MidnightUI Error:|r Invalid import string format.")
+        print("|cffff0000AbstractUI Error:|r Invalid import string format.")
         return
     end
     
@@ -2084,21 +2084,21 @@ function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
     -- Decode from hex
     local success, compressed = pcall(DecodeHex, encoded)
     if not success or not compressed then
-        print("|cffff0000MidnightUI Error:|r Failed to decode import string.")
+        print("|cffff0000AbstractUI Error:|r Failed to decode import string.")
         return
     end
     
     -- Decompress
     local serialized, err = LibCompress:Decompress(compressed)
     if not serialized then
-        print("|cffff0000MidnightUI Error:|r Failed to decompress import data: " .. tostring(err or "unknown error"))
+        print("|cffff0000AbstractUI Error:|r Failed to decompress import data: " .. tostring(err or "unknown error"))
         return
     end
     
     -- Deserialize
     local success, exportData = AceSerializer:Deserialize(serialized)
     if not success or not exportData then
-        print("|cffff0000MidnightUI Error:|r Failed to deserialize import data.")
+        print("|cffff0000AbstractUI Error:|r Failed to deserialize import data.")
         return
     end
     
@@ -2110,7 +2110,7 @@ function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
     for _ in pairs(namespaceData) do
         namespaceCount = namespaceCount + 1
     end
-    print("|cff00ff00MidnightUI:|r Import contains " .. namespaceCount .. " module namespaces")
+    print("|cff00ff00AbstractUI:|r Import contains " .. namespaceCount .. " module namespaces")
     
     -- Check if user wants to create a new profile
     if newProfileName and newProfileName ~= "" then
@@ -2133,13 +2133,13 @@ function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
                         namespace.profile[key] = value
                     end
                     appliedCount = appliedCount + 1
-                    print("|cff00ff00MidnightUI:|r   - Applied: " .. namespaceName)
+                    print("|cff00ff00AbstractUI:|r   - Applied: " .. namespaceName)
                 end
             end
-            print("|cff00ff00MidnightUI:|r Applied " .. appliedCount .. " module namespaces")
+            print("|cff00ff00AbstractUI:|r Applied " .. appliedCount .. " module namespaces")
         end
         
-        print("|cff00ff00MidnightUI:|r Profile imported as '" .. newProfileName .. "'!")
+        print("|cff00ff00AbstractUI:|r Profile imported as '" .. newProfileName .. "'!")
     else
         -- Overwrite current profile
         local currentProfileName = self.db:GetCurrentProfile()
@@ -2160,18 +2160,18 @@ function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
                         namespace.profile[key] = value
                     end
                     appliedCount = appliedCount + 1
-                    print("|cff00ff00MidnightUI:|r   - Applied: " .. namespaceName)
+                    print("|cff00ff00AbstractUI:|r   - Applied: " .. namespaceName)
                 end
             end
-            print("|cff00ff00MidnightUI:|r Applied " .. appliedCount .. " module namespaces")
+            print("|cff00ff00AbstractUI:|r Applied " .. appliedCount .. " module namespaces")
         end
         
-        print("|cff00ff00MidnightUI:|r Profile '" .. currentProfileName .. "' updated!")
+        print("|cff00ff00AbstractUI:|r Profile '" .. currentProfileName .. "' updated!")
     end
     
     -- Show reload dialog (unless suppressed by caller)
     if not suppressDialog then
-        StaticPopupDialogs["MIDNIGHTUI_IMPORT_RELOAD"] = {
+        StaticPopupDialogs["AbstractUI_IMPORT_RELOAD"] = {
             text = "Profile imported successfully!\n\nReload UI now to apply changes?",
             button1 = "Reload Now",
             button2 = "Later",
@@ -2183,7 +2183,7 @@ function MidnightUI:DoImport(importString, newProfileName, suppressDialog)
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show("MIDNIGHTUI_IMPORT_RELOAD")
+        StaticPopup_Show("AbstractUI_IMPORT_RELOAD")
     end
 end
 

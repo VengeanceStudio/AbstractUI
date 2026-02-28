@@ -1,8 +1,8 @@
--- MidnightUI Theme: MidnightUI Default
--- Based on the iconic MidnightUI logo gradient colors
+-- AbstractUI Theme: AbstractUI Default
+-- Based on the iconic AbstractUI logo gradient colors
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,7 +10,7 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightUIDefault", {
+ColorPalette:RegisterPalette("AbstractUIDefault", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.10, g = 0.10, b = 0.18, a = 0.95},      -- Deep navy background
     ["panel-border"] = {r = 0.0, g = 0.83, b = 1.0, a = 0.9},     -- Cyan blue accent

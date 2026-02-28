@@ -1,15 +1,15 @@
-# MidnightUI
+# AbstractUI
 
 ![WoW Version](https://img.shields.io/badge/WoW-12.0%2B-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-**MidnightUI** is a complete, modular, and modern User Interface replacement for World of Warcraft. 
+**AbstractUI** is a complete, modular, and modern User Interface replacement for World of Warcraft. 
 
 Built for **WoW 12.0+** (Midnight expansion), it prioritizes readability, performance, and a sleek aesthetic. It removes the clutter of the default Blizzard UI while retaining feature-rich functionality through a suite of integrated modules.
 
 ## ✨ Features
 
-MidnightUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/mui` or the AddOns settings panel.
+AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/mui` or the AddOns settings panel.
 
 ---
 
@@ -19,7 +19,7 @@ MidnightUI is divided into lightweight, independent modules. You can enable or d
 Transform your entire interface with consistent theming across all UI elements.
 
 **Features:**
-* **4 Pre-defined Skins:** Midnight (default), Blizzard, Glass, and Flat
+* **Multiple Pre-defined Themes:** AbstractTransparent (default), AbstractGlass, AbstractGreen, and class-specific themes
 * Customizable frame backgrounds and borders with independent transparency controls
 * Applies consistent theming to action bars, tooltips, minimap, unit frames, and info bars
 * Color customization with RGB + alpha controls
@@ -251,7 +251,7 @@ This addon includes the following libraries in the `libs` folder:
 ## 🚀 Installation
 
 1.  Download the latest release.
-2.  Extract the **MidnightUI** folder.
+2.  Extract the **AbstractUI** folder.
 3.  Place the folder into your WoW AddOns directory:
     * `World of Warcraft\_retail_\Interface\AddOns\`
 4.  Launch World of Warcraft.
@@ -262,7 +262,7 @@ This addon includes the following libraries in the `libs` folder:
 Access the full configuration menu via:
 
 * Type `/mui` in chat
-* Press **Esc** → **Options** → **AddOns** → **MidnightUI**
+* Press **Esc** → **Options** → **AddOns** → **AbstractUI**
 
 ### Quick Commands
 * `/mui` - Open main settings
@@ -271,8 +271,8 @@ Access the full configuration menu via:
 ## 📂 Directory Structure
 
 ```text
-MidnightUI/
-├── MidnightUI.toc          # Addon Metadata (Interface 12.0+)
+AbstractUI/
+├── AbstractUI.toc          # Addon Metadata (Interface 12.0+)
 ├── Core.lua                # Main Engine & Module Loader
 ├── LICENSE.txt             # MIT License
 ├── README.md               # This file
@@ -301,7 +301,7 @@ MidnightUI/
 
 ## 🎮 WoW 12.0+ API Changes
 
-MidnightUI is built for the **Midnight expansion (12.0+)** and uses the latest WoW APIs:
+AbstractUI is built for the **Midnight expansion (12.0+)** and uses the latest WoW APIs:
 * `UnitHealthPercent()` and `UnitPowerPercent()` for efficient resource tracking
 * Secure frame system for combat-safe unit frames
 * State drivers for dynamic visibility control
@@ -309,12 +309,12 @@ MidnightUI is built for the **Midnight expansion (12.0+)** and uses the latest W
 
 ## ⚠️ Known Limitations
 
-* **Party/Raid Frames:** Due to major changes in WoW 12.0's secure frame API, MidnightUI does not support custom party/raid frames. We recommend using dedicated addons like Grid2, VuhDo, or ElvUI for raid frame needs.
+* **Party/Raid Frames:** Due to major changes in WoW 12.0's secure frame API, AbstractUI does not support custom party/raid frames. We recommend using dedicated addons like Grid2, VuhDo, or ElvUI for raid frame needs.
 * **Combat Restrictions:** Some frame movements and visibility changes are restricted during combat per Blizzard's secure frame policies.
 
 ## 🤝 Contributing
 
-MidnightUI welcomes contributions! If you'd like to:
+AbstractUI welcomes contributions! If you'd like to:
 * Report a bug
 * Suggest a feature
 * Submit code improvements
@@ -340,4 +340,4 @@ For support, questions, or feature requests:
 
 ---
 
-*MidnightUI - A cleaner, modern interface for World of Warcraft: Midnight and beyond.*
+*AbstractUI - A cleaner, modern interface for World of Warcraft: Midnight and beyond.*

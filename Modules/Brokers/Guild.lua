@@ -1,9 +1,9 @@
--- MidnightUI Guild Broker
+-- AbstractUI Guild Broker
 -- Displays online guild members count and provides a popup with detailed member list
 
 if not BrokerBar then return end
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local LDB = LibStub("LibDataBroker-1.1")
 local LSM = LibStub("LibSharedMedia-3.0")
 local guildFrame, guildTitle, guildMotD, guildFooter, gScrollChild
@@ -13,10 +13,10 @@ local guildObj
 -- Create the guild popup frame
 function BrokerBar:CreateGuildFrame()
     if guildFrame then return end
-    guildFrame = CreateFrame("Frame", "MidnightGuildPopup", UIParent, "BackdropTemplate")
+    guildFrame = CreateFrame("Frame", "AbstractGuildPopup", UIParent, "BackdropTemplate")
     guildFrame:SetSize(600, 450); guildFrame:SetFrameStrata("DIALOG"); guildFrame:EnableMouse(true); guildFrame:Hide()
     -- Don't skin on creation, wait for OnShow to apply themed backdrop
-    -- MidnightUI:SkinFrame(guildFrame)
+    -- AbstractUI:SkinFrame(guildFrame)
     
     guildTitle = guildFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     guildTitle:SetPoint("TOP", 0, -10); guildTitle:SetText("Guild List")
@@ -55,10 +55,10 @@ function BrokerBar:CreateGuildFrame()
     -- Add OnShow script to update fonts/colors dynamically
     guildFrame:SetScript("OnShow", function()
         -- Refresh backdrop with current theme
-        MidnightUI:ApplyThemedBackdrop(guildFrame)
+        AbstractUI:ApplyThemedBackdrop(guildFrame)
         
         local db = BrokerBar.db.profile
-        local FontKit = _G.MidnightUI_FontKit
+        local FontKit = _G.AbstractUI_FontKit
         local titleFont, titleSize, bodyFont, bodySize, motdSize, fontFlags
         
         if FontKit then
@@ -162,7 +162,7 @@ function BrokerBar:UpdateGuildList()
 end
 
 -- Register the broker
-guildObj = LDB:NewDataObject("MidnightGuild", {
+guildObj = LDB:NewDataObject("AbstractGuild", {
     type = "data source", text = "0", icon = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
     OnClick = function() ToggleGuildFrame() end,
     OnEnter = function(self) 

@@ -1,13 +1,13 @@
--- MidnightUI Font Kit System
+-- AbstractUI Font Kit System
 -- Font management and registration
 
 local LSM = LibStub("LibSharedMedia-3.0")
 local FontKit = {}
-_G.MidnightUI_FontKit = FontKit
+_G.AbstractUI_FontKit = FontKit
 
 -- Font definitions per theme
 FontKit.fonts = {}
-FontKit.activeTheme = "MidnightGlass"
+FontKit.activeTheme = "AbstractGlass"
 
 -- Font size scale
 FontKit.sizes = {

@@ -1,6 +1,6 @@
-# MidnightUI Texture Atlas
+# AbstractUI Texture Atlas
 
-This directory contains the texture atlas files used by the MidnightUI framework.
+This directory contains the texture atlas files used by the AbstractUI framework.
 
 ## Atlas Files
 
@@ -9,9 +9,9 @@ This directory contains the texture atlas files used by the MidnightUI framework
 - Contains shared UI elements like borders, basic shapes, and utility textures
 - Used by all themes
 
-### MidnightGlass.tga
+### AbstractGlass.tga
 - Size: 1024x1024
-- Contains textures for the Midnight Dark Glass theme
+- Contains textures for the Abstract Dark Glass theme
 - Dark, translucent glass aesthetic with subtle gradients
 
 ### NeonSciFi.tga

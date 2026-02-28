@@ -1,4 +1,4 @@
-# MidnightUI Framework Architecture
+# AbstractUI Framework Architecture
 
 Complete framework implementation for texture atlas, UI component factory, and theme system.
 
@@ -14,13 +14,13 @@ Framework/
 └── README.md           - Framework documentation
 
 Themes/
-├── MidnightGlass.lua   - Midnight Dark Glass theme
+├── AbstractGlass.lua   - Abstract Dark Glass theme
 ├── NeonSciFi.lua       - Neon Sci-Fi theme
 └── README.md           - Theme documentation
 
 Media/Textures/Atlas/
 ├── Common.tga          - Shared UI elements (to be created)
-├── MidnightGlass.tga   - Dark glass theme textures (to be created)
+├── AbstractGlass.tga   - Dark glass theme textures (to be created)
 ├── NeonSciFi.tga       - Neon sci-fi theme textures (to be created)
 └── README.md           - Atlas documentation
 ```
@@ -29,7 +29,7 @@ Media/Textures/Atlas/
 
 ### Atlas System
 - Texture coordinate mapping for efficient atlas usage
-- Multiple atlas support (Common, MidnightGlass, NeonSciFi)
+- Multiple atlas support (Common, AbstractGlass, NeonSciFi)
 - Pixel-to-texcoord conversion helpers
 - Texture preloading system
 - Region-based texture application
@@ -66,7 +66,7 @@ Media/Textures/Atlas/
 
 ## Themes
 
-### Midnight Dark Glass
+### Abstract Dark Glass
 - **Visual Style**: Dark, translucent glass with subtle gradients
 - **Primary Color**: Cyan (#00CCFF)
 - **Background**: Very dark blue (RGB: 12, 12, 25)
@@ -82,7 +82,7 @@ Media/Textures/Atlas/
 
 ## Integration
 
-The framework is loaded in [MidnightUI.toc](MidnightUI.toc) before the core engine and modules:
+The framework is loaded in [AbstractUI.toc](AbstractUI.toc) before the core engine and modules:
 
 ```
 Framework\Atlas.lua
@@ -90,7 +90,7 @@ Framework\ColorPalette.lua
 Framework\FontKit.lua
 Framework\LayoutHelper.lua
 Framework\FrameFactory.lua
-Themes\MidnightGlass.lua
+Themes\AbstractGlass.lua
 Themes\NeonSciFi.lua
 ```
 
@@ -99,13 +99,13 @@ FrameFactory is initialized in [Core.lua](Core.lua) during addon OnEnable.
 ## Usage Example
 
 ```lua
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local FrameFactory = MidnightUI.FrameFactory
-local ColorPalette = MidnightUI.ColorPalette
-local LayoutHelper = MidnightUI.LayoutHelper
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local FrameFactory = AbstractUI.FrameFactory
+local ColorPalette = AbstractUI.ColorPalette
+local LayoutHelper = AbstractUI.LayoutHelper
 
 -- Set theme
-FrameFactory:SetTheme("MidnightGlass")
+FrameFactory:SetTheme("AbstractGlass")
 
 -- Create themed button
 local button = FrameFactory:CreateButton(parent, 120, 32, "My Button")
@@ -122,7 +122,7 @@ vbox:Add(button, 32)
 
 ## Next Steps
 
-1. **Create Texture Atlases**: Design and create .tga files for Common, MidnightGlass, and NeonSciFi atlases
+1. **Create Texture Atlases**: Design and create .tga files for Common, AbstractGlass, and NeonSciFi atlases
 2. **Integrate with Existing Modules**: Update existing modules to use FrameFactory instead of raw CreateFrame
 3. **Theme Options**: Add theme selection to the options menu
 4. **Additional Components**: Expand FrameFactory with checkboxes, sliders, dropdowns, etc.

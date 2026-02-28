@@ -1,8 +1,8 @@
--- MidnightUI Layout Helper System
+-- AbstractUI Layout Helper System
 -- Grid system, anchoring, and responsive scaling
 
 local LayoutHelper = {}
-_G.MidnightUI_LayoutHelper = LayoutHelper
+_G.AbstractUI_LayoutHelper = LayoutHelper
 
 -- Grid settings
 LayoutHelper.gridSize = 8

@@ -1,6 +1,6 @@
 
 if not UnitFrames then return end
--- MidnightUI UnitFrames: Focus Frame Module
+-- AbstractUI UnitFrames: Focus Frame Module
 
 -- ============================================================================
 -- FOCUS FRAME CREATION
@@ -15,7 +15,7 @@ function UnitFrames:CreateFocusFrame()
     local posY = (db.focus and db.focus.posY) or 0
     self:CreateUnitFrame("FocusFrame", "focus", anchorTo, "CENTER", "CENTER", posX, posY)
     -- Only show FocusFrame if a focus exists
-    local customFocusFrame = _G["MidnightUI_FocusFrame"]
+    local customFocusFrame = _G["AbstractUI_FocusFrame"]
     if customFocusFrame then
         -- Start hidden - state driver will show when focus exists
         customFocusFrame:Hide()
@@ -48,5 +48,5 @@ end
 -- ============================================================================
 
 function UnitFrames:GetFocusOptions_Real()
-    return self:GenerateFrameOptions("Focus Frame", "focus", "CreateFocusFrame", "MidnightUI_FocusFrame")
+    return self:GenerateFrameOptions("Focus Frame", "focus", "CreateFocusFrame", "AbstractUI_FocusFrame")
 end

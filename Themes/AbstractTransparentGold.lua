@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Transparent Gold
+-- AbstractUI Theme: Abstract Transparent Gold
 -- High transparency theme with deep blacks and warm gold/brown accents
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,7 +10,7 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightTransparentGold", {
+ColorPalette:RegisterPalette("AbstractTransparentGold", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.08, g = 0.06, b = 0.04, a = 0.65},       -- Very transparent black-brown
     ["panel-border"] = {r = 0.60, g = 0.45, b = 0.20, a = 0.70},   -- Gold/bronze

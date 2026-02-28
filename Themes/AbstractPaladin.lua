@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Warrior
--- Based on Midnight Transparent with Warrior class color text (#C79C6E)
+-- AbstractUI Theme: Abstract Paladin
+-- Based on Abstract Transparent with Paladin class color text (#F48CBA)
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,14 +10,14 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightWarrior", {
+ColorPalette:RegisterPalette("AbstractPaladin", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.65},       -- Very transparent black (from Transparent)
-    ["panel-border"] = {r = 0.235, g = 0.184, b = 0.129, a = 0.90}, -- Dark Warrior tan (#3C2F21)
+    ["panel-border"] = {r = 0.286, g = 0.165, b = 0.220, a = 0.90}, -- Dark Paladin pink (#492A38)
     ["accent-primary"] = {r = 0.55, g = 0.60, b = 0.70, a = 0.85}, -- Steel blue-grey (from Transparent)
     ["button-bg"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.60},      -- Transparent dark charcoal
     ["button-hover"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},   -- Medium grey-blue
-    ["text-primary"] = {r = 0.780, g = 0.612, b = 0.431, a = 1.0}, -- Warrior class color (#C79C6E)
+    ["text-primary"] = {r = 0.957, g = 0.549, b = 0.729, a = 1.0}, -- Paladin class color (#F48CBA)
     ["text-secondary"] = {r = 0.70, g = 0.70, b = 0.75, a = 0.95}, -- Light grey (from Transparent)
     ["tab-active"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},     -- Medium grey-blue
     
@@ -41,7 +41,7 @@ ColorPalette:RegisterPalette("MidnightWarrior", {
     
     -- Toggle switch colors
     ["toggle-off-bg"] = {r = 0.05, g = 0.03, b = 0.02, a = 1.0},
-    ["toggle-off-border"] = {r = 0.35, g = 0.25, b = 0.20, a = 0.8},
+    ["toggle-off-border"] = {r = 0.38, g = 0.28, b = 0.22, a = 0.8},
     
     ["tab-inactive"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.55},
     ["tab-selected-bg"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},

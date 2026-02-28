@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Dark Glass
+-- AbstractUI Theme: Abstract Dark Glass
 -- Dark, translucent glass aesthetic with subtle gradients
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,7 +10,7 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightGlass", {
+ColorPalette:RegisterPalette("AbstractGlass", {
     -- Primary colors
     ["primary"] = {r = 0.0, g = 0.8, b = 1.0, a = 1.0},           -- Cyan
     ["secondary"] = {r = 0.4, g = 0.4, b = 0.5, a = 1.0},         -- Gray-blue
@@ -69,7 +69,7 @@ ColorPalette:RegisterPalette("MidnightGlass", {
 -- FONT KIT
 -- ============================================================================
 
-FontKit:RegisterThemeFonts("MidnightGlass", {
+FontKit:RegisterThemeFonts("AbstractGlass", {
     ["title"] = "Friz Quadrata TT",        -- Large headers
     ["heading"] = "Friz Quadrata TT",      -- Section headers
     ["body"] = "Friz Quadrata TT",         -- Body text

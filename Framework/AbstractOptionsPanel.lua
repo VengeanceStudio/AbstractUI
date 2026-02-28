@@ -1,12 +1,12 @@
 -- ============================================================================
--- MidnightUI Options Panel Framework
+-- AbstractUI Options Panel Framework
 -- Custom options UI framework - zero dependency on AceGUI
 -- ============================================================================
 
-local MidnightOptionsPanel = {}
-_G.MidnightUI_OptionsPanel = MidnightOptionsPanel
+local AbstractOptionsPanel = {}
+_G.AbstractUI_OptionsPanel = AbstractOptionsPanel
 
-local ScrollFrame = _G.MidnightUI_ScrollFrame
+local ScrollFrame = _G.AbstractUI_ScrollFrame
 
 -- ============================================================================
 -- HELPER FUNCTIONS
@@ -25,7 +25,7 @@ end
 -- ============================================================================
 
 -- Parse options table into tree structure for navigation
-function MidnightOptionsPanel:ParseOptionsToTree(optionsTable)
+function AbstractOptionsPanel:ParseOptionsToTree(optionsTable)
     local tree = {}
     
     if not optionsTable or not optionsTable.args then
@@ -83,16 +83,16 @@ end
 -- MAIN FRAME CREATION
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateFrame(addonRef)
+function AbstractOptionsPanel:CreateFrame(addonRef)
     if self.frame then
         return self.frame
     end
     
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     -- Create main frame
-    local frame = CreateFrame("Frame", "MidnightUIOptionsFrame", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "AbstractUIOptionsFrame", UIParent, "BackdropTemplate")
     frame:SetSize(1100, 800)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
@@ -112,14 +112,14 @@ function MidnightOptionsPanel:CreateFrame(addonRef)
     
     -- Add logo
     frame.logo = frame:CreateTexture(nil, "ARTWORK")
-    frame.logo:SetTexture("Interface\\AddOns\\MidnightUI\\Media\\midnightUI_icon.tga")
+    frame.logo:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\AbstractUI_icon.tga")
     frame.logo:SetSize(80, 80)
     frame.logo:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -18)
     
     -- Add title
     frame.title = frame:CreateFontString(nil, "OVERLAY")
     frame.title:SetFont("Fonts\\FRIZQT__.TTF", 32, "OUTLINE")
-    frame.title:SetText("Midnight UI")
+    frame.title:SetText("Abstract UI")
     frame.title:SetTextColor(ColorPalette:GetColor('text-primary'))
     frame.title:SetPoint("LEFT", frame.logo, "RIGHT", 15, 0)
     
@@ -156,8 +156,8 @@ end
 -- TREE NAVIGATION PANEL
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateTreePanel(parent)
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractOptionsPanel:CreateTreePanel(parent)
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 6, -106)
@@ -190,10 +190,10 @@ function MidnightOptionsPanel:CreateTreePanel(parent)
 end
 
 -- Build tree buttons from parsed tree structure
-function MidnightOptionsPanel:BuildTree(tree)
+function AbstractOptionsPanel:BuildTree(tree)
     local panel = self.frame.treePanel
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     -- Clear existing buttons
     for _, btn in ipairs(panel.buttons) do
@@ -226,7 +226,7 @@ function MidnightOptionsPanel:BuildTree(tree)
         
         -- Click handler
         btn:SetScript("OnClick", function(self)
-            MidnightOptionsPanel:SelectNode(self.node)
+            AbstractOptionsPanel:SelectNode(self.node)
         end)
         
         -- Hover effect
@@ -241,7 +241,7 @@ function MidnightOptionsPanel:BuildTree(tree)
         end)
         
         btn:SetScript("OnLeave", function(self)
-            if MidnightOptionsPanel.selectedNode ~= self.node then
+            if AbstractOptionsPanel.selectedNode ~= self.node then
                 self:SetBackdrop(nil)
             end
         end)
@@ -268,8 +268,8 @@ function MidnightOptionsPanel:BuildTree(tree)
 end
 
 -- Handle node selection
-function MidnightOptionsPanel:SelectNode(node)
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractOptionsPanel:SelectNode(node)
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     -- Clear previous selection
     if self.selectedNode then
@@ -304,8 +304,8 @@ end
 -- CONTENT PANEL
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateContentPanel(parent)
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractOptionsPanel:CreateContentPanel(parent)
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     panel:SetPoint("TOPLEFT", parent.treePanel, "TOPRIGHT", 6, 0)
@@ -337,7 +337,7 @@ function MidnightOptionsPanel:CreateContentPanel(parent)
 end
 
 -- Render content for selected node
-function MidnightOptionsPanel:RenderContent(node)
+function AbstractOptionsPanel:RenderContent(node)
     local panel = self.frame.contentPanel
     
     -- Clear existing widgets
@@ -432,9 +432,9 @@ function MidnightOptionsPanel:RenderContent(node)
 end
 
 -- Render a group with tabs for child groups
-function MidnightOptionsPanel:RenderTabGroup(node)
+function AbstractOptionsPanel:RenderTabGroup(node)
     local panel = self.frame.contentPanel
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     -- Build sorted list of child groups
     local childGroups = {}
@@ -485,7 +485,7 @@ function MidnightOptionsPanel:RenderTabGroup(node)
         tabButton.index = i
         
         tabButton:SetScript("OnClick", function(self)
-            MidnightOptionsPanel:SelectTab(self.index)
+            AbstractOptionsPanel:SelectTab(self.index)
         end)
         
         table.insert(panel.tabs, tabButton)
@@ -497,9 +497,9 @@ function MidnightOptionsPanel:RenderTabGroup(node)
 end
 
 -- Select and render a specific tab
-function MidnightOptionsPanel:SelectTab(tabIndex)
+function AbstractOptionsPanel:SelectTab(tabIndex)
     local panel = self.frame.contentPanel
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     if not panel.tabs or not panel.tabs[tabIndex] then
         return
@@ -599,7 +599,7 @@ end
 -- WIDGET CREATION
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateWidgetForOption(parent, option, xOffset, yOffset)
+function AbstractOptionsPanel:CreateWidgetForOption(parent, option, xOffset, yOffset)
     -- Dispatch to specific widget creator based on type
     if option.type == "header" then
         return self:CreateHeader(parent, option, xOffset, yOffset)
@@ -623,9 +623,9 @@ function MidnightOptionsPanel:CreateWidgetForOption(parent, option, xOffset, yOf
 end
 
 -- Create header widget
-function MidnightOptionsPanel:CreateHeader(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateHeader(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     -- Create container frame for header with lines
     local headerFrame = CreateFrame("Frame", nil, parent)
@@ -655,8 +655,8 @@ function MidnightOptionsPanel:CreateHeader(parent, option, xOffset, yOffset)
 end
 
 -- Create description widget
-function MidnightOptionsPanel:CreateDescription(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
+function AbstractOptionsPanel:CreateDescription(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     local desc = parent:CreateFontString(nil, "OVERLAY")
     desc:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, -yOffset)
@@ -678,9 +678,9 @@ end
 -- TOGGLE (CHECKBOX) WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateToggle(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -766,9 +766,9 @@ end
 -- RANGE (SLIDER) WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -854,9 +854,9 @@ end
 -- SELECT (DROPDOWN) WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -1011,9 +1011,9 @@ end
 -- INPUT (TEXT BOX) WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -1113,9 +1113,9 @@ end
 -- COLOR PICKER WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateColor(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -1209,9 +1209,9 @@ end
 -- EXECUTE (BUTTON) WIDGET
 -- ============================================================================
 
-function MidnightOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+function AbstractOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
     local frame = CreateFrame("Frame", nil, parent)
@@ -1258,7 +1258,7 @@ function MidnightOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
             -- Check for confirmation dialog
             local confirmText = EvaluateValue(option.confirm)
             if confirmText then
-                StaticPopupDialogs["MIDNIGHTUI_OPTIONS_CONFIRM"] = {
+                StaticPopupDialogs["AbstractUI_OPTIONS_CONFIRM"] = {
                     text = confirmText,
                     button1 = "Yes",
                     button2 = "No",
@@ -1269,7 +1269,7 @@ function MidnightOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
                     whileDead = true,
                     hideOnEscape = true,
                 }
-                StaticPopup_Show("MIDNIGHTUI_OPTIONS_CONFIRM")
+                StaticPopup_Show("AbstractUI_OPTIONS_CONFIRM")
             else
                 option.func()
             end
@@ -1283,7 +1283,7 @@ end
 -- OPEN/CLOSE FUNCTIONS
 -- ============================================================================
 
-function MidnightOptionsPanel:Open(addonRef)
+function AbstractOptionsPanel:Open(addonRef)
     -- Store addon reference
     self.addonRef = addonRef
     
@@ -1295,19 +1295,19 @@ function MidnightOptionsPanel:Open(addonRef)
     -- Get and parse options table
     local success, optionsTable = pcall(function() return addonRef:GetOptions() end)
     if not success then
-        print("|cffff0000[MidnightUI]|r Error getting options:", optionsTable)
+        print("|cffff0000[AbstractUI]|r Error getting options:", optionsTable)
         return
     end
     
     if not optionsTable or not optionsTable.args then
-        print("|cffff0000[MidnightUI]|r No options available")
+        print("|cffff0000[AbstractUI]|r No options available")
         return
     end
     
     local tree = self:ParseOptionsToTree(optionsTable)
     
     if not tree or #tree == 0 then
-        print("|cffff0000[MidnightUI]|r No options tree generated")
+        print("|cffff0000[AbstractUI]|r No options tree generated")
         return
     end
     
@@ -1322,13 +1322,13 @@ function MidnightOptionsPanel:Open(addonRef)
     self.frame:Show()
 end
 
-function MidnightOptionsPanel:Close()
+function AbstractOptionsPanel:Close()
     if self.frame then
         self.frame:Hide()
     end
 end
 
-function MidnightOptionsPanel:Toggle(addonRef)
+function AbstractOptionsPanel:Toggle(addonRef)
     if self.frame and self.frame:IsShown() then
         self:Close()
     else
@@ -1336,4 +1336,4 @@ function MidnightOptionsPanel:Toggle(addonRef)
     end
 end
 
-return MidnightOptionsPanel
+return AbstractOptionsPanel

@@ -1,8 +1,8 @@
--- MidnightUI Texture Atlas System
+-- AbstractUI Texture Atlas System
 -- Manages texture coordinates and atlas loading for efficient UI rendering
 
 local Atlas = {}
-_G.MidnightUI_Atlas = Atlas
+_G.AbstractUI_Atlas = Atlas
 
 -- Atlas definitions - texture coordinates for each component in the atlas
 Atlas.atlases = {}
@@ -101,14 +101,14 @@ end
 -- ============================================================================
 
 -- Register common atlas (shared UI elements)
-Atlas:RegisterAtlas("Common", "Interface\\AddOns\\MidnightUI\\Media\\Textures\\Atlas\\Common", 512, 512, {
+Atlas:RegisterAtlas("Common", "Interface\\AddOns\\AbstractUI\\Media\\Textures\\Atlas\\Common", 512, 512, {
     -- These will be defined once actual texture files are created
     ["white"] = {x = 0, y = 0, w = 32, h = 32},
     ["border-simple"] = {x = 32, y = 0, w = 64, h = 64},
 })
 
--- Midnight Glass atlas
-Atlas:RegisterAtlas("MidnightGlass", "Interface\\AddOns\\MidnightUI\\Media\\Textures\\Atlas\\MidnightGlass", 1024, 1024, {
+-- Abstract Glass atlas
+Atlas:RegisterAtlas("AbstractGlass", "Interface\\AddOns\\AbstractUI\\Media\\Textures\\Atlas\\AbstractGlass", 1024, 1024, {
     -- Button states
     ["button-normal"] = {x = 0, y = 0, w = 256, h = 64},
     ["button-hover"] = {x = 0, y = 64, w = 256, h = 64},
@@ -132,7 +132,7 @@ Atlas:RegisterAtlas("MidnightGlass", "Interface\\AddOns\\MidnightUI\\Media\\Text
 })
 
 -- Neon SciFi atlas
-Atlas:RegisterAtlas("NeonSciFi", "Interface\\AddOns\\MidnightUI\\Media\\Textures\\Atlas\\NeonSciFi", 1024, 1024, {
+Atlas:RegisterAtlas("NeonSciFi", "Interface\\AddOns\\AbstractUI\\Media\\Textures\\Atlas\\NeonSciFi", 1024, 1024, {
     -- Button states
     ["button-normal"] = {x = 0, y = 0, w = 256, h = 64},
     ["button-hover"] = {x = 0, y = 64, w = 256, h = 64},

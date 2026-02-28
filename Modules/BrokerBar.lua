@@ -1,13 +1,13 @@
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local BrokerBar = MidnightUI:NewModule("BrokerBar", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local BrokerBar = AbstractUI:NewModule("BrokerBar", "AceEvent-3.0")
 local LDB = LibStub("LibDataBroker-1.1")
 local LSM = LibStub("LibSharedMedia-3.0")
 local Masque = LibStub("Masque", true)
 
 -- Framework integration - use global reference for ColorPalette
 local FrameFactory, FontKit
-local ColorPalette = _G.MidnightUI_ColorPalette
+local ColorPalette = _G.AbstractUI_ColorPalette
 
 -- Make BrokerBar globally accessible for broker files
 _G.BrokerBar = BrokerBar
@@ -53,17 +53,17 @@ local lastState = {
 
 -- Mappings
 local LABEL_MAP_FULL = { 
-    MidnightDiff = "Difficulty", MidnightVolume = "Volume", MidnightDura = "Durability", 
-    MidnightClock = "Clock", MidnightBags = "Bags", MidnightFriends = "Friends", 
-    MidnightGold = "Gold", MidnightGuild = "Guild", MidnightLocation = "Location", 
-    MidnightSystem = "System", MidnightToken = "Token", MidnightILvl = "Item Level"
+    AbstractDiff = "Difficulty", AbstractVolume = "Volume", AbstractDura = "Durability", 
+    AbstractClock = "Clock", AbstractBags = "Bags", AbstractFriends = "Friends", 
+    AbstractGold = "Gold", AbstractGuild = "Guild", AbstractLocation = "Location", 
+    AbstractSystem = "System", AbstractToken = "Token", AbstractILvl = "Item Level"
 }
 
 local LABEL_MAP_SHORT = { 
-    MidnightDiff = "Diff", MidnightVolume = "Vol", MidnightDura = "Dura", 
-    MidnightClock = "Time", MidnightBags = "Bags", MidnightFriends = "Frnd", 
-    MidnightGold = "Gold", MidnightGuild = "Gld", MidnightLocation = "Loc", 
-    MidnightSystem = "Sys", MidnightToken = "Tok", MidnightILvl = "iLvL" 
+    AbstractDiff = "Diff", AbstractVolume = "Vol", AbstractDura = "Dura", 
+    AbstractClock = "Time", AbstractBags = "Bags", AbstractFriends = "Frnd", 
+    AbstractGold = "Gold", AbstractGuild = "Gld", AbstractLocation = "Loc", 
+    AbstractSystem = "Sys", AbstractToken = "Tok", AbstractILvl = "iLvL" 
 }
 
 local SHORTEN_REPLACEMENTS = {
@@ -88,7 +88,7 @@ end
 
 -- SKINS DEFINITIONS
 local SKINS = {
-    ["Midnight"] = { 
+    ["Abstract"] = { 
         backdrop = { 
             bgFile = "Interface\\ChatFrame\\ChatFrameBackground", 
             edgeFile = nil, 
@@ -169,7 +169,7 @@ local defaults = {
         tokenHistory = {},
         brokers = {}, -- Initialize empty brokers table
         lastVolume = 1, -- PERSISTENT VOLUME STORAGE
-        barSkin = "Midnight", 
+        barSkin = "Abstract", 
         bars = { 
             ["MainBar"] = { 
                 enabled = true, 
@@ -181,7 +181,7 @@ local defaults = {
                 useThemeColor = true,
                 color = {r = 0.1, g = 0.1, b = 0.1}, 
                 texture = "Blizzard", 
-                skin = "Midnight",    
+                skin = "Abstract",    
                 padding = 10, 
                 point = "TOP", 
                 x = 0, y = 0,
@@ -310,7 +310,7 @@ function ApplyTooltipStyle(tip)
     end
     
     -- Apply themed backdrop
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette and tip.SetBackdrop then
         tip:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -472,18 +472,18 @@ end
 function BrokerBar:InitializeBrokers()
     -- Brokers are now loaded from separate files in Modules/Brokers/
     -- Get references to the data objects created by those files
-    friendObj = LDB:GetDataObjectByName("MidnightFriends")
-    guildObj = LDB:GetDataObjectByName("MidnightGuild")
-    goldObj = LDB:GetDataObjectByName("MidnightGold")
-    sysObj = LDB:GetDataObjectByName("MidnightSystem")
-    bagObj = LDB:GetDataObjectByName("MidnightBags")
-    tokenObj = LDB:GetDataObjectByName("MidnightToken")
-    volObj = LDB:GetDataObjectByName("MidnightVolume")
-    duraObj = LDB:GetDataObjectByName("MidnightDura")
-    locObj = LDB:GetDataObjectByName("MidnightLocation")
-    diffObj = LDB:GetDataObjectByName("MidnightDiff")
-    ilvlObj = LDB:GetDataObjectByName("MidnightILvl")
-    clockObj = LDB:GetDataObjectByName("MidnightClock")
+    friendObj = LDB:GetDataObjectByName("AbstractFriends")
+    guildObj = LDB:GetDataObjectByName("AbstractGuild")
+    goldObj = LDB:GetDataObjectByName("AbstractGold")
+    sysObj = LDB:GetDataObjectByName("AbstractSystem")
+    bagObj = LDB:GetDataObjectByName("AbstractBags")
+    tokenObj = LDB:GetDataObjectByName("AbstractToken")
+    volObj = LDB:GetDataObjectByName("AbstractVolume")
+    duraObj = LDB:GetDataObjectByName("AbstractDura")
+    locObj = LDB:GetDataObjectByName("AbstractLocation")
+    diffObj = LDB:GetDataObjectByName("AbstractDiff")
+    ilvlObj = LDB:GetDataObjectByName("AbstractILvl")
+    clockObj = LDB:GetDataObjectByName("AbstractClock")
 end
 
 -- ============================================================================
@@ -637,32 +637,32 @@ function BrokerBar:GetSafeConfig(name)
     if not self.db.profile.brokers[name] then
         -- Default enabled brokers (only these are shown by default)
         local defaultEnabledBrokers = {
-            ["MidnightVolume"] = true,
-            ["MidnightLocation"] = true,
-            ["MidnightGold"] = true,
-            ["MidnightDiff"] = true,
-            ["MidnightSystem"] = true,
-            ["MidnightClock"] = true,
+            ["AbstractVolume"] = true,
+            ["AbstractLocation"] = true,
+            ["AbstractGold"] = true,
+            ["AbstractDiff"] = true,
+            ["AbstractSystem"] = true,
+            ["AbstractClock"] = true,
         }
         
         -- Default alignments for each broker
         local defaultAlignments = {
-            ["MidnightVolume"] = "RIGHT",
-            ["MidnightLocation"] = "RIGHT",
-            ["MidnightDiff"] = "RIGHT",
-            ["MidnightSystem"] = "LEFT",
-            ["MidnightGold"] = "LEFT",
-            ["MidnightClock"] = "CENTER",
+            ["AbstractVolume"] = "RIGHT",
+            ["AbstractLocation"] = "RIGHT",
+            ["AbstractDiff"] = "RIGHT",
+            ["AbstractSystem"] = "LEFT",
+            ["AbstractGold"] = "LEFT",
+            ["AbstractClock"] = "CENTER",
         }
         
         -- Default order values for positioning (lower = leftmost in their alignment group)
         local defaultOrders = {
-            ["MidnightSystem"] = 10,    -- LEFT side, first
-            ["MidnightGold"] = 20,      -- LEFT side, second
-            ["MidnightClock"] = 30,     -- CENTER
-            ["MidnightDiff"] = 60,      -- RIGHT side, first (leftmost)
-            ["MidnightLocation"] = 50,  -- RIGHT side, second
-            ["MidnightVolume"] = 40,    -- RIGHT side, third (rightmost)
+            ["AbstractSystem"] = 10,    -- LEFT side, first
+            ["AbstractGold"] = 20,      -- LEFT side, second
+            ["AbstractClock"] = 30,     -- CENTER
+            ["AbstractDiff"] = 60,      -- RIGHT side, first (leftmost)
+            ["AbstractLocation"] = 50,  -- RIGHT side, second
+            ["AbstractVolume"] = 40,    -- RIGHT side, third (rightmost)
         }
         
         -- Check if this broker should be enabled by default
@@ -671,10 +671,10 @@ function BrokerBar:GetSafeConfig(name)
         local defaultOrder = defaultOrders[name] or 100
         
         -- Special case: Location should show coordinates by default
-        local defaultShowCoords = (name == "MidnightLocation")
+        local defaultShowCoords = (name == "AbstractLocation")
         
         -- Special case: Volume should default to 5% step size
-        local defaultVolumeStep = (name == "MidnightVolume") and 0.05 or nil
+        local defaultVolumeStep = (name == "AbstractVolume") and 0.05 or nil
         
         self.db.profile.brokers[name] = { 
             bar = defaultBar, 
@@ -752,11 +752,11 @@ function BrokerBar:UpdateBarLayout(barID)
                 local rawText = tostring(obj.text or "")
                 
                 local textValue = rawText
-                if name ~= "MidnightLocation" then
+                if name ~= "AbstractLocation" then
                     textValue = ShortenValue(rawText)
                 end
                 
-                if name == "MidnightLocation" and bCfg.showCoords then
+                if name == "AbstractLocation" and bCfg.showCoords then
                     textValue = textValue .. " (00, 00)" -- Placeholder for sizing
                 end
                 
@@ -785,7 +785,7 @@ function BrokerBar:UpdateBarLayout(barID)
             local textValue = rawText
             
             -- LOCATION LOGIC (DECIMALS & TRUNCATION BYPASS)
-            if name == "MidnightLocation" then
+            if name == "AbstractLocation" then
                 if bCfg.showCoords then 
                     local m = C_Map.GetBestMapForUnit("player")
                     if m then 
@@ -847,9 +847,9 @@ function BrokerBar:UpdateBarLayout(barID)
 end
 
 function BrokerBar:CreateBarFrame(id)
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
-    local f = CreateFrame("Frame", "MidnightBar_"..id, UIParent, "BackdropTemplate")
+    local f = CreateFrame("Frame", "AbstractBar_"..id, UIParent, "BackdropTemplate")
     f:SetMovable(true)
     f:SetClampedToScreen(true)
     f.bg = f:CreateTexture(nil, "BACKGROUND")
@@ -913,7 +913,7 @@ function BrokerBar:ApplyBarSettings(barID)
     local f, db = bars[barID], self.db.profile.bars[barID]
     if not f or not db then return end
     
-    local skin = SKINS[db.skin == "Global" and self.db.profile.barSkin or db.skin] or SKINS["Midnight"]
+    local skin = SKINS[db.skin == "Global" and self.db.profile.barSkin or db.skin] or SKINS["Abstract"]
     f:SetScale(db.scale or 1.0)
     f:ClearAllPoints()
     
@@ -991,7 +991,7 @@ function BrokerBar:CreateWidget(name, obj)
     end)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     btn:SetScript("OnClick", function(self, button) 
-        if name == "MidnightLocation" then 
+        if name == "AbstractLocation" then 
             ToggleWorldMap() 
         elseif obj.OnClick then 
             obj.OnClick(self, button) 
@@ -1016,18 +1016,18 @@ end
 -- ============================================================================
 
 function BrokerBar:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function BrokerBar:OnDBReady()
-    if not MidnightUI.db.profile.modules.bar then return end
+    if not AbstractUI.db.profile.modules.bar then return end
     
     -- Get framework systems (ColorPalette already set at top of file)
-    FrameFactory = MidnightUI.FrameFactory
-    FontKit = MidnightUI.FontKit
+    FrameFactory = AbstractUI.FrameFactory
+    FontKit = AbstractUI.FontKit
     
     -- Keep namespace as "Bar" for backwards compatibility with saved settings
-    self.db = MidnightUI.db:RegisterNamespace("Bar", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("Bar", defaults)
     
     -- Ensure MainBar has useThemeColor flag set (migration for existing profiles)
     if self.db.profile.bars["MainBar"] and self.db.profile.bars["MainBar"].useThemeColor == nil then
@@ -1035,7 +1035,7 @@ function BrokerBar:OnDBReady()
     end
     
     if Masque then 
-        masqueGroup = Masque:Group("Midnight Bar") 
+        masqueGroup = Masque:Group("Abstract Bar") 
     end
 
     for id in pairs(self.db.profile.bars) do 
@@ -1200,26 +1200,26 @@ function BrokerBar:GetPluginOptions()
     end
     
     local nameMap = { 
-        MidnightDura = "Midnight Durability", 
-        MidnightClock = "Midnight Clock", 
-        MidnightBags = "Midnight Bags", 
-        MidnightFriends = "Midnight Friends", 
-        MidnightGold = "Midnight Gold", 
-        MidnightGuild = "Midnight Guild", 
-        MidnightLocation = "Midnight Location", 
-        MidnightSystem = "Midnight System", 
-        MidnightDiff = "Midnight Difficulty", 
-        MidnightToken = "Midnight Token", 
-        MidnightVolume = "Midnight Volume", 
-        MidnightILvl = "Midnight Item Level" 
+        AbstractDura = "Abstract Durability", 
+        AbstractClock = "Abstract Clock", 
+        AbstractBags = "Abstract Bags", 
+        AbstractFriends = "Abstract Friends", 
+        AbstractGold = "Abstract Gold", 
+        AbstractGuild = "Abstract Guild", 
+        AbstractLocation = "Abstract Location", 
+        AbstractSystem = "Abstract System", 
+        AbstractDiff = "Abstract Difficulty", 
+        AbstractToken = "Abstract Token", 
+        AbstractVolume = "Abstract Volume", 
+        AbstractILvl = "Abstract Item Level" 
     }
 
     for name in pairs(widgets) do
         self:GetSafeConfig(name)
         local displayName = nameMap[name] or name
-        local isLoc = (name == "MidnightLocation")
-        local isVol = (name == "MidnightVolume")
-        local isGold = (name == "MidnightGold")
+        local isLoc = (name == "AbstractLocation")
+        local isVol = (name == "AbstractVolume")
+        local isGold = (name == "AbstractGold")
 
         options.args[name:gsub("%s", "_")] = {
             name = (self.db.profile.brokers[name].bar ~= "None") and displayName or "|cff808080"..displayName.."|r", 
@@ -1340,7 +1340,7 @@ function BrokerBar:GetOptions()
     -- SAFETY CHECK: Ensure DB is loaded if GetOptions is called before OnInitialize
     if not self.db then
         -- Keep namespace as "Bar" for backwards compatibility with saved settings
-        self.db = MidnightUI.db:RegisterNamespace("Bar", defaults)
+        self.db = AbstractUI.db:RegisterNamespace("Bar", defaults)
     end
 
     local function GetSkinList() 
@@ -1595,7 +1595,7 @@ function BrokerBar:GetOptions()
                         if self.db.profile.brokers then
                             for name, config in pairs(self.db.profile.brokers) do if config.bar == id then config.bar = "None" end end
                         end
-                        MidnightUI:OpenConfig()
+                        AbstractUI:OpenConfig()
                     end
                 },
         }}

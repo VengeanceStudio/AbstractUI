@@ -1,9 +1,9 @@
--- MidnightUI Volume Broker
+-- AbstractUI Volume Broker
 -- Displays master volume and provides volume mixer popup with sliders and settings
 
 if not BrokerBar then return end
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local LDB = LibStub("LibDataBroker-1.1")
 local LSM = LibStub("LibSharedMedia-3.0")
 local volFrame
@@ -12,11 +12,11 @@ local volObj
 -- Create the volume mixer popup
 function BrokerBar:CreateVolumeFrame()
     if volFrame then return end
-    volFrame = CreateFrame("Frame", "MidnightVolumePopout", UIParent, "BackdropTemplate")
+    volFrame = CreateFrame("Frame", "AbstractVolumePopout", UIParent, "BackdropTemplate")
     volFrame:SetSize(220, 320); volFrame:SetFrameStrata("DIALOG"); volFrame:EnableMouse(true); volFrame:Hide()
     
     -- Don't skin on creation, wait for OnShow to apply themed backdrop
-    -- MidnightUI:SkinFrame(volFrame)
+    -- AbstractUI:SkinFrame(volFrame)
 
     local vTitle = volFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     vTitle:SetPoint("TOP", 0, -10)
@@ -25,11 +25,11 @@ function BrokerBar:CreateVolumeFrame()
     -- Add OnShow script to update Title Font/Color dynamically based on current settings
     volFrame:SetScript("OnShow", function()
         -- Refresh backdrop with current theme
-        MidnightUI:ApplyThemedBackdrop(volFrame)
+        AbstractUI:ApplyThemedBackdrop(volFrame)
         
         local db = BrokerBar.db.profile
         local fontPath, fontSize, fontFlags
-        local FontKit = _G.MidnightUI_FontKit
+        local FontKit = _G.AbstractUI_FontKit
         if FontKit then
             fontPath = FontKit:GetFont('header')
             fontSize = FontKit:GetSize('large')
@@ -60,7 +60,7 @@ function BrokerBar:CreateVolumeFrame()
     local function CreateSlider(name, label, cvar, parent, yOffset)
         local s = CreateFrame("Slider", name, parent, "OptionsSliderTemplate")
         s:SetPoint("TOP", parent, "TOP", 0, yOffset); s:SetWidth(180)
-        local config = BrokerBar:GetSafeConfig("MidnightVolume")
+        local config = BrokerBar:GetSafeConfig("AbstractVolume")
         local step = config.volumeStep or 0.05
         s:SetMinMaxValues(0, 1); s:SetValueStep(step)
         _G[s:GetName().."Text"]:SetText(label)
@@ -105,7 +105,7 @@ function BrokerBar:CreateVolumeFrame()
 end
 
 -- Register the broker
-volObj = LDB:NewDataObject("MidnightVolume", { 
+volObj = LDB:NewDataObject("AbstractVolume", { 
     type = "data source", text = "0%", icon = "Interface\\Common\\VoiceChat-Speaker",
     OnClick = function(self, button) 
         if button == "RightButton" then 
@@ -134,7 +134,7 @@ volObj = LDB:NewDataObject("MidnightVolume", {
         end
     end,
     OnMouseWheel = function(_, d) 
-        local config = BrokerBar:GetSafeConfig("MidnightVolume")
+        local config = BrokerBar:GetSafeConfig("AbstractVolume")
         local step = config.volumeStep or 0.05
         local v = (tonumber(GetCVar("Sound_MasterVolume")) or 0) + (d>0 and step or -step)
         v = math.max(0, math.min(1, v))

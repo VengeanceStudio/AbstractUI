@@ -1,6 +1,6 @@
 
 if not UnitFrames then return end
--- MidnightUI UnitFrames: Pet Frame Module
+-- AbstractUI UnitFrames: Pet Frame Module
 
 -- ============================================================================
 -- PET FRAME CREATION
@@ -15,7 +15,7 @@ function UnitFrames:CreatePetFrame()
     local posY = (db.pet and db.pet.posY) or 0
     self:CreateUnitFrame("PetFrame", "pet", anchorTo, "CENTER", "CENTER", posX, posY)
     -- Only show PetFrame if pet exists
-    local customPetFrame = _G["MidnightUI_PetFrame"]
+    local customPetFrame = _G["AbstractUI_PetFrame"]
     if customPetFrame then
         -- Start hidden - state driver will show when pet exists
         customPetFrame:Hide()
@@ -50,5 +50,5 @@ end
 -- ============================================================================
 
 function UnitFrames:GetPetOptions_Real()
-    return self:GenerateFrameOptions("Pet Frame", "pet", "CreatePetFrame", "MidnightUI_PetFrame")
+    return self:GenerateFrameOptions("Pet Frame", "pet", "CreatePetFrame", "AbstractUI_PetFrame")
 end

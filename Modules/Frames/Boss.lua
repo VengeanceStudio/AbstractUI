@@ -1,9 +1,9 @@
 
 if not UnitFrames then return end
--- MidnightUI UnitFrames: Boss Frames Module
+-- AbstractUI UnitFrames: Boss Frames Module
 
--- Get MidnightUI addon reference for accessing other modules
-local MidnightUI = LibStub and LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
+-- Get AbstractUI addon reference for accessing other modules
+local AbstractUI = LibStub and LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 
 -- ============================================================================
 -- BOSS FRAMES CREATION
@@ -31,7 +31,7 @@ function UnitFrames:CreateBossFrames()
             if bossConfig.posY then baseY = bossConfig.posY end
             
             self:CreateUnitFrame(key, unit, UIParent, "CENTER", "CENTER", baseX, baseY)
-            boss1Frame = _G["MidnightUI_" .. key]
+            boss1Frame = _G["AbstractUI_" .. key]
         else
             -- Boss 2-5: Position relative to boss1 with spacing
             local spacing = bossConfig.spacing or 80
@@ -40,7 +40,7 @@ function UnitFrames:CreateBossFrames()
             -- Create frame initially at same position as boss1, then reposition
             self:CreateUnitFrame(key, unit, UIParent, "CENTER", "CENTER", 0, 0)
             
-            local bossFrame = _G["MidnightUI_" .. key]
+            local bossFrame = _G["AbstractUI_" .. key]
             if bossFrame and boss1Frame then
                 -- Position relative to boss1
                 bossFrame:ClearAllPoints()
@@ -49,7 +49,7 @@ function UnitFrames:CreateBossFrames()
         end
         
         -- Configure visibility with state driver
-        local bossFrame = _G["MidnightUI_" .. key]
+        local bossFrame = _G["AbstractUI_" .. key]
         if bossFrame then
             -- Start hidden - state driver will show when boss exists
             bossFrame:Hide()
@@ -71,13 +71,13 @@ function UnitFrames:CreateBossFrames()
     
     -- Create a single large movable overlay for all boss frames
     if boss1Frame then
-        local Movable = MidnightUI:GetModule("Movable", true)
+        local Movable = AbstractUI:GetModule("Movable", true)
         if Movable then
             -- Remove existing boss overlay if present
-            if _G.MidnightUI_BossFramesOverlay then
-                _G.MidnightUI_BossFramesOverlay:Hide()
-                _G.MidnightUI_BossFramesOverlay:SetParent(nil)
-                _G.MidnightUI_BossFramesOverlay = nil
+            if _G.AbstractUI_BossFramesOverlay then
+                _G.AbstractUI_BossFramesOverlay:Hide()
+                _G.AbstractUI_BossFramesOverlay:SetParent(nil)
+                _G.AbstractUI_BossFramesOverlay = nil
             end
             
             -- Calculate total height for all 5 boss frames
@@ -87,7 +87,7 @@ function UnitFrames:CreateBossFrames()
             local frameWidth = boss1Frame:GetWidth()
             
             -- Create overlay frame
-            local overlay = CreateFrame("Frame", "MidnightUI_BossFramesOverlay", UIParent, "BackdropTemplate")
+            local overlay = CreateFrame("Frame", "AbstractUI_BossFramesOverlay", UIParent, "BackdropTemplate")
             overlay:SetFrameStrata("FULLSCREEN_DIALOG")
             overlay:SetFrameLevel(10000)
             overlay:SetSize(frameWidth, totalHeight)
@@ -123,7 +123,7 @@ function UnitFrames:CreateBossFrames()
             
             local isDragging = false
             overlay:SetScript("OnDragStart", function(self)
-                if MidnightUI.moveMode then
+                if AbstractUI.moveMode then
                     isDragging = true
                     boss1Frame:StartMoving()
                 end
@@ -167,7 +167,7 @@ function UnitFrames:CreateBossFrames()
             
             -- Hook to show/hide arrows
             overlay:HookScript("OnEnter", function()
-                if MidnightUI.moveMode and boss1Frame.arrows then
+                if AbstractUI.moveMode and boss1Frame.arrows then
                     if boss1Frame.arrowHideTimer then
                         boss1Frame.arrowHideTimer:Cancel()
                         boss1Frame.arrowHideTimer = nil
@@ -202,5 +202,5 @@ end
 -- ============================================================================
 
 function UnitFrames:GetBossOptions_Real()
-    return self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "MidnightUI_Boss1Frame")
+    return self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "AbstractUI_Boss1Frame")
 end

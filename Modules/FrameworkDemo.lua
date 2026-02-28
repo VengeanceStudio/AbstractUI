@@ -1,8 +1,8 @@
--- MidnightUI Framework Demo
+-- AbstractUI Framework Demo
 -- Showcases the framework components and theme system
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Demo = MidnightUI:NewModule("FrameworkDemo", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Demo = AbstractUI:NewModule("FrameworkDemo", "AceEvent-3.0")
 
 -- Cache framework systems
 local FrameFactory, ColorPalette, FontKit, LayoutHelper, Atlas
@@ -16,9 +16,9 @@ local demoFrame
 
 function Demo:OnInitialize()
     -- Register slash command
-    SLASH_MIDNIGHTDEMO1 = "/midemo"
-    SLASH_MIDNIGHTDEMO2 = "/midnightdemo"
-    SlashCmdList["MIDNIGHTDEMO"] = function()
+    SLASH_ABSTRACTDEMO1 = "/absdemo"
+    SLASH_ABSTRACTDEMO2 = "/ABSTRACTDEMO"
+    SlashCmdList["ABSTRACTDEMO"] = function()
         Demo:Toggle()
     end
 end
@@ -35,19 +35,19 @@ function Demo:CreateDemoFrame()
     if demoFrame then return demoFrame end
     
     -- Get framework systems (they're registered by now)
-    FrameFactory = MidnightUI.FrameFactory
-    ColorPalette = _G.MidnightUI_ColorPalette
-    FontKit = MidnightUI.FontKit
-    LayoutHelper = MidnightUI.LayoutHelper
-    Atlas = MidnightUI.Atlas
+    FrameFactory = AbstractUI.FrameFactory
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = AbstractUI.FontKit
+    LayoutHelper = AbstractUI.LayoutHelper
+    Atlas = AbstractUI.Atlas
     
     if not FrameFactory or not ColorPalette or not FontKit then
-        MidnightUI:Print("Framework not initialized yet. Please try again.")
+        AbstractUI:Print("Framework not initialized yet. Please try again.")
         return
     end
     
     -- Main container
-    demoFrame = CreateFrame("Frame", "MidnightUIDemoFrame", UIParent, "BackdropTemplate")
+    demoFrame = CreateFrame("Frame", "AbstractUIDemoFrame", UIParent, "BackdropTemplate")
     demoFrame:SetSize(800, 600)
     demoFrame:SetPoint("CENTER")
     demoFrame:SetFrameStrata("DIALOG")
@@ -79,7 +79,7 @@ function Demo:CreateDemoFrame()
     
     local title = FontKit:CreateFontString(demoFrame, "title", "large")
     title:SetPoint("TOP", 0, -10)
-    title:SetText("MidnightUI Framework Demo")
+    title:SetText("AbstractUI Framework Demo")
     title:SetTextColor(ColorPalette:GetColor("text-primary"))
     
     -- Close button (top right)
@@ -102,15 +102,15 @@ function Demo:CreateDemoFrame()
     demoFrame.themeValue = themeValue
     
     -- Theme switching buttons
-    local glassBtnLabel = "Switch to Midnight Glass"
-    if ColorPalette:GetActiveTheme() == "MidnightGlass" then
-        glassBtnLabel = "Midnight Glass (Active)"
+    local glassBtnLabel = "Switch to Abstract Glass"
+    if ColorPalette:GetActiveTheme() == "AbstractGlass" then
+        glassBtnLabel = "Abstract Glass (Active)"
     end
     
     local glassBtn = FrameFactory:CreateButton(demoFrame, 200, 32, glassBtnLabel)
     glassBtn:SetPoint("TOPLEFT", 20, -80)
     glassBtn:SetScript("OnClick", function()
-        Demo:SwitchTheme("MidnightGlass")
+        Demo:SwitchTheme("AbstractGlass")
     end)
     demoFrame.glassBtn = glassBtn
     
@@ -142,19 +142,19 @@ function Demo:CreateDemoFrame()
     local btn1 = FrameFactory:CreateButton(demoFrame, 140, 36, "Normal Button")
     btn1:SetPoint("TOPLEFT", 20, -170)
     btn1:SetScript("OnClick", function()
-        MidnightUI:Print("Button 1 clicked!")
+        AbstractUI:Print("Button 1 clicked!")
     end)
     
     local btn2 = FrameFactory:CreateButton(demoFrame, 140, 36, "Another Button")
     btn2:SetPoint("LEFT", btn1, "RIGHT", 10, 0)
     btn2:SetScript("OnClick", function()
-        MidnightUI:Print("Button 2 clicked!")
+        AbstractUI:Print("Button 2 clicked!")
     end)
     
     local btn3 = FrameFactory:CreateButton(demoFrame, 140, 36, "Third Button")
     btn3:SetPoint("LEFT", btn2, "RIGHT", 10, 0)
     btn3:SetScript("OnClick", function()
-        MidnightUI:Print("Button 3 clicked!")
+        AbstractUI:Print("Button 3 clicked!")
     end)
     
     -- TABS SECTION
@@ -181,7 +181,7 @@ function Demo:CreateDemoFrame()
                 t:SetActive(false)
             end
             tab:SetActive(true)
-            MidnightUI:Print("Switched to " .. tab.text:GetText())
+            AbstractUI:Print("Switched to " .. tab.text:GetText())
         end)
     end
     
@@ -265,7 +265,7 @@ function Demo:SwitchTheme(themeName)
     if not FrameFactory or not ColorPalette then return end
     
     FrameFactory:SetTheme(themeName)
-    MidnightUI:Print("Switched to " .. themeName .. " theme")
+    AbstractUI:Print("Switched to " .. themeName .. " theme")
     
     -- Recreate the demo frame to apply new theme
     if demoFrame then

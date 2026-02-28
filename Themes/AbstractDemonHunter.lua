@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Evoker
--- Based on Midnight Transparent with Evoker class color text (#33937F)
+-- AbstractUI Theme: Abstract Demon Hunter
+-- Based on Abstract Transparent with DH class color text (#A330C9)
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,14 +10,14 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightEvoker", {
+ColorPalette:RegisterPalette("AbstractDemonHunter", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.65},       -- Very transparent black (from Transparent)
-    ["panel-border"] = {r = 0.059, g = 0.173, b = 0.149, a = 0.90}, -- Dark Evoker teal (#0F2C26)
+    ["panel-border"] = {r = 0.192, g = 0.055, b = 0.235, a = 0.90}, -- Dark DH purple (#310E3C)
     ["accent-primary"] = {r = 0.55, g = 0.60, b = 0.70, a = 0.85}, -- Steel blue-grey (from Transparent)
     ["button-bg"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.60},      -- Transparent dark charcoal
     ["button-hover"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},   -- Medium grey-blue
-    ["text-primary"] = {r = 0.200, g = 0.576, b = 0.498, a = 1.0}, -- Evoker class color (#33937F)
+    ["text-primary"] = {r = 0.639, g = 0.188, b = 0.788, a = 1.0}, -- DH class color (#A330C9)
     ["text-secondary"] = {r = 0.70, g = 0.70, b = 0.75, a = 0.95}, -- Light grey (from Transparent)
     ["tab-active"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},     -- Medium grey-blue
     
@@ -40,8 +40,8 @@ ColorPalette:RegisterPalette("MidnightEvoker", {
     ["button-disabled"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.40},
     
     -- Toggle switch colors
-    ["toggle-off-bg"] = {r = 0.02, g = 0.04, b = 0.05, a = 1.0},
-    ["toggle-off-border"] = {r = 0.25, g = 0.30, b = 0.32, a = 0.8},
+    ["toggle-off-bg"] = {r = 0.05, g = 0.02, b = 0.08, a = 1.0},
+    ["toggle-off-border"] = {r = 0.30, g = 0.20, b = 0.35, a = 0.8},
     
     ["tab-inactive"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.55},
     ["tab-selected-bg"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},
@@ -58,7 +58,7 @@ ColorPalette:RegisterPalette("MidnightEvoker", {
     ["border-strong"] = {r = 0.45, g = 0.48, b = 0.55, a = 0.85},
     
     -- Tooltip colors
-    ["tooltip-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.90},
+    ["tooltip-bg"] = {r = 0.08, g = 0.05, b = 0.10, a = 0.90},
     
     -- Shadow & highlight
     ["shadow"] = {r = 0.0, g = 0.0, b = 0.0, a = 0.70},

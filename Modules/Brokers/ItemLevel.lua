@@ -1,4 +1,4 @@
--- MidnightUI Item Level Broker
+-- AbstractUI Item Level Broker
 -- Displays average equipped item level with per-slot breakdown tooltip
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local ilvlObj
 
 -- Register the broker
-ilvlObj = LDB:NewDataObject("MidnightILvl", { 
+ilvlObj = LDB:NewDataObject("AbstractILvl", { 
     type = "data source", text = "0", icon = "Interface\\Icons\\INV_Helmet_03", 
     OnTooltipShow = function(tip) 
         tip:AddLine("Item Level", GetColor())

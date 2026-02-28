@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Monk
--- Based on Midnight Transparent with Monk class color text (#00FF98)
+-- AbstractUI Theme: Abstract Warlock
+-- Based on Abstract Transparent with Warlock class color text (#8788EE)
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,14 +10,14 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightMonk", {
+ColorPalette:RegisterPalette("AbstractWarlock", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.65},       -- Very transparent black (from Transparent)
-    ["panel-border"] = {r = 0.0, g = 0.302, b = 0.180, a = 0.90},  -- Dark Monk jade (#004D2E)
+    ["panel-border"] = {r = 0.161, g = 0.161, b = 0.278, a = 0.90}, -- Dark Warlock purple (#292947)
     ["accent-primary"] = {r = 0.55, g = 0.60, b = 0.70, a = 0.85}, -- Steel blue-grey (from Transparent)
     ["button-bg"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.60},      -- Transparent dark charcoal
     ["button-hover"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},   -- Medium grey-blue
-    ["text-primary"] = {r = 0.0, g = 1.0, b = 0.596, a = 1.0},     -- Monk class color (#00FF98)
+    ["text-primary"] = {r = 0.529, g = 0.533, b = 0.933, a = 1.0}, -- Warlock class color (#8788EE)
     ["text-secondary"] = {r = 0.70, g = 0.70, b = 0.75, a = 0.95}, -- Light grey (from Transparent)
     ["tab-active"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},     -- Medium grey-blue
     
@@ -40,8 +40,8 @@ ColorPalette:RegisterPalette("MidnightMonk", {
     ["button-disabled"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.40},
     
     -- Toggle switch colors
-    ["toggle-off-bg"] = {r = 0.02, g = 0.05, b = 0.02, a = 1.0},
-    ["toggle-off-border"] = {r = 0.20, g = 0.35, b = 0.20, a = 0.8},
+    ["toggle-off-bg"] = {r = 0.05, g = 0.02, b = 0.05, a = 1.0},
+    ["toggle-off-border"] = {r = 0.35, g = 0.22, b = 0.35, a = 0.8},
     
     ["tab-inactive"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.55},
     ["tab-selected-bg"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},

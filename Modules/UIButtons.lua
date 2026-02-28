@@ -1,5 +1,5 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local UIButtons = MidnightUI:NewModule("UIButtons", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local UIButtons = AbstractUI:NewModule("UIButtons", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local uiButtons = {}
@@ -7,23 +7,23 @@ local container
 local FrameFactory, ColorPalette, FontKit
 
 function UIButtons:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function UIButtons:OnDBReady()
-    if not MidnightUI.db or not MidnightUI.db.profile or not MidnightUI.db.profile.modules then
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules then
         return
     end
-    if not MidnightUI.db.profile.modules.UIButtons then
+    if not AbstractUI.db.profile.modules.UIButtons then
         return 
     end
     
     -- Get framework systems
-    FrameFactory = MidnightUI.FrameFactory
-    ColorPalette = _G.MidnightUI_ColorPalette
-    FontKit = MidnightUI.FontKit
+    FrameFactory = AbstractUI.FrameFactory
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = AbstractUI.FontKit
 
-    self.db = MidnightUI.db:RegisterNamespace("UIButtons", {
+    self.db = AbstractUI.db:RegisterNamespace("UIButtons", {
         profile = {
             enabled = true,
             scale = 1.0,
@@ -61,7 +61,7 @@ function UIButtons:OnDBReady()
     if not btns.move then btns.move = { enabled = true, order = 5 } end
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
 
     -- Manually call setup since PLAYER_ENTERING_WORLD already fired
     C_Timer.After(0.1, function()
@@ -78,9 +78,9 @@ end
 function UIButtons:CreateContainer()
     if container then return end
     
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
-    container = CreateFrame("Frame", "MidnightUI_UIButtonsContainer", UIParent, "BackdropTemplate")
+    container = CreateFrame("Frame", "AbstractUI_UIButtonsContainer", UIParent, "BackdropTemplate")
     container:SetSize(200, 36)
     
     local pos = self.db.profile.position
@@ -138,11 +138,11 @@ function UIButtons:CreateButtons()
         options = {
             name = "Options",
             text = "O",
-            tooltip = "Open MidnightUI Options",
+            tooltip = "Open AbstractUI Options",
             onClick = function()
-                -- Use custom MidnightUI options panel
-                if MidnightUI and type(MidnightUI.OpenConfig) == "function" then
-                    MidnightUI:OpenConfig()
+                -- Use custom AbstractUI options panel
+                if AbstractUI and type(AbstractUI.OpenConfig) == "function" then
+                    AbstractUI:OpenConfig()
                 end
             end
         },
@@ -156,10 +156,10 @@ function UIButtons:CreateButtons()
             text = "M",
             tooltip = "Toggle Move Mode\n|cffaaaaaa(Hover over elements to reposition)|r",
             onClick = function() 
-                MidnightUI:ToggleMoveMode()
+                AbstractUI:ToggleMoveMode()
             end,
             getColor = function()
-                if MidnightUI.moveMode then
+                if AbstractUI.moveMode then
                     return {0, 1, 0}
                 else
                     return {1, 1, 1}
@@ -179,7 +179,7 @@ function UIButtons:CreateButtons()
             
             -- For exit button, we need SecureActionButtonTemplate
             if key == "exit" then
-                btn = CreateFrame("Button", "MidnightUIButton_"..key, container, "SecureActionButtonTemplate, BackdropTemplate")
+                btn = CreateFrame("Button", "AbstractUIButton_"..key, container, "SecureActionButtonTemplate, BackdropTemplate")
                 btn:SetSize(32, 32)
                 btn:SetAttribute("type", "macro")
                 btn:SetAttribute("macrotext", "/editmode")
@@ -237,7 +237,7 @@ function UIButtons:CreateButtons()
                     end
                 else
                     -- Fallback to basic button if framework not available
-                    btn = CreateFrame("Button", "MidnightUIButton_"..key, container, "BackdropTemplate")
+                    btn = CreateFrame("Button", "AbstractUIButton_"..key, container, "BackdropTemplate")
                     btn:SetSize(32, 32)
                     btn:SetBackdrop({
                         bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -321,7 +321,7 @@ function UIButtons:CreateButtons()
                 GameTooltip:SetText(data.tooltip)
                 
                 -- Manually position tooltip using Tooltips module anchor
-                local Tooltips = MidnightUI:GetModule("Tooltips", true)
+                local Tooltips = AbstractUI:GetModule("Tooltips", true)
                 if Tooltips then
                     -- Use custom anchor position
                     local pos = Tooltips.db.profile.anchorPosition
@@ -349,7 +349,7 @@ function UIButtons:CreateButtons()
             uiButtons[key] = btn
         end
     end
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
 
     -- Store font update function for later use
     self.UpdateButtonFonts = function(this)
@@ -366,7 +366,7 @@ function UIButtons:CreateButtons()
 end
 
 function UIButtons:OnMoveModeChanged(event, enabled)
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     -- Update move button color
     local moveBtn = uiButtons.move
@@ -412,7 +412,7 @@ function UIButtons:UpdateLayout()
     container:SetScale(self.db.profile.scale)
     
     -- Update background color if available
-    local ColorPalette = _G.MidnightUI_ColorPalette
+    local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette then
         container:SetBackdropColor(ColorPalette:GetColor('panel-bg'))
     elseif self.db.profile.backgroundColor then

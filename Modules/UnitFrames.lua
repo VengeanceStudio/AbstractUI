@@ -1,6 +1,6 @@
 --[[
 ================================================================================
-MidnightUI - UnitFrames Module
+AbstractUI - UnitFrames Module
 ================================================================================
 Custom unit frame implementation for player, target, focus, pet, and boss frames.
 
@@ -68,13 +68,13 @@ CRITICAL: Do NOT call SetBlizzardFramesHidden() in high-frequency event handlers
 -- Creates and shows a popup window with tag documentation
 local function ShowTagHelp()
     -- Check if the frame already exists
-    if _G.MidnightUI_TagHelpFrame then
-        _G.MidnightUI_TagHelpFrame:Show()
+    if _G.AbstractUI_TagHelpFrame then
+        _G.AbstractUI_TagHelpFrame:Show()
         return
     end
     
     -- Create the help frame
-    local frame = CreateFrame("Frame", "MidnightUI_TagHelpFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "AbstractUI_TagHelpFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(500, 500)
     local screenWidth = UIParent:GetWidth()
     frame:SetPoint("CENTER", UIParent, "LEFT", screenWidth * 0.825, 0)
@@ -270,8 +270,8 @@ local function FormatHealthText(hp, hpPct, style, divider, maxHp)
     return hpStr or ""
 end
 if not LibStub then return end
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local UnitFrames = MidnightUI and MidnightUI:NewModule("UnitFrames", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local UnitFrames = AbstractUI and AbstractUI:NewModule("UnitFrames", "AceEvent-3.0", "AceHook-3.0")
 if not UnitFrames then return end
 _G.UnitFrames = UnitFrames
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -918,11 +918,11 @@ local function SetBlizzardFramesHidden(self)
 end
 
 local function HookBlizzardPlayerFrame(self)
-    if PlayerFrame and not PlayerFrame._MidnightUIHooked then
+    if PlayerFrame and not PlayerFrame._AbstractUIHooked then
         hooksecurefunc(PlayerFrame, "Show", function()
             if self.db and self.db.profile and self.db.profile.showPlayer then PlayerFrame:Hide() end
         end)
-        PlayerFrame._MidnightUIHooked = true
+        PlayerFrame._AbstractUIHooked = true
     end
 end
 
@@ -1365,12 +1365,12 @@ function UnitFrames:GetOptions()
                 args = {
                     header = {
                         type = "header",
-                        name = "MidnightUI Does Not Support Party/Raid Frames",
+                        name = "AbstractUI Does Not Support Party/Raid Frames",
                         order = 1,
                     },
                     description1 = {
                         type = "description",
-                        name = "With the release of WoW: Midnight (12.0), Blizzard introduced major changes to the unitframe API and the new Secure Party/Raid Frame system. Because these frames are now fully controlled by the client and no longer expose the hooks or layout controls that addons previously relied on, MidnightUI will not include support for modifying or replacing Party Frames or Raid Frames.",
+                        name = "With the release of WoW: Midnight (12.0), Blizzard introduced major changes to the unitframe API and the new Secure Party/Raid Frame system. Because these frames are now fully controlled by the client and no longer expose the hooks or layout controls that addons previously relied on, AbstractUI will not include support for modifying or replacing Party Frames or Raid Frames.",
                         order = 2,
                         fontSize = "medium",
                     },
@@ -1409,7 +1409,7 @@ function UnitFrames:GetOptions()
                     },
                     description4 = {
                         type = "description",
-                        name = "MidnightUI will continue to focus on delivering a clean, modern experience for the parts of the interface that remain customizable under the updated WoW 12.0 API restrictions. Boss Frames are now supported - see the Boss Frames tab to configure them.",
+                        name = "AbstractUI will continue to focus on delivering a clean, modern experience for the parts of the interface that remain customizable under the updated WoW 12.0 API restrictions. Boss Frames are now supported - see the Boss Frames tab to configure them.",
                         order = 9,
                         fontSize = "medium",
                     },
@@ -1427,11 +1427,11 @@ function UnitFrames:GetPlayerOptions()
 end
 
 function UnitFrames:GetPetOptions_Real()
-    return self:GenerateFrameOptions("Pet", "pet", "CreatePetFrame", "MidnightUI_PetFrame")
+    return self:GenerateFrameOptions("Pet", "pet", "CreatePetFrame", "AbstractUI_PetFrame")
 end
 
 function UnitFrames:GetBossOptions_Real()
-    local options = self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "MidnightUI_Boss1Frame")
+    local options = self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "AbstractUI_Boss1Frame")
     
     -- Add boss-specific options at the top
     options.args.enable = {
@@ -1447,7 +1447,7 @@ function UnitFrames:GetBossOptions_Real()
                 self:CreateBossFrames()
             else
                 for i = 1, 5 do
-                    local frame = _G["MidnightUI_Boss" .. i .. "Frame"]
+                    local frame = _G["AbstractUI_Boss" .. i .. "Frame"]
                     if frame then
                         frame:Hide()
                         frame:SetParent(nil)
@@ -1473,12 +1473,12 @@ end
         
         HookBlizzardPlayerFrame(self)
         -- Only create frames if they don't already exist to prevent recreation on every zone change
-        if self.db.profile.showPlayer and not _G["MidnightUI_PlayerFrame"] then self:CreatePlayerFrame() end
-        if self.db.profile.showTarget and not _G["MidnightUI_TargetFrame"] then self:CreateTargetFrame() end
-        if self.db.profile.showTargetTarget and not _G["MidnightUI_TargetTargetFrame"] then self:CreateTargetTargetFrame() end
-        if self.db.profile.showPet and not _G["MidnightUI_PetFrame"] then self:CreatePetFrame() end
-        if self.db.profile.showFocus and not _G["MidnightUI_FocusFrame"] then self:CreateFocusFrame() end
-        if self.db.profile.showBoss and not _G["MidnightUI_Boss1Frame"] then self:CreateBossFrames() end
+        if self.db.profile.showPlayer and not _G["AbstractUI_PlayerFrame"] then self:CreatePlayerFrame() end
+        if self.db.profile.showTarget and not _G["AbstractUI_TargetFrame"] then self:CreateTargetFrame() end
+        if self.db.profile.showTargetTarget and not _G["AbstractUI_TargetTargetFrame"] then self:CreateTargetTargetFrame() end
+        if self.db.profile.showPet and not _G["AbstractUI_PetFrame"] then self:CreatePetFrame() end
+        if self.db.profile.showFocus and not _G["AbstractUI_FocusFrame"] then self:CreateFocusFrame() end
+        if self.db.profile.showBoss and not _G["AbstractUI_Boss1Frame"] then self:CreateBossFrames() end
         
         -- Only hide Blizzard frames once - state drivers persist across zone changes
         if not self.blizzardFramesHidden then
@@ -1492,30 +1492,30 @@ end
         if not self.db or not self.db.profile then return end
         
         -- Update player frame to hide combat icon
-        local playerFrame = _G["MidnightUI_PlayerFrame"]
+        local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
         end
         
-        local targetFrame = _G["MidnightUI_TargetFrame"]
+        local targetFrame = _G["AbstractUI_TargetFrame"]
         if targetFrame and self.db.profile.showTarget then
             UnregisterStateDriver(targetFrame, "visibility")
             RegisterStateDriver(targetFrame, "visibility", "[@target,exists] show; hide")
         end
         
-        local targetTargetFrame = _G["MidnightUI_TargetTargetFrame"]
+        local targetTargetFrame = _G["AbstractUI_TargetTargetFrame"]
         if targetTargetFrame and self.db.profile.showTargetTarget then
             UnregisterStateDriver(targetTargetFrame, "visibility")
             RegisterStateDriver(targetTargetFrame, "visibility", "[@targettarget,exists] show; hide")
         end
         
-        local petFrame = _G["MidnightUI_PetFrame"]
+        local petFrame = _G["AbstractUI_PetFrame"]
         if petFrame and self.db.profile.showPet then
             UnregisterStateDriver(petFrame, "visibility")
             RegisterStateDriver(petFrame, "visibility", "[@pet,exists] show; hide")
         end
         
-        local focusFrame = _G["MidnightUI_FocusFrame"]
+        local focusFrame = _G["AbstractUI_FocusFrame"]
         if focusFrame and self.db.profile.showFocus then
             UnregisterStateDriver(focusFrame, "visibility")
             RegisterStateDriver(focusFrame, "visibility", "[@focus,exists] show; hide")
@@ -1524,7 +1524,7 @@ end
         -- Re-register boss frame state drivers
         if self.db.profile.showBoss then
             for i = 1, 5 do
-                local bossFrame = _G["MidnightUI_Boss" .. i .. "Frame"]
+                local bossFrame = _G["AbstractUI_Boss" .. i .. "Frame"]
                 if bossFrame then
                     UnregisterStateDriver(bossFrame, "visibility")
                     RegisterStateDriver(bossFrame, "visibility", "[@boss" .. i .. ",exists] show; hide")
@@ -1537,7 +1537,7 @@ end
         -- Update player frame to show combat icon when entering combat
         if not self.db or not self.db.profile then return end
         
-        local playerFrame = _G["MidnightUI_PlayerFrame"]
+        local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
         end
@@ -1842,7 +1842,7 @@ end
                     
                     -- Hide bars for target/targettarget/pet/focus/boss by default (state driver will show parent, UpdateUnitFrame shows bars)
                     local parentName = parent and parent:GetName() or ""
-                    if parentName == "MidnightUI_TargetFrame" or parentName == "MidnightUI_TargetTargetFrame" or parentName == "MidnightUI_PetFrame" or parentName == "MidnightUI_FocusFrame" or (parentName and parentName:match("^MidnightUI_Boss%dFrame$")) then
+                    if parentName == "AbstractUI_TargetFrame" or parentName == "AbstractUI_TargetTargetFrame" or parentName == "AbstractUI_PetFrame" or parentName == "AbstractUI_FocusFrame" or (parentName and parentName:match("^AbstractUI_Boss%dFrame$")) then
                         bar:Hide()
                     end
                     
@@ -1857,7 +1857,7 @@ end
                         local alpha = bg[4] ~= nil and bg[4] or 0.5
                         
                         -- For target/targettarget/focus frames, enforce minimum alpha since there's no parent frame background
-                        if parentFrame == "MidnightUI_TargetFrame" or parentFrame == "MidnightUI_TargetTargetFrame" or parentFrame == "MidnightUI_FocusFrame" then
+                        if parentFrame == "AbstractUI_TargetFrame" or parentFrame == "AbstractUI_TargetTargetFrame" or parentFrame == "AbstractUI_FocusFrame" then
                             alpha = math.max(alpha, 0.5)
                         end
                         
@@ -1931,7 +1931,7 @@ end
 
                     local frameType = "Button"
                     local template = "SecureUnitButtonTemplate,BackdropTemplate"
-                    local frame = CreateFrame(frameType, "MidnightUI_"..key, UIParent, template)
+                    local frame = CreateFrame(frameType, "AbstractUI_"..key, UIParent, template)
                     frame:SetSize(width, totalHeight)
 
                     -- Use saved anchor/relative points if present, else fallback to CENTER
@@ -1948,7 +1948,7 @@ end
                     end
 
                     -- Enable drag-and-drop movement for unit frames (skip boss frames - they use a shared overlay)
-                    local Movable = MidnightUI:GetModule("Movable", true)
+                    local Movable = AbstractUI:GetModule("Movable", true)
                     if Movable and (key == "PlayerFrame" or key == "TargetFrame" or key == "TargetTargetFrame" or key == "PetFrame" or key == "FocusFrame") then
                         -- Remove any old highlight
                         if frame.movableHighlightFrame then
@@ -2004,7 +2004,7 @@ end
                         
                         local isDragging = false
                         frame.movableHighlightFrame:SetScript("OnDragStart", function(self)
-                            if MidnightUI.moveMode then
+                            if AbstractUI.moveMode then
                                 isDragging = true
                                 frame:StartMoving()
                             end
@@ -2041,7 +2041,7 @@ end
                         -- This allows arrows to appear even when the unit frame is hidden
                         if key ~= "player" and frame.movableHighlightFrame and frame.arrows then
                             frame.movableHighlightFrame:HookScript("OnEnter", function()
-                                if MidnightUI.moveMode and frame.arrows then
+                                if AbstractUI.moveMode and frame.arrows then
                                     -- Cancel any pending hide timer
                                     if frame.arrowHideTimer then
                                         frame.arrowHideTimer:Cancel()
@@ -2174,7 +2174,7 @@ end
                             
                             frame.deadTexture = frame.deadTextFrame:CreateTexture(nil, "OVERLAY")
                             frame.deadTexture:SetAllPoints(frame.deadTextFrame)
-                            frame.deadTexture:SetTexture("Interface\\AddOns\\MidnightUI\\Media\\Skull")
+                            frame.deadTexture:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\Skull")
                             frame.deadTexture:SetBlendMode("BLEND") -- Enable alpha blending for transparency
                             frame.deadTextFrame:Hide()
                         end
@@ -2589,7 +2589,7 @@ end
                         local fallback = {0.2, 0.8, 0.2, 1} -- bright green fallback
                         local c = SanitizeColorTable(h.color, fallback)
                         if not c or not c[1] or not c[2] or not c[3] then
-                            print("[MidnightUI] Health bar fallback color used! h.color:", h.color)
+                            print("[AbstractUI] Health bar fallback color used! h.color:", h.color)
                             c = fallback
                         end
                         -- Always set a visible, non-gray color
@@ -2770,7 +2770,7 @@ end
                         -- Force show target frame if target exists (fixes self-targeting after login)
                         -- Skip Show() calls in combat to prevent taint
                         if not InCombatLockdown() then
-                            local targetFrame = _G["MidnightUI_TargetFrame"]
+                            local targetFrame = _G["AbstractUI_TargetFrame"]
                             if targetFrame then
                                 local hasTarget = pcall(UnitExists, "target")
                                 if hasTarget then
@@ -2858,7 +2858,7 @@ end
                 end
 
                 function UnitFrames:OnInitialize()
-                    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+                    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
                     self:RegisterEvent("PLAYER_ENTERING_WORLD")
                 end
 
@@ -2868,8 +2868,8 @@ end
                 end
 
                 function UnitFrames:OnDBReady()
-                    if not MidnightUI.db.profile.modules.unitframes then return end
-                    self.db = MidnightUI.db:RegisterNamespace("UnitFrames", defaults)
+                    if not AbstractUI.db.profile.modules.unitframes then return end
+                    self.db = AbstractUI.db:RegisterNamespace("UnitFrames", defaults)
                     
                     -- CRITICAL: Unregister events first to prevent duplicate handlers on reload
                     self:UnregisterEvent("UNIT_HEALTH")

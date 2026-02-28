@@ -1,11 +1,11 @@
 -- CooldownManager.lua
--- Skins and positions Blizzard's cooldown manager frames with MidnightUI styling
+-- Skins and positions Blizzard's cooldown manager frames with AbstractUI styling
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Create the module
-local CooldownManager = MidnightUI:NewModule("CooldownManager", "AceEvent-3.0", "AceHook-3.0")
+local CooldownManager = AbstractUI:NewModule("CooldownManager", "AceEvent-3.0", "AceHook-3.0")
 
 -- Module reference for global access
 _G.CooldownManager = CooldownManager
@@ -63,7 +63,7 @@ local defaults = {
 
 function CooldownManager:OnInitialize()
     -- Setup database
-    self.db = MidnightUI.db:RegisterNamespace("CooldownManager", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("CooldownManager", defaults)
 end
 
 function CooldownManager:OnEnable()
@@ -146,7 +146,7 @@ function CooldownManager:UpdateCooldownManager()
     
     -- Update Resource Bars if they're attached to Essential Cooldowns
     C_Timer.After(0.1, function()
-        local ResourceBars = MidnightUI:GetModule("ResourceBars", true)
+        local ResourceBars = AbstractUI:GetModule("ResourceBars", true)
         if ResourceBars and ResourceBars.db and ResourceBars.db.profile.primary.attachToEssentialCooldowns then
             ResourceBars:UpdatePrimaryResourceBar()
         end

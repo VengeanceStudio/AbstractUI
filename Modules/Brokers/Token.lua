@@ -1,4 +1,4 @@
--- MidnightUI Token Broker
+-- AbstractUI Token Broker
 -- Displays WoW Token price and price history with manual refresh on click
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local tokenObj
 
 -- Register the broker
-tokenObj = LDB:NewDataObject("MidnightToken", {
+tokenObj = LDB:NewDataObject("AbstractToken", {
     type = "data source", text = "Loading...", icon = "Interface\\Icons\\WoW_Token01", 
     OnClick = function() 
         C_WowTokenPublic.UpdateMarketPrice() -- Manual refresh on click

@@ -1,9 +1,9 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Movable = MidnightUI:NewModule("Movable", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Movable = AbstractUI:NewModule("Movable", "AceEvent-3.0")
 
 -- ============================================================================
 -- MOVABLE FRAME SYSTEM
--- Centralized drag and nudge functionality for all MidnightUI modules
+-- Centralized drag and nudge functionality for all AbstractUI modules
 -- ============================================================================
 
 -- Store registered movable frames with their highlight overlays
@@ -32,7 +32,7 @@ end
 function Movable:CreateGrid()
     if gridFrame then return gridFrame end
     
-    gridFrame = CreateFrame("Frame", "MidnightUI_GridOverlay", UIParent)
+    gridFrame = CreateFrame("Frame", "AbstractUI_GridOverlay", UIParent)
     gridFrame:SetAllPoints(UIParent)
     gridFrame:SetFrameStrata("BACKGROUND")
     gridFrame:SetFrameLevel(0)
@@ -200,16 +200,16 @@ end
 
 function Movable:OnInitialize()
     -- Initialize database namespace for saving Blizzard frame positions
-    self.db = MidnightUI.db:RegisterNamespace("Movable", {
+    self.db = AbstractUI.db:RegisterNamespace("Movable", {
         profile = {
             blizzardFramePositions = {},
             enableBlizzardFrameMovement = true,
         }
     })
     
-    if MidnightUI and MidnightUI.RegisterMessage then
-        MidnightUI:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", function(_, enabled)
-            Movable:OnMoveModeChanged("MIDNIGHTUI_MOVEMODE_CHANGED", enabled)
+    if AbstractUI and AbstractUI.RegisterMessage then
+        AbstractUI:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", function(_, enabled)
+            Movable:OnMoveModeChanged("AbstractUI_MOVEMODE_CHANGED", enabled)
         end)
     end
 end
@@ -223,7 +223,7 @@ function Movable:OnEnable()
     end
     
     -- Listen for move mode changes (grid only)
-    Movable:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", function(event, enabled)
+    Movable:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", function(event, enabled)
         if enabled then
             if not gridFrame then
                 Movable:CreateGrid()
@@ -236,7 +236,7 @@ function Movable:OnEnable()
         end
     end)
     -- Also register OnMoveModeChanged for safety
-    Movable:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    Movable:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
 end
 
 function Movable:OnMoveModeChanged(event, enabled)
@@ -247,7 +247,7 @@ function Movable:OnMoveModeChanged(event, enabled)
         -- Show green highlight overlay and fade frames in Move Mode
         for i, frame in ipairs(self.registeredFrames) do
             -- Force highlight and fade for player frame for direct test
-            if frame:GetName() and frame:GetName():find("MidnightUI_PlayerFrame") then
+            if frame:GetName() and frame:GetName():find("AbstractUI_PlayerFrame") then
                 if frame.movableHighlightFrame then frame.movableHighlightFrame:Show() end
                 if frame.movableHighlight then frame.movableHighlight:Show() end
                 if frame.movableHighlightLabel then frame.movableHighlightLabel:Show() end
@@ -258,22 +258,22 @@ function Movable:OnMoveModeChanged(event, enabled)
                 if frame.movableHighlight then frame.movableHighlight:Show() end
                 if frame.movableHighlightLabel then 
                     -- Hide label for button bar (it has the MB label)
-                    if frame:GetName() ~= "MidnightUI_MinimapButtonBar" then
+                    if frame:GetName() ~= "AbstractUI_MinimapButtonBar" then
                         frame.movableHighlightLabel:Show()
                     end
                 end
                 if frame.movableHighlightBorder then frame.movableHighlightBorder:Show() end
                 if frame.movableHighlightFrame then frame.movableHighlightFrame:Show() end
                 -- Change buttonBar color to green in move mode
-                if frame:GetName() == "MidnightUI_MinimapButtonBar" and frame.buttonBarTab and frame.buttonBarTab.bar then 
+                if frame:GetName() == "AbstractUI_MinimapButtonBar" and frame.buttonBarTab and frame.buttonBarTab.bar then 
                     frame.buttonBarTab.bar:SetVertexColor(0, 1, 0, 1)
                 end
                 -- Show buttonBar backdrop in move mode
-                if frame:GetName() and frame:GetName() == "MidnightUI_MinimapButtonBar" then
+                if frame:GetName() and frame:GetName() == "AbstractUI_MinimapButtonBar" then
                     frame:SetBackdropColor(0, 0, 0, 0.8)
                     frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
                 end
-                if frame:GetName() and (frame:GetName():find("MidnightUI_TargetFrame") or frame:GetName():find("MidnightUI_TargetTargetFrame") or frame:GetName():find("MidnightUI_FocusFrame")) then
+                if frame:GetName() and (frame:GetName():find("AbstractUI_TargetFrame") or frame:GetName():find("AbstractUI_TargetTargetFrame") or frame:GetName():find("AbstractUI_FocusFrame")) then
                     if frame.SetAlpha then frame:SetAlpha(0.3) end
                 end
                 -- For unit frame highlight overlays, also fade the parent frame
@@ -297,20 +297,20 @@ function Movable:OnMoveModeChanged(event, enabled)
             if frame.movableHighlightBorder then frame.movableHighlightBorder:Hide() end
             if frame.movableHighlightFrame then frame.movableHighlightFrame:Hide() end
             -- Restore buttonBar color when move mode disabled
-            if frame:GetName() == "MidnightUI_MinimapButtonBar" and frame.buttonBarTab and frame.buttonBarTab.bar then
+            if frame:GetName() == "AbstractUI_MinimapButtonBar" and frame.buttonBarTab and frame.buttonBarTab.bar then
                 -- Restore to user's selected color
-                local Maps = MidnightUI:GetModule("Maps", true)
+                local Maps = AbstractUI:GetModule("Maps", true)
                 if Maps then
                     Maps:UpdateButtonBarColor()
                 end
             end
             -- Hide buttonBar backdrop when move mode disabled
-            if frame:GetName() and frame:GetName() == "MidnightUI_MinimapButtonBar" then
+            if frame:GetName() and frame:GetName() == "AbstractUI_MinimapButtonBar" then
                 frame:SetBackdropColor(0, 0, 0, 0)
                 frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 0)
             end
             -- Restore full opacity
-            if frame:GetName() and (frame:GetName():find("MidnightUI_PlayerFrame") or frame:GetName():find("MidnightUI_TargetFrame") or frame:GetName():find("MidnightUI_TargetTargetFrame") or frame:GetName():find("MidnightUI_FocusFrame")) then
+            if frame:GetName() and (frame:GetName():find("AbstractUI_PlayerFrame") or frame:GetName():find("AbstractUI_TargetFrame") or frame:GetName():find("AbstractUI_TargetTargetFrame") or frame:GetName():find("AbstractUI_FocusFrame")) then
                 if frame.SetAlpha then frame:SetAlpha(1) end
             end
             -- For unit frame highlight overlays, also restore parent frame opacity
@@ -351,9 +351,9 @@ function Movable:MakeFrameDraggable(frame, saveCallback, unlockCheck, label)
         -- Check if unlocked (if unlockCheck provided) OR CTRL+ALT held OR Move Mode active
         local canMove = true
         if unlockCheck then
-            canMove = unlockCheck() or (IsControlKeyDown() and IsAltKeyDown()) or MidnightUI.moveMode
+            canMove = unlockCheck() or (IsControlKeyDown() and IsAltKeyDown()) or AbstractUI.moveMode
         else
-            canMove = (IsControlKeyDown() and IsAltKeyDown()) or MidnightUI.moveMode
+            canMove = (IsControlKeyDown() and IsAltKeyDown()) or AbstractUI.moveMode
         end
         if canMove then
             isDragging = true
@@ -375,7 +375,7 @@ function Movable:MakeFrameDraggable(frame, saveCallback, unlockCheck, label)
     -- Right-click to open config (DISABLED)
     --[[ frame:SetScript("OnMouseUp", function(self, button)
         if button == "RightButton" then
-            MidnightUI:OpenConfig()
+            AbstractUI:OpenConfig()
         end
     end) ]]
     
@@ -590,7 +590,7 @@ function Movable:CreateNudgeControls(parentFrame, db, applyCallback, updateCallb
     -- Setup mouseover behavior for parent frame
     if parentFrame and not parentFrame.movableNudgeHooked then
         parentFrame:HookScript("OnEnter", function()
-            if MidnightUI.moveMode and nudge then
+            if AbstractUI.moveMode and nudge then
                 -- Cancel any pending hide timer
                 if nudge.hideTimer then
                     nudge.hideTimer:Cancel()
@@ -658,7 +658,7 @@ end
     @param parentFrame - The frame to anchor near
 ]]
 function Movable:ShowNudgeControls(nudgeFrame, parentFrame)
-    if not nudgeFrame or not parentFrame or not MidnightUI.moveMode then return end
+    if not nudgeFrame or not parentFrame or not AbstractUI.moveMode then return end
     
     -- Cancel any pending hide timer
     if nudgeFrame.hideTimer then
@@ -877,7 +877,7 @@ function Movable:CreateNudgeArrows(container, db, resetCallback, updateCallback)
     -- Setup mouseover for container arrows
     if not container.movableArrowsHooked then
         container:HookScript("OnEnter", function()
-            if MidnightUI.moveMode and container.arrows then
+            if AbstractUI.moveMode and container.arrows then
                 -- Cancel any pending hide timer
                 if container.arrowHideTimer then
                     container.arrowHideTimer:Cancel()
@@ -958,7 +958,7 @@ end
 function Movable:UpdateNudgeArrows(container)
     if not container or not container.arrows then return end
     
-    local showArrows = MidnightUI and MidnightUI.moveMode
+    local showArrows = AbstractUI and AbstractUI.moveMode
     
     if not showArrows then
         for _, arrow in pairs(container.arrows) do

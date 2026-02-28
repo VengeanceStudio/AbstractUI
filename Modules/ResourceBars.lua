@@ -1,10 +1,10 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local ResourceBars = MidnightUI:NewModule("ResourceBars", "AceEvent-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local ResourceBars = AbstractUI:NewModule("ResourceBars", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Get ColorPalette and FontKit from Framework
-local ColorPalette = MidnightUI.ColorPalette
-local FontKit = MidnightUI.FontKit
+local ColorPalette = AbstractUI.ColorPalette
+local FontKit = AbstractUI.FontKit
 
 -- -----------------------------------------------------------------------------
 -- DATABASE DEFAULTS
@@ -101,16 +101,16 @@ end
 -- INITIALIZATION
 -- -----------------------------------------------------------------------------
 function ResourceBars:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function ResourceBars:OnDBReady()
-    if not MidnightUI.db or not MidnightUI.db.profile or not MidnightUI.db.profile.modules.resourceBars then
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules.resourceBars then
         self:Disable()
         return
     end
     
-    self.db = MidnightUI.db:RegisterNamespace("ResourceBars", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("ResourceBars", defaults)
     
     -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -125,7 +125,7 @@ function ResourceBars:OnDBReady()
     self:RegisterEvent("RUNE_POWER_UPDATE")
     
     -- Register for Move Mode changes
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
     
     -- If player is already in world, set up immediately
     if IsPlayerInWorld and IsPlayerInWorld() then
@@ -144,7 +144,7 @@ function ResourceBars:PLAYER_ENTERING_WORLD()
             
             -- Trigger cooldowns attachment update after bars are created
             C_Timer.After(0.5, function()
-                local CooldownManager = MidnightUI:GetModule("CooldownManager", true)
+                local CooldownManager = AbstractUI:GetModule("CooldownManager", true)
                 if CooldownManager then
                     CooldownManager:UpdateCooldownManager()
                 end
@@ -193,7 +193,7 @@ function ResourceBars:SetupPrimaryResourceBar()
     end
     
     -- Create main frame
-    local frame = CreateFrame("Frame", "MidnightUI_PrimaryResourceBar", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "AbstractUI_PrimaryResourceBar", UIParent, "BackdropTemplate")
     frame:SetSize(barWidth, db.height)
     
     -- Set position based on attachment
@@ -281,7 +281,7 @@ function ResourceBars:SetupPrimaryResourceBar()
     self:SetupDragging(frame, "primary")
     
     -- Add nudge arrows
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     if Movable and Movable.CreateNudgeArrows then
         Movable:CreateNudgeArrows(frame, db, function()
             -- Reset callback: center the frame
@@ -534,7 +534,7 @@ function ResourceBars:SetupSecondaryResourceBar()
     local db = self.db.profile.secondary
     
     -- Create main frame
-    local frame = CreateFrame("Frame", "MidnightUI_SecondaryResourceBar", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "AbstractUI_SecondaryResourceBar", UIParent, "BackdropTemplate")
     frame:SetSize(db.width, db.height)
     
     -- Set position and width based on attachment setting
@@ -603,7 +603,7 @@ function ResourceBars:SetupSecondaryResourceBar()
     self:SetupDragging(frame, "secondary")
     
     -- Add nudge arrows
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     if Movable and Movable.CreateNudgeArrows then
         Movable:CreateNudgeArrows(frame, db, function()
             -- Reset callback: center the frame
@@ -723,7 +723,7 @@ end
 function ResourceBars:SetupDragging(frame, barType)
     if not frame then return end
     
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     Movable:MakeFrameDraggable(
         frame,
@@ -737,7 +737,7 @@ function ResourceBars:SetupDragging(frame, barType)
 end
 
 function ResourceBars:OnMoveModeChanged(event, enabled)
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     if self.primaryBar then
         self.primaryBar:EnableMouse(enabled)

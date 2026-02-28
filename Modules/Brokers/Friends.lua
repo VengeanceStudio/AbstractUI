@@ -1,9 +1,9 @@
--- MidnightUI Friends Broker
+-- AbstractUI Friends Broker
 -- Displays online friends count and provides a popup with detailed friend list
 
 if not BrokerBar then return end
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local LDB = LibStub("LibDataBroker-1.1")
 local LSM = LibStub("LibSharedMedia-3.0")
 local friendsFrame, friendTitle, friendFooter, scrollChild, listSeparator
@@ -13,10 +13,10 @@ local friendObj
 -- Create the friends popup frame
 function BrokerBar:CreateFriendsFrame()
     if friendsFrame then return end
-    friendsFrame = CreateFrame("Frame", "MidnightFriendsPopup", UIParent, "BackdropTemplate")
+    friendsFrame = CreateFrame("Frame", "AbstractFriendsPopup", UIParent, "BackdropTemplate")
     friendsFrame:SetSize(600, 400); friendsFrame:SetFrameStrata("DIALOG"); friendsFrame:EnableMouse(true); friendsFrame:Hide()
     -- Don't skin on creation, wait for OnShow to apply themed backdrop
-    -- MidnightUI:SkinFrame(friendsFrame)
+    -- AbstractUI:SkinFrame(friendsFrame)
 
     friendTitle = friendsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     friendTitle:SetPoint("TOP", 0, -10); friendTitle:SetText("Friends List")
@@ -54,10 +54,10 @@ function BrokerBar:CreateFriendsFrame()
     -- Add OnShow script to update fonts/colors dynamically
     friendsFrame:SetScript("OnShow", function()
         -- Refresh backdrop with current theme
-        MidnightUI:ApplyThemedBackdrop(friendsFrame)
+        AbstractUI:ApplyThemedBackdrop(friendsFrame)
         
         local db = BrokerBar.db.profile
-        local FontKit = _G.MidnightUI_FontKit
+        local FontKit = _G.AbstractUI_FontKit
         local titleFont, titleSize, bodyFont, bodySize, fontFlags
         
         if FontKit then
@@ -209,7 +209,7 @@ function BrokerBar:UpdateFriendList()
 end
 
 -- Register the broker
-friendObj = LDB:NewDataObject("MidnightFriends", {
+friendObj = LDB:NewDataObject("AbstractFriends", {
     type = "data source", text = "0", icon = "Interface\\FriendsFrame\\UI-Toast-ChatInviteIcon",
     OnClick = function() ToggleFriendsFrame(1) end,
     OnEnter = function(self) 

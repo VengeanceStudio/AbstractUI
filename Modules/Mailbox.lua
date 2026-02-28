@@ -1,12 +1,12 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Mailbox = MidnightUI:NewModule("Mailbox", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Mailbox = AbstractUI:NewModule("Mailbox", "AceEvent-3.0", "AceHook-3.0")
 
 -- ============================================================================
 -- Module Initialization
 -- ============================================================================
 
 function Mailbox:OnInitialize()
-    self.db = MidnightUI.db:RegisterNamespace("Mailbox", {
+    self.db = AbstractUI.db:RegisterNamespace("Mailbox", {
         profile = {
             -- BlackBook
             blackBookEnabled = true,
@@ -66,15 +66,15 @@ function Mailbox:OnInitialize()
     })
     
     -- Initialize data storage
-    if not MidnightUI.db.global.mailbox then
-        MidnightUI.db.global.mailbox = {
+    if not AbstractUI.db.global.mailbox then
+        AbstractUI.db.global.mailbox = {
             alts = {},
             recentlyMailed = {},
             contacts = {},
         }
     end
     
-    self.data = MidnightUI.db.global.mailbox
+    self.data = AbstractUI.db.global.mailbox
     
     -- Track current character
     self:TrackCurrentCharacter()
@@ -224,7 +224,7 @@ function Mailbox:CreateBlackBookUI()
     if self.blackBookButton then return end
     
     -- Create dropdown button next to To: field
-    local button = CreateFrame("Button", "MidnightUI_BlackBookButton", SendMailNameEditBox, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", "AbstractUI_BlackBookButton", SendMailNameEditBox, "UIPanelButtonTemplate")
     button:SetSize(80, 22)
     button:SetPoint("LEFT", SendMailNameEditBox, "RIGHT", 5, 0)
     button:SetText("Contacts")
@@ -341,7 +341,7 @@ function Mailbox:ShowBlackBookMenu(button)
     
     -- Show menu
     if #menu > 0 then
-        local menuFrame = CreateFrame("Frame", "MidnightUI_BlackBookMenu", UIParent, "UIDropDownMenuTemplate")
+        local menuFrame = CreateFrame("Frame", "AbstractUI_BlackBookMenu", UIParent, "UIDropDownMenuTemplate")
         if UIDropDownMenu_Initialize then
             UIDropDownMenu_Initialize(menuFrame, function(frame, level)
                 for i, item in ipairs(menu) do
@@ -365,7 +365,7 @@ end
 function Mailbox:CreateOpenAllButton()
     if self.openAllButton then return end
     
-    local button = CreateFrame("Button", "MidnightUI_OpenAllButton", InboxFrame, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", "AbstractUI_OpenAllButton", InboxFrame, "UIPanelButtonTemplate")
     button:SetSize(100, 22)
     button:SetPoint("TOPLEFT", InboxFrame, "TOPLEFT", 50, -40)
     button:SetText("Open All")
@@ -395,7 +395,7 @@ function Mailbox:OpenAllMail(ignoreFilters)
     end
     
     if bagSlots <= self.db.profile.keepFreeSlots then
-        MidnightUI:Print("Not enough bag space to open mail.")
+        AbstractUI:Print("Not enough bag space to open mail.")
         return
     end
     
@@ -414,7 +414,7 @@ function Mailbox:OpenAllMail(ignoreFilters)
     if #self.mailsToOpen > 0 then
         self:ProcessNextMail()
     else
-        MidnightUI:Print("No mail matching your filters.")
+        AbstractUI:Print("No mail matching your filters.")
     end
 end
 
@@ -460,7 +460,7 @@ function Mailbox:ProcessNextMail()
     end
     
     if bagSlots <= self.db.profile.keepFreeSlots then
-        MidnightUI:Print("Stopped opening mail - not enough bag space.")
+        AbstractUI:Print("Stopped opening mail - not enough bag space.")
         self.openingMail = false
         return
     end
@@ -620,7 +620,7 @@ function Mailbox:CreateSelectCheckboxes()
     for i = 1, 7 do
         local mailItem = _G["MailItem" .. i]
         if mailItem and not mailItem.selectCheckbox then
-            local checkbox = CreateFrame("CheckButton", "MidnightUI_MailSelectCheckbox" .. i, mailItem, "UICheckButtonTemplate")
+            local checkbox = CreateFrame("CheckButton", "AbstractUI_MailSelectCheckbox" .. i, mailItem, "UICheckButtonTemplate")
             checkbox:SetSize(20, 20)
             checkbox:SetPoint("LEFT", mailItem, "LEFT", 5, 0)
             mailItem.selectCheckbox = checkbox
@@ -639,7 +639,7 @@ function Mailbox:CreateSelectCheckboxes()
     
     -- Add action buttons
     if not self.selectOpenButton then
-        local openBtn = CreateFrame("Button", "MidnightUI_SelectOpenButton", InboxFrame, "UIPanelButtonTemplate")
+        local openBtn = CreateFrame("Button", "AbstractUI_SelectOpenButton", InboxFrame, "UIPanelButtonTemplate")
         openBtn:SetSize(80, 22)
         openBtn:SetPoint("BOTTOMLEFT", InboxFrame, "BOTTOMLEFT", 20, 80)
         openBtn:SetText("Open")
@@ -648,7 +648,7 @@ function Mailbox:CreateSelectCheckboxes()
         end)
         self.selectOpenButton = openBtn
         
-        local returnBtn = CreateFrame("Button", "MidnightUI_SelectReturnButton", InboxFrame, "UIPanelButtonTemplate")
+        local returnBtn = CreateFrame("Button", "AbstractUI_SelectReturnButton", InboxFrame, "UIPanelButtonTemplate")
         returnBtn:SetSize(80, 22)
         returnBtn:SetPoint("LEFT", openBtn, "RIGHT", 5, 0)
         returnBtn:SetText("Return")
@@ -710,7 +710,7 @@ function Mailbox:CreateQuickAttachButtons()
     }
     
     for i, tradeType in ipairs(tradeSkillTypes) do
-        local button = CreateFrame("Button", "MidnightUI_QuickAttach" .. tradeType.name, SendMailFrame, "UIPanelButtonTemplate")
+        local button = CreateFrame("Button", "AbstractUI_QuickAttach" .. tradeType.name, SendMailFrame, "UIPanelButtonTemplate")
         button:SetSize(60, 22)
         button:SetPoint("TOPLEFT", SendMailFrame, "TOPLEFT", 20 + (i - 1) * 65, -120)
         button:SetText(tradeType.name)

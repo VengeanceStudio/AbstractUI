@@ -1,12 +1,12 @@
-MidnightUI/
+AbstractUI/
 │
-├── MidnightUI.toc                          # Addon metadata & load order (Interface 12.0+)
+├── AbstractUI.toc                          # Addon metadata & load order (Interface 12.0+)
 ├── Core.lua                                # Main engine, database, & module loader
 ├── icon.png                                # Addon icon
 ├── LICENSE.txt                             # MIT License
 ├── README.md                               # Complete documentation & feature list
 ├── FRAMEWORK_ARCHITECTURE.md               # Framework documentation
-├── MidnightUI Directory Structure.txt      # This file
+├── AbstractUI Directory Structure.txt      # This file
 │
 ├── Media/                                  # Textures, fonts, and sounds
 │   ├── Skull.tga                           # Skull texture asset
@@ -22,39 +22,39 @@ MidnightUI/
 │   └── README.md                           # Framework documentation
 │
 ├── Themes/                                 # Color theme definitions
-│   ├── MidnightUIDefault.lua               # Default theme (purple/blue)
-│   ├── MidnightGlass.lua                   # Glass theme (transparent blue)
-│   ├── MidnightGreen.lua                   # Green theme
-│   ├── MidnightTransparent.lua             # Transparent blue theme (new default)
-│   ├── MidnightTransparentGold.lua         # Transparent gold theme
+│   ├── AbstractUIDefault.lua               # Default theme (purple/blue)
+│   ├── AbstractGlass.lua                   # Glass theme (transparent blue)
+│   ├── AbstractGreen.lua                   # Green theme
+│   ├── AbstractTransparent.lua             # Transparent blue theme (new default)
+│   ├── AbstractTransparentGold.lua         # Transparent gold theme
 │   ├── NeonSciFi.lua                       # Neon sci-fi theme (cyan/magenta)
-│   ├── MidnightDeathKnight.lua             # Death Knight class theme (crimson)
-│   ├── MidnightDemonHunter.lua             # Demon Hunter class theme (purple)
-│   ├── MidnightDruid.lua                   # Druid class theme (orange)
-│   ├── MidnightEvoker.lua                  # Evoker class theme (teal)
-│   ├── MidnightHunter.lua                  # Hunter class theme (lime)
-│   ├── MidnightMage.lua                    # Mage class theme (cyan)
-│   ├── MidnightMonk.lua                    # Monk class theme (jade)
-│   ├── MidnightPaladin.lua                 # Paladin class theme (pink)
-│   ├── MidnightPriest.lua                  # Priest class theme (white)
-│   ├── MidnightRogue.lua                   # Rogue class theme (yellow)
-│   ├── MidnightShaman.lua                  # Shaman class theme (blue)
-│   ├── MidnightWarlock.lua                 # Warlock class theme (lavender)
-│   ├── MidnightWarrior.lua                 # Warrior class theme (tan)
+│   ├── AbstractDeathKnight.lua             # Death Knight class theme (crimson)
+│   ├── AbstractDemonHunter.lua             # Demon Hunter class theme (purple)
+│   ├── AbstractDruid.lua                   # Druid class theme (orange)
+│   ├── AbstractEvoker.lua                  # Evoker class theme (teal)
+│   ├── AbstractHunter.lua                  # Hunter class theme (lime)
+│   ├── AbstractMage.lua                    # Mage class theme (cyan)
+│   ├── AbstractMonk.lua                    # Monk class theme (jade)
+│   ├── AbstractPaladin.lua                 # Paladin class theme (pink)
+│   ├── AbstractPriest.lua                  # Priest class theme (white)
+│   ├── AbstractRogue.lua                   # Rogue class theme (yellow)
+│   ├── AbstractShaman.lua                  # Shaman class theme (blue)
+│   ├── AbstractWarlock.lua                 # Warlock class theme (lavender)
+│   ├── AbstractWarrior.lua                 # Warrior class theme (tan)
 │   └── README.md                           # Theme documentation
 │
 ├── Widgets/                                # Custom AceGUI widgets
-│   ├── MidnightButton.lua                  # Styled button widget
-│   ├── MidnightCheckBox.lua                # Styled checkbox widget
-│   ├── MidnightColorPicker.lua             # Color picker widget
-│   ├── MidnightDropdown.lua                # Styled dropdown widget
-│   ├── MidnightDropdown-Pullout.lua        # Dropdown pullout menu
-│   ├── MidnightEditBox.lua                 # Styled text input widget
-│   ├── MidnightHeading.lua                 # Heading text widget
-│   ├── MidnightInlineGroup.lua             # Inline group container
-│   ├── MidnightMultiLineEditBox.lua        # Multi-line text input widget
-│   ├── MidnightSlider.lua                  # Styled slider widget
-│   └── MidnightTabGroup.lua                # Tab group container
+│   ├── AbstractButton.lua                  # Styled button widget
+│   ├── AbstractCheckBox.lua                # Styled checkbox widget
+│   ├── AbstractColorPicker.lua             # Color picker widget
+│   ├── AbstractDropdown.lua                # Styled dropdown widget
+│   ├── AbstractDropdown-Pullout.lua        # Dropdown pullout menu
+│   ├── AbstractEditBox.lua                 # Styled text input widget
+│   ├── AbstractHeading.lua                 # Heading text widget
+│   ├── AbstractInlineGroup.lua             # Inline group container
+│   ├── AbstractMultiLineEditBox.lua        # Multi-line text input widget
+│   ├── AbstractSlider.lua                  # Styled slider widget
+│   └── AbstractTabGroup.lua                # Tab group container
 │
 ├── Modules/                                # Core addon modules
 │   ├── ActionBars.lua                      # Action bar customization & skinning
@@ -65,7 +65,7 @@ MidnightUI/
 │   ├── Maps.lua                            # Minimap customization
 │   ├── Movable.lua                         # Frame positioning & movement system
 │   ├── Setup.lua                           # First-time setup wizard
-│   ├── Skins.lua                           # Skin system (Midnight/Blizzard/Glass/Flat)
+│   ├── Skins.lua                           # Skin system (Abstract/Blizzard/Glass/Flat)
 │   ├── Tooltips.lua                        # Tooltip styling & customization
 │   ├── Tweaks.lua                          # Quality of life features & automation
 │   ├── UIButtons.lua                       # Menu & bag button styling
@@ -221,23 +221,23 @@ Built-in Data Widgets (12):
     Friends, Guild, Location, Difficulty, WoW Token, Item Level
 
 Built-in Themes (19):
-  - MidnightUIDefault, MidnightGlass, MidnightGreen, MidnightTransparent (default),
-    MidnightTransparentGold, NeonSciFi, MidnightDeathKnight, MidnightDemonHunter, 
-    MidnightDruid, MidnightEvoker, MidnightHunter, MidnightMage, MidnightMonk, 
-    MidnightPaladin, MidnightPriest, MidnightRogue, MidnightShaman, MidnightWarlock,
-    MidnightWarrior
+  - AbstractUIDefault, AbstractGlass, AbstractGreen, AbstractTransparent (default),
+    AbstractTransparentGold, NeonSciFi, AbstractDeathKnight, AbstractDemonHunter, 
+    AbstractDruid, AbstractEvoker, AbstractHunter, AbstractMage, AbstractMonk, 
+    AbstractPaladin, AbstractPriest, AbstractRogue, AbstractShaman, AbstractWarlock,
+    AbstractWarrior
 
 Custom Widgets (11):
-  - MidnightButton, MidnightCheckBox, MidnightColorPicker, MidnightDropdown,
-    MidnightEditBox, MidnightHeading, MidnightInlineGroup, MidnightMultiLineEditBox,
-    MidnightSlider, MidnightTabGroup
+  - AbstractButton, AbstractCheckBox, AbstractColorPicker, AbstractDropdown,
+    AbstractEditBox, AbstractHeading, AbstractInlineGroup, AbstractMultiLineEditBox,
+    AbstractSlider, AbstractTabGroup
 
 Framework Systems (5):
   - Atlas (texture management), ColorPalette (theme colors), FontKit (fonts),
     FrameFactory (frame creation), LayoutHelper (positioning)
 
 Supported Skins: 4
-  - Midnight (default), Blizzard, Glass, Flat
+  - Abstract (default), Blizzard, Glass, Flat
 
 Quality of Life Features (Tweaks): 12
   - Fast Loot, Hide Gryphons, Hide Bag Bar, Auto-Repair, Auto-Repair (Guild),
@@ -246,5 +246,5 @@ Quality of Life Features (Tweaks): 12
 
 ================================================================================
 For complete feature documentation, see README.md
-Configuration: Type /mui in-game or Esc → Options → AddOns → MidnightUI
+Configuration: Type /mui in-game or Esc → Options → AddOns → AbstractUI
 ================================================================================

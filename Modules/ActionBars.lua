@@ -6,8 +6,8 @@ local function ShouldShowEmpty(db)
     return forceShowEmpty or db.showEmpty
 end
 
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local AB = MidnightUI:NewModule("ActionBars", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local AB = AbstractUI:NewModule("ActionBars", "AceEvent-3.0", "AceHook-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 -- ============================================================================
@@ -83,7 +83,7 @@ end
 -- ============================================================================
 
 function AB:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
     -- Use OnUpdate polling to detect cursor changes for showing empty buttons
     -- Show empty buttons whenever any icon is being dragged from any UI page (Spellbook, Talents, Macros, Mounts, Pets, Heirlooms, Bags, etc.)
     if not self.cursorUpdateFrame then
@@ -141,28 +141,28 @@ function AB:CheckForConflicts()
             local addonList = table.concat(conflictingAddons, ", ")
             
             -- Create a popup dialog
-            StaticPopupDialogs["MIDNIGHTUI_ACTIONBAR_CONFLICT"] = {
+            StaticPopupDialogs["AbstractUI_ACTIONBAR_CONFLICT"] = {
                 text = string.format(
-                    "|cffff6600MidnightUI Action Bars Conflict|r\n\n" ..
+                    "|cffff6600AbstractUI Action Bars Conflict|r\n\n" ..
                     "You have the following action bar addon(s) enabled:\n" ..
                     "|cff00ff00%s|r\n\n" ..
                     "Having multiple action bar addons enabled can cause conflicts and unexpected behavior.\n\n" ..
-                    "Would you like to disable MidnightUI's Action Bars module?",
+                    "Would you like to disable AbstractUI's Action Bars module?",
                     addonList
                 ),
-                button1 = "Disable MidnightUI ActionBars",
+                button1 = "Disable AbstractUI ActionBars",
                 button2 = "Keep Both (Not Recommended)",
                 button3 = "Disable Other Addon",
                 OnAccept = function()
-                    -- Disable MidnightUI action bars
-                    MidnightUI.db.profile.modules.actionbars = false
-                    print("|cff9482c9MidnightUI:|r Action Bars module disabled. Reloading UI...")
+                    -- Disable AbstractUI action bars
+                    AbstractUI.db.profile.modules.actionbars = false
+                    print("|cff9482c9AbstractUI:|r Action Bars module disabled. Reloading UI...")
                     C_Timer.After(0.5, ReloadUI)
                 end,
                 OnCancel = function()
                     -- User chose to keep both - warn them and offer reload
-                    print("|cff9482c9MidnightUI:|r Warning: Running multiple action bar addons may cause conflicts.")
-                    StaticPopupDialogs["MIDNIGHTUI_ACTIONBAR_RELOAD"] = {
+                    print("|cff9482c9AbstractUI:|r Warning: Running multiple action bar addons may cause conflicts.")
+                    StaticPopupDialogs["AbstractUI_ACTIONBAR_RELOAD"] = {
                         text = "Reload UI to ensure changes take effect?",
                         button1 = "Reload Now",
                         button2 = "Later",
@@ -175,13 +175,13 @@ function AB:CheckForConflicts()
                         preferredIndex = 3,
                     }
                     C_Timer.After(0.5, function()
-                        StaticPopup_Show("MIDNIGHTUI_ACTIONBAR_RELOAD")
+                        StaticPopup_Show("AbstractUI_ACTIONBAR_RELOAD")
                     end)
                 end,
                 OnAlt = function()
                     -- Show instructions to disable the other addon
-                    print("|cff9482c9MidnightUI:|r To disable " .. addonList .. ", type /reload, then at the character select screen, click 'AddOns' and uncheck it.")
-                    StaticPopupDialogs["MIDNIGHTUI_ACTIONBAR_RELOAD"] = {
+                    print("|cff9482c9AbstractUI:|r To disable " .. addonList .. ", type /reload, then at the character select screen, click 'AddOns' and uncheck it.")
+                    StaticPopupDialogs["AbstractUI_ACTIONBAR_RELOAD"] = {
                         text = "Reload UI now to access the AddOns menu?",
                         button1 = "Reload Now",
                         button2 = "Later",
@@ -194,7 +194,7 @@ function AB:CheckForConflicts()
                         preferredIndex = 3,
                     }
                     C_Timer.After(0.5, function()
-                        StaticPopup_Show("MIDNIGHTUI_ACTIONBAR_RELOAD")
+                        StaticPopup_Show("AbstractUI_ACTIONBAR_RELOAD")
                     end)
                 end,
                 timeout = 0,
@@ -205,28 +205,28 @@ function AB:CheckForConflicts()
             
             -- Show the popup after a short delay to ensure UI is loaded
             C_Timer.After(2, function()
-                StaticPopup_Show("MIDNIGHTUI_ACTIONBAR_CONFLICT")
+                StaticPopup_Show("AbstractUI_ACTIONBAR_CONFLICT")
             end)
         end
     end
 end
 
 function AB:OnDBReady()
-    if not MidnightUI.db.profile.modules.actionbars then return end
+    if not AbstractUI.db.profile.modules.actionbars then return end
     
     -- CRITICAL: Check for conflicting addons FIRST and bail out if detected
     local IsAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
     if IsAddOnLoaded("Bartender4") or IsAddOnLoaded("Dominos") or IsAddOnLoaded("ElvUI") or 
        IsAddOnLoaded("LUI") or IsAddOnLoaded("RealUI") or IsAddOnLoaded("TukUI") then
-        print("|cff9482c9MidnightUI:|r Action bar addon detected. Disabling MidnightUI ActionBars to prevent conflicts.")
+        print("|cff9482c9AbstractUI:|r Action bar addon detected. Disabling AbstractUI ActionBars to prevent conflicts.")
         self:CheckForConflicts() -- Show the popup
         return -- Exit immediately - don't initialize anything
     end
     
-    self.db = MidnightUI.db:RegisterNamespace("ActionBars", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("ActionBars", defaults)
     
     if Masque then
-        masqueGroup = Masque:Group("Midnight ActionBars")
+        masqueGroup = Masque:Group("Abstract ActionBars")
     end
     
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -242,7 +242,7 @@ function AB:OnDBReady()
     self:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
     
     -- ADDED: Register for Move Mode changes
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
     
     -- CHANGED: Initialize bars immediately instead of waiting for PLAYER_ENTERING_WORLD
     -- This ensures bars are created even on /reload
@@ -264,7 +264,7 @@ function AB:PLAYER_ENTERING_WORLD()
     
     -- TEMPORARILY DISABLED - Skinning disabled for now
     -- C_Timer.After(0.5, function()
-    --     local Skin = MidnightUI:GetModule("Skin", true)
+    --     local Skin = AbstractUI:GetModule("Skin", true)
     --     if Skin and Skin.SkinActionBarButtons then
     --         Skin:SkinActionBarButtons()
     --     end
@@ -320,7 +320,7 @@ function AB:HideBlizzardElements()
             StatusTrackingBarManager:SetAlpha(0)
         else
             -- Just skin it
-            MidnightUI:SkinFrame(StatusTrackingBarManager)
+            AbstractUI:SkinFrame(StatusTrackingBarManager)
         end
     end
 end
@@ -344,7 +344,7 @@ function AB:CreateBar(barKey, config)
     if bars[barKey] then return end
     
     -- Create container frame (SecureHandlerStateTemplate for paging support)
-    local container = CreateFrame("Frame", "MidnightAB_"..barKey, UIParent, "SecureHandlerStateTemplate")
+    local container = CreateFrame("Frame", "AbstractAB_"..barKey, UIParent, "SecureHandlerStateTemplate")
     container:SetFrameStrata("LOW")
     container:SetMovable(true)
     container:EnableMouse(false)
@@ -406,11 +406,11 @@ function AB:CreateBar(barKey, config)
             
             -- Kill Blizzard's positioning by hooking the functions
             hooksecurefunc(blizzBar, "SetPoint", function(self)
-                if not self.midnightLock then
-                    self.midnightLock = true
+                if not self.abstractLock then
+                    self.abstractLock = true
                     self:ClearAllPoints()
                     self:SetPoint("CENTER", container, "CENTER", 0, 0)
-                    self.midnightLock = false
+                    self.abstractLock = false
                 end
             end)
             
@@ -490,7 +490,7 @@ function AB:CreateBar(barKey, config)
     end
     
     -- Drag handlers using Movable module
-    local Movable = MidnightUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable")
     
     -- Store barKey on container so Movable can identify it
     container.barKey = barKey
@@ -498,7 +498,7 @@ function AB:CreateBar(barKey, config)
     container.dragFrame:RegisterForDrag("LeftButton")
     container.dragFrame:SetScript("OnDragStart", function(self)
         -- Only allow dragging with CTRL+ALT or Move Mode
-        if (IsControlKeyDown() and IsAltKeyDown()) or MidnightUI.moveMode then
+        if (IsControlKeyDown() and IsAltKeyDown()) or AbstractUI.moveMode then
             container:StartMoving()
         end
     end)
@@ -509,7 +509,7 @@ function AB:CreateBar(barKey, config)
     end)
     container.dragFrame:SetScript("OnMouseUp", function(self, button)
         if button == "RightButton" then
-            MidnightUI:OpenConfig()
+            AbstractUI:OpenConfig()
         end
     end)
     
@@ -530,11 +530,11 @@ function AB:CreateBar(barKey, config)
                 container:SetPoint(db.point, UIParent, db.point, db.x, db.y)
                 if DEFAULT_CHAT_FRAME then
                     local p, relTo, relP, px, py = container:GetPoint()
-                    DEFAULT_CHAT_FRAME:AddMessage("[MidnightUI] After SetPoint (restore): point="..tostring(p)..", relativeTo="..tostring(relTo and relTo:GetName() or "nil")..", relativePoint="..tostring(relP)..", x="..tostring(px)..", y="..tostring(py))
-                    DEFAULT_CHAT_FRAME:AddMessage("[MidnightUI] debugstack after SetPoint (restore):\n"..debugstack(2, 10, 10))
+                    DEFAULT_CHAT_FRAME:AddMessage("[AbstractUI] After SetPoint (restore): point="..tostring(p)..", relativeTo="..tostring(relTo and relTo:GetName() or "nil")..", relativePoint="..tostring(relP)..", x="..tostring(px)..", y="..tostring(py))
+                    DEFAULT_CHAT_FRAME:AddMessage("[AbstractUI] debugstack after SetPoint (restore):\n"..debugstack(2, 10, 10))
                 end
                 -- Refresh move mode state after reset
-                if MidnightUI.moveMode then
+                if AbstractUI.moveMode then
                     AB:UpdateBar(barKey)
                 end
             end
@@ -571,7 +571,7 @@ function AB:CreateBar(barKey, config)
                     container:SetPoint(db.point, UIParent, db.point, db.x, db.y)
                     
                     -- Refresh move mode state
-                    if MidnightUI.moveMode then
+                    if AbstractUI.moveMode then
                         C_Timer.After(0, function()
                             AB:UpdateBar(barKey)
                         end)
@@ -815,7 +815,7 @@ function AB:UpdateBar(barKey)
     self:UpdateBarFading(barKey)
     
     -- Handle Move Mode display
-    if MidnightUI.moveMode then
+    if AbstractUI.moveMode then
         -- Ensure container is visible
         container:Show()
         container:SetAlpha(1)
@@ -1436,7 +1436,7 @@ end
 
 function AB:GetOptions()
     if not self.db then
-        self.db = MidnightUI.db:RegisterNamespace("ActionBars", defaults)
+        self.db = AbstractUI.db:RegisterNamespace("ActionBars", defaults)
     end
     
     local options = {
@@ -1497,7 +1497,7 @@ function AB:GetOptions()
                                 db.y = config.default.y
                                 self:UpdateBar(barKey)
                             end
-                            print("|cff00ff00MidnightUI:|r All action bar positions have been reset to default.")
+                            print("|cff00ff00AbstractUI:|r All action bar positions have been reset to default.")
                         end
                     },
                     spacer1 = { name = "", type = "description", order = 10 },

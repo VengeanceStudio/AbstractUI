@@ -1,10 +1,10 @@
 ## Interface: 120001
-## Title: Midnight UI
+## Title: Abstract UI
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
-## Version: 12.0.1.2
-## IconTexture: Interface\AddOns\MidnightUI\icon.png
-## SavedVariables: MidnightUIDB
+## Version: 12.0.1.0
+## IconTexture: Interface\AddOns\AbstractUI\icon.png
+## SavedVariables: AbstractUIDB
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, Masque
 
 # ------------------------------------------------------------------------------
@@ -40,25 +40,25 @@ Framework\FontKit.lua
 Framework\LayoutHelper.lua
 Framework\FrameFactory.lua
 Framework\ScrollFrame.lua
-Framework\MidnightOptionsPanel.lua
-Themes\MidnightUIDefault.lua
-Themes\MidnightGlass.lua
-Themes\MidnightGreen.lua
-Themes\MidnightTransparent.lua
-Themes\MidnightTransparentGold.lua
-Themes\MidnightDeathKnight.lua
-Themes\MidnightDemonHunter.lua
-Themes\MidnightDruid.lua
-Themes\MidnightEvoker.lua
-Themes\MidnightHunter.lua
-Themes\MidnightMage.lua
-Themes\MidnightMonk.lua
-Themes\MidnightPaladin.lua
-Themes\MidnightPriest.lua
-Themes\MidnightRogue.lua
-Themes\MidnightShaman.lua
-Themes\MidnightWarlock.lua
-Themes\MidnightWarrior.lua
+Framework\AbstractOptionsPanel.lua
+Themes\AbstractUIDefault.lua
+Themes\AbstractGlass.lua
+Themes\AbstractGreen.lua
+Themes\AbstractTransparent.lua
+Themes\AbstractTransparentGold.lua
+Themes\AbstractDeathKnight.lua
+Themes\AbstractDemonHunter.lua
+Themes\AbstractDruid.lua
+Themes\AbstractEvoker.lua
+Themes\AbstractHunter.lua
+Themes\AbstractMage.lua
+Themes\AbstractMonk.lua
+Themes\AbstractPaladin.lua
+Themes\AbstractPriest.lua
+Themes\AbstractRogue.lua
+Themes\AbstractShaman.lua
+Themes\AbstractWarlock.lua
+Themes\AbstractWarrior.lua
 Themes\NeonSciFi.lua
 
 # ------------------------------------------------------------------------------

@@ -1,13 +1,13 @@
 -- ScrollFrame.lua
--- Custom scrollbar implementation for MidnightUI
+-- Custom scrollbar implementation for AbstractUI
 -- Replaces Blizzard's UIPanelScrollFrameTemplate with styled scrollbars
 
-local _, MidnightUI = ...
+local _, AbstractUI = ...
 local ScrollFrame = {}
-MidnightUI.ScrollFrame = ScrollFrame
-_G.MidnightUI_ScrollFrame = ScrollFrame
+AbstractUI.ScrollFrame = ScrollFrame
+_G.AbstractUI_ScrollFrame = ScrollFrame
 
-local ColorPalette = _G.MidnightUI_ColorPalette
+local ColorPalette = _G.AbstractUI_ColorPalette
 
 -- Create a custom scrollbar frame
 local function CreateScrollbar(parent, width)

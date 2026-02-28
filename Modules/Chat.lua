@@ -1,20 +1,20 @@
--- MidnightUI Chat Copy Module
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local ChatCopy = MidnightUI:NewModule("ChatCopy", "AceEvent-3.0", "AceHook-3.0")
+-- AbstractUI Chat Copy Module
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local ChatCopy = AbstractUI:NewModule("ChatCopy", "AceEvent-3.0", "AceHook-3.0")
 
 local frames = {}
 local copyFrame, copyEditBox, copyTopBar, closeButton, bottomButton
 local ColorPalette, FontKit
 
 function ChatCopy:OnInitialize()
-    ColorPalette = _G.MidnightUI_ColorPalette
-    FontKit = _G.MidnightUI_FontKit
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = _G.AbstractUI_FontKit
 end
 
 -- Create the copy frame and edit box
 local function CreateCopyFrame()
     if copyFrame then return end
-    copyFrame = CreateFrame("Frame", "MidnightUI_ChatCopyFrame", UIParent, "BackdropTemplate")
+    copyFrame = CreateFrame("Frame", "AbstractUI_ChatCopyFrame", UIParent, "BackdropTemplate")
     copyFrame:SetSize(400, 245)
     copyFrame:SetPoint("CENTER", UIParent, -100, 100)
     copyFrame:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", insets = {top = 0, left = 0, bottom = 0, right = 0}})
@@ -29,7 +29,7 @@ local function CreateCopyFrame()
     copyFrame:SetMovable(true)
     copyFrame:EnableMouse(true)
     copyFrame:Hide()
-    tinsert(UISpecialFrames, "MidnightUI_ChatCopyFrame")
+    tinsert(UISpecialFrames, "AbstractUI_ChatCopyFrame")
 
     -- Top bar
     copyTopBar = CreateFrame("Frame", nil, copyFrame, "ThinGoldEdgeTemplate")

@@ -1,4 +1,4 @@
--- MidnightUI Gold Broker
+-- AbstractUI Gold Broker
 -- Displays current character gold and provides account-wide summary tooltip
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local goldObj
 
 -- Register the broker
-goldObj = LDB:NewDataObject("MidnightGold", { 
+goldObj = LDB:NewDataObject("AbstractGold", { 
     type = "data source", text = "0g", icon = "Interface\\Icons\\INV_Misc_Coin_01",
     OnEnter = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_NONE")

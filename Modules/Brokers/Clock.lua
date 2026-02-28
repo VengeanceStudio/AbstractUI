@@ -1,4 +1,4 @@
--- MidnightUI Clock Broker
+-- AbstractUI Clock Broker
 -- Displays current time (local or realm) with tooltip showing daily/weekly resets
 
 if not BrokerBar then return end
@@ -7,12 +7,12 @@ local LDB = LibStub("LibDataBroker-1.1")
 local clockObj
 
 -- Register the broker
-clockObj = LDB:NewDataObject("MidnightClock", { 
+clockObj = LDB:NewDataObject("AbstractClock", { 
     type = "data source", text = "00:00", icon = "Interface\\Icons\\INV_Misc_PocketWatch_01", 
     OnTooltipShow = function(tip) 
         local r,g,b = GetColor()
         local db = BrokerBar.db.profile
-        tip:AddLine("Midnight Clock", r,g,b) -- UPDATED TITLE
+        tip:AddLine("Abstract Clock", r,g,b) -- UPDATED TITLE
         
         -- Local Time
         local localTime = date("*t")

@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Druid
--- Based on Midnight Transparent with Druid class color text (#FF7C0A)
+-- AbstractUI Theme: Abstract Priest
+-- Based on Abstract Transparent with Priest class color text (#FFFFFF)
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,14 +10,14 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightDruid", {
+ColorPalette:RegisterPalette("AbstractPriest", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.65},       -- Very transparent black (from Transparent)
-    ["panel-border"] = {r = 0.302, g = 0.145, b = 0.012, a = 0.90}, -- Dark Druid orange (#4D2503)
+    ["panel-border"] = {r = 0.302, g = 0.302, b = 0.302, a = 0.90}, -- Dark grey (#4D4D4D)
     ["accent-primary"] = {r = 0.55, g = 0.60, b = 0.70, a = 0.85}, -- Steel blue-grey (from Transparent)
     ["button-bg"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.60},      -- Transparent dark charcoal
     ["button-hover"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},   -- Medium grey-blue
-    ["text-primary"] = {r = 1.0, g = 0.486, b = 0.039, a = 1.0},   -- Druid class color (#FF7C0A)
+    ["text-primary"] = {r = 1.0, g = 1.0, b = 1.0, a = 1.0},       -- Priest class color (#FFFFFF)
     ["text-secondary"] = {r = 0.70, g = 0.70, b = 0.75, a = 0.95}, -- Light grey (from Transparent)
     ["tab-active"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},     -- Medium grey-blue
     
@@ -40,8 +40,8 @@ ColorPalette:RegisterPalette("MidnightDruid", {
     ["button-disabled"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.40},
     
     -- Toggle switch colors
-    ["toggle-off-bg" ] = {r = 0.05, g = 0.04, b = 0.02, a = 1.0},
-    ["toggle-off-border"] = {r = 0.35, g = 0.30, b = 0.20, a = 0.8},
+    ["toggle-off-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 1.0},
+    ["toggle-off-border"] = {r = 0.35, g = 0.35, b = 0.35, a = 0.8},
     
     ["tab-inactive"] = {r = 0.08, g = 0.08, b = 0.10, a = 0.55},
     ["tab-selected-bg"] = {r = 0.40, g = 0.42, b = 0.48, a = 0.75},

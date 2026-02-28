@@ -1,5 +1,5 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Tweaks = MidnightUI:NewModule("Tweaks", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Tweaks = AbstractUI:NewModule("Tweaks", "AceEvent-3.0", "AceHook-3.0")
 
 -- Create a hidden parent frame for hiding UI elements
 local hiddenFrame = CreateFrame("Frame")
@@ -27,7 +27,7 @@ local defaults = {
 function Tweaks:OnInitialize()
     LOADOUT_SERIALIZATION_VERSION = C_Traits.GetLoadoutSerializationVersion and C_Traits.GetLoadoutSerializationVersion() or 1
     
-    StaticPopupDialogs["MIDNIGHTUI_TALENT_IMPORT_ERROR"] = {
+    StaticPopupDialogs["AbstractUI_TALENT_IMPORT_ERROR"] = {
         text = "%s",
         button1 = OKAY,
         timeout = 0,
@@ -35,16 +35,16 @@ function Tweaks:OnInitialize()
         hideOnEscape = 1,
     }
     
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function Tweaks:OnDBReady()
-    if not MidnightUI.db.profile.modules.tweaks then 
+    if not AbstractUI.db.profile.modules.tweaks then 
         self:Disable()
         return 
     end
     
-    self.db = MidnightUI.db:RegisterNamespace("Tweaks", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("Tweaks", defaults)
     
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("PLAYER_LOGIN")
@@ -161,7 +161,7 @@ end
 function Tweaks:ACHIEVEMENT_EARNED(event, achievementID)
     if self.db.profile.autoScreenshot and achievementID then
         Screenshot()
-        print("|cff00ff00[MidnightUI]|r Achievement earned, screenshot taken.")
+        print("|cff00ff00[AbstractUI]|r Achievement earned, screenshot taken.")
     end
 end
 
@@ -296,13 +296,13 @@ function Tweaks:HideBagBar()
         BagsBar:UnregisterAllEvents()
         
         -- Hook Show to prevent it from appearing
-        if not BagsBar.midnightHooked then
+        if not BagsBar.abstractHooked then
             hooksecurefunc(BagsBar, "Show", function()
                 if Tweaks.db and Tweaks.db.profile.hideBagBar then
                     BagsBar:Hide()
                 end
             end)
-            BagsBar.midnightHooked = true
+            BagsBar.abstractHooked = true
         end
     end
     if MicroButtonAndBagsBar and MicroButtonAndBagsBar.BagsBar then
@@ -312,13 +312,13 @@ function Tweaks:HideBagBar()
         MicroButtonAndBagsBar.BagsBar:UnregisterAllEvents()
         
         -- Hook Show to prevent it from appearing
-        if not MicroButtonAndBagsBar.BagsBar.midnightHooked then
+        if not MicroButtonAndBagsBar.BagsBar.abstractHooked then
             hooksecurefunc(MicroButtonAndBagsBar.BagsBar, "Show", function()
                 if Tweaks.db and Tweaks.db.profile.hideBagBar then
                     MicroButtonAndBagsBar.BagsBar:Hide()
                 end
             end)
-            MicroButtonAndBagsBar.BagsBar.midnightHooked = true
+            MicroButtonAndBagsBar.BagsBar.abstractHooked = true
         end
     end
     
@@ -331,13 +331,13 @@ function Tweaks:HideBagBar()
             bagBar:SetAlpha(0)
             
             -- Hook Show to prevent it from appearing
-            if not bagBar.midnightHooked then
+            if not bagBar.abstractHooked then
                 hooksecurefunc(bagBar, "Show", function()
                     if Tweaks.db and Tweaks.db.profile.hideBagBar then
                         bagBar:Hide()
                     end
                 end)
-                bagBar.midnightHooked = true
+                bagBar.abstractHooked = true
             end
         end
     end
@@ -466,16 +466,16 @@ function Tweaks:AutoRepair()
         RepairAllItems(true)
         local guildRepairCost = GetGuildBankWithdrawMoney()
         if guildRepairCost >= repairCost then
-            print("|cff00ff00[MidnightUI]|r Repaired all items using guild bank funds for " .. GetCoinTextureString(repairCost))
+            print("|cff00ff00[AbstractUI]|r Repaired all items using guild bank funds for " .. GetCoinTextureString(repairCost))
         else
-            print("|cff00ff00[MidnightUI]|r Guild bank repair failed, insufficient funds.")
+            print("|cff00ff00[AbstractUI]|r Guild bank repair failed, insufficient funds.")
         end
     else
         if GetMoney() >= repairCost then
             RepairAllItems(false)
-            print("|cff00ff00[MidnightUI]|r Repaired all items for " .. GetCoinTextureString(repairCost))
+            print("|cff00ff00[AbstractUI]|r Repaired all items for " .. GetCoinTextureString(repairCost))
         else
-            print("|cffff6b6b[MidnightUI]|r Not enough gold to repair all items. Need " .. GetCoinTextureString(repairCost))
+            print("|cffff6b6b[AbstractUI]|r Not enough gold to repair all items. Need " .. GetCoinTextureString(repairCost))
         end
     end
 end
@@ -510,7 +510,7 @@ function Tweaks:AutoSellJunk()
     end
     
     if itemsSold > 0 then
-        print("|cff00ff00[MidnightUI]|r Sold " .. itemsSold .. " junk item(s) for " .. GetCoinTextureString(totalValue))
+        print("|cff00ff00[AbstractUI]|r Sold " .. itemsSold .. " junk item(s) for " .. GetCoinTextureString(totalValue))
     end
 end
 
@@ -666,7 +666,7 @@ function Tweaks:CreateImportCheckbox(dialog)
         return
     end
     
-    local checkbox = CreateFrame("CheckButton", "MidnightUI_ImportOverwriteCheckbox", dialog, "UICheckButtonTemplate")
+    local checkbox = CreateFrame("CheckButton", "AbstractUI_ImportOverwriteCheckbox", dialog, "UICheckButtonTemplate")
     
     -- Position relative to the dialog itself if NameControl doesn't exist
     if dialog.NameControl then
@@ -748,7 +748,7 @@ function Tweaks:GetTreeID()
 end
 
 function Tweaks:ShowImportError(errorString)
-    StaticPopup_Show("MIDNIGHTUI_TALENT_IMPORT_ERROR", errorString)
+    StaticPopup_Show("AbstractUI_TALENT_IMPORT_ERROR", errorString)
 end
 
 function Tweaks:ImportLoadoutIntoActive(importText)

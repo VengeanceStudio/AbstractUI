@@ -1,12 +1,12 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Skin = MidnightUI:NewModule("Skin", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Skin = AbstractUI:NewModule("Skin", "AceEvent-3.0", "AceHook-3.0")
 
 -- ============================================================================
 -- SKIN DEFINITIONS
 -- ============================================================================
 
 local SKINS = {
-    ["Midnight"] = {
+    ["Abstract"] = {
         backdrop = {
             bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
             edgeFile = nil,
@@ -57,13 +57,13 @@ local SKINS = {
 -- ============================================================================
 
 function Skin:OnInitialize()
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "OnDBReady")
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function Skin:OnDBReady()
-    self.db = MidnightUI.db:RegisterNamespace("Skin", {
+    self.db = AbstractUI.db:RegisterNamespace("Skin", {
         profile = {
-            globalSkin = "Midnight",
+            globalSkin = "Abstract",
             skinActionBars = true,
             skinDataBrokerBars = true,
             skinUIButtons = true,
@@ -196,12 +196,12 @@ function Skin:ApplyFrameSkin(frame, skinName)
     
     -- Safety check: ensure database is initialized
     if not self.db or not self.db.profile then
-        skinName = skinName or "Midnight"
+        skinName = skinName or "Abstract"
     else
         skinName = skinName or self.db.profile.globalSkin
     end
     
-    local skin = SKINS[skinName] or SKINS["Midnight"]
+    local skin = SKINS[skinName] or SKINS["Abstract"]
     
     -- Blizzard art restoration: do not strip Blizzard decorative textures
     -- self:StripBlizzardTextures(frame)
@@ -495,11 +495,11 @@ end
 function Skin:GetSkin(skinName)
     -- Safety check: ensure database is initialized
     if not self.db or not self.db.profile then
-        skinName = skinName or "Midnight"
+        skinName = skinName or "Abstract"
     else
         skinName = skinName or self.db.profile.globalSkin
     end
-    return SKINS[skinName] or SKINS["Midnight"]
+    return SKINS[skinName] or SKINS["Abstract"]
 end
 
 -- ============================================================================
@@ -509,7 +509,7 @@ end
 --[[
 function Skin:SkinActionBarButtons()
     -- DISABLED - Action bar skinning completely disabled
-    print("|cffff0000MidnightUI:|r Action bar skinning is currently disabled.")
+    print("|cffff0000AbstractUI:|r Action bar skinning is currently disabled.")
     return
 end
 
@@ -763,7 +763,7 @@ function Skin:GetOptions()
             },
             desc = {
                 type = "description",
-                name = "Applies consistent visual styling across all MidnightUI elements.",
+                name = "Applies consistent visual styling across all AbstractUI elements.",
                 order = 2
             },
             globalSkin = {
@@ -906,20 +906,20 @@ end
 -- ============================================================================
 
 -- Export skin definitions for other modules
-MidnightUI.Skins = SKINS
+AbstractUI.Skins = SKINS
 
 -- Export skinning function for other modules to use
-function MidnightUI:SkinFrame(frame, skinName)
+function AbstractUI:SkinFrame(frame, skinName)
     if Skin and Skin.ApplyFrameSkin then
         Skin:ApplyFrameSkin(frame, skinName)
     end
 end
 
-function MidnightUI:GetSkin(skinName)
+function AbstractUI:GetSkin(skinName)
     if Skin and Skin.GetSkin then
         return Skin:GetSkin(skinName)
     end
-    return SKINS["Midnight"]
+    return SKINS["Abstract"]
 end
 
 return Skin

@@ -1,8 +1,8 @@
--- MidnightUI Theme: Midnight Green
+-- AbstractUI Theme: Abstract Green
 -- Dark Matrix-inspired theme with black, dark grey, and bright green accents
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 
@@ -10,7 +10,7 @@ if not ColorPalette or not FontKit then return end
 -- COLOR PALETTE
 -- ============================================================================
 
-ColorPalette:RegisterPalette("MidnightGreen", {
+ColorPalette:RegisterPalette("AbstractGreen", {
     -- Core UI Colors (8 main colors for theme editor)
     ["panel-bg"] = {r = 0.05, g = 0.05, b = 0.05, a = 0.95},       -- Almost black
     ["panel-border"] = {r = 0.0, g = 1.0, b = 0.0, a = 0.9},       -- Bright green

@@ -1,12 +1,12 @@
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local Tooltips = MidnightUI:NewModule("Tooltips", "AceEvent-3.0", "AceHook-3.0")
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local Tooltips = AbstractUI:NewModule("Tooltips", "AceEvent-3.0", "AceHook-3.0")
 
 -- ============================================================================
 -- Module Initialization
 -- ============================================================================
 
 function Tooltips:OnInitialize()
-    self.db = MidnightUI.db:RegisterNamespace("Tooltips", {
+    self.db = AbstractUI.db:RegisterNamespace("Tooltips", {
         profile = {
             borderSize = 2,
             backdropAlpha = 0.95,
@@ -71,9 +71,9 @@ end
 
 function Tooltips:OnEnable()
     -- Wait for theme system to be ready
-    self:RegisterMessage("MIDNIGHTUI_DB_READY", "Initialize")
+    self:RegisterMessage("AbstractUI_DB_READY", "Initialize")
     -- Listen for move mode changes
-    self:RegisterMessage("MIDNIGHTUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
 end
 
 function Tooltips:OnDisable()
@@ -81,11 +81,11 @@ function Tooltips:OnDisable()
 end
 
 function Tooltips:Initialize()
-    local ColorPalette = _G.MidnightUI_ColorPalette
-    local FontKit = _G.MidnightUI_FontKit
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
     
     if not ColorPalette or not FontKit then
-        MidnightUI:Print("Tooltips module: ColorPalette or FontKit not available")
+        AbstractUI:Print("Tooltips module: ColorPalette or FontKit not available")
         return
     end
     
@@ -133,7 +133,7 @@ function Tooltips:Initialize()
     self:RegisterEvent("INSPECT_READY")
     
     -- Listen for theme changes
-    self:RegisterMessage("MIDNIGHTUI_THEME_CHANGED", "OnThemeChanged")
+    self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
     
     -- Create tooltip anchor frame
     self:CreateTooltipAnchor()
@@ -182,10 +182,10 @@ end
 function Tooltips:CreateTooltipAnchor()
     if self.anchorFrame then return end
     
-    local Movable = MidnightUI:GetModule("Movable", true)
+    local Movable = AbstractUI:GetModule("Movable", true)
     if not Movable then return end
     
-    local frame = CreateFrame("Frame", "MidnightUI_TooltipAnchor", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "AbstractUI_TooltipAnchor", UIParent, "BackdropTemplate")
     frame:SetSize(32, 32)
     
     local pos = self.db.profile.anchorPosition
@@ -322,12 +322,12 @@ function Tooltips:StyleTooltip(tooltip, itemQuality, classColor)
         end
         
         -- Create or update background texture
-        if not tooltip.MidnightBG then
-            tooltip.MidnightBG = tooltip:CreateTexture(nil, "BACKGROUND")
-            tooltip.MidnightBG:SetAllPoints(tooltip)
-            tooltip.MidnightBG:SetDrawLayer("BACKGROUND", -8)
+        if not tooltip.AbstractBG then
+            tooltip.AbstractBG = tooltip:CreateTexture(nil, "BACKGROUND")
+            tooltip.AbstractBG:SetAllPoints(tooltip)
+            tooltip.AbstractBG:SetDrawLayer("BACKGROUND", -8)
         end
-        tooltip.MidnightBG:SetColorTexture(bgr, bgg, bgb, bga)
+        tooltip.AbstractBG:SetColorTexture(bgr, bgg, bgb, bga)
     end
     
     -- Hook to update font when tooltip shows

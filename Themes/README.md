@@ -1,10 +1,10 @@
-# MidnightUI Themes
+# AbstractUI Themes
 
-Theme definitions for the MidnightUI framework.
+Theme definitions for the AbstractUI framework.
 
 ## Available Themes
 
-### MidnightGlass
+### AbstractGlass
 Dark, translucent glass aesthetic with subtle gradients.
 - **Primary Color**: Cyan (#00CCFF)
 - **Background**: Very dark blue, almost black
@@ -23,7 +23,7 @@ Bright neon accents with holographic effects and futuristic styling.
 1. Create a new .lua file in Themes/ directory
 2. Register color palette with ColorPalette:RegisterPalette()
 3. Register fonts with FontKit:RegisterThemeFonts()
-4. Add theme file to MidnightUI.toc
+4. Add theme file to AbstractUI.toc
 5. Create corresponding texture atlas (optional)
 
 ### Minimum Required Colors
@@ -41,9 +41,9 @@ tooltip-bg
 ### Example Theme Structure
 
 ```lua
-local MidnightUI = LibStub("AceAddon-3.0"):GetAddon("MidnightUI")
-local ColorPalette = MidnightUI.ColorPalette
-local FontKit = MidnightUI.FontKit
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local ColorPalette = AbstractUI.ColorPalette
+local FontKit = AbstractUI.FontKit
 
 ColorPalette:RegisterPalette("MyTheme", {
     ["primary"] = {r = 1.0, g = 0.5, b = 0.0, a = 1.0},

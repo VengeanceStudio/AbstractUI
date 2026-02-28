@@ -1,11 +1,11 @@
--- MidnightUI Color Palette System
+-- AbstractUI Color Palette System
 -- Theme color management with RGB/RGBA support
 
 local ColorPalette = {}
-_G.MidnightUI_ColorPalette = ColorPalette
+_G.AbstractUI_ColorPalette = ColorPalette
 
 -- Active theme
-ColorPalette.activeTheme = "MidnightGlass"
+ColorPalette.activeTheme = "AbstractGlass"
 
 -- Color palette storage
 ColorPalette.palettes = {}

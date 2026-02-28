@@ -1,4 +1,4 @@
--- MidnightUI Durability Broker
+-- AbstractUI Durability Broker
 -- Displays overall equipment durability percentage with detailed per-slot tooltip
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local duraObj
 
 -- Register the broker
-duraObj = LDB:NewDataObject("MidnightDura", { 
+duraObj = LDB:NewDataObject("AbstractDura", { 
     type = "data source", text = "100%", icon = "Interface\\Icons\\Trade_BlackSmithing", 
     OnTooltipShow = function(tip) 
         tip:AddLine("Durability Details", GetColor())

@@ -1,4 +1,4 @@
--- MidnightUI System Broker
+-- AbstractUI System Broker
 -- Displays FPS and latency with color-coded tooltip showing top 60 addons by memory usage
 
 if not BrokerBar then return end
@@ -7,7 +7,7 @@ local LDB = LibStub("LibDataBroker-1.1")
 local sysObj
 
 -- Register the broker
-sysObj = LDB:NewDataObject("MidnightSystem", {
+sysObj = LDB:NewDataObject("AbstractSystem", {
     type = "data source", text = "0 FPS", icon = "Interface\\Icons\\Trade_Engineering",
     OnTooltipShow = function(tip)
         local r, g, b = GetColor()

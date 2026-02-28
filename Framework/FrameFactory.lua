@@ -1,32 +1,32 @@
--- MidnightUI Frame Factory
+-- AbstractUI Frame Factory
 -- Component creation system with theme support
 
 local FrameFactory = {}
 
 -- Cache framework systems
 local Atlas, ColorPalette, FontKit, LayoutHelper
-local MidnightUI
+local AbstractUI
 
 -- Initialize on addon load
 function FrameFactory:Initialize(addon)
-    MidnightUI = addon
+    AbstractUI = addon
     
     -- Get framework systems from global namespace
-    Atlas = _G.MidnightUI_Atlas
-    ColorPalette = _G.MidnightUI_ColorPalette
-    FontKit = _G.MidnightUI_FontKit
-    LayoutHelper = _G.MidnightUI_LayoutHelper
+    Atlas = _G.AbstractUI_Atlas
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = _G.AbstractUI_FontKit
+    LayoutHelper = _G.AbstractUI_LayoutHelper
     
     -- Register all framework systems with the addon
-    MidnightUI.Atlas = Atlas
-    MidnightUI.ColorPalette = ColorPalette
-    MidnightUI.FontKit = FontKit
-    MidnightUI.LayoutHelper = LayoutHelper
-    MidnightUI.FrameFactory = FrameFactory
+    AbstractUI.Atlas = Atlas
+    AbstractUI.ColorPalette = ColorPalette
+    AbstractUI.FontKit = FontKit
+    AbstractUI.LayoutHelper = LayoutHelper
+    AbstractUI.FrameFactory = FrameFactory
 end
 
 -- Current theme
-FrameFactory.activeTheme = "MidnightGlass"
+FrameFactory.activeTheme = "AbstractGlass"
 
 -- ============================================================================
 -- THEME MANAGEMENT
@@ -215,7 +215,7 @@ end
 -- ============================================================================
 
 function FrameFactory:CreateTooltip(name)
-    local tooltip = CreateFrame("GameTooltip", name or "MidnightUITooltip", UIParent, "GameTooltipTemplate")
+    local tooltip = CreateFrame("GameTooltip", name or "AbstractUITooltip", UIParent, "GameTooltipTemplate")
     
     -- Background
     if tooltip.NineSlice then
@@ -257,6 +257,6 @@ function FrameFactory:ApplyTheme(frame, componentType)
 end
 
 -- Register in global namespace for Core.lua to find
-_G.MidnightUI_FrameFactory = FrameFactory
+_G.AbstractUI_FrameFactory = FrameFactory
 
 return FrameFactory

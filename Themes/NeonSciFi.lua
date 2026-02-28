@@ -1,8 +1,8 @@
--- MidnightUI Theme: Neon Sci-Fi
+-- AbstractUI Theme: Neon Sci-Fi
 -- Bright neon accents with holographic effects and futuristic styling
 
-local ColorPalette = _G.MidnightUI_ColorPalette
-local FontKit = _G.MidnightUI_FontKit
+local ColorPalette = _G.AbstractUI_ColorPalette
+local FontKit = _G.AbstractUI_FontKit
 
 if not ColorPalette or not FontKit then return end
 

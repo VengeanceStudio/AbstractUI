@@ -1,6 +1,6 @@
 
 if not UnitFrames then return end
--- MidnightUI UnitFrames: Target of Target Frame Module
+-- AbstractUI UnitFrames: Target of Target Frame Module
 
 -- ============================================================================
 -- TARGET-OF-TARGET FRAME CREATION
@@ -15,7 +15,7 @@ function UnitFrames:CreateTargetTargetFrame()
     local posY = (db.targettarget and db.targettarget.posY) or 0
     self:CreateUnitFrame("TargetTargetFrame", "targettarget", anchorTo, "CENTER", "CENTER", posX, posY)
     -- Only show TargetTargetFrame if target has a target
-    local customToTFrame = _G["MidnightUI_TargetTargetFrame"]
+    local customToTFrame = _G["AbstractUI_TargetTargetFrame"]
     if customToTFrame then
         -- Start hidden - state driver will show when targettarget exists
         customToTFrame:Hide()
@@ -40,5 +40,5 @@ end
 -- ============================================================================
 
 function UnitFrames:GetTargetTargetOptions_Real()
-    return self:GenerateFrameOptions("Target of Target Frame", "targettarget", "CreateTargetTargetFrame", "MidnightUI_TargetTargetFrame")
+    return self:GenerateFrameOptions("Target of Target Frame", "targettarget", "CreateTargetTargetFrame", "AbstractUI_TargetTargetFrame")
 end
