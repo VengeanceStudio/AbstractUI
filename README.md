@@ -9,7 +9,7 @@ Built for **WoW 12.0+** (Midnight expansion), it prioritizes readability, perfor
 
 ## ✨ Features
 
-AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/mui` or the AddOns settings panel.
+AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/aui` or the AddOns settings panel.
 
 ---
 
