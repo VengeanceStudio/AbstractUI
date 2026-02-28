@@ -1,7 +1,7 @@
 # AbstractUI
 
 ![WoW Version](https://img.shields.io/badge/WoW-12.0%2B-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 **AbstractUI** is a complete, modular, and modern User Interface replacement for World of Warcraft. 
 
