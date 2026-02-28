@@ -1063,17 +1063,31 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     if isMultiline then
         local scroll = ScrollFrame:Create(frame)
         scroll:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        scroll:SetSize(frameWidth - 20, 60)
+        scroll:SetSize(frameWidth - 20, option.multiline * 3 or 60)
         
-        editBox = CreateFrame("EditBox", nil, scroll.scrollArea)
+        editBox = CreateFrame("EditBox", nil, scroll.scrollArea, "BackdropTemplate")
         editBox:SetMultiLine(true)
-        editBox:SetSize(scroll.scrollArea:GetWidth(), 200)
+        editBox:SetSize(scroll.scrollArea:GetWidth() - 10, 500)
         editBox:SetAutoFocus(false)
+        
+        -- Style multiline edit box
+        editBox:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false, edgeSize = 1,
+            insets = { left = 4, right = 4, top = 2, bottom = 2 }
+        })
+        editBox:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+        editBox:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        
         scroll:SetScrollChild(editBox)
+        
+        -- Adjust frame height for multiline
+        frameHeight = (option.multiline * 3 or 60) + 30
     else
         editBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
         editBox:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        editBox:SetSize(frameWidth - 20, 24)
+        editBox:SetSize(frameWidth - 50, 24)
         editBox:SetAutoFocus(false)
         
         -- Style edit box
@@ -1095,6 +1109,43 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     end
     editBox:SetTextColor(ColorPalette:GetColor('text-primary'))
     editBox:SetTextInsets(6, 6, 2, 2)
+    
+    -- Add confirmation button for single-line inputs
+    local confirmButton
+    if not isMultiline then
+        confirmButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
+        confirmButton:SetPoint("LEFT", editBox, "RIGHT", 4, 0)
+        confirmButton:SetSize(24, 24)
+        confirmButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false, edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        confirmButton:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+        confirmButton:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        
+        -- Checkmark text
+        confirmButton.text = confirmButton:CreateFontString(nil, "OVERLAY")
+        confirmButton.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
+        confirmButton.text:SetText("✓")
+        confirmButton.text:SetPoint("CENTER", 0, 0)
+        confirmButton.text:SetTextColor(0.4, 0.8, 0.4, 1)
+        
+        -- Hover effects
+        confirmButton:SetScript("OnEnter", function(self)
+            local r, g, b = ColorPalette:GetColor('accent-primary')
+            self:SetBackdropColor(r, g, b, 0.15)
+            self.text:SetTextColor(0.5, 1, 0.5, 1)
+        end)
+        confirmButton:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+            self.text:SetTextColor(0.4, 0.8, 0.4, 1)
+        end)
+        confirmButton:SetScript("OnClick", function()
+            editBox:ClearFocus()
+        end)
+    end
     
     -- Get/Set value functions
     local function GetValue()
