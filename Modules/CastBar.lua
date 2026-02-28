@@ -65,6 +65,12 @@ function CastBar:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("CastBar", defaults)
     
+    -- Hide Blizzard's cast bars
+    PlayerCastingBarFrame:SetScript("OnEvent", nil)
+    PlayerCastingBarFrame:Hide()
+    PetCastingBarFrame:SetScript("OnEvent", nil)
+    PetCastingBarFrame:Hide()
+    
     -- Register events
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_SPELLCAST_START")
@@ -86,6 +92,20 @@ function CastBar:OnDBReady()
         C_Timer.After(0.5, function()
             self:SetupCastBar()
         end)
+    end
+end
+
+function CastBar:OnDisable()
+    -- Restore Blizzard's cast bars
+    PlayerCastingBarFrame:SetScript("OnEvent", PlayerCastingBarFrame.OnEvent)
+    PlayerCastingBarFrame:Show()
+    PetCastingBarFrame:SetScript("OnEvent", PetCastingBarFrame.OnEvent)
+    PetCastingBarFrame:Show()
+    
+    -- Hide custom cast bar
+    if self.castBar then
+        self.castBar:Hide()
+        self.castBar = nil
     end
 end
 
