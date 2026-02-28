@@ -147,7 +147,6 @@ Advanced text formatting with dynamic tags:
 ---
 
 ### ⏱️ Cooldown Manager Module
-*(Work in Progress - Currently Disabled by Default)*
 
 **Planned Features:**
 * Built-in digital timers on ability icons
