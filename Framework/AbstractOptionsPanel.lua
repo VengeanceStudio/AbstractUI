@@ -1010,8 +1010,8 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     
     -- Create slider
     local slider = CreateFrame("Slider", nil, frame, "BackdropTemplate")
-    slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 5, -10)
-    slider:SetSize(150, 4)
+    slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 20, -10)
+    slider:SetSize(120, 4)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(option.min or 0, option.max or 100)
     slider:SetValueStep(option.step or 1)
@@ -1033,6 +1033,20 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     local thumb = slider:GetThumbTexture()
     thumb:SetVertexColor(ColorPalette:GetColor('text-primary'))
     thumb:SetSize(6, 10)
+    
+    -- Create min value label (left of slider)
+    local minLabel = frame:CreateFontString(nil, "OVERLAY")
+    minLabel:SetFont("Fonts\\FRIZQT__.TTF", 8, "")
+    minLabel:SetPoint("RIGHT", slider, "LEFT", -3, 0)
+    minLabel:SetText(tostring(option.min or 0))
+    minLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
+    
+    -- Create max value label (right of slider)
+    local maxLabel = frame:CreateFontString(nil, "OVERLAY")
+    maxLabel:SetFont("Fonts\\FRIZQT__.TTF", 8, "")
+    maxLabel:SetPoint("LEFT", slider, "RIGHT", 3, 0)
+    maxLabel:SetText(tostring(option.max or 100))
+    maxLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- Create value input box (editable) - centered below slider
     local valueInput = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
