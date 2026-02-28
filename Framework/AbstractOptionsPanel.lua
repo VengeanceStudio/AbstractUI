@@ -672,9 +672,23 @@ function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
         end
     end
     
-    -- Sort by order
+    -- Sort by enabled status first, then alphabetically by name
     table.sort(nestedNodes, function(a, b)
-        return (a.order or 100) < (b.order or 100)
+        local aName = a.name or ""
+        local bName = b.name or ""
+        local aDisabled = aName:find("|cff808080") ~= nil
+        local bDisabled = bName:find("|cff808080") ~= nil
+        
+        -- If one is disabled and one is not, enabled comes first
+        if aDisabled ~= bDisabled then
+            return not aDisabled
+        end
+        
+        -- Both same enabled state, sort alphabetically
+        -- Remove color codes for comparison
+        local aClean = aName:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        local bClean = bName:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        return aClean < bClean
     end)
     
     if #nestedNodes == 0 then
@@ -749,7 +763,7 @@ function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, panel)
         btn:SetPoint("TOPLEFT", panel.nestedTreeScrollChild, "TOPLEFT", 4, yOffset)
         
         local text = btn:CreateFontString(nil, "OVERLAY")
-        text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        text:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
         text:SetText(node.name)
         text:SetPoint("LEFT", btn, "LEFT", 8, 0)
         text:SetTextColor(ColorPalette:GetColor('text-primary'))
