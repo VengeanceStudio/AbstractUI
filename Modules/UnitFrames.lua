@@ -930,7 +930,11 @@ end
 
 -- Helper function to generate frame options with independent databases
 function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameGlobal)
-    local db = self.db and self.db.profile and self.db.profile[frameKey] or {}
+    -- Use a function to get db so it's always current
+    local function getDB()
+        return self.db and self.db.profile and self.db.profile[frameKey] or {}
+    end
+    
     local function update()
         if _G[frameGlobal] then _G[frameGlobal]:Hide(); _G[frameGlobal]:SetParent(nil) end
         if self and self[createFunc] then self[createFunc](self) end
@@ -1023,8 +1027,8 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 width = "inline",
                 min = 16, max = 64, step = 1,
                 order = 0.92,
-                get = function() return db.raidTargetIconSize or 32 end,
-                set = function(_, v) db.raidTargetIconSize = v; update() end,
+                get = function() local db = getDB(); return db.raidTargetIconSize or 32 end,
+                set = function(_, v) local db = getDB(); db.raidTargetIconSize = v; update() end,
             },
             raidTargetIconOffsetX = {
                 type = "range",
@@ -1033,8 +1037,8 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 width = "inline",
                 min = -100, max = 100, step = 1,
                 order = 0.93,
-                get = function() return db.raidTargetIconOffsetX or 0 end,
-                set = function(_, v) db.raidTargetIconOffsetX = v; update() end,
+                get = function() local db = getDB(); return db.raidTargetIconOffsetX or 0 end,
+                set = function(_, v) local db = getDB(); db.raidTargetIconOffsetX = v; update() end,
             },
             raidTargetIconOffsetY = {
                 type = "range",
@@ -1043,43 +1047,48 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 width = "inline",
                 min = -100, max = 100, step = 1,
                 order = 0.94,
-                get = function() return db.raidTargetIconOffsetY or 0 end,
-                set = function(_, v) db.raidTargetIconOffsetY = v; update() end,
+                get = function() local db = getDB(); return db.raidTargetIconOffsetY or 0 end,
+                set = function(_, v) local db = getDB(); db.raidTargetIconOffsetY = v; update() end,
             },
             health = {
                 type = "group",
                 name = "Health Bar",
                 order = 1,
                 inline = true,
-                args = self:GetBarOptions("health", db, update),
+                args = self:GetBarOptions("health", frameKey, update),
             },
             power = {
                 type = "group",
                 name = "Power Bar",
                 order = 2,
                 inline = true,
-                args = self:GetBarOptions("power", db, update),
+                args = self:GetBarOptions("power", frameKey, update),
             },
             info = {
                 type = "group",
                 name = "Info Bar",
                 order = 3,
                 inline = true,
-                args = self:GetBarOptions("info", db, update),
+                args = self:GetBarOptions("info", frameKey, update),
             },
         },
     }
 end
 
 -- Helper function to generate bar-specific options
-function UnitFrames:GetBarOptions(barType, db, update)
+function UnitFrames:GetBarOptions(barType, frameKey, update)
+    -- Use a function to get the current db value
+    local function getDB()
+        return self.db and self.db.profile and self.db.profile[frameKey] or {}
+    end
+    
     local options = {
         enabled = {
             type = "toggle",
             name = "Show",
             order = 1,
-            get = function() return db[barType] and db[barType].enabled end,
-            set = function(_, v) db[barType].enabled = v; update() end,
+            get = function() local db = getDB(); return db[barType] and db[barType].enabled end,
+            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].enabled = v; update() end,
         },
         width = {
             type = "range",
@@ -1087,8 +1096,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
             width = "inline",
             min = 50, max = 600, step = 1,
             order = 2,
-            get = function() return db[barType] and db[barType].width or 220 end,
-            set = function(_, v) db[barType].width = v; update() end,
+            get = function() local db = getDB(); return db[barType] and db[barType].width or 220 end,
+            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].width = v; update() end,
         },
         height = {
             type = "range",
@@ -1097,10 +1106,11 @@ function UnitFrames:GetBarOptions(barType, db, update)
             min = 5, max = 100, step = 1,
             order = 3,
             get = function() 
+                local db = getDB()
                 local defaults = {health = 24, power = 12, info = 10}
                 return db[barType] and db[barType].height or defaults[barType] or 20
             end,
-            set = function(_, v) db[barType].height = v; update() end,
+            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].height = v; update() end,
         },
     }
     
@@ -1136,10 +1146,11 @@ function UnitFrames:GetBarOptions(barType, db, update)
                 order = 2,
                 width = "full",
                 get = function() 
+                    local db = getDB()
                     local defaults = {health = "", power = "", info = "[name]"}
                     return db[barType] and db[barType].textLeft or defaults[barType] or ""
                 end,
-                set = function(_, v) db[barType].textLeft = v; update() end,
+                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textLeft = v; update() end,
             },
             textCenter = {
                 type = "input",
@@ -1148,10 +1159,11 @@ function UnitFrames:GetBarOptions(barType, db, update)
                 order = 3,
                 width = "full",
                 get = function() 
+                    local db = getDB()
                     local defaults = {health = "[curhp] / [maxhp] ([perhp]%)", power = "", info = "[level]"}
                     return db[barType] and db[barType].textCenter or defaults[barType] or ""
                 end,
-                set = function(_, v) db[barType].textCenter = v; update() end,
+                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textCenter = v; update() end,
             },
             textRight = {
                 type = "input",
@@ -1159,8 +1171,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
                 desc = "Text to display on the right side of the " .. barType .. " bar.",
                 order = 4,
                 width = "full",
-                get = function() return db[barType] and db[barType].textRight or "" end,
-                set = function(_, v) db[barType].textRight = v; update() end,
+                get = function() local db = getDB(); return db[barType] and db[barType].textRight or "" end,
+                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textRight = v; update() end,
             },
         },
     }
@@ -1173,8 +1185,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
             desc = "Attach the " .. barType:gsub("^%l", string.upper) .. " Bar to another bar.",
             order = 1.5,
             values = { health = "Health Bar", power = "Power Bar", info = "Info Bar", none = "None" },
-            get = function() return db[barType] and db[barType].attachTo or "health" end,
-            set = function(_, v) db[barType].attachTo = v; update() end,
+            get = function() local db = getDB(); return db[barType] and db[barType].attachTo or "health" end,
+            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].attachTo = v; update() end,
         }
     end
     
@@ -1184,8 +1196,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Class Colored Bar",
         desc = "Use class color for the " .. barType .. " bar.",
         order = 3.9,
-        get = function() return db[barType] and db[barType].classColor end,
-        set = function(_, v) db[barType].classColor = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].classColor end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].classColor = v; update() end,
     }
     
     -- Add hostility color option for health bars
@@ -1195,8 +1207,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
             name = "Hostility Colored Bar",
             desc = "Use reaction colors (green=friendly, yellow=neutral, red=hostile) for the " .. barType .. " bar.",
             order = 3.91,
-            get = function() return db[barType] and db[barType].hostilityColor end,
-            set = function(_, v) db[barType].hostilityColor = v; update() end,
+            get = function() local db = getDB(); return db[barType] and db[barType].hostilityColor end,
+            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].hostilityColor = v; update() end,
         }
     end
     
@@ -1206,10 +1218,11 @@ function UnitFrames:GetBarOptions(barType, db, update)
         hasAlpha = true,
         order = 4,
         get = function() 
+            local db = getDB()
             local defaults = {health = {0.2,0.8,0.2,1}, power = {0.2,0.4,0.8,1}, info = {0.8,0.8,0.2,1}}
             return unpack(db[barType] and db[barType].color or defaults[barType] or {1,1,1,1})
         end,
-        set = function(_, r,g,b,a) db[barType].color = {r,g,b,a}; update() end,
+        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].color = {r,g,b,a}; update() end,
     }
     
     options.alpha = {
@@ -1217,8 +1230,13 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Bar Transparency",
         desc = "Set the transparency of the " .. barType .. " bar.",
         min = 0, max = 100, step = 1, order = 4.1,
-        get = function() return math.floor(100 * (db[barType] and db[barType].alpha or (db[barType] and db[barType].color and db[barType].color[4]) or 1) + 0.5) end,
+        get = function() 
+            local db = getDB()
+            return math.floor(100 * (db[barType] and db[barType].alpha or (db[barType] and db[barType].color and db[barType].color[4]) or 1) + 0.5) 
+        end,
         set = function(_, v)
+            local db = getDB()
+            if not db[barType] then db[barType] = {} end
             local alpha = v / 100
             db[barType].alpha = alpha
             if db[barType] and db[barType].color then
@@ -1237,8 +1255,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Class Colored Font",
         desc = "Use class color for the " .. barType .. " bar text.",
         order = 9.5,
-        get = function() return db[barType] and db[barType].fontClassColor end,
-        set = function(_, v) db[barType].fontClassColor = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].fontClassColor end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontClassColor = v; update() end,
     }
     
     options.bgColor = {
@@ -1246,8 +1264,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Background Color",
         hasAlpha = true,
         order = 5,
-        get = function() return unpack(db[barType] and db[barType].bgColor or {0,0,0,0.5}) end,
-        set = function(_, r,g,b,a) db[barType].bgColor = {r,g,b,a}; update() end,
+        get = function() local db = getDB(); return unpack(db[barType] and db[barType].bgColor or {0,0,0,0.5}) end,
+        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].bgColor = {r,g,b,a}; update() end,
     }
     
     options.font = {
@@ -1260,8 +1278,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
             for _, font in ipairs(fonts) do out[font] = font end
             return out
         end,
-        get = function() return db[barType] and db[barType].font or "Friz Quadrata TT" end,
-        set = function(_, v) db[barType].font = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].font or "Friz Quadrata TT" end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].font = v; update() end,
     }
     
     options.fontSize = {
@@ -1270,10 +1288,11 @@ function UnitFrames:GetBarOptions(barType, db, update)
         min = 6, max = 32, step = 1,
         order = 7,
         get = function() 
+            local db = getDB()
             local defaults = {health = 14, power = 12, info = 10}
             return db[barType] and db[barType].fontSize or defaults[barType] or 12
         end,
-        set = function(_, v) db[barType].fontSize = v; update() end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontSize = v; update() end,
     }
     
     options.fontOutline = {
@@ -1281,8 +1300,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Font Outline",
         order = 8,
         values = { NONE = "None", OUTLINE = "Outline", THICKOUTLINE = "Thick Outline" },
-        get = function() return db[barType] and db[barType].fontOutline or "OUTLINE" end,
-        set = function(_, v) db[barType].fontOutline = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].fontOutline or "OUTLINE" end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontOutline = v; update() end,
     }
     
     options.fontColor = {
@@ -1290,8 +1309,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Font Color",
         hasAlpha = true,
         order = 9,
-        get = function() return unpack(db[barType] and db[barType].fontColor or {1,1,1,1}) end,
-        set = function(_, r,g,b,a) db[barType].fontColor = {r,g,b,a}; update() end,
+        get = function() local db = getDB(); return unpack(db[barType] and db[barType].fontColor or {1,1,1,1}) end,
+        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontColor = {r,g,b,a}; update() end,
     }
     
     options.textPos = {
@@ -1299,8 +1318,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
         name = "Text Position",
         order = 11,
         values = { LEFT = "Left", CENTER = "Center", RIGHT = "Right" },
-        get = function() return db[barType] and db[barType].textPos or "CENTER" end,
-        set = function(_, v) db[barType].textPos = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].textPos or "CENTER" end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textPos = v; update() end,
     }
     
     options.texture = {
@@ -1314,8 +1333,8 @@ function UnitFrames:GetBarOptions(barType, db, update)
             for _, tex in ipairs(textures) do out[tex] = tex end
             return out
         end,
-        get = function() return db[barType] and db[barType].texture or "Blizzard Raid Bar" end,
-        set = function(_, v) db[barType].texture = v; update() end,
+        get = function() local db = getDB(); return db[barType] and db[barType].texture or "Blizzard Raid Bar" end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].texture = v; update() end,
     }
     
     return options
