@@ -394,14 +394,16 @@ function AbstractOptionsPanel:RenderContent(node)
         panel.activeNestedTab = nil
     end
     
-    -- Clear any nested tree buttons
-    local treePanel = self.frame.treePanel
-    if treePanel.nestedButtons then
-        for _, btn in ipairs(treePanel.nestedButtons) do
+    -- Clear any nested tree panel and buttons
+    if panel.nestedTreePanel then
+        panel.nestedTreePanel:Hide()
+    end
+    if panel.nestedTreeButtons then
+        for _, btn in ipairs(panel.nestedTreeButtons) do
             btn:Hide()
             btn:SetParent(nil)
         end
-        treePanel.nestedButtons = {}
+        panel.nestedTreeButtons = {}
     end
     self.selectedNestedNode = nil
     
@@ -651,7 +653,7 @@ end
 -- Render nested tree navigation (tree within a tab)
 function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
     local panel = self.frame.contentPanel
-    local treePanel = self.frame.treePanel
+    local ColorPalette = _G.AbstractUI_ColorPalette
     
     -- Build nested nodes from childGroup
     local nestedNodes = {}
@@ -679,48 +681,72 @@ function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
         return
     end
     
-    -- Store nested nodes on the parent tab for cleanup
-    parentTab.nestedNodes = nestedNodes
+    -- Create nested tree panel within content area
+    if not panel.nestedTreePanel then
+        panel.nestedTreePanel = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+        panel.nestedTreePanel:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
+        panel.nestedTreePanel:SetWidth(200)
+        panel.nestedTreePanel:SetPoint("BOTTOM", panel, "BOTTOM", 0, 8)
+        
+        panel.nestedTreePanel:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        panel.nestedTreePanel:SetBackdropColor(ColorPalette:GetColor('panel-bg'))
+        panel.nestedTreePanel:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        
+        -- Create scroll frame for nested tree
+        panel.nestedTreeScroll = CreateFrame("ScrollFrame", nil, panel.nestedTreePanel)
+        panel.nestedTreeScroll:SetPoint("TOPLEFT", 4, -4)
+        panel.nestedTreeScroll:SetPoint("BOTTOMRIGHT", -4, 4)
+        
+        panel.nestedTreeScrollChild = CreateFrame("Frame", nil, panel.nestedTreeScroll)
+        panel.nestedTreeScrollChild:SetSize(192, 400)
+        panel.nestedTreeScroll:SetScrollChild(panel.nestedTreeScrollChild)
+    end
     
-    -- Build nested tree buttons
-    self:BuildNestedTreeButtons(nestedNodes, treePanel)
+    panel.nestedTreePanel:Show()
+    
+    -- Adjust scroll frame to make room for nested tree panel
+    panel.scrollFrame:ClearAllPoints()
+    panel.scrollFrame:SetPoint("TOPLEFT", panel.nestedTreePanel, "TOPRIGHT", 8, 0)
+    panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
+    
+    -- Build nested tree buttons in the nested tree panel
+    self:BuildNestedTreeButtons(nestedNodes, panel)
     
     -- Select first nested node by default
     self:SelectNestedTreeNode(nestedNodes[1])
 end
 
 -- Build tree buttons for nested nodes
-function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, treePanel)
+function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, panel)
     local ColorPalette = _G.AbstractUI_ColorPalette
     local yOffset = 0
     
     -- Store nested buttons for cleanup
-    if not treePanel.nestedButtons then
-        treePanel.nestedButtons = {}
+    if not panel.nestedTreeButtons then
+        panel.nestedTreeButtons = {}
     end
     
     -- Clear existing nested buttons
-    for _, btn in ipairs(treePanel.nestedButtons) do
+    for _, btn in ipairs(panel.nestedTreeButtons) do
         btn:Hide()
         btn:SetParent(nil)
     end
-    treePanel.nestedButtons = {}
-    
-    -- Find the offset for nested buttons (after the main tree buttons)
-    for _, btn in ipairs(treePanel.buttons) do
-        local _, _, _, _, bottomY = btn:GetPoint()
-        yOffset = math.min(yOffset, bottomY or 0)
-    end
-    yOffset = yOffset - 35 -- Add spacing below last main button
+    panel.nestedTreeButtons = {}
     
     -- Create buttons for nested nodes
     for i, node in ipairs(nodes) do
-        local btn = CreateFrame("Button", nil, treePanel.scrollChild, "BackdropTemplate")
-        btn:SetSize(treePanel.scrollChild:GetWidth() - 20, 28)
-        btn:SetPoint("TOPLEFT", treePanel.scrollChild, "TOPLEFT", 20, yOffset) -- Indent nested items
+        local btn = CreateFrame("Button", nil, panel.nestedTreeScrollChild, "BackdropTemplate")
+        btn:SetSize(panel.nestedTreeScrollChild:GetWidth() - 8, 28)
+        btn:SetPoint("TOPLEFT", panel.nestedTreeScrollChild, "TOPLEFT", 4, yOffset)
         
         local text = btn:CreateFontString(nil, "OVERLAY")
-        text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        text:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
         text:SetText(node.name)
         text:SetPoint("LEFT", btn, "LEFT", 8, 0)
         text:SetTextColor(ColorPalette:GetColor('text-secondary'))
@@ -746,24 +772,24 @@ function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, treePanel)
             end
         end)
         
-        table.insert(treePanel.nestedButtons, btn)
+        table.insert(panel.nestedTreeButtons, btn)
         
         yOffset = yOffset - 30
     end
     
     -- Update scroll child height to accommodate nested buttons
     local totalHeight = math.abs(yOffset) + 40
-    treePanel.scrollChild:SetHeight(math.max(totalHeight, treePanel:GetHeight()))
+    panel.nestedTreeScrollChild:SetHeight(math.max(totalHeight, panel.nestedTreeScroll:GetHeight()))
 end
 
 -- Select a nested tree node
 function AbstractOptionsPanel:SelectNestedTreeNode(node)
-    local treePanel = self.frame.treePanel
+    local panel = self.frame.contentPanel
     local ColorPalette = _G.AbstractUI_ColorPalette
     
     -- Clear previous nested selection
     if self.selectedNestedNode then
-        for _, btn in ipairs(treePanel.nestedButtons or {}) do
+        for _, btn in ipairs(panel.nestedTreeButtons or {}) do
             if btn.node == self.selectedNestedNode then
                 btn:SetBackdrop(nil)
                 btn.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
@@ -775,7 +801,7 @@ function AbstractOptionsPanel:SelectNestedTreeNode(node)
     self.selectedNestedNode = node
     
     -- Highlight selected nested button
-    for _, btn in ipairs(treePanel.nestedButtons or {}) do
+    for _, btn in ipairs(panel.nestedTreeButtons or {}) do
         if btn.node == node then
             btn:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -1050,14 +1076,16 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
         panel.activeNestedTab = nil
     end
     
-    -- Clear any nested tree buttons
-    local treePanel = self.frame.treePanel
-    if treePanel.nestedButtons then
-        for _, btn in ipairs(treePanel.nestedButtons) do
+    -- Clear any nested tree panel and buttons
+    if panel.nestedTreePanel then
+        panel.nestedTreePanel:Hide()
+    end
+    if panel.nestedTreeButtons then
+        for _, btn in ipairs(panel.nestedTreeButtons) do
             btn:Hide()
             btn:SetParent(nil)
         end
-        treePanel.nestedButtons = {}
+        panel.nestedTreeButtons = {}
     end
     self.selectedNestedNode = nil
     
