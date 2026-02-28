@@ -836,13 +836,31 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     thumb:SetVertexColor(ColorPalette:GetColor('text-primary'))
     thumb:SetSize(6, 10)
     
-    -- Create value display
-    local valueText = frame:CreateFontString(nil, "OVERLAY")
-    if FontKit then
-        FontKit:SetFont(valueText, 'body', 'normal')
-    end
-    valueText:SetPoint("LEFT", slider, "RIGHT", 10, 0)
-    valueText:SetTextColor(ColorPalette:GetColor('text-primary'))
+    -- Create value input box (editable)
+    local valueInput = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
+    valueInput:SetPoint("LEFT", slider, "RIGHT", 10, 0)
+    valueInput:SetSize(50, 20)
+    valueInput:SetAutoFocus(false)
+    valueInput:SetMaxLetters(10)
+    valueInput:EnableMouse(true)
+    valueInput:EnableKeyboard(true)
+    valueInput:SetFont("Fonts\\FRIZQT__.TTF", 11)
+    valueInput:SetTextColor(ColorPalette:GetColor('text-primary'))
+    valueInput:SetJustifyH("CENTER")
+    
+    -- Style the input box
+    valueInput:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    local r, g, b = ColorPalette:GetColor('button-bg')
+    valueInput:SetBackdropColor(r, g, b, 0.8)
+    valueInput:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+    
+    -- Track if user is editing the input box
+    local isEditing = false
     
     -- Get/Set value functions
     local function GetValue()
@@ -854,10 +872,26 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     
     local function UpdateVisual(value)
         slider:SetValue(value)
-        valueText:SetText(tostring(value))
+        -- Only update input text if not currently editing
+        if not isEditing then
+            -- Format display based on step size
+            local step = option.step or 1
+            if step < 1 then
+                -- Show decimal places
+                local decimals = math.ceil(-math.log10(step))
+                valueInput:SetText(string.format("%." .. decimals .. "f", value))
+            else
+                valueInput:SetText(tostring(math.floor(value + 0.5)))
+            end
+        end
     end
     
     local function SetValue(value)
+        -- Clamp value to min/max
+        local min = option.min or 0
+        local max = option.max or 100
+        value = math.max(min, math.min(max, value))
+        
         if option.set then
             option.set(self.addonRef.db.profile, value)
         end
@@ -866,8 +900,50 @@ function AbstractOptionsPanel:CreateRange(parent, option, xOffset, yOffset)
     
     -- Slider change handler
     slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value + 0.5) -- Round to nearest
+        -- Only round to integers if step is >= 1
+        local step = option.step or 1
+        if step >= 1 then
+            value = math.floor(value + 0.5)
+        end
         SetValue(value)
+    end)
+    
+    -- Input box handlers
+    valueInput:SetScript("OnEnterPressed", function(self)
+        local inputValue = tonumber(self:GetText())
+        if inputValue then
+            SetValue(inputValue)
+        else
+            -- Invalid input, revert to current value
+            UpdateVisual(GetValue())
+        end
+        isEditing = false
+        self:ClearFocus()
+    end)
+    
+    valueInput:SetScript("OnEscapePressed", function(self)
+        -- Revert to current value
+        UpdateVisual(GetValue())
+        isEditing = false
+        self:ClearFocus()
+    end)
+    
+    valueInput:SetScript("OnEditFocusLost", function(self)
+        -- Apply value when focus is lost
+        local inputValue = tonumber(self:GetText())
+        if inputValue then
+            SetValue(inputValue)
+        else
+            -- Invalid input, revert to current value
+            UpdateVisual(GetValue())
+        end
+        isEditing = false
+    end)
+    
+    -- Highlight text on focus
+    valueInput:SetScript("OnEditFocusGained", function(self)
+        isEditing = true
+        self:HighlightText()
     end)
     
     -- Set initial value (visual only)

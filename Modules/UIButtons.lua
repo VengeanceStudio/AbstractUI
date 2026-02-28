@@ -456,7 +456,7 @@ function UIButtons:GetOptions()
                 name = "Scale",
                 type = "range",
                 order = 4,
-                min = 0.5,
+                min = 0.2,
                 max = 2.0,
                 step = 0.01,
                 bigStep = 0.1,
