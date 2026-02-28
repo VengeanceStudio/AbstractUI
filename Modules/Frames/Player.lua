@@ -47,6 +47,17 @@ end
 -- ============================================================================
 
 function UnitFrames:GetPlayerOptions_Real()
-    return self:GenerateFrameOptions("Player Frame", "player", "CreatePlayerFrame", "AbstractUI_PlayerFrame")
+    print("[GetPlayerOptions_Real] Called")
+    local result = self:GenerateFrameOptions("Player Frame", "player", "CreatePlayerFrame", "AbstractUI_PlayerFrame")
+    print("[GetPlayerOptions_Real] Result type:", type(result))
+    if result then
+        print("[GetPlayerOptions_Real] Result has args:", result.args and "YES" or "NO")
+        if result.args then
+            local keys = {}
+            for k in pairs(result.args) do table.insert(keys, k) end
+            print("[GetPlayerOptions_Real] Args keys: " .. table.concat(keys, ", "))
+        end
+    end
+    return result
 end
 

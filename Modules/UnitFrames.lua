@@ -930,9 +930,15 @@ end
 
 -- Helper function to generate frame options with independent databases
 function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameGlobal)
+    print("[GenerateFrameOptions] Called for frameKey: " .. frameKey .. ", frameName: " .. frameName)
+    print("[GenerateFrameOptions] self.db exists:", self.db and "YES" or "NO")
+    print("[GenerateFrameOptions] self.db.profile exists:", self.db and self.db.profile and "YES" or "NO")
+    
     -- Use a function to get db so it's always current
     local function getDB()
-        return self.db and self.db.profile and self.db.profile[frameKey] or {}
+        local db = self.db and self.db.profile and self.db.profile[frameKey] or {}
+        print("[GenerateFrameOptions.getDB] Accessing db for " .. frameKey .. ". Has data:", next(db) and "YES" or "NO")
+        return db
     end
     
     local function update()
@@ -1077,9 +1083,13 @@ end
 
 -- Helper function to generate bar-specific options
 function UnitFrames:GetBarOptions(barType, frameKey, update)
+    print("[GetBarOptions] Called for barType: " .. barType .. ", frameKey: " .. frameKey)
+    
     -- Use a function to get the current db value
     local function getDB()
-        return self.db and self.db.profile and self.db.profile[frameKey] or {}
+        local db = self.db and self.db.profile and self.db.profile[frameKey] or {}
+        print("[GetBarOptions.getDB] Accessing db[" .. barType .. "]. Exists:", db[barType] and "YES" or "NO")
+        return db
     end
     
     local options = {
@@ -1341,10 +1351,19 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
 end
 
 function UnitFrames:GetOptions()
+    print("[UnitFrames:GetOptions] Called. db.profile exists:", self.db and self.db.profile and "YES" or "NO")
+    
     local function getPlayerArgs()
+        print("[UnitFrames] getPlayerArgs called. GetPlayerOptions_Real exists:", self.GetPlayerOptions_Real and "YES" or "NO")
         if self.GetPlayerOptions_Real then
-            return self:GetPlayerOptions_Real().args or {}
+            local result = self:GetPlayerOptions_Real()
+            print("[UnitFrames] GetPlayerOptions_Real returned. Has args:", result and result.args and "YES" or "NO")
+            if result and result.args then
+                print("[UnitFrames] Player args keys:", table.concat((function() local t={} for k in pairs(result.args) do table.insert(t,k) end return t end)(), ", "))
+            end
+            return result.args or {}
         end
+        print("[UnitFrames] GetPlayerOptions_Real not found, returning empty table")
         return {}
     end
     
@@ -1486,9 +1505,13 @@ function UnitFrames:GetOptions()
 end
 
 function UnitFrames:GetPlayerOptions()
+    print("[GetPlayerOptions wrapper] Called. GetPlayerOptions_Real exists:", self.GetPlayerOptions_Real and "YES" or "NO")
     if self.GetPlayerOptions_Real then
-        return self:GetPlayerOptions_Real()
+        local result = self:GetPlayerOptions_Real()
+        print("[GetPlayerOptions wrapper] Returning result. Type:", type(result))
+        return result
     end
+    print("[GetPlayerOptions wrapper] GetPlayerOptions_Real not found, returning nil")
     return nil
 end
 
