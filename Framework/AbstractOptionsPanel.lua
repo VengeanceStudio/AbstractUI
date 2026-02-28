@@ -394,6 +394,17 @@ function AbstractOptionsPanel:RenderContent(node)
         panel.activeNestedTab = nil
     end
     
+    -- Clear any nested tree buttons
+    local treePanel = self.frame.treePanel
+    if treePanel.nestedButtons then
+        for _, btn in ipairs(treePanel.nestedButtons) do
+            btn:Hide()
+            btn:SetParent(nil)
+        end
+        treePanel.nestedButtons = {}
+    end
+    self.selectedNestedNode = nil
+    
     -- Reset scroll frame position to default (no tabs)
     panel.scrollFrame:ClearAllPoints()
     panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
@@ -637,6 +648,246 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
     self:SelectNestedTab(1)
 end
 
+-- Render nested tree navigation (tree within a tab)
+function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
+    local panel = self.frame.contentPanel
+    local treePanel = self.frame.treePanel
+    
+    -- Build nested nodes from childGroup
+    local nestedNodes = {}
+    for key, option in pairs(childGroup.args or {}) do
+        if option.type == "group" then
+            local node = {
+                key = key,
+                name = EvaluateValue(option.name) or key,
+                desc = EvaluateValue(option.desc),
+                order = option.order or 100,
+                options = option.args or {},
+                isNested = true,
+                parentTab = parentTab
+            }
+            table.insert(nestedNodes, node)
+        end
+    end
+    
+    -- Sort by order
+    table.sort(nestedNodes, function(a, b)
+        return (a.order or 100) < (b.order or 100)
+    end)
+    
+    if #nestedNodes == 0 then
+        return
+    end
+    
+    -- Store nested nodes on the parent tab for cleanup
+    parentTab.nestedNodes = nestedNodes
+    
+    -- Build nested tree buttons
+    self:BuildNestedTreeButtons(nestedNodes, treePanel)
+    
+    -- Select first nested node by default
+    self:SelectNestedTreeNode(nestedNodes[1])
+end
+
+-- Build tree buttons for nested nodes
+function AbstractOptionsPanel:BuildNestedTreeButtons(nodes, treePanel)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local yOffset = 0
+    
+    -- Store nested buttons for cleanup
+    if not treePanel.nestedButtons then
+        treePanel.nestedButtons = {}
+    end
+    
+    -- Clear existing nested buttons
+    for _, btn in ipairs(treePanel.nestedButtons) do
+        btn:Hide()
+        btn:SetParent(nil)
+    end
+    treePanel.nestedButtons = {}
+    
+    -- Find the offset for nested buttons (after the main tree buttons)
+    for _, btn in ipairs(treePanel.buttons) do
+        local _, _, _, _, bottomY = btn:GetPoint()
+        yOffset = math.min(yOffset, bottomY or 0)
+    end
+    yOffset = yOffset - 35 -- Add spacing below last main button
+    
+    -- Create buttons for nested nodes
+    for i, node in ipairs(nodes) do
+        local btn = CreateFrame("Button", nil, treePanel.scrollChild, "BackdropTemplate")
+        btn:SetSize(treePanel.scrollChild:GetWidth() - 20, 28)
+        btn:SetPoint("TOPLEFT", treePanel.scrollChild, "TOPLEFT", 20, yOffset) -- Indent nested items
+        
+        local text = btn:CreateFontString(nil, "OVERLAY")
+        text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        text:SetText(node.name)
+        text:SetPoint("LEFT", btn, "LEFT", 8, 0)
+        text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+        text:SetJustifyH("LEFT")
+        text:SetWordWrap(false)
+        
+        btn.text = text
+        btn.node = node
+        
+        btn:SetScript("OnClick", function(self)
+            AbstractOptionsPanel:SelectNestedTreeNode(self.node)
+        end)
+        
+        btn:SetScript("OnEnter", function(self)
+            if AbstractOptionsPanel.selectedNestedNode ~= self.node then
+                self.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+            end
+        end)
+        
+        btn:SetScript("OnLeave", function(self)
+            if AbstractOptionsPanel.selectedNestedNode ~= self.node then
+                self.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+            end
+        end)
+        
+        table.insert(treePanel.nestedButtons, btn)
+        
+        yOffset = yOffset - 30
+    end
+    
+    -- Update scroll child height to accommodate nested buttons
+    local totalHeight = math.abs(yOffset) + 40
+    treePanel.scrollChild:SetHeight(math.max(totalHeight, treePanel:GetHeight()))
+end
+
+-- Select a nested tree node
+function AbstractOptionsPanel:SelectNestedTreeNode(node)
+    local treePanel = self.frame.treePanel
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    
+    -- Clear previous nested selection
+    if self.selectedNestedNode then
+        for _, btn in ipairs(treePanel.nestedButtons or {}) do
+            if btn.node == self.selectedNestedNode then
+                btn:SetBackdrop(nil)
+                btn.text:SetTextColor(ColorPalette:GetColor('text-secondary'))
+            end
+        end
+    end
+    
+    -- Set new nested selection
+    self.selectedNestedNode = node
+    
+    -- Highlight selected nested button
+    for _, btn in ipairs(treePanel.nestedButtons or {}) do
+        if btn.node == node then
+            btn:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                edgeFile = nil,
+                tile = false
+            })
+            local r, g, b = ColorPalette:GetColor('accent-primary')
+            btn:SetBackdropColor(r, g, b, 0.3)
+            btn.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+        end
+    end
+    
+    -- Render nested node content
+    self:RenderNestedTreeContent(node)
+end
+
+-- Render content for a nested tree node
+function AbstractOptionsPanel:RenderNestedTreeContent(node)
+    local panel = self.frame.contentPanel
+    
+    -- Clear existing widgets
+    for _, widget in ipairs(panel.widgets) do
+        widget:Hide()
+        widget:SetParent(nil)
+    end
+    panel.widgets = {}
+    
+    -- Sort node's options
+    local sortedOptions = {}
+    for key, option in pairs(node.options or {}) do
+        option.key = key
+        table.insert(sortedOptions, option)
+    end
+    table.sort(sortedOptions, function(a, b)
+        return (a.order or 100) < (b.order or 100)
+    end)
+    
+    -- Render widgets with inline layout support
+    local xOffset = 0
+    local yOffset = 0
+    local rowHeight = 0
+    local inlineCount = 0
+    local currentRowType = nil
+    local maxWidth = panel.scrollChild:GetWidth() - 20
+    
+    for _, option in ipairs(sortedOptions) do
+        -- Skip group types
+        if option.type ~= "group" then
+            local isFullWidth = (option.width == "full" or not option.width)
+            
+            -- Check if we need to wrap to next row
+            if isFullWidth and xOffset > 0 then
+                -- Move to next row
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+                inlineCount = 0
+                currentRowType = nil
+            end
+            
+            -- Wrap if widget type changes (don't mix toggles with other types)
+            if not isFullWidth and currentRowType and currentRowType ~= option.type and xOffset > 0 then
+                yOffset = yOffset + rowHeight + 10
+                xOffset = 0
+                rowHeight = 0
+                inlineCount = 0
+                currentRowType = nil
+            end
+            
+            local widget, height, width = self:CreateWidgetForOption(panel.scrollChild, option, xOffset, yOffset)
+            if widget then
+                table.insert(panel.widgets, widget)
+                rowHeight = math.max(rowHeight, height)
+                
+                if isFullWidth then
+                    -- Full width widget - move to next row
+                    yOffset = yOffset + height + 10
+                    xOffset = 0
+                    rowHeight = 0
+                    inlineCount = 0
+                    currentRowType = nil
+                else
+                    -- Inline widget - advance horizontally
+                    if not currentRowType then
+                        currentRowType = option.type
+                    end
+                    xOffset = xOffset + width + 20
+                    inlineCount = inlineCount + 1
+                    
+                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
+                    if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
+                        yOffset = yOffset + rowHeight + 10
+                        xOffset = 0
+                        rowHeight = 0
+                        inlineCount = 0
+                        currentRowType = nil
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Add final row height
+    if rowHeight > 0 then
+        yOffset = yOffset + rowHeight
+    end
+    
+    -- Set content height
+    panel.scrollChild:SetHeight(math.max(yOffset + 20, panel.scrollFrame:GetHeight()))
+end
+
 -- Select and render a specific nested tab
 function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     local panel = self.frame.contentPanel
@@ -799,13 +1050,30 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
         panel.activeNestedTab = nil
     end
     
+    -- Clear any nested tree buttons
+    local treePanel = self.frame.treePanel
+    if treePanel.nestedButtons then
+        for _, btn in ipairs(treePanel.nestedButtons) do
+            btn:Hide()
+            btn:SetParent(nil)
+        end
+        treePanel.nestedButtons = {}
+    end
+    self.selectedNestedNode = nil
+    
     -- Render the selected tab's content
     local selectedTab = panel.tabs[tabIndex]
     local childGroup = selectedTab.childGroup
     
-    -- Check if this child group also uses tabs
+    -- Check if this child group uses nested tabs
     if childGroup.childGroups == "tab" then
         self:RenderNestedTabGroup(childGroup, 45) -- 45px offset for parent tabs (30px height + 15px spacing)
+        return
+    end
+    
+    -- Check if this child group uses nested tree navigation
+    if childGroup.childGroups == "tree" then
+        self:RenderNestedTree(childGroup, selectedTab)
         return
     end
     
