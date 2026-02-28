@@ -383,6 +383,16 @@ function AbstractOptionsPanel:RenderContent(node)
         panel.activeTab = nil
     end
     
+    -- Clear any nested tabs
+    if panel.nestedTabs then
+        for _, tab in ipairs(panel.nestedTabs) do
+            tab:Hide()
+            tab:SetParent(nil)
+        end
+        panel.nestedTabs = nil
+        panel.activeNestedTab = nil
+    end
+    
     if not node or not node.options then
         return
     end
