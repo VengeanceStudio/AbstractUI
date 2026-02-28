@@ -930,15 +930,9 @@ end
 
 -- Helper function to generate frame options with independent databases
 function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameGlobal)
-    print("[GenerateFrameOptions] Called for frameKey: " .. frameKey .. ", frameName: " .. frameName)
-    print("[GenerateFrameOptions] self.db exists:", self.db and "YES" or "NO")
-    print("[GenerateFrameOptions] self.db.profile exists:", self.db and self.db.profile and "YES" or "NO")
-    
     -- Use a function to get db so it's always current
     local function getDB()
-        local db = self.db and self.db.profile and self.db.profile[frameKey] or {}
-        print("[GenerateFrameOptions.getDB] Accessing db for " .. frameKey .. ". Has data:", next(db) and "YES" or "NO")
-        return db
+        return self.db and self.db.profile and self.db.profile[frameKey] or {}
     end
     
     local function update()
@@ -1056,40 +1050,56 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 get = function() local db = getDB(); return db.raidTargetIconOffsetY or 0 end,
                 set = function(_, v) local db = getDB(); db.raidTargetIconOffsetY = v; update() end,
             },
-            health = {
-                type = "group",
-                name = "Health Bar",
-                order = 1,
-                inline = true,
-                args = self:GetBarOptions("health", frameKey, update),
-            },
-            power = {
-                type = "group",
-                name = "Power Bar",
-                order = 2,
-                inline = true,
-                args = self:GetBarOptions("power", frameKey, update),
-            },
-            info = {
-                type = "group",
-                name = "Info Bar",
-                order = 3,
-                inline = true,
-                args = self:GetBarOptions("info", frameKey, update),
-            },
         },
     }
+    
+    -- Add Health Bar options with header
+    local healthHeader = {
+        type = "header",
+        name = "Health Bar",
+        order = 1.0,
+    }
+    local healthOptions = self:GetBarOptions("health", frameKey, update)
+    result.args.healthHeader = healthHeader
+    for key, option in pairs(healthOptions) do
+        option.order = 1.0 + (option.order or 0) * 0.01 -- Adjust order to be after header
+        result.args["health_" .. key] = option
+    end
+    
+    -- Add Power Bar options with header
+    local powerHeader = {
+        type = "header",
+        name = "Power Bar",
+        order = 2.0,
+    }
+    local powerOptions = self:GetBarOptions("power", frameKey, update)
+    result.args.powerHeader = powerHeader
+    for key, option in pairs(powerOptions) do
+        option.order = 2.0 + (option.order or 0) * 0.01
+        result.args["power_" .. key] = option
+    end
+    
+    -- Add Info Bar options with header
+    local infoHeader = {
+        type = "header",
+        name = "Info Bar",
+        order = 3.0,
+    }
+    local infoOptions = self:GetBarOptions("info", frameKey, update)
+    result.args.infoHeader = infoHeader
+    for key, option in pairs(infoOptions) do
+        option.order = 3.0 + (option.order or 0) * 0.01
+        result.args["info_" .. key] = option
+    end
+    
+    return result
 end
 
 -- Helper function to generate bar-specific options
 function UnitFrames:GetBarOptions(barType, frameKey, update)
-    print("[GetBarOptions] Called for barType: " .. barType .. ", frameKey: " .. frameKey)
-    
     -- Use a function to get the current db value
     local function getDB()
-        local db = self.db and self.db.profile and self.db.profile[frameKey] or {}
-        print("[GetBarOptions.getDB] Accessing db[" .. barType .. "]. Exists:", db[barType] and "YES" or "NO")
-        return db
+        return self.db and self.db.profile and self.db.profile[frameKey] or {}
     end
     
     local options = {
@@ -1351,19 +1361,10 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
 end
 
 function UnitFrames:GetOptions()
-    print("[UnitFrames:GetOptions] Called. db.profile exists:", self.db and self.db.profile and "YES" or "NO")
-    
     local function getPlayerArgs()
-        print("[UnitFrames] getPlayerArgs called. GetPlayerOptions_Real exists:", self.GetPlayerOptions_Real and "YES" or "NO")
         if self.GetPlayerOptions_Real then
-            local result = self:GetPlayerOptions_Real()
-            print("[UnitFrames] GetPlayerOptions_Real returned. Has args:", result and result.args and "YES" or "NO")
-            if result and result.args then
-                print("[UnitFrames] Player args keys:", table.concat((function() local t={} for k in pairs(result.args) do table.insert(t,k) end return t end)(), ", "))
-            end
-            return result.args or {}
+            return self:GetPlayerOptions_Real().args or {}
         end
-        print("[UnitFrames] GetPlayerOptions_Real not found, returning empty table")
         return {}
     end
     
@@ -1505,13 +1506,9 @@ function UnitFrames:GetOptions()
 end
 
 function UnitFrames:GetPlayerOptions()
-    print("[GetPlayerOptions wrapper] Called. GetPlayerOptions_Real exists:", self.GetPlayerOptions_Real and "YES" or "NO")
     if self.GetPlayerOptions_Real then
-        local result = self:GetPlayerOptions_Real()
-        print("[GetPlayerOptions wrapper] Returning result. Type:", type(result))
-        return result
+        return self:GetPlayerOptions_Real()
     end
-    print("[GetPlayerOptions wrapper] GetPlayerOptions_Real not found, returning nil")
     return nil
 end
 
