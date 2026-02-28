@@ -924,6 +924,7 @@ function Tooltips:GetOptions()
                 type = "range",
                 name = "X Offset",
                 desc = "Horizontal offset from cursor",
+                width = "inline",
                 min = -100,
                 max = 100,
                 step = 1,
@@ -939,6 +940,7 @@ function Tooltips:GetOptions()
                 type = "range",
                 name = "Y Offset",
                 desc = "Vertical offset from cursor",
+                width = "inline",
                 min = -100,
                 max = 100,
                 step = 1,
@@ -954,6 +956,7 @@ function Tooltips:GetOptions()
                 type = "range",
                 name = "Fade Delay",
                 desc = "How quickly tooltips fade out (in seconds)",
+                width = "inline",
                 min = 0,
                 max = 2,
                 step = 0.1,
@@ -969,6 +972,7 @@ function Tooltips:GetOptions()
                 type = "range",
                 name = "Tooltip Scale",
                 desc = "Overall size of tooltips (50% to 200%)",
+                width = "inline",
                 min = 0.5,
                 max = 2.0,
                 step = 0.05,
@@ -1053,7 +1057,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Guild",
                 desc = "Display guild information",
-                order = 32,
+                order = 39,
                 get = function() return self.db.profile.showGuild end,
                 set = function(_, value)
                     self.db.profile.showGuild = value
@@ -1064,7 +1068,7 @@ function Tooltips:GetOptions()
                 type = "color",
                 name = "Your Guild Color",
                 desc = "Color for your guild members",
-                order = 33,
+                order = 40,
                 get = function()
                     local c = self.db.profile.yourGuildColor
                     return c.r, c.g, c.b
@@ -1078,7 +1082,7 @@ function Tooltips:GetOptions()
                 type = "color",
                 name = "Other Guild Color",
                 desc = "Color for other guild members",
-                order = 34,
+                order = 41,
                 get = function()
                     local c = self.db.profile.otherGuildColor
                     return c.r, c.g, c.b
@@ -1092,7 +1096,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show AFK/DND Status",
                 desc = "Display player AFK or DND status",
-                order = 35,
+                order = 32,
                 get = function() return self.db.profile.showStatus end,
                 set = function(_, value)
                     self.db.profile.showStatus = value
@@ -1103,7 +1107,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Item Level",
                 desc = "Display player item levels (requires inspect)",
-                order = 36,
+                order = 33,
                 get = function() return self.db.profile.showItemLevel end,
                 set = function(_, value)
                     self.db.profile.showItemLevel = value
@@ -1114,7 +1118,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Faction",
                 desc = "Display player faction (Horde/Alliance)",
-                order = 37,
+                order = 34,
                 get = function() return self.db.profile.showFaction end,
                 set = function(_, value)
                     self.db.profile.showFaction = value
@@ -1125,7 +1129,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Mount Info",
                 desc = "Display mounted player's mount and if you have it collected",
-                order = 38,
+                order = 35,
                 get = function() return self.db.profile.showMount end,
                 set = function(_, value)
                     self.db.profile.showMount = value
@@ -1136,7 +1140,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Role",
                 desc = "Display player role (Tank/Healer/DPS)",
-                order = 39,
+                order = 36,
                 get = function() return self.db.profile.showRole end,
                 set = function(_, value)
                     self.db.profile.showRole = value
@@ -1147,7 +1151,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Mythic+ Rating",
                 desc = "Display player's Mythic+ score",
-                order = 40,
+                order = 37,
                 get = function() return self.db.profile.showMythicScore end,
                 set = function(_, value)
                     self.db.profile.showMythicScore = value
@@ -1158,7 +1162,7 @@ function Tooltips:GetOptions()
                 type = "toggle",
                 name = "Show Target Of Target",
                 desc = "Display who the unit is targeting",
-                order = 41,
+                order = 38,
                 get = function() return self.db.profile.showTargetOf end,
                 set = function(_, value)
                     self.db.profile.showTargetOf = value
