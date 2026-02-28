@@ -1067,24 +1067,32 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
             multilineHeight = option.multiline * 15  -- 15 pixels per line
         end
         
-        local scroll = ScrollFrame:Create(frame)
-        scroll:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
-        scroll:SetSize(frameWidth - 20, multilineHeight)
-        
-        editBox = CreateFrame("EditBox", nil, scroll.scrollArea, "BackdropTemplate")
-        editBox:SetMultiLine(true)
-        editBox:SetSize(scroll.scrollArea:GetWidth() - 10, 1000)
-        editBox:SetAutoFocus(false)
-        
-        -- Style multiline edit box
-        editBox:SetBackdrop({
+        -- Create a container frame with backdrop for visibility
+        local container = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+        container:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -8)
+        container:SetSize(frameWidth - 20, multilineHeight)
+        container:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             tile = false, edgeSize = 1,
-            insets = { left = 4, right = 4, top = 2, bottom = 2 }
+            insets = { left = 2, right = 2, top = 2, bottom = 2 }
         })
-        editBox:SetBackdropColor(ColorPalette:GetColor('button-bg'))
-        editBox:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        container:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+        container:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+        
+        local scroll = ScrollFrame:Create(container)
+        scroll:SetPoint("TOPLEFT", container, "TOPLEFT", 4, -4)
+        scroll:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -4, 4)
+        
+        editBox = CreateFrame("EditBox", nil, scroll.scrollArea)
+        editBox:SetMultiLine(true)
+        editBox:SetWidth(scroll.scrollArea:GetWidth() - 10)
+        editBox:SetHeight(10000)  -- Large height to accommodate very long text (31k+ characters)
+        editBox:SetAutoFocus(false)
+        editBox:SetMaxLetters(0)  -- No character limit
+        
+        -- Enable word wrap for better readability
+        editBox:SetSpacing(2)
         
         scroll:SetScrollChild(editBox)
         
