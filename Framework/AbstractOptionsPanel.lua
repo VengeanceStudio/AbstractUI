@@ -20,6 +20,14 @@ local function EvaluateValue(value, ...)
     return value
 end
 
+-- Evaluate args that can be a table or a function returning a table
+local function EvaluateArgs(args)
+    if type(args) == "function" then
+        return args() or {}
+    end
+    return args or {}
+end
+
 -- ============================================================================
 -- TREE PARSER - Convert options table to tree structure
 -- ============================================================================
@@ -35,10 +43,17 @@ function AbstractOptionsPanel:ParseOptionsToTree(optionsTable)
     -- Build tree nodes from options table
     for key, option in pairs(optionsTable.args) do
         if option.type == "group" then
-            -- Inherit get/set to child options that don't have their own
-            local childOptions = {}
-            if option.args then
-                for childKey, childOption in pairs(option.args) do
+            -- For tab groups, store args directly (may be a function for lazy loading)
+            -- For non-tab groups, inherit get/set to child options that don't have their own
+            local childOptions
+            if option.childGroups == "tab" then
+                -- Store args as-is (could be a function for lazy evaluation)
+                childOptions = option.args
+            else
+                -- Build child options with inheritance
+                childOptions = {}
+                local optionArgs = EvaluateArgs(option.args)
+                for childKey, childOption in pairs(optionArgs) do
                     childOptions[childKey] = childOption
                     -- Inherit get/set from parent if child doesn't have its own
                     if option.get and not childOption.get then
@@ -61,13 +76,15 @@ function AbstractOptionsPanel:ParseOptionsToTree(optionsTable)
             }
             
             -- Recursively parse child groups ONLY if childGroups != "tab"
-            if option.args and option.childGroups ~= "tab" then
-                for childKey, childOption in pairs(option.args) do
+            if option.childGroups ~= "tab" then
+                local optionArgs = EvaluateArgs(option.args)
+                for childKey, childOption in pairs(optionArgs) do
                     if childOption.type == "group" then
                         -- Inherit get/set from parent to grandchild options
                         local grandchildOptions = {}
-                        if childOption.args then
-                            for grandchildKey, grandchildOption in pairs(childOption.args) do
+                        local childArgs = EvaluateArgs(childOption.args)
+                        if childArgs and next(childArgs) then
+                            for grandchildKey, grandchildOption in pairs(childArgs) do
                                 grandchildOptions[grandchildKey] = grandchildOption
                                 -- First check child group's get/set, then parent group's
                                 if not grandchildOption.get then
@@ -454,7 +471,8 @@ function AbstractOptionsPanel:RenderContent(node)
     
     -- Sort options by order
     local sortedOptions = {}
-    for key, option in pairs(node.options) do
+    local nodeOptions = EvaluateArgs(node.options)
+    for key, option in pairs(nodeOptions) do
         option.key = key
         table.insert(sortedOptions, option)
     end
@@ -545,7 +563,8 @@ function AbstractOptionsPanel:RenderTabGroup(node)
     
     -- Build sorted list of child groups
     local childGroups = {}
-    for key, option in pairs(node.options) do
+    local nodeOptions = EvaluateArgs(node.options)
+    for key, option in pairs(nodeOptions) do
         if option.type == "group" then
             option.key = key
             table.insert(childGroups, option)
@@ -616,7 +635,8 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
     
     -- Build sorted list of nested child groups
     local nestedGroups = {}
-    for key, option in pairs(childGroup.args or {}) do
+    local childArgs = EvaluateArgs(childGroup.args)
+    for key, option in pairs(childArgs) do
         if option.type == "group" then
             option.key = key
             table.insert(nestedGroups, option)
@@ -687,12 +707,14 @@ function AbstractOptionsPanel:RenderNestedTree(childGroup, parentTab)
     
     -- Build nested nodes from childGroup
     local nestedNodes = {}
-    for key, option in pairs(childGroup.args or {}) do
+    local childArgs = EvaluateArgs(childGroup.args)
+    for key, option in pairs(childArgs) do
         if option.type == "group" then
             -- Inherit get/set to nested options
             local nestedOptions = {}
-            if option.args then
-                for nestedKey, nestedOption in pairs(option.args) do
+            local optionArgs = EvaluateArgs(option.args)
+            if optionArgs and next(optionArgs) then
+                for nestedKey, nestedOption in pairs(optionArgs) do
                     nestedOptions[nestedKey] = nestedOption
                     -- Inherit get/set from parent group (option) or grandparent (childGroup)
                     if not nestedOption.get then
@@ -897,7 +919,8 @@ function AbstractOptionsPanel:RenderNestedTreeContent(node)
     
     -- Sort node's options
     local sortedOptions = {}
-    for key, option in pairs(node.options or {}) do
+    local nodeOptions = EvaluateArgs(node.options)
+    for key, option in pairs(nodeOptions) do
         option.key = key
         table.insert(sortedOptions, option)
     end
@@ -1017,7 +1040,8 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     
     -- Sort nested group's options
     local sortedOptions = {}
-    for key, option in pairs(nestedGroup.args or {}) do
+    local nestedArgs = EvaluateArgs(nestedGroup.args)
+    for key, option in pairs(nestedArgs) do
         option.key = key
         -- Inherit get/set from parent nested group if option doesn't have its own
         if nestedGroup.get and not option.get then
@@ -1180,7 +1204,8 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     -- Sort child group's options
     local sortedOptions = {}
-    for key, option in pairs(childGroup.args or {}) do
+    local childArgs = EvaluateArgs(childGroup.args)
+    for key, option in pairs(childArgs) do
         option.key = key
         -- Inherit get/set from parent group if option doesn't have its own
         if childGroup.get and not option.get then
