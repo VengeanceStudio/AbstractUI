@@ -133,10 +133,35 @@ function AbstractOptionsPanel:CreateFrame(addonRef)
     frame.dragArea:SetScript("OnDragStart", function() frame:StartMoving() end)
     frame.dragArea:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
     
-    -- Create close button
-    frame.closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    frame.closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
+    -- Create modern close button
+    frame.closeButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
+    frame.closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -12)
     frame.closeButton:SetSize(32, 32)
+    frame.closeButton:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    frame.closeButton:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+    frame.closeButton:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    
+    -- Close button text (X)
+    frame.closeButton.text = frame.closeButton:CreateFontString(nil, "OVERLAY")
+    frame.closeButton.text:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+    frame.closeButton.text:SetText("×")
+    frame.closeButton.text:SetPoint("CENTER", 0, 0)
+    frame.closeButton.text:SetTextColor(0.7, 0.7, 0.7, 1)
+    
+    -- Hover effects
+    frame.closeButton:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(0.8, 0.2, 0.2, 0.9)
+        self.text:SetTextColor(1, 1, 1, 1)
+    end)
+    frame.closeButton:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+        self.text:SetTextColor(0.7, 0.7, 0.7, 1)
+    end)
     frame.closeButton:SetScript("OnClick", function() frame:Hide() end)
     
     -- Create tree navigation panel (left side)
