@@ -1020,6 +1020,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "range",
                 name = "Raid Target Icon Size",
                 desc = "Size of the raid target marker icon.",
+                width = "inline",
                 min = 16, max = 64, step = 1,
                 order = 0.92,
                 get = function() return db.raidTargetIconSize or 32 end,
@@ -1029,6 +1030,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "range",
                 name = "Raid Target Icon X Offset",
                 desc = "Horizontal offset of the raid target icon from center-top of frame.",
+                width = "inline",
                 min = -100, max = 100, step = 1,
                 order = 0.93,
                 get = function() return db.raidTargetIconOffsetX or 0 end,
@@ -1038,6 +1040,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 type = "range",
                 name = "Raid Target Icon Y Offset",
                 desc = "Vertical offset of the raid target icon. Positive = up, negative = down.",
+                width = "inline",
                 min = -100, max = 100, step = 1,
                 order = 0.94,
                 get = function() return db.raidTargetIconOffsetY or 0 end,
@@ -1081,6 +1084,7 @@ function UnitFrames:GetBarOptions(barType, db, update)
         width = {
             type = "range",
             name = "Width",
+            width = "inline",
             min = 50, max = 600, step = 1,
             order = 2,
             get = function() return db[barType] and db[barType].width or 220 end,
@@ -1089,6 +1093,7 @@ function UnitFrames:GetBarOptions(barType, db, update)
         height = {
             type = "range",
             name = "Height",
+            width = "inline",
             min = 5, max = 100, step = 1,
             order = 3,
             get = function() 

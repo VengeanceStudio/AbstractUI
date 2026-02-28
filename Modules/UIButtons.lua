@@ -455,6 +455,7 @@ function UIButtons:GetOptions()
             scale = {
                 name = "Scale",
                 type = "range",
+                width = "inline",
                 order = 4,
                 min = 0.2,
                 max = 2.0,
@@ -473,6 +474,7 @@ function UIButtons:GetOptions()
             spacing = {
                 name = "Spacing",
                 type = "range",
+                width = "inline",
                 order = 5,
                 min = 0,
                 max = 20,
@@ -522,6 +524,7 @@ function UIButtons:GetOptions()
             fontSize = {
                 name = "Font Size",
                 type = "range",
+                width = "inline",
                 order = 8,
                 min = 8,
                 max = 32,

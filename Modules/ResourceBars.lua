@@ -813,6 +813,7 @@ function ResourceBars:GetOptions()
             primaryWidth = {
                 name = "Width",
                 type = "range",
+                width = "inline",
                 order = 12,
                 min = 100,
                 max = 500,
@@ -829,6 +830,7 @@ function ResourceBars:GetOptions()
             primaryHeight = {
                 name = "Height",
                 type = "range",
+                width = "inline",
                 order = 13,
                 min = 10,
                 max = 50,
@@ -965,6 +967,7 @@ function ResourceBars:GetOptions()
             secondaryWidth = {
                 name = "Width",
                 type = "range",
+                width = "inline",
                 order = 22,
                 min = 100,
                 max = 500,
@@ -982,6 +985,7 @@ function ResourceBars:GetOptions()
             secondaryHeight = {
                 name = "Height",
                 type = "range",
+                width = "inline",
                 order = 23,
                 min = 8,
                 max = 30,

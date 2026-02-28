@@ -795,18 +795,6 @@ function Tooltips:GetOptions()
         name = "Tooltips",
         type = "group",
         args = {
-            description = {
-                type = "description",
-                name = "Customize tooltip appearance and information display. Use the Tooltips toggle on the General tab to enable/disable this module.\n\n|cffFFD700Smart Inspection System:|r Item level data is cached for 5 minutes and only requested when you target a player (1.5s throttle to prevent API rate limiting).",
-                order = 1,
-                fontSize = "medium",
-            },
-            spacer1 = {
-                type = "description",
-                name = " ",
-                order = 2,
-            },
-            
             -- Appearance Settings
             appearanceHeader = {
                 type = "header",
@@ -820,6 +808,7 @@ function Tooltips:GetOptions()
                 min = 1,
                 max = 5,
                 step = 1,
+                width = "inline",
                 order = 11,
                 get = function() return self.db.profile.borderSize end,
                 set = function(_, value)
@@ -835,6 +824,7 @@ function Tooltips:GetOptions()
                 min = 0,
                 max = 1,
                 step = 0.05,
+                width = "inline",
                 order = 12,
                 get = function() return self.db.profile.backdropAlpha end,
                 set = function(_, value)
@@ -850,6 +840,7 @@ function Tooltips:GetOptions()
                 min = 8,
                 max = 18,
                 step = 1,
+                width = "inline",
                 order = 13,
                 get = function() return self.db.profile.fontSize end,
                 set = function(_, value)
