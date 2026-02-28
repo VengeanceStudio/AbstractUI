@@ -1090,6 +1090,8 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         editBox:SetHeight(10000)  -- Large height to accommodate very long text (31k+ characters)
         editBox:SetAutoFocus(false)
         editBox:SetMaxLetters(0)  -- No character limit
+        editBox:EnableMouse(true)
+        editBox:EnableKeyboard(true)
         
         -- Enable word wrap for better readability
         editBox:SetSpacing(2)
@@ -1183,29 +1185,37 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
         editBox:SetScript("OnTextChanged", function()
             UpdateButtonVisibility()
         end)
+        
+        -- Initial button visibility check
+        C_Timer.After(0.1, function()
+            UpdateButtonVisibility()
+        end)
     end
     
     -- Enable paste for multiline editboxes
     if isMultiline then
-        -- Enable Ctrl+V paste functionality
+        -- Only intercept specific key combinations, allow normal typing
         editBox:SetScript("OnKeyDown", function(self, key)
-            if key == "V" and IsControlKeyDown() then
-                local pasteText = GetClipboardText()
-                if pasteText and pasteText ~= "" then
-                    local currentText = self:GetText() or ""
-                    local cursorPos = self:GetCursorPosition() or 0
-                    local beforeCursor = currentText:sub(1, cursorPos)
-                    local afterCursor = currentText:sub(cursorPos + 1)
-                    local newText = beforeCursor .. pasteText .. afterCursor
-                    self:SetText(newText)
-                    self:SetCursorPosition(cursorPos + #pasteText)
-                    
-                    -- Save the pasted value
-                    SetValue(newText)
+            if IsControlKeyDown() then
+                if key == "V" then
+                    -- Ctrl+V paste functionality
+                    local pasteText = GetClipboardText()
+                    if pasteText and pasteText ~= "" then
+                        local currentText = self:GetText() or ""
+                        local cursorPos = self:GetCursorPosition() or 0
+                        local beforeCursor = currentText:sub(1, cursorPos)
+                        local afterCursor = currentText:sub(cursorPos + 1)
+                        local newText = beforeCursor .. pasteText .. afterCursor
+                        self:SetText(newText)
+                        self:SetCursorPosition(cursorPos + #pasteText)
+                        
+                        -- Save the pasted value
+                        SetValue(newText)
+                    end
+                elseif key == "A" then
+                    -- Ctrl+A to select all
+                    self:HighlightText()
                 end
-            elseif key == "A" and IsControlKeyDown() then
-                -- Ctrl+A to select all
-                self:HighlightText(0, #self:GetText())
             end
         end)
     end

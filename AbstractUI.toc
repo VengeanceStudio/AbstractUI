@@ -2,7 +2,7 @@
 ## Title: Abstract UI
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
-## Version: 12.0.1.13
+## Version: 12.0.1.14
 ## IconTexture: Interface\AddOns\AbstractUI\icon.png
 ## SavedVariables: AbstractUIDB
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, Masque
