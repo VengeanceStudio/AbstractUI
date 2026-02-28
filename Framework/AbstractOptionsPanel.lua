@@ -352,9 +352,10 @@ function AbstractOptionsPanel:CreateContentPanel(parent)
     panel.scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
     panel.scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
     
-    -- Get scroll child
+    -- Get scroll child and set its frame level below tabs
     panel.scrollChild = panel.scrollFrame:GetScrollChild()
     panel.scrollChild:SetWidth(panel.scrollFrame.scrollArea:GetWidth())
+    panel.scrollChild:SetFrameLevel(panel:GetFrameLevel() + 1)
     
     -- Store for widgets
     panel.widgets = {}
@@ -501,8 +502,7 @@ function AbstractOptionsPanel:RenderTabGroup(node)
     
     for i, childGroup in ipairs(childGroups) do
         local tabButton = CreateFrame("Button", nil, panel, "BackdropTemplate")
-        tabButton:SetFrameStrata("HIGH")
-        tabButton:SetFrameLevel(100)
+        tabButton:SetFrameLevel(panel:GetFrameLevel() + 10)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
@@ -568,8 +568,7 @@ function AbstractOptionsPanel:RenderNestedTabGroup(childGroup, yOffset)
     
     for i, nestedGroup in ipairs(nestedGroups) do
         local tabButton = CreateFrame("Button", nil, panel, "BackdropTemplate")
-        tabButton:SetFrameStrata("HIGH")
-        tabButton:SetFrameLevel(100)
+        tabButton:SetFrameLevel(panel:GetFrameLevel() + 10)
         
         -- Create tab text first to measure width
         local tabText = tabButton:CreateFontString(nil, "OVERLAY")
