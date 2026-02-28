@@ -1322,6 +1322,48 @@ function UnitFrames:GetBarOptions(barType, db, update)
 end
 
 function UnitFrames:GetOptions()
+    local function getPlayerArgs()
+        if self.GetPlayerOptions_Real then
+            return self:GetPlayerOptions_Real().args or {}
+        end
+        return {}
+    end
+    
+    local function getTargetArgs()
+        if self.GetTargetOptions_Real then
+            return self:GetTargetOptions_Real().args or {}
+        end
+        return {}
+    end
+    
+    local function getTargetTargetArgs()
+        if self.GetTargetTargetOptions_Real then
+            return self:GetTargetTargetOptions_Real().args or {}
+        end
+        return {}
+    end
+    
+    local function getPetArgs()
+        if self.GetPetOptions_Real then
+            return self:GetPetOptions_Real().args or {}
+        end
+        return {}
+    end
+    
+    local function getFocusArgs()
+        if self.GetFocusOptions_Real then
+            return self:GetFocusOptions_Real().args or {}
+        end
+        return {}
+    end
+    
+    local function getBossArgs()
+        if self.GetBossOptions_Real then
+            return self:GetBossOptions_Real().args or {}
+        end
+        return {}
+    end
+    
     return {
         name = "Unit Frames",
         type = "group",
@@ -1331,37 +1373,37 @@ function UnitFrames:GetOptions()
                 name = "Player",
                 type = "group",
                 order = 1,
-                args = self.GetPlayerOptions_Real and self:GetPlayerOptions_Real().args or {},
+                args = getPlayerArgs,
             },
             target = {
                 name = "Target",
                 type = "group",
                 order = 2,
-                args = self.GetTargetOptions_Real and self:GetTargetOptions_Real().args or {},
+                args = getTargetArgs,
             },
             targettarget = {
                 name = "Target of Target",
                 type = "group",
                 order = 3,
-                args = self.GetTargetTargetOptions_Real and self:GetTargetTargetOptions_Real().args or {},
+                args = getTargetTargetArgs,
             },
             pet = {
                 name = "Pet",
                 type = "group",
                 order = 4,
-                args = self.GetPetOptions_Real and self:GetPetOptions_Real().args or {},
+                args = getPetArgs,
             },
             focus = {
                 name = "Focus",
                 type = "group",
                 order = 5,
-                args = self.GetFocusOptions_Real and self:GetFocusOptions_Real().args or {},
+                args = getFocusArgs,
             },
             boss = {
                 name = "Boss Frames",
                 type = "group",
                 order = 6,
-                args = self.GetBossOptions_Real and self:GetBossOptions_Real().args or {},
+                args = getBossArgs,
             },
             partyRaid = {
                 name = "Party/Raid",
@@ -1429,42 +1471,6 @@ function UnitFrames:GetPlayerOptions()
         return self:GetPlayerOptions_Real()
     end
     return nil
-end
-
-function UnitFrames:GetBossOptions_Real()
-    local options = self:GenerateFrameOptions("Boss Frames", "boss", "CreateBossFrames", "AbstractUI_Boss1Frame")
-    
-    -- Add boss-specific options at the top
-    options.args.enable = {
-        type = "toggle",
-        name = "Show Boss Frames",
-        desc = "Enable custom boss frames",
-        order = 0.5,
-        get = function() return self.db and self.db.profile and self.db.profile.showBoss end,
-        set = function(_, v)
-            if not self.db or not self.db.profile then return end
-            self.db.profile.showBoss = v
-            if v then
-                self:CreateBossFrames()
-            else
-                for i = 1, 5 do
-                    local frame = _G["AbstractUI_Boss" .. i .. "Frame"]
-                    if frame then
-                        frame:Hide()
-                        frame:SetParent(nil)
-                    end
-                end
-            end
-        end,
-    }
-    
-    options.args.description = {
-        type = "description",
-        name = "Settings below apply to all 5 boss frames.",
-        order = 0.6,
-    }
-    
-    return options
 end
 
     function UnitFrames:PLAYER_ENTERING_WORLD()
