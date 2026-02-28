@@ -1035,6 +1035,7 @@ function Tooltips:GetOptions()
                 name = "Class-Colored Names",
                 desc = "Display player names in their class colors",
                 order = 31,
+                width = "inline",
                 get = function() return self.db.profile.classColor end,
                 set = function(_, value)
                     self.db.profile.classColor = value
@@ -1046,6 +1047,7 @@ function Tooltips:GetOptions()
                 name = "Class-Colored Borders",
                 desc = "Color tooltip borders based on player class (overrides theme border color)",
                 order = 31.5,
+                width = "inline",
                 get = function() return self.db.profile.classColoredBorders end,
                 set = function(_, value)
                     self.db.profile.classColoredBorders = value
@@ -1058,6 +1060,7 @@ function Tooltips:GetOptions()
                 name = "Show Guild",
                 desc = "Display guild information",
                 order = 39,
+                width = "inline",
                 get = function() return self.db.profile.showGuild end,
                 set = function(_, value)
                     self.db.profile.showGuild = value
@@ -1097,6 +1100,7 @@ function Tooltips:GetOptions()
                 name = "Show AFK/DND Status",
                 desc = "Display player AFK or DND status",
                 order = 32,
+                width = "inline",
                 get = function() return self.db.profile.showStatus end,
                 set = function(_, value)
                     self.db.profile.showStatus = value
@@ -1108,6 +1112,7 @@ function Tooltips:GetOptions()
                 name = "Show Item Level",
                 desc = "Display player item levels (requires inspect)",
                 order = 33,
+                width = "inline",
                 get = function() return self.db.profile.showItemLevel end,
                 set = function(_, value)
                     self.db.profile.showItemLevel = value
@@ -1119,6 +1124,7 @@ function Tooltips:GetOptions()
                 name = "Show Faction",
                 desc = "Display player faction (Horde/Alliance)",
                 order = 34,
+                width = "inline",
                 get = function() return self.db.profile.showFaction end,
                 set = function(_, value)
                     self.db.profile.showFaction = value
@@ -1130,6 +1136,7 @@ function Tooltips:GetOptions()
                 name = "Show Mount Info",
                 desc = "Display mounted player's mount and if you have it collected",
                 order = 35,
+                width = "inline",
                 get = function() return self.db.profile.showMount end,
                 set = function(_, value)
                     self.db.profile.showMount = value
@@ -1141,6 +1148,7 @@ function Tooltips:GetOptions()
                 name = "Show Role",
                 desc = "Display player role (Tank/Healer/DPS)",
                 order = 36,
+                width = "inline",
                 get = function() return self.db.profile.showRole end,
                 set = function(_, value)
                     self.db.profile.showRole = value
@@ -1152,6 +1160,7 @@ function Tooltips:GetOptions()
                 name = "Show Mythic+ Rating",
                 desc = "Display player's Mythic+ score",
                 order = 37,
+                width = "inline",
                 get = function() return self.db.profile.showMythicScore end,
                 set = function(_, value)
                     self.db.profile.showMythicScore = value
@@ -1163,6 +1172,7 @@ function Tooltips:GetOptions()
                 name = "Show Target Of Target",
                 desc = "Display who the unit is targeting",
                 order = 38,
+                width = "inline",
                 get = function() return self.db.profile.showTargetOf end,
                 set = function(_, value)
                     self.db.profile.showTargetOf = value
