@@ -1,7 +1,7 @@
 # AbstractUI
 
 ![WoW Version](https://img.shields.io/badge/WoW-12.0%2B-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 **AbstractUI** is a complete, modular, and modern User Interface replacement for World of Warcraft. 
 
@@ -9,7 +9,7 @@ Built for **WoW 12.0+** (Midnight expansion), it prioritizes readability, perfor
 
 ## ✨ Features
 
-AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually via `/aui` or the AddOns settings panel.
+AbstractUI is divided into lightweight, independent modules. You can enable or disable each module individually.
 
 ---
 
@@ -27,7 +27,7 @@ Transform your entire interface with consistent theming across all UI elements.
 
 ---
 
-### 📊 Info Bar Module (Data Brokers)
+### 📊 Data Broker Bar Module
 A powerful, fully customizable bar system for displaying critical game information at a glance.
 
 **Core Features:**
@@ -36,11 +36,10 @@ A powerful, fully customizable bar system for displaying critical game informati
 * Per-bar configuration: position, size, transparency, fonts, textures, and colors
 * Three alignment sections per bar: Left, Center, Right
 * Click-through mode option
-* LibSharedMedia-3.0 integration
 
-**Built-in Data Widgets:**
+**Built-in Data Brokers:**
 
-| Widget | Description | Features |
+| Broker | Description | Features |
 |--------|-------------|----------|
 | **System Info** | FPS, Latency, Memory | Color-coded alerts (green/yellow/red), click for details |
 | **Volume Mixer** | Master sound control | Click to mute/unmute, mousewheel to adjust, visual indicator |
@@ -130,30 +129,22 @@ Advanced text formatting with dynamic tags:
 * **Portrait display:** 2D/3D portraits (where applicable)
 * **Cast bars:** Position, size, color, and text customization
 
-#### Boss Frames Specific:
-* **Unified settings** for all 5 boss frames (configure once, apply to all)
-* **Vertical stacking** with adjustable spacing
-* **Group movement** - all boss frames move together
-* **Hostility-based health bar coloring**
-* **Raid target icon display**
-* **Automatic show/hide** based on encounter
-
-#### Pet Frame Specific:
-* Matches design pattern of other unit frames
-* Health and power bars
-* Name and level display
-* Happiness indicator (for hunter pets)
-
 ---
 
 ### ⏱️ Cooldown Manager Module
-*(Work in Progress - Currently Disabled by Default)*
-
-**Planned Features:**
 * Built-in digital timers on ability icons
 * Clear, readable cooldown display
-* Integrates with action bars
 * Customizable font and positioning
+* Can attach Resource Bars to Cooldown Manager
+
+---
+
+### Resource Bars and Cast Bar Modules
+- Primary Power Bar (Mana, Energy, Rage, etc.)
+- Secondary Power Bar (Holy Power, Chi, Runes, etc.)
+- Both bars support smart attachment to Cooldown Manager
+- Cast Bar with optional Spell icon
+- Visual indicator for non-interruptible casts
 
 ---
 
@@ -214,6 +205,19 @@ Comprehensive quality-of-life improvements and automation features to streamline
 
 ---
 
+### 🎨 UI Buttons Module
+Consistent styling for interface buttons and menus.
+
+**Features:**
+* Styled menu buttons (Character, Spellbook, Talents, Collections, etc.)
+* Themed bag buttons
+* Micromenu button styling
+* Consistent hover effects
+* Matches active skin
+* Proper scaling and positioning
+
+---
+
 ### ⚙️ Setup Module
 First-time setup wizard for quick configuration.
 
@@ -228,21 +232,10 @@ First-time setup wizard for quick configuration.
 
 ---
 
-### 🎨 UI Buttons Module
-Consistent styling for interface buttons and menus.
-
-**Features:**
-* Styled menu buttons (Character, Spellbook, Talents, Collections, etc.)
-* Themed bag buttons
-* Micromenu button styling
-* Consistent hover effects
-* Matches active skin
-* Proper scaling and positioning
-
 ## 📦 Dependencies
 
 This addon includes the following libraries in the `libs` folder:
-* **Ace3** (AceAddon, AceConfig, AceDB, AceEvent, AceGUI, AceHook, AceConsole, AceSerializer)
+* **Ace3** (AceAddon, AceConfig, AceDB, AceEvent, AceHook, AceConsole, AceSerializer)
 * **LibSharedMedia-3.0** (Fonts, Textures, Statusbars)
 * **LibDataBroker-1.1** (Data display integration)
 * **LibCompress** (Data compression utilities)
@@ -260,44 +253,13 @@ This addon includes the following libraries in the `libs` folder:
 ## ⚙️ Configuration
 
 Access the full configuration menu via:
-
 * Type `/aui` in chat
-* Press **Esc** → **Options** → **AddOns** → **AbstractUI**
 
 ### Quick Commands
 * `/aui` - Open main settings
 * Toggle Move Mode via the Movable module settings to reposition frames
 
 ## 📂 Directory Structure
-
-```text
-AbstractUI/
-├── AbstractUI.toc          # Addon Metadata (Interface 12.0+)
-├── Core.lua                # Main Engine & Module Loader
-├── LICENSE.txt             # MIT License
-├── README.md               # This file
-├── Modules/
-│   ├── BrokerBar.lua       # Info Bar & Data Brokers
-│   ├── ActionBars.lua      # Action Bar Customization
-│   ├── UnitFrames.lua      # Unit Frame System
-│   ├── Maps.lua            # Minimap Customization
-│   ├── Cooldowns.lua       # Ability Cooldown Timers
-│   ├── UIButtons.lua       # Menu/Bag Button Styling
-│   ├── Tweaks.lua          # Quality of Life Features
-│   ├── Chat.lua            # Chat Enhancements
-│   ├── Skins.lua           # Skin System
-│   ├── Movable.lua         # Frame Movement System
-│   ├── Setup.lua           # Initial Setup Wizard
-│   └── Frames/             # Individual Frame Modules
-│       ├── Player.lua      # Player Frame
-│       ├── Target.lua      # Target Frame
-│       ├── TargetTarget.lua # Target of Target Frame
-│       ├── Focus.lua       # Focus Frame
-│       ├── Pet.lua         # Pet Frame
-│       └── Boss.lua        # Boss Frames (1-5)
-├── libs/                   # Embedded Libraries
-└── Media/                  # Textures, Fonts, Sounds
-```
 
 ## 🎮 WoW 12.0+ API Changes
 
@@ -323,11 +285,11 @@ Please feel free to open an issue or pull request on the project repository.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the GNU General Public License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 ## 🙏 Credits
 
-* **Author:** Chorthee
+* **Author:** Vengeance
 * **Libraries:** Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, LibCompress
 * **Community:** Thanks to all users providing feedback and bug reports
 
