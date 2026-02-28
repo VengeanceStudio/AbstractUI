@@ -1476,12 +1476,6 @@ function AB:GetOptions()
                         end
                     },
                     spacer0 = { name = "", type = "header", order = 5},
-                    moveNote = {
-                        name = "|cffaaaaaa(Use /auimove or click M button to enable Move Mode)\nThen hover over bars to see nudge controls|r",
-                        type = "description",
-                        order = 5.5,
-                        fontSize = "medium",
-                    },
                     resetAllPositions = {
                         name = "Reset All Bar Positions",
                         desc = "Reset all action bars to their default positions",
