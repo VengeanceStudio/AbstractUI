@@ -148,14 +148,15 @@ function AbstractOptionsPanel:CreateFrame(addonRef)
     
     -- Close button text (X)
     frame.closeButton.text = frame.closeButton:CreateFontString(nil, "OVERLAY")
-    frame.closeButton.text:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+    frame.closeButton.text:SetFont("Fonts\\FRIZQT__.TTF", 28, "OUTLINE")
     frame.closeButton.text:SetText("×")
-    frame.closeButton.text:SetPoint("CENTER", 0, 0)
+    frame.closeButton.text:SetPoint("CENTER", 0, 1)
     frame.closeButton.text:SetTextColor(0.7, 0.7, 0.7, 1)
     
     -- Hover effects
     frame.closeButton:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(0.8, 0.2, 0.2, 0.9)
+        local r, g, b = ColorPalette:GetColor('accent-primary')
+        self:SetBackdropColor(r, g, b, 0.15)
         self.text:SetTextColor(1, 1, 1, 1)
     end)
     frame.closeButton:SetScript("OnLeave", function(self)
