@@ -252,14 +252,28 @@ end
 function CooldownManager:CleanKeybindText(text)
     if not text then return nil end
     
+    local originalText = text
+    
     -- Remove WoW formatting codes
     text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
     
-    -- Replace Dominos modifier symbols while preserving the rest of the text
-    -- Bullet symbol (●) = bytes 226,151,143 - used for Ctrl
-    text = text:gsub("([\226][\151][\143])(.)", "C%2")
+    -- Debug: check for non-ASCII
+    if text:find("[\128-\255]") then
+        local bytes = ""
+        for i = 1, #text do
+            bytes = bytes .. string.format("%d,", text:byte(i))
+        end
+        print("DEBUG Keybind: Original=", originalText, "Cleaned=", text, "Bytes=", bytes)
+    end
     
-    return text
+    -- Replace Dominos modifier symbols while preserving the rest of the text
+    -- Bullet symbol (\u25cf) = bytes 226,151,143 - used for Ctrl
+    local newText = text:gsub("[\226][\151][\143](.)", "C%1")
+    if newText ~= text then
+        print("  After replacement:", newText)
+    end
+    
+    return newText
 end
 
 function CooldownManager:GetSpellKeybind(spellID)
@@ -298,12 +312,17 @@ function CooldownManager:GetSpellKeybind(spellID)
     end
     
     -- Second approach: Check Dominos buttons directly
+    if spellID == 217832 then print("DEBUG: Checking Dominos buttons for spell", spellID) end
+    
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
         if button then
             -- Check what action this button has
             if button.GetAction then
                 local actionType, actionID = button:GetAction()
+                if spellID == 217832 and (actionType or actionID) then
+                    print("  Button", i, "action type=", actionType or "nil", "ID=", actionID or "nil")
+                end
                 if actionType == "spell" and actionID == spellID then
                     return self:GetActionSlotBinding(i)
                 elseif actionType == "macro" and actionID then
@@ -324,6 +343,9 @@ function CooldownManager:GetSpellKeybind(spellID)
             -- Also check if GetSpellID works (some addons override this)
             if button.GetSpellID then
                 local buttonSpellID = button:GetSpellID()
+                if spellID == 217832 and buttonSpellID then
+                    print("  Button", i, "GetSpellID returned", buttonSpellID)
+                end
                 if buttonSpellID == spellID then
                     return self:GetActionSlotBinding(i)
                 end
