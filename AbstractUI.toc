@@ -1,6 +1,6 @@
 ## Interface: 120001
 ## Title: Abstract UI
-## Version: 12.0.1.3
+## Version: 12.0.1.1
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
