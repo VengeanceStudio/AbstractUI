@@ -233,40 +233,6 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     
     return nil
 end
-    local bindingName
-    
-    if actionSlot >= 1 and actionSlot <= 12 then
-        bindingName = "ACTIONBUTTON" .. actionSlot
-    elseif actionSlot >= 13 and actionSlot <= 24 then
-        bindingName = "MULTIACTIONBAR1BUTTON" .. (actionSlot - 12)
-    elseif actionSlot >= 25 and actionSlot <= 36 then
-        bindingName = "MULTIACTIONBAR2BUTTON" .. (actionSlot - 24)
-    elseif actionSlot >= 37 and actionSlot <= 48 then
-        bindingName = "MULTIACTIONBAR3BUTTON" .. (actionSlot - 36)
-    elseif actionSlot >= 49 and actionSlot <= 60 then
-        bindingName = "MULTIACTIONBAR4BUTTON" .. (actionSlot - 48)
-    elseif actionSlot >= 61 and actionSlot <= 72 then
-        bindingName = "MULTIACTIONBAR5BUTTON" .. (actionSlot - 60)
-    elseif actionSlot >= 73 and actionSlot <= 84 then
-        bindingName = "MULTIACTIONBAR6BUTTON" .. (actionSlot - 72)
-    elseif actionSlot >= 85 and actionSlot <= 96 then
-        bindingName = "MULTIACTIONBAR7BUTTON" .. (actionSlot - 84)
-    else
-        bindingName = "ACTIONBUTTON" .. actionSlot
-    end
-    
-    local key1, key2 = GetBindingKey(bindingName)
-    local binding = key1 or key2
-    
-    if binding then
-        binding = binding:gsub("SHIFT%-", "S")
-        binding = binding:gsub("CTRL%-", "C")
-        binding = binding:gsub("ALT%-", "A")
-        return binding
-    end
-    
-    return nil
-end
 
 function CooldownManager:CleanKeybindText(text)
     if not text then return nil end
