@@ -257,8 +257,6 @@ function Tweaks:HookAutoDelete()
     
     local module = self
     
-    print("|cff00ff00[AbstractUI]|r Auto-Delete hook being installed...")
-    
     -- Hook the OnShow event of all StaticPopup dialogs
     for i = 1, 4 do
         local dialog = _G["StaticPopup" .. i]
@@ -269,13 +267,9 @@ function Tweaks:HookAutoDelete()
                 local which = dialogFrame.which
                 if not which then return end
                 
-                print("|cff00ff00[AbstractUI]|r Dialog shown:", which)
-                
                 -- Check if this is a delete confirmation dialog
                 if (which == "DELETE_ITEM" or which == "DELETE_GOOD_ITEM" or 
                     which == "DELETE_QUEST_ITEM" or which == "DELETE_GOOD_QUEST_ITEM") then
-                    
-                    print("|cff00ff00[AbstractUI]|r Delete dialog detected, auto-filling...")
                     
                     C_Timer.After(0.1, function()
                         if dialogFrame:IsShown() then
@@ -285,8 +279,18 @@ function Tweaks:HookAutoDelete()
                                 or _G[dialogFrame:GetName() .. "EditBox"]
                                 or _G[dialogFrame:GetName() .. "WideEditBox"]
                             
+                            -- If not found, search through child frames
+                            if not editBox then
+                                local children = {dialogFrame:GetChildren()}
+                                for _, child in ipairs(children) do
+                                    if child.GetObjectType and child:GetObjectType() == "EditBox" then
+                                        editBox = child
+                                        break
+                                    end
+                                end
+                            end
+                            
                             if editBox then
-                                print("|cff00ff00[AbstractUI]|r Setting text to:", DELETE_ITEM_CONFIRM_STRING)
                                 editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
                                 editBox:HighlightText(0, 0)
                                 
@@ -294,7 +298,6 @@ function Tweaks:HookAutoDelete()
                                 local button1 = dialogFrame.button1 or _G[dialogFrame:GetName() .. "Button1"]
                                 if button1 then
                                     button1:Enable()
-                                    print("|cff00ff00[AbstractUI]|r Button enabled!")
                                 end
                                 
                                 -- Clear focus
@@ -303,20 +306,6 @@ function Tweaks:HookAutoDelete()
                                         editBox:ClearFocus()
                                     end
                                 end)
-                            else
-                                print("|cffff6b6b[AbstractUI]|r ERROR: No editBox found on dialog")
-                                -- Debug: print child frames
-                                local children = {dialogFrame:GetChildren()}
-                                print("|cffff6b6b[AbstractUI]|r Dialog has", #children, "children")
-                                for idx, child in ipairs(children) do
-                                    if child.GetObjectType and child:GetObjectType() == "EditBox" then
-                                        print("|cff00ff00[AbstractUI]|r Found EditBox child at index", idx)
-                                        editBox = child
-                                        editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
-                                        editBox:ClearFocus()
-                                        break
-                                    end
-                                end
                             end
                         end
                     end)
@@ -326,7 +315,6 @@ function Tweaks:HookAutoDelete()
     end
     
     self.autoDeleteHooked = true
-    print("|cff00ff00[AbstractUI]|r Auto-Delete hook installed successfully!")
 end
 
 function Tweaks:HideBagBar()
