@@ -180,18 +180,33 @@ function CooldownManager:GetSpellKeybind(spellID)
     -- Get spell name for comparison
     local spellName = C_Spell.GetSpellName(spellID)
     
+    -- Debug for specific spell
+    local isDebugSpell = (spellID == 217832)
+    if isDebugSpell then
+        print("|cff00ff00[CooldownManager]|r Searching for spell", spellID, spellName)
+    end
+    
     -- Search all action bar slots manually (up to 180 for all bars including hidden ones)
     for actionSlot = 1, 180 do
         local slotType, id = GetActionInfo(actionSlot)
         
-        if slotType == "spell" and id == spellID then
-            -- Found the spell directly
-            local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
-            if binding then
-                binding = binding:gsub("SHIFT%-", "S-")
-                binding = binding:gsub("CTRL%-", "C-")
-                binding = binding:gsub("ALT%-", "A-")
-                return binding
+        if slotType == "spell" then
+            if isDebugSpell then
+                print("|cff00ff00[CooldownManager]|r Action slot", actionSlot, "has spell", id)
+            end
+            
+            if id == spellID then
+                -- Found the spell directly
+                local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
+                if isDebugSpell then
+                    print("|cff00ff00[CooldownManager]|r FOUND at slot", actionSlot, "binding:", binding or "NONE")
+                end
+                if binding then
+                    binding = binding:gsub("SHIFT%-", "S-")
+                    binding = binding:gsub("CTRL%-", "C-")
+                    binding = binding:gsub("ALT%-", "A-")
+                    return binding
+                end
             end
         elseif slotType == "macro" and id then
             -- Check if macro casts this spell
@@ -218,6 +233,10 @@ function CooldownManager:GetSpellKeybind(spellID)
                 end
             end
         end
+    end
+    
+    if isDebugSpell then
+        print("|cffff6b6b[CooldownManager]|r Spell", spellID, "NOT FOUND on any action bar")
     end
     
     return nil
