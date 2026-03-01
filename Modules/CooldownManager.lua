@@ -200,8 +200,8 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         if hotkeyText and hotkeyText.GetText then
             local hotkey = hotkeyText:GetText()
             if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
-                -- Clean up the hotkey text (remove special formatting characters)
-                hotkey = hotkey:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
+                -- Clean up the hotkey text
+                hotkey = self:CleanKeybindText(hotkey)
                 return hotkey
             end
         end
@@ -210,7 +210,7 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         if button.GetHotkey then
             local hotkey = button:GetHotkey()
             if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
-                hotkey = hotkey:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
+                hotkey = self:CleanKeybindText(hotkey)
                 return hotkey
             end
         end
@@ -249,6 +249,21 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     return nil
 end
 
+function CooldownManager:CleanKeybindText(text)
+    if not text then return nil end
+    
+    -- Remove WoW formatting codes
+    text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
+    
+    -- Replace Dominos Unicode modifier symbols with text
+    text = text:gsub("⌃", "C-")  -- Ctrl symbol
+    text = text:gsub("⇧", "S-")  -- Shift symbol
+    text = text:gsub("⌥", "A-")  -- Alt symbol
+    text = text:gsub("⌘", "M-")  -- Meta/Command symbol
+    
+    return text
+end
+
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
@@ -268,10 +283,17 @@ function CooldownManager:GetSpellKeybind(spellID)
             if macroSpellID == spellID then
                 return self:GetActionSlotBinding(actionSlot)
             elseif spellName then
-                -- Check macro body for spell name
+                -- Check macro body for spell name or ID
                 local macroBody = GetMacroBody(id)
-                if macroBody and macroBody:find(spellName, 1, true) then
-                    return self:GetActionSlotBinding(actionSlot)
+                if macroBody then
+                    -- Check for spell name (case insensitive)
+                    if macroBody:lower():find(spellName:lower(), 1, true) then
+                        return self:GetActionSlotBinding(actionSlot)
+                    end
+                    -- Check for spell ID in spell links (e.g., spell:217832)
+                    if macroBody:find("spell:" .. spellID) then
+                        return self:GetActionSlotBinding(actionSlot)
+                    end
                 end
             end
         end
