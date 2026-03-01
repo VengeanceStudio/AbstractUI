@@ -175,59 +175,64 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Check Blizzard and Dominos button frames directly
-    local buttonPatterns = {
-        "ActionButton",              -- Main bar (Blizzard)
-        "MultiBarBottomLeftButton",  -- Bottom left bar (Blizzard)
-        "MultiBarBottomRightButton", -- Bottom right bar (Blizzard)
-        "MultiBarRightButton",       -- Right bar (Blizzard)
-        "MultiBarLeftButton",        -- Left bar (Blizzard)
-        "MultiBarRightActionButton", -- Right bar (with "Action" in name)
-        "MultiBarLeftActionButton",  -- Left bar (with "Action" in name)
-        "DominosActionButton",       -- Dominos primary
-        "Dominos2ActionButton",      -- Dominos bar 2
-        "Dominos3ActionButton",      -- Dominos bar 3
-        "Dominos4ActionButton",      -- Dominos bar 4
-    }
-    
-    for _, pattern in ipairs(buttonPatterns) do
-        for i = 1, 12 do
-            local buttonName = pattern .. i
-            local button = _G[buttonName]
-            if button then
-                local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+    -- First, try to find Dominos buttons with action attributes
+    for i = 1, 180 do
+        local button = _G["DominosActionButton" .. i]
+        if button then
+            local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+            
+            if buttonAction == actionSlot then
+                -- Found the Dominos button displaying this action slot
+                local bindName = "CLICK DominosActionButton" .. i .. ":HOTKEY"
+                local key1, key2 = GetBindingKey(bindName)
+                local clickBinding = key1 or key2
                 
-                if buttonAction == actionSlot then
-                    -- Found the button displaying this action slot
-                    -- Try Dominos CLICK binding first
-                    local bindName = "CLICK " .. buttonName .. ":HOTKEY"
-                    local key1, key2 = GetBindingKey(bindName)
-                    local clickBinding = key1 or key2
-                    
-                    if clickBinding then
-                        clickBinding = clickBinding:gsub("SHIFT%-", "S")
-                        clickBinding = clickBinding:gsub("CTRL%-", "C")
-                        clickBinding = clickBinding:gsub("ALT%-", "A")
-                        return clickBinding
-                    end
-                    
-                    -- Try standard CLICK binding without :HOTKEY
-                    bindName = "CLICK " .. buttonName .. ":LeftButton"
-                    key1, key2 = GetBindingKey(bindName)
-                    clickBinding = key1 or key2
-                    
-                    if clickBinding then
-                        clickBinding = clickBinding:gsub("SHIFT%-", "S")
-                        clickBinding = clickBinding:gsub("CTRL%-", "C")
-                        clickBinding = clickBinding:gsub("ALT%-", "A")
-                        return clickBinding
-                    end
+                if clickBinding then
+                    clickBinding = clickBinding:gsub("SHIFT%-", "S")
+                    clickBinding = clickBinding:gsub("CTRL%-", "C")
+                    clickBinding = clickBinding:gsub("ALT%-", "A")
+                    return clickBinding
                 end
             end
         end
     end
     
-    -- Fallback: Try standard WoW keybinding names (for Blizzard bars)
+    -- Fallback: Try standard WoW keybinding names 
+    -- These work for both Blizzard bars and Dominos-skinned Blizzard bars
+    local bindingName
+    
+    if actionSlot >= 1 and actionSlot <= 12 then
+        bindingName = "ACTIONBUTTON" .. actionSlot
+    elseif actionSlot >= 13 and actionSlot <= 24 then
+        bindingName = "MULTIACTIONBAR1BUTTON" .. (actionSlot - 12)
+    elseif actionSlot >= 25 and actionSlot <= 36 then
+        bindingName = "MULTIACTIONBAR2BUTTON" .. (actionSlot - 24)
+    elseif actionSlot >= 37 and actionSlot <= 48 then
+        bindingName = "MULTIACTIONBAR3BUTTON" .. (actionSlot - 36)
+    elseif actionSlot >= 49 and actionSlot <= 60 then
+        bindingName = "MULTIACTIONBAR4BUTTON" .. (actionSlot - 48)
+    elseif actionSlot >= 61 and actionSlot <= 72 then
+        bindingName = "MULTIACTIONBAR5BUTTON" .. (actionSlot - 60)
+    elseif actionSlot >= 73 and actionSlot <= 84 then
+        bindingName = "MULTIACTIONBAR6BUTTON" .. (actionSlot - 72)
+    elseif actionSlot >= 85 and actionSlot <= 96 then
+        bindingName = "MULTIACTIONBAR7BUTTON" .. (actionSlot - 84)
+    else
+        bindingName = "ACTIONBUTTON" .. actionSlot
+    end
+    
+    local key1, key2 = GetBindingKey(bindingName)
+    local binding = key1 or key2
+    
+    if binding then
+        binding = binding:gsub("SHIFT%-", "S")
+        binding = binding:gsub("CTRL%-", "C")
+        binding = binding:gsub("ALT%-", "A")
+        return binding
+    end
+    
+    return nil
+end
     local bindingName
     
     if actionSlot >= 1 and actionSlot <= 12 then
