@@ -156,15 +156,24 @@ function CooldownManager:StartOverlayPolling()
                         print("    " .. k .. " =", type(v))
                     end
                 end
-            end
-            
-            -- Check a standard button
-            local stdButton = _G["ActionButton1"]
-            if stdButton then
-                print("  ActionButton1 found, checking for overlay-related properties:")
-                for k, v in pairs(stdButton) do
-                    if type(k) == "string" and (k:lower():find("overlay") or k:lower():find("alert") or k:lower():find("glow")) then
-                        print("    " .. k .. " =", type(v))
+                
+                -- Check children for spell alert frames
+                local children = {testButton:GetChildren()}
+                print("  DominosActionButton1 has", #children, "children")
+                for i, child in ipairs(children) do
+                    local name = child:GetName()
+                    print("    Child", i, "name:", name or "unnamed", "type:", child:GetObjectType())
+                end
+                
+                -- Check regions
+                local regions = {testButton:GetRegions()}
+                print("  DominosActionButton1 has", #regions, "regions")
+                for i, region in ipairs(regions) do
+                    if region.GetTexture then
+                        local texture = region:GetTexture()
+                        if texture and type(texture) == "string" and texture:lower():find("stars") then
+                            print("    Region", i, "HAS STARS TEXTURE:", texture)
+                        end
                     end
                 end
             end
@@ -179,12 +188,22 @@ function CooldownManager:StartOverlayPolling()
                 -- Check various possible overlay frames
                 local hasOverlay = false
                 
-                if button.overlay and button.overlay:IsShown() then
-                    hasOverlay = true
-                elseif button.SpellActivationAlert and button.SpellActivationAlert:IsShown() then
-                    hasOverlay = true
-                elseif button.spellActivationAlert and button.spellActivationAlert:IsShown() then
-                    hasOverlay = true
+                -- Check for visible "star" texture regions (spell activation)
+                local regions = {button:GetRegions()}
+                for _, region in ipairs(regions) do
+                    if region and region.GetTexture and region:IsShown() then
+                        local texture = region:GetTexture()
+                        if texture and type(texture) == "number" then
+                            texture = tostring(texture)
+                        end
+                        if texture and type(texture) == "string" and (
+                            texture:lower():find("star") or 
+                            texture:lower():find("alert") or
+                            texture:find("SpellActivation")) then
+                            hasOverlay = true
+                            break
+                        end
+                    end
                 end
                 
                 if hasOverlay then
@@ -215,12 +234,22 @@ function CooldownManager:StartOverlayPolling()
                 if button and button:IsVisible() then
                     local hasOverlay = false
                     
-                    if button.overlay and button.overlay:IsShown() then
-                        hasOverlay = true
-                    elseif button.SpellActivationAlert and button.SpellActivationAlert:IsShown() then
-                        hasOverlay = true
-                    elseif button.spellActivationAlert and button.spellActivationAlert:IsShown() then
-                        hasOverlay = true
+                    -- Check for visible "star" texture regions (spell activation)
+                    local regions = {button:GetRegions()}
+                    for _, region in ipairs(regions) do
+                        if region and region.GetTexture and region:IsShown() then
+                            local texture = region:GetTexture()
+                            if texture and type(texture) == "number" then
+                                texture = tostring(texture)
+                            end
+                            if texture and type(texture) == "string" and (
+                                texture:lower():find("star") or 
+                                texture:lower():find("alert") or
+                                texture:find("SpellActivation")) then
+                                hasOverlay = true
+                                break
+                            end
+                        end
                     end
                     
                     if hasOverlay then
