@@ -290,15 +290,28 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     print("  ApplyHighlightToViewer: Looking for spellID", spellID, "in", viewerFrame:GetName())
     
     -- Search through child frames to find ones with this spell ID
-    for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
+    local children = {viewerFrame:GetChildren()}
+    for i, childFrame in ipairs(children) do
+        -- Debug first frame completely to see what properties exist
+        if i == 2 then
+            print("    DEBUG: Dumping all properties of frame 2:")
+            for k, v in pairs(childFrame) do
+                if type(k) == "string" and (k:lower():find("spell") or k:lower():find("cooldown") or k:lower():find("aura")) then
+                    print("      " .. k .. " =", type(v), v)
+                end
+            end
+        end
+        
         -- Try multiple possible spell ID properties
-        local frameSpellID = childFrame.cooldownID -- Try cooldownID first (seen in error)
+        local frameSpellID = childFrame.auraSpellID  -- Try auraSpellID (seen in the error dump earlier)
+            or childFrame.cooldownID 
             or childFrame.spellID 
             or childFrame.spellId 
             or (childFrame.spell and childFrame.spell:GetSpellID())
             or (childFrame.GetSpellID and childFrame:GetSpellID())
+            or (childFrame.cooldownInfo and childFrame.cooldownInfo.spellID)
         
-        print("    Frame:", childFrame:GetName(), "cooldownID:", childFrame.cooldownID, "spellID:", childFrame.spellID, "spellId:", childFrame.spellId)
+        print("    Frame:", childFrame:GetName(), "auraSpellID:", childFrame.auraSpellID, "cooldownID:", childFrame.cooldownID)
         
         -- Safely compare, handling potential taint
         local isMatch = false
