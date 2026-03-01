@@ -283,6 +283,8 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
+    print("ApplyHighlightToViewer: Looking for spell", spellID, C_Spell.GetSpellName(spellID), "show:", show)
+    
     -- Search through child frames to find ones with this spell ID
     for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
         -- Use GetSpellID() method or check auraSpellID property
@@ -290,14 +292,26 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
         
         if childFrame.GetSpellID then
             local success, result = pcall(childFrame.GetSpellID, childFrame)
-            if success then
+            if success and result then
                 frameSpellID = result
+                -- Try to get spell name to verify
+                local spellName = C_Spell.GetSpellName(frameSpellID)
+                print("  Frame GetSpellID():", frameSpellID, spellName)
             end
         end
         
         -- Fallback to auraSpellID if GetSpellID didn't work
         if not frameSpellID and childFrame.auraSpellID then
             frameSpellID = childFrame.auraSpellID
+            local spellName = C_Spell.GetSpellName(frameSpellID)
+            print("  Frame auraSpellID:", frameSpellID, spellName)
+        end
+        
+        -- Also check cooldownInfo.spellID
+        if not frameSpellID and childFrame.cooldownInfo and childFrame.cooldownInfo.spellID then
+            frameSpellID = childFrame.cooldownInfo.spellID
+            local spellName = C_Spell.GetSpellName(frameSpellID)
+            print("  Frame cooldownInfo.spellID:", frameSpellID, spellName)
         end
         
         -- Safely compare spell IDs (handles taint)
@@ -309,6 +323,7 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             end)
             if success and result then
                 isMatch = true
+                print("  MATCH!")
             end
         end
         
