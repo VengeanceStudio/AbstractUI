@@ -178,7 +178,8 @@ function Maps:ApplyMinimapOffset()
     local db = self.db.profile
     print("|cff00ff00[AbstractUI Maps]|r ApplyMinimapOffset - offsetX:", db.offsetX, "offsetY:", db.offsetY)
     Minimap:ClearAllPoints()
-    Minimap:SetPoint("CENTER", MinimapCluster, "CENTER", db.offsetX, db.offsetY)
+    -- Anchor to UIParent instead of MinimapCluster to avoid EditMode interference
+    Minimap:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", db.offsetX, db.offsetY)
 end
 
 -- -----------------------------------------------------------------------------
