@@ -302,19 +302,21 @@ function CooldownManager:GetSpellKeybind(spellID)
         local button = _G["DominosActionButton" .. i]
         if button then
             -- Check what action this button has
-            local actionType, actionID = button:GetAction and button:GetAction()
-            if actionType == "spell" and actionID == spellID then
-                return self:GetActionSlotBinding(i)
-            elseif actionType == "macro" and actionID then
-                -- Check if the macro casts our spell
-                local macroName, macroSpellID = GetMacroSpell(actionID)
-                if macroSpellID == spellID then
+            if button.GetAction then
+                local actionType, actionID = button:GetAction()
+                if actionType == "spell" and actionID == spellID then
                     return self:GetActionSlotBinding(i)
-                elseif spellName then
-                    local macroBody = GetMacroBody(actionID)
-                    if macroBody and (macroBody:lower():find(spellName:lower(), 1, true) or
-                       macroBody:find("spell:" .. spellID)) then
+                elseif actionType == "macro" and actionID then
+                    -- Check if the macro casts our spell
+                    local macroName, macroSpellID = GetMacroSpell(actionID)
+                    if macroSpellID == spellID then
                         return self:GetActionSlotBinding(i)
+                    elseif spellName then
+                        local macroBody = GetMacroBody(actionID)
+                        if macroBody and (macroBody:lower():find(spellName:lower(), 1, true) or
+                           macroBody:find("spell:" .. spellID)) then
+                            return self:GetActionSlotBinding(i)
+                        end
                     end
                 end
             end
