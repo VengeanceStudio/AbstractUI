@@ -200,6 +200,8 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         if hotkeyText and hotkeyText.GetText then
             local hotkey = hotkeyText:GetText()
             if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
+                -- Clean up the hotkey text (remove special formatting characters)
+                hotkey = hotkey:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
                 return hotkey
             end
         end
@@ -208,6 +210,7 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         if button.GetHotkey then
             local hotkey = button:GetHotkey()
             if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
+                hotkey = hotkey:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
                 return hotkey
             end
         end
@@ -261,7 +264,7 @@ function CooldownManager:GetSpellKeybind(spellID)
             return self:GetActionSlotBinding(actionSlot)
         elseif slotType == "macro" and id then
             -- Check if macro casts this spell
-            local macroSpellID = GetMacroSpell(id)
+            local _, macroSpellID = GetMacroSpell(id)
             if macroSpellID == spellID then
                 return self:GetActionSlotBinding(actionSlot)
             elseif spellName then
