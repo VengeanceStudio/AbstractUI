@@ -1811,13 +1811,13 @@ function AbstractUI:GetOptions()
             themes = {
                 name = "Themes",
                 type = "group",
-                order = 40,
+                order = 14,
                 args = self:GetThemeOptions(),
             },  -- closes themes group
             export = {
                 name = "Export",
                 type = "group",
-                order = 50,
+                order = 16,
                 args = {
                     header = {
                         type = "header",
@@ -1861,7 +1861,7 @@ function AbstractUI:GetOptions()
             import = {
                 name = "Import",
                 type = "group",
-                order = 51,
+                order = 17,
                 args = {
                     header = {
                         type = "header",
@@ -1999,18 +1999,49 @@ function AbstractUI:GetOptions()
             elseif name == "CooldownManager" then
                 displayName = "Cooldown Manager"
             end
+            
+            -- Set module order based on name
+            local moduleOrder = 10  -- Default order
+            if name == "UnitFrames" then
+                moduleOrder = 2
+            elseif name == "ActionBars" then
+                moduleOrder = 3
+            elseif name == "CooldownManager" then
+                moduleOrder = 4
+            elseif name == "ResourceBars" then
+                moduleOrder = 5
+            elseif name == "CastBar" then
+                moduleOrder = 6
+            elseif name == "Maps" then
+                moduleOrder = 7
+            elseif name == "Tooltips" then
+                moduleOrder = 8
+            elseif name == "BrokerBar" then
+                moduleOrder = 9
+            elseif name == "Mailbox" then
+                moduleOrder = 10
+            elseif name == "Skin" then
+                moduleOrder = 11
+            elseif name == "UIButtons" then
+                moduleOrder = 12
+            elseif name == "Tweaks" then
+                moduleOrder = 13
+            elseif name == "Setup" then
+                moduleOrder = 15
+            end
+            
             if name == "UnitFrames" then
                 options.args.unitframes = module:GetOptions()
                 options.args.unitframes.name = "Unit Frames"
-                options.args.unitframes.order = 8
+                options.args.unitframes.order = moduleOrder
             elseif name == "Setup" then
                 options.args[name] = module:GetOptions()
                 options.args[name].name = displayName
-                options.args[name].order = 45
+                options.args[name].order = moduleOrder
             else
                 options.args[name] = module:GetOptions()
                 options.args[name].name = displayName
-                options.args[name].order = 10
+                options.args[name].order = moduleOrder
             end
         end
     end
