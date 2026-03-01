@@ -175,6 +175,16 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
+    -- Debug spells with issues
+    local debugSlots = {26, 27, 28, 29, 30}
+    local isDebugSlot = false
+    for _, slot in ipairs(debugSlots) do
+        if slot == actionSlot then
+            isDebugSlot = true
+            break
+        end
+    end
+    
     -- First, try to find Dominos buttons with action attributes
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
@@ -186,6 +196,10 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                 local bindName = "CLICK DominosActionButton" .. i .. ":HOTKEY"
                 local key1, key2 = GetBindingKey(bindName)
                 local clickBinding = key1 or key2
+                
+                if isDebugSlot then
+                    print("DEBUG slot", actionSlot, "-> DominosActionButton" .. i, "bindName:", bindName, "result:", clickBinding)
+                end
                 
                 if clickBinding then
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
@@ -223,6 +237,10 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     
     local key1, key2 = GetBindingKey(bindingName)
     local binding = key1 or key2
+    
+    if isDebugSlot then
+        print("DEBUG slot", actionSlot, "fallback bindingName:", bindingName, "result:", binding)
+    end
     
     if binding then
         binding = binding:gsub("SHIFT%-", "S")
