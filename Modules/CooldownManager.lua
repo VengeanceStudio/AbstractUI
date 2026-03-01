@@ -175,28 +175,6 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Debug spells with issues
-    local debugSlots = {26, 27, 28, 29, 30}
-    local isDebugSlot = false
-    for _, slot in ipairs(debugSlots) do
-        if slot == actionSlot then
-            isDebugSlot = true
-            break
-        end
-    end
-    
-    if isDebugSlot then
-        print("DEBUG: Searching ALL bindings for action slot", actionSlot)
-        -- Search through ALL keybindings to find what's bound
-        for i = 1, GetNumBindings() do
-            local command, category, key1, key2 = GetBinding(i)
-            if key1 and key1:find("CTRL") then
-                -- This is a Ctrl keybind, check if it's relevant
-                print("  Found Ctrl binding:", key1, "->", command)
-            end
-        end
-    end
-    
     -- First, try to find Dominos buttons with action attributes
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
@@ -209,14 +187,11 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                 local key1, key2 = GetBindingKey(bindName)
                 local clickBinding = key1 or key2
                 
-                if isDebugSlot then
-                    print("DEBUG slot", actionSlot, "-> DominosActionButton" .. i, "bindName:", bindName, "result:", clickBinding)
-                end
-                
                 if clickBinding then
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
+                    clickBinding = clickBinding:gsub("SPACE", "SP")
                     return clickBinding
                 end
             end
@@ -250,14 +225,11 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     local key1, key2 = GetBindingKey(bindingName)
     local binding = key1 or key2
     
-    if isDebugSlot then
-        print("DEBUG slot", actionSlot, "fallback bindingName:", bindingName, "result:", binding)
-    end
-    
     if binding then
         binding = binding:gsub("SHIFT%-", "S")
         binding = binding:gsub("CTRL%-", "C")
         binding = binding:gsub("ALT%-", "A")
+        binding = binding:gsub("SPACE", "SP")
         return binding
     end
     
@@ -291,21 +263,14 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                         barBindingName = "MULTIACTIONBAR" .. buttonInfo.bar .. "BUTTON" .. i
                     end
                     
-                    if isDebugSlot then
-                        print("DEBUG slot", actionSlot, "found on button", buttonName, "checking", barBindingName)
-                    end
-                    
                     local k1, k2 = GetBindingKey(barBindingName)
                     local barBind = k1 or k2
-                    
-                    if isDebugSlot then
-                        print("  Result:", barBind)
-                    end
                     
                     if barBind then
                         barBind = barBind:gsub("SHIFT%-", "S")
                         barBind = barBind:gsub("CTRL%-", "C")
                         barBind = barBind:gsub("ALT%-", "A")
+                        barBind = barBind:gsub("SPACE", "SP")
                         return barBind
                     end
                     
@@ -323,6 +288,7 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                             clickBind = clickBind:gsub("SHIFT%-", "S")
                             clickBind = clickBind:gsub("CTRL%-", "C")
                             clickBind = clickBind:gsub("ALT%-", "A")
+                            clickBind = clickBind:gsub("SPACE", "SP")
                             return clickBind
                         end
                     end
@@ -346,13 +312,17 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- Debug spells
-    local debugSpells = {179057, 202137, 187827, 207684, 258920, 217832}
-    local isDebugSpell = false
-    for _, id in ipairs(debugSpells) do
-        if id == spellID then
-            isDebugSpell = true
-            break
+    -- First, try to get direct spell keybind (for spells bound directly, not via action bars)
+    local spellName = C_Spell.GetSpellName(spellID)
+    if spellName then
+        local key1, key2 = GetBindingKey("SPELL " .. spellName)
+        local directBind = key1 or key2
+        if directBind then
+            directBind = directBind:gsub("SHIFT%-", "S")
+            directBind = directBind:gsub("CTRL%-", "C")
+            directBind = directBind:gsub("ALT%-", "A")
+            directBind = directBind:gsub("SPACE", "SP")
+            return directBind
         end
     end
     
@@ -360,16 +330,6 @@ function CooldownManager:GetSpellKeybind(spellID)
     -- This works with macros AND is addon-agnostic (works with any action bar addon)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
-        
-        if isDebugSpell then
-            local spellName = C_Spell.GetSpellName(spellID)
-            if slots and #slots > 0 then
-                print("DEBUG:", spellName, "(" .. spellID .. ") found in", #slots, "slots:", table.concat(slots, ", "))
-            else
-                print("DEBUG:", spellName, "(" .. spellID .. ") NOT FOUND in any action slots")
-                return nil
-            end
-        end
         
         if slots and #slots > 0 then
             -- If spell is in multiple slots, try to find one with a keybind
@@ -380,10 +340,6 @@ function CooldownManager:GetSpellKeybind(spellID)
             
             for _, slot in ipairs(slots) do
                 local keybind = self:GetActionSlotBinding(slot)
-                
-                if isDebugSpell then
-                    print("  Slot", slot, "keybind:", keybind or "NIL")
-                end
                 
                 if keybind then
                     -- Score the keybind: modifiers are better than plain keys
@@ -401,10 +357,6 @@ function CooldownManager:GetSpellKeybind(spellID)
                     -- No keybind yet, use this slot as fallback
                     bestSlot = slot
                 end
-            end
-            
-            if isDebugSpell then
-                print("  RESULT: Using slot", bestSlot, "with keybind:", bestKeybind or "NIL")
             end
             
             if bestKeybind then
