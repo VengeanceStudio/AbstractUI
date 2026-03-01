@@ -95,118 +95,65 @@ function CooldownManager:OnEnable()
 end
 
 function CooldownManager:HookSpellActivationOverlays()
-    -- Try multiple approaches to detect spell activation overlays
-    
-    -- Approach 1: Hook the frame methods
-    if SpellActivationOverlayFrame then
-        print("DEBUG: Found SpellActivationOverlayFrame, hooking methods")
-        
-        -- Try hooking ShowOverlay
-        if SpellActivationOverlayFrame.ShowOverlay then
-            hooksecurefunc(SpellActivationOverlayFrame, "ShowOverlay", function(frame, spellID, texture, position, scale, r, g, b)
-                print("DEBUG: ShowOverlay called - spellID:", spellID, C_Spell.GetSpellName(spellID))
-                if spellID then
-                    self.highlightedSpells[spellID] = true
-                    self:UpdateSpellHighlight(spellID, true)
-                end
-            end)
-        end
-        
-        -- Try hooking HideOverlays
-        if SpellActivationOverlayFrame.HideOverlays then
-            hooksecurefunc(SpellActivationOverlayFrame, "HideOverlays", function(frame)
-                print("DEBUG: HideOverlays called")
-                for spellID, _ in pairs(self.highlightedSpells) do
-                    self:UpdateSpellHighlight(spellID, false)
-                end
-                wipe(self.highlightedSpells)
-            end)
-        end
-    else
-        print("DEBUG: SpellActivationOverlayFrame not found")
-    end
-    
-    -- Approach 2: Poll for active overlays
+    -- Start polling to check for AssistedCombatHighlightFrame
     self:StartOverlayPolling()
 end
 
 function CooldownManager:StartOverlayPolling()
-    print("DEBUG: Starting overlay polling")
+    print("DEBUG: Starting AssistedCombatHighlightFrame polling")
     
     local debugOnce = false
     
-    -- Poll every 0.5 seconds to check for highlights on action buttons
-    self.overlayTimer = C_Timer.NewTicker(0.5, function()
+    -- Poll every 0.3 seconds to check for AssistedCombatHighlightFrame
+    self.overlayTimer = C_Timer.NewTicker(0.3, function()
         if not self.db.profile.essential.showAssistedHighlight and 
            not self.db.profile.utility.showAssistedHighlight then
             return
         end
         
-        -- Debug button structure once
+        -- Debug once to verify the frame exists
         if not debugOnce then
             debugOnce = true
-            print("DEBUG: Checking button structure...")
+            print("DEBUG: Checking for AssistedCombatHighlightFrame...")
             
-            -- Check a Dominos button
-            local testButton = _G["DominosActionButton1"]
-            if testButton then
-                print("  DominosActionButton1 found, checking for overlay-related properties:")
-                for k, v in pairs(testButton) do
-                    if type(k) == "string" and (k:lower():find("overlay") or k:lower():find("alert") or k:lower():find("glow")) then
-                        print("    " .. k .. " =", type(v))
-                    end
-                end
-                
-                -- Check children for spell alert frames
-                local children = {testButton:GetChildren()}
-                print("  DominosActionButton1 has", #children, "children")
-                for i, child in ipairs(children) do
-                    local name = child:GetName()
-                    print("    Child", i, "name:", name or "unnamed", "type:", child:GetObjectType())
-                end
-                
-                -- Check regions
-                local regions = {testButton:GetRegions()}
-                print("  DominosActionButton1 has", #regions, "regions")
-                for i, region in ipairs(regions) do
-                    if region.GetTexture then
-                        local texture = region:GetTexture()
-                        if texture and type(texture) == "string" and texture:lower():find("stars") then
-                            print("    Region", i, "HAS STARS TEXTURE:", texture)
+            local testButton = _G["DominosActionButton1"] or _G["ActionButton1"]
+            if testButton and testButton.AssistedCombatHighlightFrame then
+                print("  Found AssistedCombatHighlightFrame on button!")
+            else
+                print("  AssistedCombatHighlightFrame NOT found on test button")
+            end
+        end
+        
+        local foundHighlights = {}
+        
+        -- Check Dominos buttons
+        for i = 1, 180 do
+            local button = _G["DominosActionButton" .. i]
+            if button and button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
+                local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                if action then
+                    local actionType, id = GetActionInfo(action)
+                    if actionType == "spell" and id then
+                        foundHighlights[id] = true
+                        
+                        if not self.highlightedSpells[id] then
+                            print("DEBUG: Found assisted highlight on DominosActionButton" .. i, "- spellID:", id, C_Spell.GetSpellName(id))
+                            self.highlightedSpells[id] = true
+                            self:UpdateSpellHighlight(id, true)
                         end
                     end
                 end
             end
         end
         
-        -- Check Dominos buttons for active overlays/alerts
-        local foundHighlights = {}
+        -- Check standard action buttons
+        local buttonPatterns = {"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", 
+                                "MultiBarRightButton", "MultiBarLeftButton", "MultiBarRightActionButton", "MultiBarLeftActionButton"}
         
-        for i = 1, 180 do
-            local button = _G["DominosActionButton" .. i]
-            if button and button:IsVisible() then
-                -- Check various possible overlay frames
-                local hasOverlay = false
-                
-                -- Check for visible "star" texture regions (spell activation)
-                local regions = {button:GetRegions()}
-                for _, region in ipairs(regions) do
-                    if region and region.GetTexture and region:IsShown() then
-                        local texture = region:GetTexture()
-                        if texture and type(texture) == "number" then
-                            texture = tostring(texture)
-                        end
-                        if texture and type(texture) == "string" and (
-                            texture:lower():find("star") or 
-                            texture:lower():find("alert") or
-                            texture:find("SpellActivation")) then
-                            hasOverlay = true
-                            break
-                        end
-                    end
-                end
-                
-                if hasOverlay then
+        for _, pattern in ipairs(buttonPatterns) do
+            for i = 1, 12 do
+                local button = _G[pattern .. i]
+                if button and button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
                     local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                     if action then
                         local actionType, id = GetActionInfo(action)
@@ -214,56 +161,9 @@ function CooldownManager:StartOverlayPolling()
                             foundHighlights[id] = true
                             
                             if not self.highlightedSpells[id] then
-                                print("DEBUG: Found highlighted spell on DominosActionButton" .. i, "- spellID:", id, C_Spell.GetSpellName(id))
+                                print("DEBUG: Found assisted highlight on", pattern .. i, "- spellID:", id, C_Spell.GetSpellName(id))
                                 self.highlightedSpells[id] = true
                                 self:UpdateSpellHighlight(id, true)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        
-        -- Check standard action buttons too
-        local buttonPatterns = {"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", 
-                                "MultiBarRightButton", "MultiBarLeftButton", "MultiBarRightActionButton", "MultiBarLeftActionButton"}
-        
-        for _, pattern in ipairs(buttonPatterns) do
-            for i = 1, 12 do
-                local button = _G[pattern .. i]
-                if button and button:IsVisible() then
-                    local hasOverlay = false
-                    
-                    -- Check for visible "star" texture regions (spell activation)
-                    local regions = {button:GetRegions()}
-                    for _, region in ipairs(regions) do
-                        if region and region.GetTexture and region:IsShown() then
-                            local texture = region:GetTexture()
-                            if texture and type(texture) == "number" then
-                                texture = tostring(texture)
-                            end
-                            if texture and type(texture) == "string" and (
-                                texture:lower():find("star") or 
-                                texture:lower():find("alert") or
-                                texture:find("SpellActivation")) then
-                                hasOverlay = true
-                                break
-                            end
-                        end
-                    end
-                    
-                    if hasOverlay then
-                        local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
-                        if action then
-                            local actionType, id = GetActionInfo(action)
-                            if actionType == "spell" and id then
-                                foundHighlights[id] = true
-                                
-                                if not self.highlightedSpells[id] then
-                                    print("DEBUG: Found highlighted spell on", pattern .. i, "- spellID:", id, C_Spell.GetSpellName(id))
-                                    self.highlightedSpells[id] = true
-                                    self:UpdateSpellHighlight(id, true)
-                                end
                             end
                         end
                     end
@@ -274,7 +174,6 @@ function CooldownManager:StartOverlayPolling()
         -- Remove highlights that are no longer active
         for spellID, _ in pairs(self.highlightedSpells) do
             if not foundHighlights[spellID] then
-                print("DEBUG: Spell no longer highlighted:", spellID)
                 self.highlightedSpells[spellID] = nil
                 self:UpdateSpellHighlight(spellID, false)
             end
