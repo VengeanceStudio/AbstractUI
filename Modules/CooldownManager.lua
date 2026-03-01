@@ -263,37 +263,61 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     
     -- Last resort: Check for CLICK bindings on Blizzard UI buttons
     -- Dominos may bind keys to these buttons directly
+    -- More importantly: Dominos may set custom action slot numbers on buttons,
+    -- but the keybinds are still tied to the button's ORIGINAL bar position
     local blizzardButtons = {
-        "ActionButton",
-        "MultiBarBottomLeftButton",
-        "MultiBarBottomRightButton", 
-        "MultiBarRightButton",
-        "MultiBarLeftButton",
-        "MultiBarRightActionButton",
-        "MultiBarLeftActionButton",
+        {pattern = "ActionButton", bar = nil, offset = 0},                -- Main bar, slots 1-12, ACTIONBUTTON
+        {pattern = "MultiBarBottomLeftButton", bar = 1, offset = 12},     -- Bottom left, slots 13-24, MULTIACTIONBAR1BUTTON
+        {pattern = "MultiBarBottomRightButton", bar = 2, offset = 24},    -- Bottom right, slots 25-36, MULTIACTIONBAR2BUTTON  
+        {pattern = "MultiBarRightButton", bar = 3, offset = 36},          -- Right bar, slots 37-48, MULTIACTIONBAR3BUTTON
+        {pattern = "MultiBarLeftButton", bar = 4, offset = 48},           -- Left bar, slots 49-60, MULTIACTIONBAR4BUTTON
+        {pattern = "MultiBarRightActionButton", bar = 3, offset = 36},    -- Right bar alt name, MULTIACTIONBAR3BUTTON
+        {pattern = "MultiBarLeftActionButton", bar = 4, offset = 48},     -- Left bar alt name, MULTIACTIONBAR4BUTTON
     }
     
-    for _, buttonPattern in ipairs(blizzardButtons) do
+    for _, buttonInfo in ipairs(blizzardButtons) do
         for i = 1, 12 do
-            local buttonName = buttonPattern .. i
+            local buttonName = buttonInfo.pattern .. i
             local button = _G[buttonName]
             if button then
                 local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
                 
                 if buttonAction == actionSlot then
-                    -- Try various CLICK binding formats
+                    -- Found the button! Now check keybind based on button's BAR, not action slot
+                    local barBindingName
+                    if not buttonInfo.bar then
+                        barBindingName = "ACTIONBUTTON" .. i
+                    else
+                        barBindingName = "MULTIACTIONBAR" .. buttonInfo.bar .. "BUTTON" .. i
+                    end
+                    
+                    if isDebugSlot then
+                        print("DEBUG slot", actionSlot, "found on button", buttonName, "checking", barBindingName)
+                    end
+                    
+                    local k1, k2 = GetBindingKey(barBindingName)
+                    local barBind = k1 or k2
+                    
+                    if isDebugSlot then
+                        print("  Result:", barBind)
+                    end
+                    
+                    if barBind then
+                        barBind = barBind:gsub("SHIFT%-", "S")
+                        barBind = barBind:gsub("CTRL%-", "C")
+                        barBind = barBind:gsub("ALT%-", "A")
+                        return barBind
+                    end
+                    
+                    -- Also try CLICK bindings
                     local bindFormats = {
                         "CLICK " .. buttonName .. ":HOTKEY",
                         "CLICK " .. buttonName .. ":LeftButton",
                     }
                     
                     for _, bindFormat in ipairs(bindFormats) do
-                        local k1, k2 = GetBindingKey(bindFormat)
-                        local clickBind = k1 or k2
-                        
-                        if isDebugSlot then
-                            print("DEBUG slot", actionSlot, "trying", bindFormat, "result:", clickBind)
-                        end
+                        local bk1, bk2 = GetBindingKey(bindFormat)
+                        local clickBind = bk1 or bk2
                         
                         if clickBind then
                             clickBind = clickBind:gsub("SHIFT%-", "S")
