@@ -263,13 +263,10 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:UpdateSpellHighlight(spellID, show)
-    print("UpdateSpellHighlight: spellID", spellID, C_Spell.GetSpellName(spellID), "show:", show)
-    
     -- Update Essential Cooldowns
     if self.db.profile.essential.enabled and self.db.profile.essential.showAssistedHighlight then
         local frame = _G["EssentialCooldownViewer"]
         if frame then
-            print("  Updating Essential Cooldowns viewer")
             self:ApplyHighlightToViewer(frame, spellID, show)
         end
     end
@@ -278,7 +275,6 @@ function CooldownManager:UpdateSpellHighlight(spellID, show)
     if self.db.profile.utility.enabled and self.db.profile.utility.showAssistedHighlight then
         local frame = _G["UtilityCooldownViewer"]
         if frame then
-            print("  Updating Utility Cooldowns viewer")
             self:ApplyHighlightToViewer(frame, spellID, show)
         end
     end
@@ -287,55 +283,29 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
-    print("  ApplyHighlightToViewer: Looking for spellID", spellID, "in", viewerFrame:GetName())
-    
     -- Search through child frames to find ones with this spell ID
-    local children = {viewerFrame:GetChildren()}
-    for i, childFrame in ipairs(children) do
-        -- Debug first frame completely to see what properties exist
-        if i == 2 then
-            print("    DEBUG: Dumping all properties of frame 2:")
-            for k, v in pairs(childFrame) do
-                if type(k) == "string" and (k:lower():find("spell") or k:lower():find("cooldown") or k:lower():find("aura")) then
-                    print("      " .. k .. " =", type(v), v)
-                end
-            end
-        end
+    for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
+        -- Use GetSpellID() method or check auraSpellID property
+        local frameSpellID = nil
         
-        -- Try multiple possible spell ID properties
-        local frameSpellID = childFrame.auraSpellID  -- Try auraSpellID (seen in the error dump earlier)
-            or childFrame.cooldownID 
-            or childFrame.spellID 
-            or childFrame.spellId 
-            or (childFrame.spell and childFrame.spell:GetSpellID())
-            or (childFrame.GetSpellID and childFrame:GetSpellID())
-            or (childFrame.cooldownInfo and childFrame.cooldownInfo.spellID)
-        
-        print("    Frame:", childFrame:GetName(), "auraSpellID:", childFrame.auraSpellID, "cooldownID:", childFrame.cooldownID)
-        
-        -- Safely compare, handling potential taint
-        local isMatch = false
-        if frameSpellID then
-            local success, result = pcall(function() return frameSpellID == spellID end)
+        if childFrame.GetSpellID then
+            local success, result = pcall(childFrame.GetSpellID, childFrame)
             if success then
-                isMatch = result
-                print("      Comparison success:", frameSpellID, "==", spellID, "?", isMatch)
-            else
-                -- Tainted comparison, try converting to string
-                local frameIDStr = tostring(frameSpellID)
-                local spellIDStr = tostring(spellID)
-                isMatch = (frameIDStr == spellIDStr)
-                print("      Tainted comparison, using strings:", frameIDStr, "==", spellIDStr, "?", isMatch)
+                frameSpellID = result
             end
         end
         
-        if isMatch then
-            print("  MATCH FOUND! spellID:", spellID, "show:", show, "frame:", childFrame:GetName())
+        -- Fallback to auraSpellID if GetSpellID didn't work
+        if not frameSpellID and childFrame.auraSpellID then
+            frameSpellID = childFrame.auraSpellID
+        end
+        
+        -- Compare spell IDs
+        if frameSpellID and frameSpellID == spellID then
             
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
                 if not childFrame.assistedHighlight then
-                    print("    Creating highlight texture...")
                     childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
                     childFrame.assistedHighlight:SetAllPoints(childFrame.Icon or childFrame)
                     childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
@@ -343,7 +313,6 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                     
                     -- Blue color to match Blizzard's highlight
                     childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
-                    print("    Highlight texture created")
                     
                     -- Pulse animation
                     if not childFrame.assistedHighlightAnim then
@@ -361,17 +330,13 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                         alpha2:SetOrder(2)
                         
                         childFrame.assistedHighlightAnim:SetLooping("REPEAT")
-                        print("    Animation created")
                     end
                 end
                 
-                print("    Showing highlight and playing animation")
                 childFrame.assistedHighlight:Show()
                 childFrame.assistedHighlightAnim:Play()
-                print("    Highlight visible:", childFrame.assistedHighlight:IsShown())
             else
                 -- Remove highlight
-                print("    Hiding highlight")
                 if childFrame.assistedHighlight then
                     childFrame.assistedHighlight:Hide()
                 end
