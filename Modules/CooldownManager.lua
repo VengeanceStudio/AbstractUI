@@ -116,12 +116,24 @@ function CooldownManager:StartOverlayPolling()
                 local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                 if action then
                     local actionType, id = GetActionInfo(action)
+                    local spellID = nil
+                    
                     if actionType == "spell" and id then
-                        foundHighlights[id] = true
+                        spellID = id
+                    elseif actionType == "macro" and id then
+                        -- Get spell from macro
+                        local macroSpell = GetMacroSpell(id)
+                        if macroSpell then
+                            spellID = select(7, C_Spell.GetSpellInfo(macroSpell))
+                        end
+                    end
+                    
+                    if spellID then
+                        foundHighlights[spellID] = true
                         
-                        if not self.highlightedSpells[id] then
-                            self.highlightedSpells[id] = true
-                            self:UpdateSpellHighlight(id, true)
+                        if not self.highlightedSpells[spellID] then
+                            self.highlightedSpells[spellID] = true
+                            self:UpdateSpellHighlight(spellID, true)
                         end
                     end
                 end
@@ -139,12 +151,24 @@ function CooldownManager:StartOverlayPolling()
                     local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                     if action then
                         local actionType, id = GetActionInfo(action)
+                        local spellID = nil
+                        
                         if actionType == "spell" and id then
-                            foundHighlights[id] = true
+                            spellID = id
+                        elseif actionType == "macro" and id then
+                            -- Get spell from macro
+                            local macroSpell = GetMacroSpell(id)
+                            if macroSpell then
+                                spellID = select(7, C_Spell.GetSpellInfo(macroSpell))
+                            end
+                        end
+                        
+                        if spellID then
+                            foundHighlights[spellID] = true
                             
-                            if not self.highlightedSpells[id] then
-                                self.highlightedSpells[id] = true
-                                self:UpdateSpellHighlight(id, true)
+                            if not self.highlightedSpells[spellID] then
+                                self.highlightedSpells[spellID] = true
+                                self:UpdateSpellHighlight(spellID, true)
                             end
                         end
                     end
