@@ -175,9 +175,18 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Debug for slots 26-30
-    if actionSlot >= 26 and actionSlot <= 30 then
-        print("DEBUG GetActionSlotBinding: Checking slot", actionSlot)
+    -- Debug for slots 26-30: Show all Dominos button mappings
+    if actionSlot == 26 then
+        print("DEBUG: Dumping DominosActionButton 25-36 action mappings:")
+        for i = 25, 36 do
+            local button = _G["DominosActionButton" .. i]
+            if button then
+                local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                print("  DominosActionButton" .. i, "-> action slot", buttonAction or "NIL")
+            else
+                print("  DominosActionButton" .. i, "doesn't exist")
+            end
+        end
     end
     
     -- First, try to find the button that displays this action slot
@@ -187,26 +196,13 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         if button then
             local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
             
-            if actionSlot >= 26 and actionSlot <= 30 and i >= 25 and i <= 30 then
-                print("  DominosActionButton" .. i, "action:", buttonAction or "NIL")
-            end
-            
             if buttonAction == actionSlot then
                 -- Found the Dominos button displaying this action slot
                 -- Dominos uses :HOTKEY for keybindings
                 local bindName = "CLICK DominosActionButton" .. i .. ":HOTKEY"
                 
-                if actionSlot >= 26 and actionSlot <= 30 then
-                    print("  FOUND: Button", i, "displays slot", actionSlot)
-                    print("    Checking binding:", bindName)
-                end
-                
                 -- GetBindingKey can return multiple bindings (key1, key2)
                 local key1, key2 = GetBindingKey(bindName)
-                
-                if actionSlot >= 26 and actionSlot <= 30 then
-                    print("    Result:", key1 or "NIL", key2 or "")
-                end
                 
                 -- Prefer the first non-nil binding
                 local clickBinding = key1 or key2
@@ -219,10 +215,6 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                 end
             end
         end
-    end
-    
-    if actionSlot >= 26 and actionSlot <= 30 then
-        print("  No Dominos button found, trying standard bindings")
     end
     
     -- Fallback: Try standard WoW keybinding names (for Blizzard bars)
