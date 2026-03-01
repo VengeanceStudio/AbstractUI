@@ -283,23 +283,12 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
-    print("ApplyHighlightToViewer: Looking for spell", spellID, C_Spell.GetSpellName(spellID), "show:", show)
-    
     -- Search through child frames to find ones with this spell ID
-    for i, childFrame in ipairs({viewerFrame:GetChildren()}) do
-        -- Debug the cooldownInfo table structure once
-        if i == 2 and childFrame.cooldownInfo then
-            print("  DEBUG: cooldownInfo contents:")
-            for k, v in pairs(childFrame.cooldownInfo) do
-                print("    " .. tostring(k) .. " =", type(v), tostring(v))
-            end
-        end
-        
+    for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
         -- Try cooldownInfo.spellID first
         local frameSpellID = nil
         if childFrame.cooldownInfo and childFrame.cooldownInfo.spellID then
             frameSpellID = childFrame.cooldownInfo.spellID
-            print("  Frame has cooldownInfo.spellID:", frameSpellID, C_Spell.GetSpellName(frameSpellID))
         end
         
         -- Fallback to GetSpellID() method
@@ -323,42 +312,46 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             end)
             if success and result then
                 isMatch = true
-                print("  MATCH FOUND!")
             end
         end
         
         if isMatch then
             local success, err = pcall(function()
-                print("    Creating/showing highlight for frame")
                 
                 if show then
                     -- Add blue glow like Blizzard's assisted highlight
                     if not childFrame.assistedHighlight then
-                        print("      Creating new highlight texture")
                         childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
-                        
-                        -- Make it cover the whole frame
                         childFrame.assistedHighlight:SetAllPoints(childFrame)
+                        childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
+                        childFrame.assistedHighlight:SetBlendMode("ADD")
                         
-                        -- Use solid color for testing visibility
-                        childFrame.assistedHighlight:SetColorTexture(1, 0, 0, 0.5) -- Bright red, semi-transparent
+                        -- Blue color to match Blizzard's highlight
+                        childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 1.0)
                         
-                        print("      RED TEST texture created")
+                        -- Pulse animation
+                        if not childFrame.assistedHighlightAnim then
+                            childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
+                            local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                            alpha1:SetFromAlpha(0.5)
+                            alpha1:SetToAlpha(1.0)
+                            alpha1:SetDuration(0.6)
+                            alpha1:SetOrder(1)
+                            
+                            local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                            alpha2:SetFromAlpha(1.0)
+                            alpha2:SetToAlpha(0.5)
+                            alpha2:SetDuration(0.6)
+                            alpha2:SetOrder(2)
+                            
+                            childFrame.assistedHighlightAnim:SetLooping("REPEAT")
+                        end
                     end
                     
-                    print("      Showing highlight")
                     childFrame.assistedHighlight:Show()
-                    
-                    C_Timer.After(0.1, function()
-                        if childFrame.assistedHighlight then
-                            print("      Highlight status check: IsShown =", childFrame.assistedHighlight:IsShown(), 
-                                  "Size =", childFrame.assistedHighlight:GetSize(),
-                                  "Parent shown =", childFrame:IsShown())
-                        end
-                    end)
+                    childFrame.assistedHighlightAnim:Play()
                 else
                     -- Remove highlight
-                    print("      Hiding highlight")
                     if childFrame.assistedHighlight then
                         childFrame.assistedHighlight:Hide()
                     end
@@ -369,7 +362,7 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             end)
             
             if not success then
-                print("    ERROR in highlight code:", err)
+                -- Silently fail to avoid spam
             end
         end
     end
