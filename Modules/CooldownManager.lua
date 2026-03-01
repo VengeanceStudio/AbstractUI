@@ -174,69 +174,75 @@ end
 -- Frame Styling
 --------------------------------------------------------------------------------
 
+function CooldownManager:GetActionSlotBinding(actionSlot)
+    -- Map action slots to their correct keybinding command
+    local bindingName
+    
+    if actionSlot >= 1 and actionSlot <= 12 then
+        -- Main action bar
+        bindingName = "ACTIONBUTTON" .. actionSlot
+    elseif actionSlot >= 13 and actionSlot <= 24 then
+        -- Bottom Left MultiBar (Bar 2)
+        bindingName = "MULTIACTIONBAR1BUTTON" .. (actionSlot - 12)
+    elseif actionSlot >= 25 and actionSlot <= 36 then
+        -- Bottom Right MultiBar (Bar 3)
+        bindingName = "MULTIACTIONBAR2BUTTON" .. (actionSlot - 24)
+    elseif actionSlot >= 37 and actionSlot <= 48 then
+        -- Right MultiBar (Bar 4)
+        bindingName = "MULTIACTIONBAR3BUTTON" .. (actionSlot - 36)
+    elseif actionSlot >= 49 and actionSlot <= 60 then
+        -- Right MultiBar 2 (Bar 5)
+        bindingName = "MULTIACTIONBAR4BUTTON" .. (actionSlot - 48)
+    elseif actionSlot >= 61 and actionSlot <= 72 then
+        -- Bar 6
+        bindingName = "MULTIACTIONBAR5BUTTON" .. (actionSlot - 60)
+    elseif actionSlot >= 73 and actionSlot <= 84 then
+        -- Bar 7
+        bindingName = "MULTIACTIONBAR6BUTTON" .. (actionSlot - 72)
+    elseif actionSlot >= 85 and actionSlot <= 96 then
+        -- Bar 8
+        bindingName = "MULTIACTIONBAR7BUTTON" .. (actionSlot - 84)
+    else
+        -- Try the simple format for other slots
+        bindingName = "ACTIONBUTTON" .. actionSlot
+    end
+    
+    local binding = GetBindingKey(bindingName)
+    if binding then
+        binding = binding:gsub("SHIFT%-", "S-")
+        binding = binding:gsub("CTRL%-", "C-")
+        binding = binding:gsub("ALT%-", "A-")
+    end
+    
+    return binding
+end
+
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
     -- Get spell name for comparison
     local spellName = C_Spell.GetSpellName(spellID)
     
-    -- Debug for specific spell
-    local isDebugSpell = (spellID == 217832)
-    if isDebugSpell then
-        print("|cff00ff00[CooldownManager]|r Searching for spell", spellID, spellName)
-    end
-    
-    -- Search all action bar slots manually (up to 180 for all bars including hidden ones)
+    -- Search all action bar slots manually
     for actionSlot = 1, 180 do
         local slotType, id = GetActionInfo(actionSlot)
         
-        if slotType == "spell" then
-            if isDebugSpell then
-                print("|cff00ff00[CooldownManager]|r Action slot", actionSlot, "has spell", id)
-            end
-            
-            if id == spellID then
-                -- Found the spell directly
-                local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
-                if isDebugSpell then
-                    print("|cff00ff00[CooldownManager]|r FOUND at slot", actionSlot, "binding:", binding or "NONE")
-                end
-                if binding then
-                    binding = binding:gsub("SHIFT%-", "S-")
-                    binding = binding:gsub("CTRL%-", "C-")
-                    binding = binding:gsub("ALT%-", "A-")
-                    return binding
-                end
-            end
+        if slotType == "spell" and id == spellID then
+            -- Found the spell directly
+            return self:GetActionSlotBinding(actionSlot)
         elseif slotType == "macro" and id then
             -- Check if macro casts this spell
             local macroSpellID = GetMacroSpell(id)
             if macroSpellID == spellID then
-                local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
-                if binding then
-                    binding = binding:gsub("SHIFT%-", "S-")
-                    binding = binding:gsub("CTRL%-", "C-")
-                    binding = binding:gsub("ALT%-", "A-")
-                    return binding
-                end
+                return self:GetActionSlotBinding(actionSlot)
             elseif spellName then
                 -- Check macro body for spell name
                 local macroBody = GetMacroBody(id)
                 if macroBody and macroBody:find(spellName, 1, true) then
-                    local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
-                    if binding then
-                        binding = binding:gsub("SHIFT%-", "S-")
-                        binding = binding:gsub("CTRL%-", "C-")
-                        binding = binding:gsub("ALT%-", "A-")
-                        return binding
-                    end
+                    return self:GetActionSlotBinding(actionSlot)
                 end
             end
         end
-    end
-    
-    if isDebugSpell then
-        print("|cffff6b6b[CooldownManager]|r Spell", spellID, "NOT FOUND on any action bar")
     end
     
     return nil
