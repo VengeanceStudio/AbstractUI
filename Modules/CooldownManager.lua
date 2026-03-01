@@ -252,28 +252,11 @@ end
 function CooldownManager:CleanKeybindText(text)
     if not text then return nil end
     
-    -- Debug: Print the raw text and its bytes
-    if text:find("[\128-\255]") then  -- Contains non-ASCII characters
-        print("DEBUG: Raw keybind text:", text)
-        local bytes = ""
-        for i = 1, #text do
-            bytes = bytes .. string.format("%d,", text:byte(i))
-        end
-        print("  Byte sequence:", bytes)
-    end
-    
     -- Remove WoW formatting codes
     text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
     
-    -- Replace Dominos Unicode modifier symbols with text (using byte patterns)
-    -- Dominos might use special UTF-8 characters, try multiple encodings
-    text = text:gsub("[\226][\140][\131]", "C-")  -- ⌃ UTF-8 bytes for Ctrl
-    text = text:gsub("[\226][\135][\167]", "S-")  -- ⇧ UTF-8 bytes for Shift
-    text = text:gsub("[\226][\140][\165]", "A-")  -- ⌥ UTF-8 bytes for Alt
-    text = text:gsub("[\226][\140][\152]", "M-")  -- ⌘ UTF-8 bytes for Meta
-    
-    -- Also try common ASCII representations
-    text = text:gsub("^C%-", "C-"):gsub("^S%-", "S-"):gsub("^A%-", "A-")
+    -- Replace Dominos modifier symbol (● = bytes 226,151,143) with C-
+    text = text:gsub("[\226][\151][\143]", "C-")
     
     return text
 end
@@ -284,41 +267,43 @@ function CooldownManager:GetSpellKeybind(spellID)
     -- Get spell name for comparison
     local spellName = C_Spell.GetSpellName(spellID)
     
-    -- Search all action bar slots manually
+    -- First approach: Search action slots with GetActionInfo
     for actionSlot = 1, 180 do
-        local slotType, id = GetActionInfo(actionSlot)
+        local slotType, id, subType = GetActionInfo(actionSlot)
         
         if slotType == "spell" and id == spellID then
-            -- Found the spell directly
             return self:GetActionSlotBinding(actionSlot)
-        elseif slotType == "macro" and id then
-            -- Check if macro casts this spell
+        elseif slotType == "macro" and id and id <= 1000 then
+            -- Valid macro indices are 1-138 (character) or 139+ (account)
             local macroName, macroSpellID = GetMacroSpell(id)
-            
-            -- Debug output
-            if spellID == 217832 then  -- Debug for a specific spell
-                print("DEBUG: Found macro at slot", actionSlot, "macro ID:", id)
-                print("  GetMacroSpell returned:", macroName or "nil", macroSpellID or "nil")
-                print("  Looking for spell:", spellName, spellID)
-                local body = GetMacroBody(id)
-                if body then print("  Macro body:", body) end
-            end
             
             if macroSpellID == spellID then
                 return self:GetActionSlotBinding(actionSlot)
             elseif spellName then
-                -- Check macro body for spell name or ID
                 local macroBody = GetMacroBody(id)
                 if macroBody then
-                    -- Check for spell name (case insensitive)
-                    if macroBody:lower():find(spellName:lower(), 1, true) then
-                        return self:GetActionSlotBinding(actionSlot)
-                    end
-                    -- Check for spell ID in spell links (e.g., spell:217832)
-                    if macroBody:find("spell:" .. spellID) then
+                    if macroBody:lower():find(spellName:lower(), 1, true) or
+                       macroBody:find("spell:" .. spellID) then
                         return self:GetActionSlotBinding(actionSlot)
                     end
                 end
+            end
+        elseif slotType == "item" and id then
+            local itemSpellID = C_Item.GetItemSpell(id)
+            if itemSpellID == spellID then
+                return self:GetActionSlotBinding(actionSlot)
+            end
+        end
+    end
+    
+    -- Second approach: Check Dominos buttons directly
+    for i = 1, 180 do
+        local button = _G["DominosActionButton" .. i]
+        if button then
+            -- Check if this button shows our spell
+            local buttonSpellID = button:GetSpellID and button:GetSpellID()
+            if buttonSpellID == spellID then
+                return self:GetActionSlotBinding(i)
             end
         end
     end
