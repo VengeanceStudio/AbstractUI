@@ -328,55 +328,58 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
         end
         
         if isMatch then
-            print("    Creating/showing highlight for frame")
-            
-            if show then
-                -- Add blue glow like Blizzard's assisted highlight
-                if not childFrame.assistedHighlight then
-                    print("      Creating new highlight texture")
-                    childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
-                    childFrame.assistedHighlight:SetAllPoints(childFrame.Icon or childFrame)
-                    childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
-                    childFrame.assistedHighlight:SetBlendMode("ADD")
-                    
-                    -- Blue color to match Blizzard's highlight
-                    childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
-                    print("      Texture created, size:", childFrame.assistedHighlight:GetSize())
-                    
-                    -- Pulse animation
-                    if not childFrame.assistedHighlightAnim then
-                        childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
-                        local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
-                        alpha1:SetFromAlpha(0.4)
-                        alpha1:SetToAlpha(0.8)
-                        alpha1:SetDuration(0.6)
-                        alpha1:SetOrder(1)
+            local success, err = pcall(function()
+                print("    Creating/showing highlight for frame")
+                
+                if show then
+                    -- Add blue glow like Blizzard's assisted highlight
+                    if not childFrame.assistedHighlight then
+                        print("      Creating new highlight texture")
+                        childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
+                        childFrame.assistedHighlight:SetAllPoints(childFrame.Icon or childFrame)
+                        childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
+                        childFrame.assistedHighlight:SetBlendMode("ADD")
                         
-                        local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
-                        alpha2:SetFromAlpha(0.8)
-                        alpha2:SetToAlpha(0.4)
-                        alpha2:SetDuration(0.6)
-                        alpha2:SetOrder(2)
+                        -- Blue color to match Blizzard's highlight
+                        childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
+                        print("      Texture created")
                         
-                        childFrame.assistedHighlightAnim:SetLooping("REPEAT")
+                        -- Pulse animation
+                        if not childFrame.assistedHighlightAnim then
+                            childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
+                            local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                            alpha1:SetFromAlpha(0.4)
+                            alpha1:SetToAlpha(0.8)
+                            alpha1:SetDuration(0.6)
+                            alpha1:SetOrder(1)
+                            
+                            local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                            alpha2:SetFromAlpha(0.8)
+                            alpha2:SetToAlpha(0.4)
+                            alpha2:SetDuration(0.6)
+                            alpha2:SetOrder(2)
+                            
+                            childFrame.assistedHighlightAnim:SetLooping("REPEAT")
+                        end
+                    end
+                    
+                    print("      Showing highlight")
+                    childFrame.assistedHighlight:Show()
+                    childFrame.assistedHighlightAnim:Play()
+                else
+                    -- Remove highlight
+                    print("      Hiding highlight")
+                    if childFrame.assistedHighlight then
+                        childFrame.assistedHighlight:Hide()
+                    end
+                    if childFrame.assistedHighlightAnim then
+                        childFrame.assistedHighlightAnim:Stop()
                     end
                 end
-                
-                print("      Showing highlight, IsShown before:", childFrame.assistedHighlight:IsShown())
-                childFrame.assistedHighlight:Show()
-                childFrame.assistedHighlightAnim:Play()
-                print("      IsShown after:", childFrame.assistedHighlight:IsShown())
-                print("      Parent frame shown:", childFrame:IsShown())
-                print("      Icon:", childFrame.Icon and childFrame.Icon:GetTexture())
-            else
-                -- Remove highlight
-                print("      Hiding highlight")
-                if childFrame.assistedHighlight then
-                    childFrame.assistedHighlight:Hide()
-                end
-                if childFrame.assistedHighlightAnim then
-                    childFrame.assistedHighlightAnim:Stop()
-                end
+            end)
+            
+            if not success then
+                print("    ERROR in highlight code:", err)
             end
         end
     end
