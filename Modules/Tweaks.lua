@@ -257,37 +257,42 @@ function Tweaks:HookAutoDelete()
     
     local module = self
     
-    -- Hook StaticPopup_Show to auto-fill when dialog opens
-    self:SecureHook("StaticPopup_Show", function(which, ...)
-        if not which then return end
-        
-        if (which == "DELETE_ITEM" or which == "DELETE_GOOD_ITEM" or 
-            which == "DELETE_QUEST_ITEM" or which == "DELETE_GOOD_QUEST_ITEM") then
-            
-            if module.db and module.db.profile.autoDelete then
-                C_Timer.After(0.1, function()
-                    -- STATICPOPUP_NUMDIALOGS doesn't exist in modern WoW, default to 4
-                    local numDialogs = 4
-                    for i = 1, numDialogs do
-                        local dialog = _G["StaticPopup" .. i]
-                        if dialog and dialog:IsShown() and dialog.which == which then
-                            local editBox = dialog.editBox
-                            if editBox then
-                                editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
-                                editBox:ClearFocus()
-                                
-                                -- Enable the accept button
-                                if dialog.button1 then
-                                    dialog.button1:Enable()
-                                end
+    -- Hook the OnShow event of all StaticPopup dialogs
+    for i = 1, 4 do
+        local dialog = _G["StaticPopup" .. i]
+        if dialog then
+            dialog:HookScript("OnShow", function(self)
+                if not module.db or not module.db.profile.autoDelete then return end
+                
+                local which = self.which
+                if not which then return end
+                
+                -- Check if this is a delete confirmation dialog
+                if (which == "DELETE_ITEM" or which == "DELETE_GOOD_ITEM" or 
+                    which == "DELETE_QUEST_ITEM" or which == "DELETE_GOOD_QUEST_ITEM") then
+                    
+                    C_Timer.After(0.05, function()
+                        if self:IsShown() and self.editBox then
+                            -- Set the text to DELETE
+                            self.editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+                            
+                            -- Enable the accept button immediately
+                            if self.button1 then
+                                self.button1:Enable()
                             end
-                            break
+                            
+                            -- Focus management
+                            C_Timer.After(0, function()
+                                if self.editBox then
+                                    self.editBox:ClearFocus()
+                                end
+                            end)
                         end
-                    end
-                end)
-            end
+                    end)
+                end
+            end)
         end
-    end)
+    end
     
     self.autoDeleteHooked = true
 end
