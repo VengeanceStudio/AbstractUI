@@ -175,26 +175,27 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Check for Dominos action bar buttons first
-    local button = _G["DominosActionButton" .. actionSlot]
-    
-    -- Fall back to Blizzard buttons if Dominos isn't found
-    if not button then
-        if actionSlot >= 1 and actionSlot <= 12 then
-            button = _G["ActionButton" .. actionSlot]
-        elseif actionSlot >= 13 and actionSlot <= 24 then
-            button = _G["MultiBarBottomLeftButton" .. (actionSlot - 12)]
-        elseif actionSlot >= 25 and actionSlot <= 36 then
-            button = _G["MultiBarBottomRightButton" .. (actionSlot - 24)]
-        elseif actionSlot >= 37 and actionSlot <= 48 then
-            button = _G["MultiBarRightButton" .. (actionSlot - 36)]
-        elseif actionSlot >= 49 and actionSlot <= 60 then
-            button = _G["MultiBarLeftButton" .. (actionSlot - 48)]
+    -- First, check if any Dominos button is showing this action slot
+    for i = 1, 180 do
+        local button = _G["DominosActionButton" .. i]
+        if button then
+            -- Check if this Dominos button is mapped to our action slot
+            local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+            if buttonAction == actionSlot then
+                -- Found the Dominos button for this action slot - use WoW's API for its keybind
+                local bindingName = "CLICK DominosActionButton" .. i .. ":LeftButton"
+                local binding = GetBindingKey(bindingName)
+                if binding then
+                    binding = binding:gsub("SHIFT%-", "S")
+                    binding = binding:gsub("CTRL%-", "C")
+                    binding = binding:gsub("ALT%-", "A")
+                    return binding
+                end
+            end
         end
     end
     
-    -- For Dominos or other action bar addons, use WoW's binding database directly
-    -- Get all bindings for this action slot
+    -- Fall back to standard Blizzard action bar bindings
     local bindingName
     if actionSlot >= 1 and actionSlot <= 12 then
         bindingName = "ACTIONBUTTON" .. actionSlot
