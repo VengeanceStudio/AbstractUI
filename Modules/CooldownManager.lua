@@ -134,6 +134,7 @@ function CooldownManager:StartOverlayPolling()
     print("DEBUG: Starting overlay polling")
     
     local debugOnce = false
+    local lastOverlayCount = 0
     
     -- Poll every 0.1 seconds to check for active overlays
     self.overlayTimer = C_Timer.NewTicker(0.1, function()
@@ -163,14 +164,26 @@ function CooldownManager:StartOverlayPolling()
         
         -- Check all possible overlay positions for active overlays
         if SpellActivationOverlayFrame and SpellActivationOverlayFrame.overlaysInUse then
-            for i = 1, #SpellActivationOverlayFrame.overlaysInUse do
+            local currentCount = #SpellActivationOverlayFrame.overlaysInUse
+            
+            -- Debug when overlay count changes
+            if currentCount ~= lastOverlayCount then
+                print("DEBUG: Overlay count changed from", lastOverlayCount, "to", currentCount)
+                lastOverlayCount = currentCount
+            end
+            
+            for i = 1, currentCount do
                 local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
-                if overlay and overlay.spellID and overlay:IsShown() then
-                    -- Check if this is a new highlight
-                    if not self.highlightedSpells[overlay.spellID] then
-                        print("DEBUG: Found active overlay for spellID:", overlay.spellID, C_Spell.GetSpellName(overlay.spellID))
-                        self.highlightedSpells[overlay.spellID] = true
-                        self:UpdateSpellHighlight(overlay.spellID, true)
+                if overlay then
+                    print("DEBUG: Checking overlay", i, "- spellID:", overlay.spellID, "shown:", overlay:IsShown())
+                    
+                    if overlay.spellID and overlay:IsShown() then
+                        -- Check if this is a new highlight
+                        if not self.highlightedSpells[overlay.spellID] then
+                            print("DEBUG: Found NEW active overlay for spellID:", overlay.spellID, C_Spell.GetSpellName(overlay.spellID))
+                            self.highlightedSpells[overlay.spellID] = true
+                            self:UpdateSpellHighlight(overlay.spellID, true)
+                        end
                     end
                 end
             end
@@ -178,7 +191,7 @@ function CooldownManager:StartOverlayPolling()
             -- Check for spells that are no longer highlighted
             for spellID, _ in pairs(self.highlightedSpells) do
                 local stillActive = false
-                for i = 1, #SpellActivationOverlayFrame.overlaysInUse do
+                for i = 1, currentCount do
                     local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
                     if overlay and overlay.spellID == spellID and overlay:IsShown() then
                         stillActive = true
