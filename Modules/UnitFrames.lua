@@ -2564,7 +2564,8 @@ end
                     -- Update status icons
                     -- Update AFK text (only for player)
                     if unit == "player" and frame.afkTextFrame then
-                        if UnitIsAFK("player") then
+                        local success, isAFK = pcall(UnitIsAFK, "player")
+                        if success and isAFK then
                             frame.afkTextFrame:Show()
                         else
                             frame.afkTextFrame:Hide()
@@ -2573,7 +2574,8 @@ end
                     
                     -- Update Combat icon (only for player)
                     if unit == "player" and frame.combatIconFrame then
-                        if UnitAffectingCombat("player") then
+                        local success, inCombat = pcall(UnitAffectingCombat, "player")
+                        if success and inCombat then
                             frame.combatIconFrame:Show()
                         else
                             frame.combatIconFrame:Hide()
@@ -2582,7 +2584,8 @@ end
                     
                     -- Update Resting icon (only for player)
                     if unit == "player" and frame.restingIconFrame then
-                        if IsResting() then
+                        local success, isResting = pcall(IsResting)
+                        if success and isResting then
                             frame.restingIconFrame:Show()
                         else
                             frame.restingIconFrame:Hide()
