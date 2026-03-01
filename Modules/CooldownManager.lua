@@ -287,6 +287,8 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
+    print("  ApplyHighlightToViewer: Looking for spellID", spellID, "in", viewerFrame:GetName())
+    
     -- Search through child frames to find ones with this spell ID
     for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
         -- Try multiple possible spell ID properties
@@ -296,17 +298,21 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             or (childFrame.spell and childFrame.spell:GetSpellID())
             or (childFrame.GetSpellID and childFrame:GetSpellID())
         
+        print("    Frame:", childFrame:GetName(), "cooldownID:", childFrame.cooldownID, "spellID:", childFrame.spellID, "spellId:", childFrame.spellId)
+        
         -- Safely compare, handling potential taint
         local isMatch = false
         if frameSpellID then
             local success, result = pcall(function() return frameSpellID == spellID end)
             if success then
                 isMatch = result
+                print("      Comparison success:", frameSpellID, "==", spellID, "?", isMatch)
             else
                 -- Tainted comparison, try converting to string
                 local frameIDStr = tostring(frameSpellID)
                 local spellIDStr = tostring(spellID)
                 isMatch = (frameIDStr == spellIDStr)
+                print("      Tainted comparison, using strings:", frameIDStr, "==", spellIDStr, "?", isMatch)
             end
         end
         
