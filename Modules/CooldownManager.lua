@@ -207,7 +207,29 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
+    -- Debug for slot 19
+    if actionSlot == 19 then
+        print("|cff00ff00[CooldownManager]|r Slot 19 checking binding:", bindingName)
+    end
+    
     local binding = GetBindingKey(bindingName)
+    
+    if actionSlot == 19 then
+        print("|cff00ff00[CooldownManager]|r Slot 19 GetBindingKey result:", binding or "NIL")
+        
+        -- Try all possible binding names for slot 19
+        for i = 1, 7 do
+            local testName = "MULTIACTIONBAR" .. i .. "BUTTON7"
+            local testBinding = GetBindingKey(testName)
+            print("|cff00ff00[CooldownManager]|r Testing", testName, "=", testBinding or "NIL")
+        end
+        
+        -- Also check click bindings
+        local clickName = "CLICK ActionButton19:LeftButton"
+        local clickBinding = GetBindingKey(clickName)
+        print("|cff00ff00[CooldownManager]|r Testing", clickName, "=", clickBinding or "NIL")
+    end
+    
     if binding then
         binding = binding:gsub("SHIFT%-", "S-")
         binding = binding:gsub("CTRL%-", "C-")
