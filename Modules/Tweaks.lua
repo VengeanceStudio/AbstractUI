@@ -21,6 +21,7 @@ local defaults = {
         autoScreenshot = false,
         skipCutscenes = false,
         autoInsertKey = true,
+        questFrameScale = 1.0,
     }
 }
 
@@ -86,12 +87,47 @@ function Tweaks:OnDBReady()
     
     -- Use event-based approach instead of constant ticker
     -- Bag bar hiding is handled by UPDATE_INVENTORY_DURABILITY event
+    
+    -- Apply quest frame scaling
+    self:ApplyQuestFrameScale()
 end
 
 function Tweaks:UPDATE_INVENTORY_DURABILITY()
     if self.db.profile.hideBagBar then
         self:HideBagBar()
     end
+end
+
+function Tweaks:ApplyQuestFrameScale()
+    if QuestFrame then
+        QuestFrame:SetScale(self.db.profile.questFrameScale or 1.0)
+    else
+        -- Quest frame not loaded yet, try again when it shows
+        self:RegisterEvent("QUEST_DETAIL")
+        self:RegisterEvent("QUEST_PROGRESS")
+        self:RegisterEvent("QUEST_COMPLETE")
+        self:RegisterEvent("QUEST_GREETING")
+    end
+end
+
+function Tweaks:QUEST_DETAIL()
+    self:ApplyQuestFrameScale()
+    self:UnregisterEvent("QUEST_DETAIL")
+end
+
+function Tweaks:QUEST_PROGRESS()
+    self:ApplyQuestFrameScale()
+    self:UnregisterEvent("QUEST_PROGRESS")
+end
+
+function Tweaks:QUEST_COMPLETE()
+    self:ApplyQuestFrameScale()
+    self:UnregisterEvent("QUEST_COMPLETE")
+end
+
+function Tweaks:QUEST_GREETING()
+    self:ApplyQuestFrameScale()
+    self:UnregisterEvent("QUEST_GREETING")
 end
 
 function Tweaks:BAG_UPDATE_DELAYED()
@@ -637,6 +673,19 @@ function Tweaks:GetOptions()
                         self:DisableTalentImportHook()
                     end
                 end 
+            },
+            questFrameScale = {
+                name = "Quest Frame Scale",
+                desc = "Adjust the size of the Quest window (1.0 = default, 1.5 = 50% larger)",
+                type = "range",
+                min = 0.5,
+                max = 2.0,
+                step = 0.05,
+                order = 13,
+                set = function(_, v)
+                    self.db.profile.questFrameScale = v
+                    self:ApplyQuestFrameScale()
+                end,
             },
         }
     }
