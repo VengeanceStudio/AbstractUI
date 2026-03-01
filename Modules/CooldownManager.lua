@@ -133,6 +133,8 @@ end
 function CooldownManager:StartOverlayPolling()
     print("DEBUG: Starting overlay polling")
     
+    local debugOnce = false
+    
     -- Poll every 0.1 seconds to check for active overlays
     self.overlayTimer = C_Timer.NewTicker(0.1, function()
         if not self.db.profile.essential.showAssistedHighlight and 
@@ -140,8 +142,27 @@ function CooldownManager:StartOverlayPolling()
             return
         end
         
+        -- Debug: Print frame structure once
+        if not debugOnce and SpellActivationOverlayFrame then
+            debugOnce = true
+            print("DEBUG: SpellActivationOverlayFrame structure:")
+            print("  overlaysInUse:", SpellActivationOverlayFrame.overlaysInUse and #SpellActivationOverlayFrame.overlaysInUse or "nil")
+            print("  Type:", type(SpellActivationOverlayFrame.overlaysInUse))
+            
+            -- Check for child frames
+            local children = {SpellActivationOverlayFrame:GetChildren()}
+            print("  Children count:", #children)
+            
+            -- Try to find overlays another way
+            for key, value in pairs(SpellActivationOverlayFrame) do
+                if type(key) == "string" and key:lower():find("overlay") then
+                    print("  Found key:", key, "=", type(value))
+                end
+            end
+        end
+        
         -- Check all possible overlay positions for active overlays
-        if SpellActivationOverlayFrame then
+        if SpellActivationOverlayFrame and SpellActivationOverlayFrame.overlaysInUse then
             for i = 1, #SpellActivationOverlayFrame.overlaysInUse do
                 local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
                 if overlay and overlay.spellID and overlay:IsShown() then
