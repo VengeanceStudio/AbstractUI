@@ -144,43 +144,31 @@ function Maps:SetupMinimapPosition()
         return
     end
     
-    -- Hook MinimapCluster.Layout to see if that's being called
+    -- Hook MinimapCluster.Layout to reapply after EditMode finishes
     if MinimapCluster.Layout then
         hooksecurefunc(MinimapCluster, "Layout", function()
             print("|cffff00ff[AbstractUI Maps]|r MinimapCluster.Layout called")
-            -- Reapply our minimap offset after Blizzard layouts the cluster
-            C_Timer.After(0, function()
+            -- Wait for EditMode to finish all its positioning
+            C_Timer.After(0.05, function()
                 Maps:ApplyMinimapOffset()
             end)
         end)
     end
     
-    -- Hook MinimapCluster SetPoint to see if IT'S being moved
+    -- Hook MinimapCluster SetPoint to reapply when cluster moves
     hooksecurefunc(MinimapCluster, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
         print("|cffff00ff[AbstractUI Maps]|r MinimapCluster.SetPoint called:", point, relativeTo and relativeTo:GetName() or "nil", relativePoint, x, y)
-    end)
-    
-    -- Hook MinimapCluster ClearAllPoints too
-    hooksecurefunc(MinimapCluster, "ClearAllPoints", function()
-        print("|cffff00ff[AbstractUI Maps]|r MinimapCluster.ClearAllPoints called")
+        -- Reapply after cluster positioning settles
+        C_Timer.After(0.05, function()
+            Maps:ApplyMinimapOffset()
+        end)
     end)
     
     -- Override Minimap.Layout to use our custom positioning
-    -- This is called by Blizzard when UI is shown/hidden (ALT-Z, DialogueUI, etc.)
     Minimap.Layout = function()
         print("|cff00ff00[AbstractUI Maps]|r Minimap.Layout called")
         Maps:ApplyMinimapOffset()
     end
-    
-    -- Hook SetPoint to see when it's being called
-    hooksecurefunc(Minimap, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
-        print("|cffff6b6b[AbstractUI Maps]|r Minimap.SetPoint called:", point, relativeTo and relativeTo:GetName() or "nil", relativePoint, x, y)
-    end)
-    
-    -- Hook ClearAllPoints too
-    hooksecurefunc(Minimap, "ClearAllPoints", function()
-        print("|cffff6b6b[AbstractUI Maps]|r Minimap.ClearAllPoints called")
-    end)
     
     self.minimapPositionInitialized = true
     self:ApplyMinimapOffset()
