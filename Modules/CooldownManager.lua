@@ -175,43 +175,53 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Debug for slots 26-30: Show all Dominos button mappings
-    if actionSlot == 26 then
-        print("DEBUG: Dumping DominosActionButton 25-36 action mappings:")
-        for i = 25, 36 do
-            local button = _G["DominosActionButton" .. i]
+    -- Check Blizzard and Dominos button frames directly
+    local buttonPatterns = {
+        "ActionButton",              -- Main bar (Blizzard)
+        "MultiBarBottomLeftButton",  -- Bottom left bar (Blizzard)
+        "MultiBarBottomRightButton", -- Bottom right bar (Blizzard)
+        "MultiBarRightButton",       -- Right bar (Blizzard)
+        "MultiBarLeftButton",        -- Left bar (Blizzard)
+        "MultiBarRightActionButton", -- Right bar (with "Action" in name)
+        "MultiBarLeftActionButton",  -- Left bar (with "Action" in name)
+        "DominosActionButton",       -- Dominos primary
+        "Dominos2ActionButton",      -- Dominos bar 2
+        "Dominos3ActionButton",      -- Dominos bar 3
+        "Dominos4ActionButton",      -- Dominos bar 4
+    }
+    
+    for _, pattern in ipairs(buttonPatterns) do
+        for i = 1, 12 do
+            local buttonName = pattern .. i
+            local button = _G[buttonName]
             if button then
                 local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
-                print("  DominosActionButton" .. i, "-> action slot", buttonAction or "NIL")
-            else
-                print("  DominosActionButton" .. i, "doesn't exist")
-            end
-        end
-    end
-    
-    -- First, try to find the button that displays this action slot
-    -- Check Dominos buttons
-    for i = 1, 180 do
-        local button = _G["DominosActionButton" .. i]
-        if button then
-            local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
-            
-            if buttonAction == actionSlot then
-                -- Found the Dominos button displaying this action slot
-                -- Dominos uses :HOTKEY for keybindings
-                local bindName = "CLICK DominosActionButton" .. i .. ":HOTKEY"
                 
-                -- GetBindingKey can return multiple bindings (key1, key2)
-                local key1, key2 = GetBindingKey(bindName)
-                
-                -- Prefer the first non-nil binding
-                local clickBinding = key1 or key2
-                
-                if clickBinding then
-                    clickBinding = clickBinding:gsub("SHIFT%-", "S")
-                    clickBinding = clickBinding:gsub("CTRL%-", "C")
-                    clickBinding = clickBinding:gsub("ALT%-", "A")
-                    return clickBinding
+                if buttonAction == actionSlot then
+                    -- Found the button displaying this action slot
+                    -- Try Dominos CLICK binding first
+                    local bindName = "CLICK " .. buttonName .. ":HOTKEY"
+                    local key1, key2 = GetBindingKey(bindName)
+                    local clickBinding = key1 or key2
+                    
+                    if clickBinding then
+                        clickBinding = clickBinding:gsub("SHIFT%-", "S")
+                        clickBinding = clickBinding:gsub("CTRL%-", "C")
+                        clickBinding = clickBinding:gsub("ALT%-", "A")
+                        return clickBinding
+                    end
+                    
+                    -- Try standard CLICK binding without :HOTKEY
+                    bindName = "CLICK " .. buttonName .. ":LeftButton"
+                    key1, key2 = GetBindingKey(bindName)
+                    clickBinding = key1 or key2
+                    
+                    if clickBinding then
+                        clickBinding = clickBinding:gsub("SHIFT%-", "S")
+                        clickBinding = clickBinding:gsub("CTRL%-", "C")
+                        clickBinding = clickBinding:gsub("ALT%-", "A")
+                        return clickBinding
+                    end
                 end
             end
         end
@@ -240,7 +250,9 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
-    local key1, key2 = GetBindingKey(bindingName)
+    local key1, key2 = GetBindingKey(bind
+
+ingName)
     local binding = key1 or key2
     
     if binding then
