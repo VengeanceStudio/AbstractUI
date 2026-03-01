@@ -250,9 +250,7 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
-    local key1, key2 = GetBindingKey(bind
-
-ingName)
+    local key1, key2 = GetBindingKey(bindingName)
     local binding = key1 or key2
     
     if binding then
