@@ -328,10 +328,12 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
         end
         
         if isMatch then
+            print("    Creating/showing highlight for frame")
             
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
                 if not childFrame.assistedHighlight then
+                    print("      Creating new highlight texture")
                     childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
                     childFrame.assistedHighlight:SetAllPoints(childFrame.Icon or childFrame)
                     childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
@@ -339,6 +341,7 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                     
                     -- Blue color to match Blizzard's highlight
                     childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
+                    print("      Texture created, size:", childFrame.assistedHighlight:GetSize())
                     
                     -- Pulse animation
                     if not childFrame.assistedHighlightAnim then
@@ -359,10 +362,15 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                     end
                 end
                 
+                print("      Showing highlight, IsShown before:", childFrame.assistedHighlight:IsShown())
                 childFrame.assistedHighlight:Show()
                 childFrame.assistedHighlightAnim:Play()
+                print("      IsShown after:", childFrame.assistedHighlight:IsShown())
+                print("      Parent frame shown:", childFrame:IsShown())
+                print("      Icon:", childFrame.Icon and childFrame.Icon:GetTexture())
             else
                 -- Remove highlight
+                print("      Hiding highlight")
                 if childFrame.assistedHighlight then
                     childFrame.assistedHighlight:Hide()
                 end
