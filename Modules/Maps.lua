@@ -93,11 +93,6 @@ function Maps:OnDBReady()
 end
 
 function Maps:PLAYER_ENTERING_WORLD()
-    -- CRITICAL FIX: Stub out Layout function to prevent errors
-    if not Minimap.Layout or Minimap.Layout == nil then
-        Minimap.Layout = function() end
-    end
-    
     self:SetupMinimapBorder()
     self:SetupMinimapPosition()
     self:SetupMinimapDragging()
@@ -145,37 +140,24 @@ function Maps:SetupMinimapBorder()
 end
 
 function Maps:SetupMinimapPosition()
-    -- Only hook SetPoint once - prevent multiple hooks on zone changes
     if self.minimapPositionInitialized then
         return
     end
     
-    -- Hook SetPoint to reapply our custom position after external calls
-    hooksecurefunc(Minimap, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
-        -- Ignore if we're the ones setting the position
-        if Maps.isApplyingPosition then
-            return
-        end
-        
-        -- Reapply our custom position after a brief delay
-        C_Timer.After(0.01, function()
-            Maps:ApplyMinimapOffset()
-        end)
-    end)
+    -- Override Minimap.Layout to use our custom positioning
+    -- This is called by Blizzard when UI is shown/hidden (ALT-Z, DialogueUI, etc.)
+    Minimap.Layout = function()
+        Maps:ApplyMinimapOffset()
+    end
     
     self.minimapPositionInitialized = true
     self:ApplyMinimapOffset()
 end
 
 function Maps:ApplyMinimapOffset()
-    -- Set flag to prevent hook recursion
-    self.isApplyingPosition = true
-    
     local db = self.db.profile
     Minimap:ClearAllPoints()
     Minimap:SetPoint("CENTER", MinimapCluster, "CENTER", db.offsetX, db.offsetY)
-    
-    self.isApplyingPosition = false
 end
 
 -- -----------------------------------------------------------------------------
