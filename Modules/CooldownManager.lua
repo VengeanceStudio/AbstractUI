@@ -177,18 +177,44 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- Search all action bar slots for this spell
-    for slot = 1, 120 do
-        local slotType, id = GetActionInfo(slot)
+    -- Try FindActionSlot first (most direct method)
+    local slot = FindActionSlot(spellID)
+    if slot then
+        local binding = GetBindingKey("ACTIONBUTTON" .. slot)
+        if binding then
+            binding = binding:gsub("SHIFT%-", "S-")
+            binding = binding:gsub("CTRL%-", "C-")
+            binding = binding:gsub("ALT%-", "A-")
+            return binding
+        end
+    end
+    
+    -- Search all action bar slots manually (up to 180 for all bars including hidden ones)
+    for actionSlot = 1, 180 do
+        local slotType, id = GetActionInfo(actionSlot)
         if slotType == "spell" and id == spellID then
             -- Found the spell, get its keybind
-            local binding = GetBindingKey("ACTIONBUTTON" .. slot)
+            local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
             if binding then
-                -- Shorten common modifiers
                 binding = binding:gsub("SHIFT%-", "S-")
                 binding = binding:gsub("CTRL%-", "C-")
                 binding = binding:gsub("ALT%-", "A-")
                 return binding
+            end
+        elseif slotType == "macro" then
+            -- Check if macro contains this spell
+            local macroSpell = GetActionText(actionSlot)
+            if macroSpell then
+                local macroSpellID = select(7, GetSpellInfo(macroSpell))
+                if macroSpellID == spellID then
+                    local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
+                    if binding then
+                        binding = binding:gsub("SHIFT%-", "S-")
+                        binding = binding:gsub("CTRL%-", "C-")
+                        binding = binding:gsub("ALT%-", "A-")
+                        return binding
+                    end
+                end
             end
         end
     end
@@ -239,35 +265,17 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
     if db.showKeybinds then
         if not childFrame.customKeybind then
             childFrame.customKeybind = childFrame:CreateFontString(nil, "OVERLAY")
-            childFrame.customKeybind:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 2, -2)
+            childFrame.customKeybind:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 3, -3)
             childFrame.customKeybind:SetJustifyH("LEFT")
             childFrame.customKeybind:SetDrawLayer("OVERLAY", 7)  -- High sublayer to be on top
         end
         
         local fontPath = LSM:Fetch("font", db.font)
-        childFrame.customKeybind:SetFont(fontPath, math.max(8, db.fontSize - 4), db.fontFlag)
-        childFrame.customKeybind:SetTextColor(0.7, 0.7, 0.7, 1)
-        
-        -- Debug: dump all properties of the first frame only once
-        if not self.dumpedFrame then
-            print("|cff00ff00[CooldownManager]|r Dumping childFrame properties:")
-            for k, v in pairs(childFrame) do
-                if type(v) ~= "function" and type(v) ~= "table" then
-                    print("  ", k, "=", tostring(v))
-                elseif type(v) == "table" and k ~= "0" then
-                    print("  ", k, "= [table]")
-                end
-            end
-            
-            -- Check specific spell-related methods
-            if childFrame.GetSpellID then
-                print("|cff00ff00[CooldownManager]|r Frame has GetSpellID method")
-                local spellID = childFrame:GetSpellID()
-                print("|cff00ff00[CooldownManager]|r GetSpellID() returned:", spellID)
-            end
-            
-            self.dumpedFrame = true
-        end
+        local keybindFontSize = math.max(11, db.fontSize)  -- Same size as main font, min 11
+        childFrame.customKeybind:SetFont(fontPath, keybindFontSize, "OUTLINE")
+        childFrame.customKeybind:SetTextColor(1, 1, 1, 1)  -- White, fully opaque
+        childFrame.customKeybind:SetShadowColor(0, 0, 0, 1)
+        childFrame.customKeybind:SetShadowOffset(1, -1)
         
         -- Get the spell ID - try multiple possible properties
         local spellID = childFrame.spellID 
@@ -277,16 +285,13 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
         
         if spellID then
             local keybind = self:GetSpellKeybind(spellID)
-            print("|cff00ff00[CooldownManager]|r Spell", spellID, "keybind:", keybind or "NOT FOUND")
             if keybind then
                 childFrame.customKeybind:SetText(keybind)
                 childFrame.customKeybind:Show()
             else
-                childFrame.customKeybind:SetText("")
                 childFrame.customKeybind:Hide()
             end
         else
-            childFrame.customKeybind:SetText("")
             childFrame.customKeybind:Hide()
         end
     elseif childFrame.customKeybind then
