@@ -74,12 +74,53 @@ function CooldownManager:OnInitialize()
 end
 
 function CooldownManager:OnEnable()
-    -- Register for spell activation overlay events (Blizzard's assisted highlight)
-    self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_SHOW")
-    self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_HIDE")
-    print("DEBUG: Registered SPELL_ACTIVATION_OVERLAY events")
-    
     if not self.db.profile.enabled then return end
+    
+    -- Enable Blizzard's cooldown manager
+    C_CVar.SetCVar("cooldownViewerEnabled", "1")
+    
+    -- Hook Blizzard's cooldown manager updates
+    self:HookBlizzardCooldownManager()
+    
+    -- Hook spell activation overlays
+    self:HookSpellActivationOverlays()
+    
+    -- Initial styling and layout
+    self:UpdateCooldownManager()
+    
+    -- Register events
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateCooldownManager")
+    self:RegisterEvent("PLAYER_TALENT_UPDATE", "UpdateCooldownManager")
+    self:RegisterEvent("SPELLS_CHANGED", "UpdateCooldownManager")
+end
+
+function CooldownManager:HookSpellActivationOverlays()
+    -- Hook into Blizzard's SpellActivationOverlay system
+    if SpellActivationOverlayFrame then
+        print("DEBUG: Found SpellActivationOverlayFrame, hooking ShowOverlay/HideOverlay")
+        
+        -- Hook the show function
+        hooksecurefunc(SpellActivationOverlayFrame, "ShowOverlay", function(frame, spellID, texture, position, scale, r, g, b)
+            print("DEBUG: ShowOverlay called - spellID:", spellID, C_Spell.GetSpellName(spellID))
+            if spellID then
+                self.highlightedSpells[spellID] = true
+                self:UpdateSpellHighlight(spellID, true)
+            end
+        end)
+        
+        -- Hook the hide function
+        hooksecurefunc(SpellActivationOverlayFrame, "HideOverlays", function(frame)
+            print("DEBUG: HideOverlays called")
+            -- Clear all highlights
+            for spellID, _ in pairs(self.highlightedSpells) do
+                self:UpdateSpellHighlight(spellID, false)
+            end
+            wipe(self.highlightedSpells)
+        end)
+    else
+        print("DEBUG: SpellActivationOverlayFrame not found")
+    end
+end
     
     -- Enable Blizzard's cooldown manager
     C_CVar.SetCVar("cooldownViewerEnabled", "1")
@@ -189,30 +230,6 @@ end
 --------------------------------------------------------------------------------
 -- Assisted Highlight Support
 --------------------------------------------------------------------------------
-
-function CooldownManager:SPELL_ACTIVATION_OVERLAY_SHOW(event, spellID)
-    if not spellID then return end
-    
-    print("DEBUG: Assisted highlight SHOW for spellID:", spellID, C_Spell.GetSpellName(spellID))
-    
-    -- Track that this spell is highlighted
-    self.highlightedSpells[spellID] = true
-    
-    -- Apply highlight to cooldown frames showing this spell
-    self:UpdateSpellHighlight(spellID, true)
-end
-
-function CooldownManager:SPELL_ACTIVATION_OVERLAY_HIDE(event, spellID)
-    if not spellID then return end
-    
-    print("DEBUG: Assisted highlight HIDE for spellID:", spellID, C_Spell.GetSpellName(spellID))
-    
-    -- Untrack this spell
-    self.highlightedSpells[spellID] = nil
-    
-    -- Remove highlight from cooldown frames showing this spell
-    self:UpdateSpellHighlight(spellID, false)
-end
 
 function CooldownManager:UpdateSpellHighlight(spellID, show)
     print("DEBUG: UpdateSpellHighlight called for spellID:", spellID, "show:", show)
