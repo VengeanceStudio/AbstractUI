@@ -22,6 +22,9 @@ local defaults = {
         skipCutscenes = false,
         autoInsertKey = true,
         questFrameScale = 1.0,
+        questFrameX = 0,
+        questFrameY = 0,
+        questFrameCustomPosition = false,
     }
 }
 
@@ -101,6 +104,12 @@ end
 function Tweaks:ApplyQuestFrameScale()
     if QuestFrame then
         QuestFrame:SetScale(self.db.profile.questFrameScale or 1.0)
+        
+        -- Apply custom position if enabled
+        if self.db.profile.questFrameCustomPosition then
+            QuestFrame:ClearAllPoints()
+            QuestFrame:SetPoint("CENTER", UIParent, "CENTER", self.db.profile.questFrameX, self.db.profile.questFrameY)
+        end
     else
         -- Quest frame not loaded yet, try again when it shows
         self:RegisterEvent("QUEST_DETAIL")
@@ -684,6 +693,44 @@ function Tweaks:GetOptions()
                 order = 13,
                 set = function(_, v)
                     self.db.profile.questFrameScale = v
+                    self:ApplyQuestFrameScale()
+                end,
+            },
+            questFrameCustomPosition = {
+                name = "Use Custom Quest Frame Position",
+                desc = "Enable to set a custom default position for the Quest window",
+                type = "toggle",
+                order = 14,
+                set = function(_, v)
+                    self.db.profile.questFrameCustomPosition = v
+                    self:ApplyQuestFrameScale()
+                end,
+            },
+            questFrameX = {
+                name = "Quest Frame Horizontal Position",
+                desc = "Horizontal offset from center of screen (negative = left, positive = right)",
+                type = "range",
+                min = -1000,
+                max = 1000,
+                step = 1,
+                order = 15,
+                disabled = function() return not self.db.profile.questFrameCustomPosition end,
+                set = function(_, v)
+                    self.db.profile.questFrameX = v
+                    self:ApplyQuestFrameScale()
+                end,
+            },
+            questFrameY = {
+                name = "Quest Frame Vertical Position",
+                desc = "Vertical offset from center of screen (negative = down, positive = up)",
+                type = "range",
+                min = -500,
+                max = 500,
+                step = 1,
+                order = 16,
+                disabled = function() return not self.db.profile.questFrameCustomPosition end,
+                set = function(_, v)
+                    self.db.profile.questFrameY = v
                     self:ApplyQuestFrameScale()
                 end,
             },
