@@ -199,6 +199,22 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         local hotkeyText = button.HotKey or _G[button:GetName() .. "HotKey"]
         if hotkeyText and hotkeyText.GetText then
             local hotkey = hotkeyText:GetText()
+            
+            -- Debug: Check all regions on the button to find the key
+            if hotkey and hotkey:find("[\128-\255]") then
+                print("DEBUG Button hotkey structure for", button:GetName())
+                print("  HotKey text:", hotkey)
+                for i = 1, button:GetNumRegions() do
+                    local region = select(i, button:GetRegions())
+                    if region and region.GetText then
+                        local text = region:GetText()
+                        if text and text ~= "" then
+                            print("  Region", i, "text:", text)
+                        end
+                    end
+                end
+            end
+            
             if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
                 -- Clean up the hotkey text
                 hotkey = self:CleanKeybindText(hotkey)
