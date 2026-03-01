@@ -277,26 +277,46 @@ function Tweaks:HookAutoDelete()
                     
                     print("|cff00ff00[AbstractUI]|r Delete dialog detected, auto-filling...")
                     
-                    C_Timer.After(0.05, function()
+                    C_Timer.After(0.1, function()
                         if dialogFrame:IsShown() then
-                            local editBox = dialogFrame.editBox
+                            -- Try multiple ways to find the editBox
+                            local editBox = dialogFrame.editBox 
+                                or dialogFrame.EditBox 
+                                or _G[dialogFrame:GetName() .. "EditBox"]
+                                or _G[dialogFrame:GetName() .. "WideEditBox"]
+                            
                             if editBox then
                                 print("|cff00ff00[AbstractUI]|r Setting text to:", DELETE_ITEM_CONFIRM_STRING)
                                 editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+                                editBox:HighlightText(0, 0)
                                 
-                                -- Enable the accept button immediately
-                                if dialogFrame.button1 then
-                                    dialogFrame.button1:Enable()
+                                -- Enable the accept button
+                                local button1 = dialogFrame.button1 or _G[dialogFrame:GetName() .. "Button1"]
+                                if button1 then
+                                    button1:Enable()
+                                    print("|cff00ff00[AbstractUI]|r Button enabled!")
                                 end
                                 
-                                -- Focus management
-                                C_Timer.After(0, function()
+                                -- Clear focus
+                                C_Timer.After(0.05, function()
                                     if editBox then
                                         editBox:ClearFocus()
                                     end
                                 end)
                             else
                                 print("|cffff6b6b[AbstractUI]|r ERROR: No editBox found on dialog")
+                                -- Debug: print child frames
+                                local children = {dialogFrame:GetChildren()}
+                                print("|cffff6b6b[AbstractUI]|r Dialog has", #children, "children")
+                                for idx, child in ipairs(children) do
+                                    if child.GetObjectType and child:GetObjectType() == "EditBox" then
+                                        print("|cff00ff00[AbstractUI]|r Found EditBox child at index", idx)
+                                        editBox = child
+                                        editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+                                        editBox:ClearFocus()
+                                        break
+                                    end
+                                end
                             end
                         end
                     end)
