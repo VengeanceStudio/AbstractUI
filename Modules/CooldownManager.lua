@@ -330,8 +330,8 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                         childFrame.assistedHighlightTex = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY", nil, 7)
                         childFrame.assistedHighlightTex:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
                         childFrame.assistedHighlightTex:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
-                        childFrame.assistedHighlightTex:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -10, 10)
-                        childFrame.assistedHighlightTex:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", 10, -10)
+                        childFrame.assistedHighlightTex:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -12, 12)
+                        childFrame.assistedHighlightTex:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", 12, -12)
                         
                         -- Blue color
                         childFrame.assistedHighlightTex:SetVertexColor(0.4, 0.7, 1.0)
