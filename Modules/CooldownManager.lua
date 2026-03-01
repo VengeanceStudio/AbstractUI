@@ -185,6 +185,18 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         end
     end
     
+    if isDebugSlot then
+        print("DEBUG: Searching ALL bindings for action slot", actionSlot)
+        -- Search through ALL keybindings to find what's bound
+        for i = 1, GetNumBindings() do
+            local command, category, key1, key2 = GetBinding(i)
+            if key1 and key1:find("CTRL") then
+                -- This is a Ctrl keybind, check if it's relevant
+                print("  Found Ctrl binding:", key1, "->", command)
+            end
+        end
+    end
+    
     -- First, try to find Dominos buttons with action attributes
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
