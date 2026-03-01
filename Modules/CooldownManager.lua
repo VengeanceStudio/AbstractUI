@@ -299,9 +299,9 @@ function CooldownManager:GetSpellKeybind(spellID)
     -- Second approach: Check Dominos buttons directly
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
-        if button then
+        if button and button.GetSpellID then
             -- Check if this button shows our spell
-            local buttonSpellID = button:GetSpellID and button:GetSpellID()
+            local buttonSpellID = button:GetSpellID()
             if buttonSpellID == spellID then
                 return self:GetActionSlotBinding(i)
             end
