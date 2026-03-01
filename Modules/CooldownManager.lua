@@ -95,34 +95,93 @@ function CooldownManager:OnEnable()
 end
 
 function CooldownManager:HookSpellActivationOverlays()
-    -- Hook into Blizzard's SpellActivationOverlay system
+    -- Try multiple approaches to detect spell activation overlays
+    
+    -- Approach 1: Hook the frame methods
     if SpellActivationOverlayFrame then
-        print("DEBUG: Found SpellActivationOverlayFrame, hooking ShowOverlay/HideOverlay")
+        print("DEBUG: Found SpellActivationOverlayFrame, hooking methods")
         
-        -- Hook the show function
-        hooksecurefunc(SpellActivationOverlayFrame, "ShowOverlay", function(frame, spellID, texture, position, scale, r, g, b)
-            print("DEBUG: ShowOverlay called - spellID:", spellID, C_Spell.GetSpellName(spellID))
-            if spellID then
-                self.highlightedSpells[spellID] = true
-                self:UpdateSpellHighlight(spellID, true)
-            end
-        end)
+        -- Try hooking ShowOverlay
+        if SpellActivationOverlayFrame.ShowOverlay then
+            hooksecurefunc(SpellActivationOverlayFrame, "ShowOverlay", function(frame, spellID, texture, position, scale, r, g, b)
+                print("DEBUG: ShowOverlay called - spellID:", spellID, C_Spell.GetSpellName(spellID))
+                if spellID then
+                    self.highlightedSpells[spellID] = true
+                    self:UpdateSpellHighlight(spellID, true)
+                end
+            end)
+        end
         
-        -- Hook the hide function
-        hooksecurefunc(SpellActivationOverlayFrame, "HideOverlays", function(frame)
-            print("DEBUG: HideOverlays called")
-            -- Clear all highlights
-            for spellID, _ in pairs(self.highlightedSpells) do
-                self:UpdateSpellHighlight(spellID, false)
-            end
-            wipe(self.highlightedSpells)
-        end)
+        -- Try hooking HideOverlays
+        if SpellActivationOverlayFrame.HideOverlays then
+            hooksecurefunc(SpellActivationOverlayFrame, "HideOverlays", function(frame)
+                print("DEBUG: HideOverlays called")
+                for spellID, _ in pairs(self.highlightedSpells) do
+                    self:UpdateSpellHighlight(spellID, false)
+                end
+                wipe(self.highlightedSpells)
+            end)
+        end
     else
         print("DEBUG: SpellActivationOverlayFrame not found")
     end
+    
+    -- Approach 2: Poll for active overlays
+    self:StartOverlayPolling()
+end
+
+function CooldownManager:StartOverlayPolling()
+    print("DEBUG: Starting overlay polling")
+    
+    -- Poll every 0.1 seconds to check for active overlays
+    self.overlayTimer = C_Timer.NewTicker(0.1, function()
+        if not self.db.profile.essential.showAssistedHighlight and 
+           not self.db.profile.utility.showAssistedHighlight then
+            return
+        end
+        
+        -- Check all possible overlay positions for active overlays
+        if SpellActivationOverlayFrame then
+            for i = 1, #SpellActivationOverlayFrame.overlaysInUse do
+                local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
+                if overlay and overlay.spellID and overlay:IsShown() then
+                    -- Check if this is a new highlight
+                    if not self.highlightedSpells[overlay.spellID] then
+                        print("DEBUG: Found active overlay for spellID:", overlay.spellID, C_Spell.GetSpellName(overlay.spellID))
+                        self.highlightedSpells[overlay.spellID] = true
+                        self:UpdateSpellHighlight(overlay.spellID, true)
+                    end
+                end
+            end
+            
+            -- Check for spells that are no longer highlighted
+            for spellID, _ in pairs(self.highlightedSpells) do
+                local stillActive = false
+                for i = 1, #SpellActivationOverlayFrame.overlaysInUse do
+                    local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
+                    if overlay and overlay.spellID == spellID and overlay:IsShown() then
+                        stillActive = true
+                        break
+                    end
+                end
+                
+                if not stillActive then
+                    print("DEBUG: Overlay no longer active for spellID:", spellID)
+                    self.highlightedSpells[spellID] = nil
+                    self:UpdateSpellHighlight(spellID, false)
+                end
+            end
+        end
+    end)
 end
 
 function CooldownManager:OnDisable()
+    -- Stop overlay polling
+    if self.overlayTimer then
+        self.overlayTimer:Cancel()
+        self.overlayTimer = nil
+    end
+    
     self:UnhookAll()
     self:UnregisterAllEvents()
 end
