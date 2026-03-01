@@ -91,7 +91,13 @@ function Tweaks:OnDBReady()
     -- Use event-based approach instead of constant ticker
     -- Bag bar hiding is handled by UPDATE_INVENTORY_DURABILITY event
     
-    -- Apply quest frame scaling
+    -- Register quest frame events to apply scale/position
+    self:RegisterEvent("QUEST_DETAIL")
+    self:RegisterEvent("QUEST_PROGRESS")
+    self:RegisterEvent("QUEST_COMPLETE")
+    self:RegisterEvent("QUEST_GREETING")
+    
+    -- Apply quest frame scaling on load
     self:ApplyQuestFrameScale()
 end
 
@@ -102,41 +108,31 @@ function Tweaks:UPDATE_INVENTORY_DURABILITY()
 end
 
 function Tweaks:ApplyQuestFrameScale()
-    if QuestFrame then
-        QuestFrame:SetScale(self.db.profile.questFrameScale or 1.0)
-        
-        -- Apply custom position if enabled
-        if self.db.profile.questFrameCustomPosition then
-            QuestFrame:ClearAllPoints()
-            QuestFrame:SetPoint("CENTER", UIParent, "CENTER", self.db.profile.questFrameX, self.db.profile.questFrameY)
-        end
-    else
-        -- Quest frame not loaded yet, try again when it shows
-        self:RegisterEvent("QUEST_DETAIL")
-        self:RegisterEvent("QUEST_PROGRESS")
-        self:RegisterEvent("QUEST_COMPLETE")
-        self:RegisterEvent("QUEST_GREETING")
+    if not QuestFrame then return end
+    
+    QuestFrame:SetScale(self.db.profile.questFrameScale or 1.0)
+    
+    -- Apply custom position if enabled
+    if self.db.profile.questFrameCustomPosition then
+        QuestFrame:ClearAllPoints()
+        QuestFrame:SetPoint("CENTER", UIParent, "CENTER", self.db.profile.questFrameX, self.db.profile.questFrameY)
     end
 end
 
 function Tweaks:QUEST_DETAIL()
     self:ApplyQuestFrameScale()
-    self:UnregisterEvent("QUEST_DETAIL")
 end
 
 function Tweaks:QUEST_PROGRESS()
     self:ApplyQuestFrameScale()
-    self:UnregisterEvent("QUEST_PROGRESS")
 end
 
 function Tweaks:QUEST_COMPLETE()
     self:ApplyQuestFrameScale()
-    self:UnregisterEvent("QUEST_COMPLETE")
 end
 
 function Tweaks:QUEST_GREETING()
     self:ApplyQuestFrameScale()
-    self:UnregisterEvent("QUEST_GREETING")
 end
 
 function Tweaks:BAG_UPDATE_DELAYED()
