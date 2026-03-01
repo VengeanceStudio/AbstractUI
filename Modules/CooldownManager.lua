@@ -121,21 +121,6 @@ function CooldownManager:HookSpellActivationOverlays()
         print("DEBUG: SpellActivationOverlayFrame not found")
     end
 end
-    
-    -- Enable Blizzard's cooldown manager
-    C_CVar.SetCVar("cooldownViewerEnabled", "1")
-    
-    -- Hook Blizzard's cooldown manager updates
-    self:HookBlizzardCooldownManager()
-    
-    -- Initial styling and layout
-    self:UpdateCooldownManager()
-    
-    -- Register events
-    self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateCooldownManager")
-    self:RegisterEvent("PLAYER_TALENT_UPDATE", "UpdateCooldownManager")
-    self:RegisterEvent("SPELLS_CHANGED", "UpdateCooldownManager")
-end
 
 function CooldownManager:OnDisable()
     self:UnhookAll()
