@@ -175,8 +175,30 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Map action slots to their standard WoW keybinding names
-    -- This works regardless of action bar addon (Dominos, Bartender, ElvUI, etc.)
+    -- First, try to find the button that displays this action slot
+    -- Check Dominos buttons
+    for i = 1, 180 do
+        local button = _G["DominosActionButton" .. i]
+        if button then
+            local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+            if buttonAction == actionSlot then
+                -- Found the Dominos button displaying this action slot
+                -- Try CLICK binding first (Dominos style)
+                local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":LeftButton")
+                if clickBinding then
+                    clickBinding = clickBinding:gsub("SHIFT%-", "S")
+                    clickBinding = clickBinding:gsub("CTRL%-", "C")
+                    clickBinding = clickBinding:gsub("ALT%-", "A")
+                    if actionSlot == 19 then
+                        print("DEBUG: Slot 19 -> DominosActionButton" .. i .. " -> keybind:", clickBinding)
+                    end
+                    return clickBinding
+                end
+            end
+        end
+    end
+    
+    -- Fallback: Try standard WoW keybinding names (for Blizzard bars)
     local bindingName
     
     if actionSlot >= 1 and actionSlot <= 12 then
@@ -199,15 +221,8 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
-    -- Debug for slot 16
-    if actionSlot == 16 then
-        print("DEBUG: Slot 16 binding name:", bindingName)
-        print("  GetBindingKey returned:", GetBindingKey(bindingName) or "NIL")
-    end
-    
     local binding = GetBindingKey(bindingName)
     if binding then
-        -- Shorten modifier names to save space
         binding = binding:gsub("SHIFT%-", "S")
         binding = binding:gsub("CTRL%-", "C")
         binding = binding:gsub("ALT%-", "A")
