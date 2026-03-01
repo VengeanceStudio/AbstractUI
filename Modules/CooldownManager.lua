@@ -184,21 +184,18 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
             if buttonAction == actionSlot then
                 -- Found the Dominos button displaying this action slot
                 -- Dominos uses :HOTKEY for keybindings
-                local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":HOTKEY")
+                local bindName = "CLICK DominosActionButton" .. i .. ":HOTKEY"
+                
+                -- GetBindingKey can return multiple bindings (key1, key2)
+                local key1, key2 = GetBindingKey(bindName)
+                
+                -- Prefer the first non-nil binding
+                local clickBinding = key1 or key2
+                
                 if clickBinding then
-                    -- Debug: Show ALL keybinds for first 36 slots
-                    if actionSlot <= 36 then
-                        print("DEBUG: Slot", actionSlot, "button", i, "raw keybind:", clickBinding)
-                    end
-                    
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
-                    
-                    if actionSlot <= 36 then
-                        print("  After cleanup:", clickBinding)
-                    end
-                    
                     return clickBinding
                 end
             end
@@ -228,7 +225,9 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
-    local binding = GetBindingKey(bindingName)
+    local key1, key2 = GetBindingKey(bindingName)
+    local binding = key1 or key2
+    
     if binding then
         binding = binding:gsub("SHIFT%-", "S")
         binding = binding:gsub("CTRL%-", "C")
@@ -256,8 +255,37 @@ function CooldownManager:GetSpellKeybind(spellID)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
-            -- Return the keybind for the first slot found
-            return self:GetActionSlotBinding(slots[1])
+            -- If spell is in multiple slots, try to find one with a keybind
+            -- Prefer keybinds with modifiers (Ctrl, Shift, Alt) over plain keys
+            local bestSlot = nil
+            local bestKeybind = nil
+            local bestScore = -1
+            
+            for _, slot in ipairs(slots) do
+                local keybind = self:GetActionSlotBinding(slot)
+                if keybind then
+                    -- Score the keybind: modifiers are better than plain keys
+                    local score = 0
+                    if keybind:find("C") then score = score + 3 end  -- Ctrl
+                    if keybind:find("A") then score = score + 2 end  -- Alt  
+                    if keybind:find("S") then score = score + 1 end  -- Shift
+                    
+                    if score > bestScore or (score == bestScore and not bestKeybind) then
+                        bestScore = score
+                        bestKeybind = keybind
+                        bestSlot = slot
+                    end
+                elseif not bestKeybind then
+                    -- No keybind yet, use this slot as fallback
+                    bestSlot = slot
+                end
+            end
+            
+            if bestKeybind then
+                return bestKeybind
+            elseif bestSlot then
+                return self:GetActionSlotBinding(bestSlot)
+            end
         end
     end
     
