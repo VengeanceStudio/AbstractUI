@@ -277,6 +277,7 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
         
         if spellID then
             local keybind = self:GetSpellKeybind(spellID)
+            print("|cff00ff00[CooldownManager]|r Spell", spellID, "keybind:", keybind or "NOT FOUND")
             if keybind then
                 childFrame.customKeybind:SetText(keybind)
                 childFrame.customKeybind:Show()
