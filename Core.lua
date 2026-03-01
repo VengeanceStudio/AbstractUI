@@ -1617,7 +1617,7 @@ function AbstractUI:GetOptions()
                             return "|cff00ccff AbstractUI|r version |cffffaa00" .. (C_AddOns.GetAddOnMetadata("AbstractUI", "Version") or "Unknown") .. "|r"
                         end,
                         order = 0.5,
-                        fontSize = "huge",
+                        fontSize = "large",
                     },
                     resolutionHeader = {
                         type = "header",
