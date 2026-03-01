@@ -241,17 +241,24 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- Get spell name for comparison
+    -- Use WoW's action bar API to find all slots containing this spell (works with macros!)
+    if C_ActionBar and C_ActionBar.FindSpellActionButtons then
+        local slots = C_ActionBar.FindSpellActionButtons(spellID)
+        if slots and #slots > 0 then
+            -- Return the keybind for the first slot found
+            return self:GetActionSlotBinding(slots[1])
+        end
+    end
+    
+    -- Fallback: Manual search through action slots
     local spellName = C_Spell.GetSpellName(spellID)
     
-    -- First approach: Search action slots with GetActionInfo
     for actionSlot = 1, 180 do
         local slotType, id, subType = GetActionInfo(actionSlot)
         
         if slotType == "spell" and id == spellID then
             return self:GetActionSlotBinding(actionSlot)
         elseif slotType == "macro" and id and id <= 1000 then
-            -- Valid macro indices are 1-138 (character) or 139+ (account)
             local macroName, macroSpellID = GetMacroSpell(id)
             
             if macroSpellID == spellID then
@@ -269,43 +276,6 @@ function CooldownManager:GetSpellKeybind(spellID)
             local itemSpellID = C_Item.GetItemSpell(id)
             if itemSpellID == spellID then
                 return self:GetActionSlotBinding(actionSlot)
-            end
-        end
-    end
-    
-    -- Second approach: Check Dominos buttons directly  
-    for i = 1, 180 do
-        local button = _G["DominosActionButton" .. i]
-        if button then
-            -- Check if GetSpellID works (some addons override this)
-            if button.GetSpellID then
-                local buttonSpellID = button:GetSpellID()
-                if spellID == 217832 and buttonSpellID then
-                    print("DEBUG: DominosActionButton", i, "GetSpellID returned", buttonSpellID)
-                end
-                if buttonSpellID == spellID then
-                    return self:GetActionSlotBinding(i)
-                end
-            end
-        end
-    end
-    
-    -- Fallback: Check actual button actions via HasAction
-    for i = 1, 180 do
-        if HasAction(i) then
-            local actionText = GetActionText(i)
-            local actionTexture = GetActionTexture(i)
-            if spellID == 217832 then
-                print("DEBUG: Slot", i, "has action, text=", actionText or "nil", "texture=", actionTexture or "nil")
-            end
-            
-            -- Try to get spell from action slot
-            if C_ActionBar and C_ActionBar.FindSpellActionButtons then
-                local slots = C_ActionBar.FindSpellActionButtons(spellID)
-                if slots and #slots > 0 then
-                    print("DEBUG: Found spell in action slots:", table.concat(slots, ","))
-                    return self:GetActionSlotBinding(slots[1])
-                end
             end
         end
     end
