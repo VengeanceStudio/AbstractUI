@@ -186,16 +186,16 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                 -- Dominos uses :HOTKEY for keybindings
                 local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":HOTKEY")
                 if clickBinding then
-                    -- Debug for ctrl keys
-                    if clickBinding:find("CTRL") then
-                        print("DEBUG: Raw keybind for slot", actionSlot, "button", i, "=", clickBinding)
+                    -- Debug: Show ALL keybinds for first 36 slots
+                    if actionSlot <= 36 then
+                        print("DEBUG: Slot", actionSlot, "button", i, "raw keybind:", clickBinding)
                     end
                     
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
                     
-                    if actionSlot <= 36 and clickBinding:find("C") then
+                    if actionSlot <= 36 then
                         print("  After cleanup:", clickBinding)
                     end
                     
