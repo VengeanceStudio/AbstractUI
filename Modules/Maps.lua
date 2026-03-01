@@ -147,8 +147,19 @@ function Maps:SetupMinimapPosition()
     -- Override Minimap.Layout to use our custom positioning
     -- This is called by Blizzard when UI is shown/hidden (ALT-Z, DialogueUI, etc.)
     Minimap.Layout = function()
+        print("|cff00ff00[AbstractUI Maps]|r Minimap.Layout called")
         Maps:ApplyMinimapOffset()
     end
+    
+    -- Hook SetPoint to see when it's being called
+    hooksecurefunc(Minimap, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
+        print("|cffff6b6b[AbstractUI Maps]|r SetPoint called:", point, relativeTo and relativeTo:GetName() or "nil", relativePoint, x, y)
+    end)
+    
+    -- Hook ClearAllPoints too
+    hooksecurefunc(Minimap, "ClearAllPoints", function()
+        print("|cffff6b6b[AbstractUI Maps]|r ClearAllPoints called")
+    end)
     
     self.minimapPositionInitialized = true
     self:ApplyMinimapOffset()
@@ -156,6 +167,7 @@ end
 
 function Maps:ApplyMinimapOffset()
     local db = self.db.profile
+    print("|cff00ff00[AbstractUI Maps]|r ApplyMinimapOffset - offsetX:", db.offsetX, "offsetY:", db.offsetY)
     Minimap:ClearAllPoints()
     Minimap:SetPoint("CENTER", MinimapCluster, "CENTER", db.offsetX, db.offsetY)
 end
