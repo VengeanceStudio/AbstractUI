@@ -77,6 +77,8 @@ function CooldownManager:OnEnable()
     -- Register for spell activation overlay events (Blizzard's assisted highlight)
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_SHOW")
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_HIDE")
+    print("DEBUG: Registered SPELL_ACTIVATION_OVERLAY events")
+    
     if not self.db.profile.enabled then return end
     
     -- Enable Blizzard's cooldown manager
@@ -191,6 +193,8 @@ end
 function CooldownManager:SPELL_ACTIVATION_OVERLAY_SHOW(event, spellID)
     if not spellID then return end
     
+    print("DEBUG: Assisted highlight SHOW for spellID:", spellID, C_Spell.GetSpellName(spellID))
+    
     -- Track that this spell is highlighted
     self.highlightedSpells[spellID] = true
     
@@ -201,6 +205,8 @@ end
 function CooldownManager:SPELL_ACTIVATION_OVERLAY_HIDE(event, spellID)
     if not spellID then return end
     
+    print("DEBUG: Assisted highlight HIDE for spellID:", spellID, C_Spell.GetSpellName(spellID))
+    
     -- Untrack this spell
     self.highlightedSpells[spellID] = nil
     
@@ -209,25 +215,36 @@ function CooldownManager:SPELL_ACTIVATION_OVERLAY_HIDE(event, spellID)
 end
 
 function CooldownManager:UpdateSpellHighlight(spellID, show)
+    print("DEBUG: UpdateSpellHighlight called for spellID:", spellID, "show:", show)
+    
     -- Update Essential Cooldowns
     if self.db.profile.essential.enabled and self.db.profile.essential.showAssistedHighlight then
+        print("  Checking Essential Cooldowns")
         local frame = _G["EssentialCooldownViewer"]
         if frame then
             self:ApplyHighlightToViewer(frame, spellID, show)
+        else
+            print("  EssentialCooldownViewer not found!")
         end
     end
     
     -- Update Utility Cooldowns
     if self.db.profile.utility.enabled and self.db.profile.utility.showAssistedHighlight then
+        print("  Checking Utility Cooldowns")
         local frame = _G["UtilityCooldownViewer"]
         if frame then
             self:ApplyHighlightToViewer(frame, spellID, show)
+        else
+            print("  UtilityCooldownViewer not found!")
         end
     end
 end
 
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
+    
+    print("  ApplyHighlightToViewer: Looking for spellID", spellID, "in viewer")
+    local foundCount = 0
     
     -- Search through child frames to find ones with this spell ID
     for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
@@ -236,7 +253,14 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             or (childFrame.spell and childFrame.spell:GetSpellID())
             or (childFrame.GetSpellID and childFrame:GetSpellID())
         
+        if frameSpellID then
+            print("    Found frame with spellID:", frameSpellID, C_Spell.GetSpellName(frameSpellID))
+        end
+        
         if frameSpellID == spellID then
+            foundCount = foundCount + 1
+            print("    MATCH! Applying highlight, show:", show)
+            
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
                 if not childFrame.assistedHighlight then
@@ -280,6 +304,8 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             end
         end
     end
+    
+    print("  ApplyHighlightToViewer: Found", foundCount, "matching frames")
 end
 
 function CooldownManager:RefreshAllHighlights(viewerFrame)
