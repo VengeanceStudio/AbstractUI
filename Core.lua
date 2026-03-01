@@ -1998,6 +1998,10 @@ function AbstractUI:GetOptions()
                 displayName = "Data Brokers"
             elseif name == "CooldownManager" then
                 displayName = "Cooldown Manager"
+            elseif name == "ActionBars" then
+                displayName = "Action Bars"
+            elseif name == "ResourceBars" then
+                displayName = "Resource Bars"
             end
             
             -- Set module order based on name
