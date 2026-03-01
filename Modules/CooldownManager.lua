@@ -33,6 +33,7 @@ local defaults = {
             fontSize = 14,
             fontFlag = "OUTLINE",
             showKeybinds = true,
+            showAssistedHighlight = true,
         },
         
         -- Utility Cooldowns
@@ -50,6 +51,7 @@ local defaults = {
             fontSize = 12,
             fontFlag = "OUTLINE",
             showKeybinds = true,
+            showAssistedHighlight = true,
         },
         
         -- Font settings
@@ -66,9 +68,15 @@ local defaults = {
 function CooldownManager:OnInitialize()
     -- Setup database
     self.db = AbstractUI.db:RegisterNamespace("CooldownManager", defaults)
+    
+    -- Track highlighted spells for assisted highlight feature
+    self.highlightedSpells = {}
 end
 
 function CooldownManager:OnEnable()
+    -- Register for spell activation overlay events (Blizzard's assisted highlight)
+    self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_SHOW")
+    self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_HIDE")
     if not self.db.profile.enabled then return end
     
     -- Enable Blizzard's cooldown manager
@@ -168,8 +176,123 @@ function CooldownManager:UpdateViewerDisplay(viewerName, displayType)
             self:SkinBlizzardFrame(childFrame, displayType)
         end
     end
+    
+    -- Refresh assisted highlights if enabled
+    local db = self.db.profile[displayType]
+    if db and db.showAssistedHighlight then
+        self:RefreshAllHighlights(viewer)
+    end
 end
 
+--------------------------------------------------------------------------------
+-- Assisted Highlight Support
+--------------------------------------------------------------------------------
+
+function CooldownManager:SPELL_ACTIVATION_OVERLAY_SHOW(event, spellID)
+    if not spellID then return end
+    
+    -- Track that this spell is highlighted
+    self.highlightedSpells[spellID] = true
+    
+    -- Apply highlight to cooldown frames showing this spell
+    self:UpdateSpellHighlight(spellID, true)
+end
+
+function CooldownManager:SPELL_ACTIVATION_OVERLAY_HIDE(event, spellID)
+    if not spellID then return end
+    
+    -- Untrack this spell
+    self.highlightedSpells[spellID] = nil
+    
+    -- Remove highlight from cooldown frames showing this spell
+    self:UpdateSpellHighlight(spellID, false)
+end
+
+function CooldownManager:UpdateSpellHighlight(spellID, show)
+    -- Update Essential Cooldowns
+    if self.db.profile.essential.enabled and self.db.profile.essential.showAssistedHighlight then
+        local frame = _G["EssentialCooldownViewer"]
+        if frame then
+            self:ApplyHighlightToViewer(frame, spellID, show)
+        end
+    end
+    
+    -- Update Utility Cooldowns
+    if self.db.profile.utility.enabled and self.db.profile.utility.showAssistedHighlight then
+        local frame = _G["UtilityCooldownViewer"]
+        if frame then
+            self:ApplyHighlightToViewer(frame, spellID, show)
+        end
+    end
+end
+
+function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
+    if not viewerFrame then return end
+    
+    -- Search through child frames to find ones with this spell ID
+    for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
+        local frameSpellID = childFrame.spellID 
+            or childFrame.spellId 
+            or (childFrame.spell and childFrame.spell:GetSpellID())
+            or (childFrame.GetSpellID and childFrame:GetSpellID())
+        
+        if frameSpellID == spellID then
+            if show then
+                -- Add blue glow like Blizzard's assisted highlight
+                if not childFrame.assistedHighlight then
+                    childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 1)
+                    childFrame.assistedHighlight:SetAllPoints(childFrame)
+                    childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
+                    childFrame.assistedHighlight:SetBlendMode("ADD")
+                    
+                    -- Blue color to match Blizzard's highlight
+                    childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
+                    
+                    -- Pulse animation
+                    if not childFrame.assistedHighlightAnim then
+                        childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
+                        local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                        alpha1:SetFromAlpha(0.4)
+                        alpha1:SetToAlpha(0.8)
+                        alpha1:SetDuration(0.6)
+                        alpha1:SetOrder(1)
+                        
+                        local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
+                        alpha2:SetFromAlpha(0.8)
+                        alpha2:SetToAlpha(0.4)
+                        alpha2:SetDuration(0.6)
+                        alpha2:SetOrder(2)
+                        
+                        childFrame.assistedHighlightAnim:SetLooping("REPEAT")
+                    end
+                end
+                
+                childFrame.assistedHighlight:Show()
+                childFrame.assistedHighlightAnim:Play()
+            else
+                -- Remove highlight
+                if childFrame.assistedHighlight then
+                    childFrame.assistedHighlight:Hide()
+                end
+                if childFrame.assistedHighlightAnim then
+                    childFrame.assistedHighlightAnim:Stop()
+                end
+            end
+        end
+    end
+end
+
+function CooldownManager:RefreshAllHighlights(viewerFrame)
+    if not viewerFrame then return end
+    
+    -- Re-apply highlights for all currently highlighted spells
+    for spellID, _ in pairs(self.highlightedSpells) do
+        self:ApplyHighlightToViewer(viewerFrame, spellID, true)
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Viewer Display Management
 --------------------------------------------------------------------------------
 -- Frame Styling
 --------------------------------------------------------------------------------
@@ -565,6 +688,17 @@ function CooldownManager:GetOptions()
                     self:UpdateCooldownManager()
                 end,
             },
+            essentialAssistedHighlight = {
+                type = "toggle",
+                name = "Show Assisted Highlight",
+                desc = "Show blue glow when Blizzard's Assisted Highlight recommends using the spell",
+                order = 16,
+                get = function() return self.db.profile.essential.showAssistedHighlight end,
+                set = function(_, value)
+                    self.db.profile.essential.showAssistedHighlight = value
+                    self:UpdateCooldownManager()
+                end,
+            },
             utilityHeader = {
                 type = "header",
                 name = "Utility Cooldowns",
@@ -631,6 +765,17 @@ function CooldownManager:GetOptions()
                 get = function() return self.db.profile.utility.showKeybinds end,
                 set = function(_, value)
                     self.db.profile.utility.showKeybinds = value
+                    self:UpdateCooldownManager()
+                end,
+            },
+            utilityAssistedHighlight = {
+                type = "toggle",
+                name = "Show Assisted Highlight",
+                desc = "Show blue glow when Blizzard's Assisted Highlight recommends using the spell",
+                order = 26,
+                get = function() return self.db.profile.utility.showAssistedHighlight end,
+                set = function(_, value)
+                    self.db.profile.utility.showAssistedHighlight = value
                     self:UpdateCooldownManager()
                 end,
             },
