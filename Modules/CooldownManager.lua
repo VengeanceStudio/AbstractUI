@@ -108,14 +108,21 @@ function CooldownManager:StartOverlayPolling()
         end
         
         local foundHighlights = {}
+        local debugOnce = false  -- Track if we've found any highlights
         
         -- Check Dominos buttons
         for i = 1, 180 do
             local button = _G["DominosActionButton" .. i]
             if button and button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
+                if not debugOnce then
+                    print("DEBUG: Found at least one highlighted button")
+                    debugOnce = true
+                end
+                
                 local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                 if action then
                     local actionType, id = GetActionInfo(action)
+                    print("  Button", i, "action type:", actionType, "id:", id)
                     local spellID = nil
                     
                     if actionType == "spell" and id then
@@ -185,29 +192,39 @@ function CooldownManager:StartOverlayPolling()
                         if actionType == "spell" and id then
                             spellID = id
                         elseif actionType == "macro" and id then
+                            print("DEBUG: Found highlighted macro on", pattern .. i, "macro ID:", id)
                             -- Get spell from macro
                             local macroSpell = GetMacroSpell(id)
+                            print("  GetMacroSpell returned:", macroSpell)
                             if macroSpell then
                                 local spellInfo = C_Spell.GetSpellInfo(macroSpell)
                                 if spellInfo then
                                     spellID = spellInfo.spellID
+                                    print("  Extracted spell ID:", spellID, spellInfo.name)
                                 end
                             end
                             
                             -- If that didn't work, try scanning the macro body
                             if not spellID then
                                 local macroName, _, macroBody = GetMacroInfo(id)
+                                print("  Macro name:", macroName, "scanning body")
                                 if macroBody then
                                     -- Look for #showtooltip spell
                                     local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
+                                    print("  Found in #showtooltip:", tooltipSpell)
                                     if tooltipSpell then
                                         tooltipSpell = strtrim(tooltipSpell)
                                         local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
                                         if tooltipInfo then
                                             spellID = tooltipInfo.spellID
+                                            print("  Using spell from #showtooltip:", spellID, tooltipInfo.name)
                                         end
                                     end
                                 end
+                            end
+                            
+                            if not spellID then
+                                print("  FAILED to extract spell ID from macro")
                             end
                         end
                         
