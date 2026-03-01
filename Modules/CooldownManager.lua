@@ -242,16 +242,44 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- Use WoW's action bar API to find all slots containing this spell (works with macros!)
+    -- For Dominos users: Check each Dominos button to see if it shows this spell
+    for i = 1, 120 do
+        local button = _G["DominosActionButton" .. i]
+        if button then
+            local actionSlot = button.action or (button.GetAttribute and button:GetAttribute("action"))
+            if actionSlot and HasAction(actionSlot) then
+                -- Check if this action slot contains our spell using WoW's API
+                if C_ActionBar and C_ActionBar.FindSpellActionButtons then
+                    local slots = C_ActionBar.FindSpellActionButtons(spellID)
+                    if slots then
+                        for _, slot in ipairs(slots) do
+                            if slot == actionSlot then
+                                -- This Dominos button shows our spell, get its keybind
+                                local bindingName = "CLICK DominosActionButton" .. i .. ":LeftButton"
+                                local binding = GetBindingKey(bindingName)
+                                if binding then
+                                    binding = binding:gsub("SHIFT%-", "S")
+                                    binding = binding:gsub("CTRL%-", "C")
+                                    binding = binding:gsub("ALT%-", "A")
+                                    return binding
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Fallback for standard Blizzard action bars
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
-            -- Return the keybind for the first slot found
             return self:GetActionSlotBinding(slots[1])
         end
     end
     
-    -- Fallback: Manual search through action slots
+    -- Manual search as final fallback
     local spellName = C_Spell.GetSpellName(spellID)
     
     for actionSlot = 1, 180 do
