@@ -136,74 +136,79 @@ function CooldownManager:StartOverlayPolling()
     local debugOnce = false
     local lastOverlayCount = 0
     
-    -- Poll every 0.1 seconds to check for active overlays
-    self.overlayTimer = C_Timer.NewTicker(0.1, function()
+    -- Poll every 0.5 seconds to check for highlights on action buttons
+    self.overlayTimer = C_Timer.NewTicker(0.5, function()
         if not self.db.profile.essential.showAssistedHighlight and 
            not self.db.profile.utility.showAssistedHighlight then
             return
         end
         
-        -- Debug: Print frame structure once
-        if not debugOnce and SpellActivationOverlayFrame then
+        -- Debug: Check if assisted highlight is even enabled
+        if not debugOnce then
             debugOnce = true
-            print("DEBUG: SpellActivationOverlayFrame structure:")
-            print("  overlaysInUse:", SpellActivationOverlayFrame.overlaysInUse and #SpellActivationOverlayFrame.overlaysInUse or "nil")
-            print("  Type:", type(SpellActivationOverlayFrame.overlaysInUse))
-            
-            -- Check for child frames
-            local children = {SpellActivationOverlayFrame:GetChildren()}
-            print("  Children count:", #children)
-            
-            -- Try to find overlays another way
-            for key, value in pairs(SpellActivationOverlayFrame) do
-                if type(key) == "string" and key:lower():find("overlay") then
-                    print("  Found key:", key, "=", type(value))
-                end
-            end
+            local setting = C_CVar.GetCVarBool("SpellActivationOverlayOpacity")
+            print("DEBUG: SpellActivationOverlayOpacity enabled:", setting)
+            print("DEBUG: Checking action buttons for overlay highlights...")
         end
         
-        -- Check all possible overlay positions for active overlays
-        if SpellActivationOverlayFrame and SpellActivationOverlayFrame.overlaysInUse then
-            local currentCount = #SpellActivationOverlayFrame.overlaysInUse
-            
-            -- Debug when overlay count changes
-            if currentCount ~= lastOverlayCount then
-                print("DEBUG: Overlay count changed from", lastOverlayCount, "to", currentCount)
-                lastOverlayCount = currentCount
-            end
-            
-            for i = 1, currentCount do
-                local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
-                if overlay then
-                    print("DEBUG: Checking overlay", i, "- spellID:", overlay.spellID, "shown:", overlay:IsShown())
-                    
-                    if overlay.spellID and overlay:IsShown() then
-                        -- Check if this is a new highlight
-                        if not self.highlightedSpells[overlay.spellID] then
-                            print("DEBUG: Found NEW active overlay for spellID:", overlay.spellID, C_Spell.GetSpellName(overlay.spellID))
-                            self.highlightedSpells[overlay.spellID] = true
-                            self:UpdateSpellHighlight(overlay.spellID, true)
+        -- Check Dominos buttons for active overlays
+        local foundHighlights = {}
+        
+        for i = 1, 180 do
+            local button = _G["DominosActionButton" .. i]
+            if button and button:IsVisible() then
+                -- Check for overlay child frame
+                if button.overlay and button.overlay:IsShown() then
+                    local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                    if action then
+                        local actionType, id = GetActionInfo(action)
+                        if actionType == "spell" and id then
+                            foundHighlights[id] = true
+                            
+                            if not self.highlightedSpells[id] then
+                                print("DEBUG: Found highlighted spell on button", i, "- spellID:", id, C_Spell.GetSpellName(id))
+                                self.highlightedSpells[id] = true
+                                self:UpdateSpellHighlight(id, true)
+                            end
                         end
                     end
                 end
             end
-            
-            -- Check for spells that are no longer highlighted
-            for spellID, _ in pairs(self.highlightedSpells) do
-                local stillActive = false
-                for i = 1, currentCount do
-                    local overlay = SpellActivationOverlayFrame.overlaysInUse[i]
-                    if overlay and overlay.spellID == spellID and overlay:IsShown() then
-                        stillActive = true
-                        break
+        end
+        
+        -- Check standard action buttons too
+        local buttonPatterns = {"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", 
+                                "MultiBarRightButton", "MultiBarLeftButton", "MultiBarRightActionButton", "MultiBarLeftActionButton"}
+        
+        for _, pattern in ipairs(buttonPatterns) do
+            for i = 1, 12 do
+                local button = _G[pattern .. i]
+                if button and button:IsVisible() then
+                    if button.overlay and button.overlay:IsShown() then
+                        local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                        if action then
+                            local actionType, id = GetActionInfo(action)
+                            if actionType == "spell" and id then
+                                foundHighlights[id] = true
+                                
+                                if not self.highlightedSpells[id] then
+                                    print("DEBUG: Found highlighted spell on", pattern .. i, "- spellID:", id, C_Spell.GetSpellName(id))
+                                    self.highlightedSpells[id] = true
+                                    self:UpdateSpellHighlight(id, true)
+                                end
+                            end
+                        end
                     end
                 end
-                
-                if not stillActive then
-                    print("DEBUG: Overlay no longer active for spellID:", spellID)
-                    self.highlightedSpells[spellID] = nil
-                    self:UpdateSpellHighlight(spellID, false)
-                end
+            end
+        end
+        
+        -- Remove highlights that are no longer active
+        for spellID, _ in pairs(self.highlightedSpells) do
+            if not foundHighlights[spellID] then
+                print("DEBUG: Spell no longer highlighted:", spellID)
+                self.highlightedSpells[spellID] = nil
+                self:UpdateSpellHighlight(spellID, false)
             end
         end
     end)
