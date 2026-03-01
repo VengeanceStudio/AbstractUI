@@ -91,11 +91,12 @@ function Tweaks:OnDBReady()
     -- Use event-based approach instead of constant ticker
     -- Bag bar hiding is handled by UPDATE_INVENTORY_DURABILITY event
     
-    -- Register quest frame events to apply scale/position
+    -- Register quest and gossip frame events to apply scale/position
     self:RegisterEvent("QUEST_DETAIL")
     self:RegisterEvent("QUEST_PROGRESS")
     self:RegisterEvent("QUEST_COMPLETE")
     self:RegisterEvent("QUEST_GREETING")
+    self:RegisterEvent("GOSSIP_SHOW")
     
     -- Apply quest frame scaling on load
     self:ApplyQuestFrameScale()
@@ -108,14 +109,27 @@ function Tweaks:UPDATE_INVENTORY_DURABILITY()
 end
 
 function Tweaks:ApplyQuestFrameScale()
-    if not QuestFrame then return end
+    local scale = self.db.profile.questFrameScale or 1.0
+    local useCustomPos = self.db.profile.questFrameCustomPosition
+    local x = self.db.profile.questFrameX
+    local y = self.db.profile.questFrameY
     
-    QuestFrame:SetScale(self.db.profile.questFrameScale or 1.0)
+    -- Apply to QuestFrame
+    if QuestFrame then
+        QuestFrame:SetScale(scale)
+        if useCustomPos then
+            QuestFrame:ClearAllPoints()
+            QuestFrame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+        end
+    end
     
-    -- Apply custom position if enabled
-    if self.db.profile.questFrameCustomPosition then
-        QuestFrame:ClearAllPoints()
-        QuestFrame:SetPoint("CENTER", UIParent, "CENTER", self.db.profile.questFrameX, self.db.profile.questFrameY)
+    -- Apply to GossipFrame (dialogue/gossip windows)
+    if GossipFrame then
+        GossipFrame:SetScale(scale)
+        if useCustomPos then
+            GossipFrame:ClearAllPoints()
+            GossipFrame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+        end
     end
 end
 
@@ -132,6 +146,10 @@ function Tweaks:QUEST_COMPLETE()
 end
 
 function Tweaks:QUEST_GREETING()
+    self:ApplyQuestFrameScale()
+end
+
+function Tweaks:GOSSIP_SHOW()
     self:ApplyQuestFrameScale()
 end
 
@@ -680,8 +698,8 @@ function Tweaks:GetOptions()
                 end 
             },
             questFrameScale = {
-                name = "Quest Frame Scale",
-                desc = "Adjust the size of the Quest window (1.0 = default, 1.5 = 50% larger)",
+                name = "Quest/Dialogue Frame Scale",
+                desc = "Adjust the size of Quest and Dialogue/Gossip windows (1.0 = default, 1.5 = 50% larger)",
                 type = "range",
                 min = 0.5,
                 max = 2.0,
@@ -693,8 +711,8 @@ function Tweaks:GetOptions()
                 end,
             },
             questFrameCustomPosition = {
-                name = "Use Custom Quest Frame Position",
-                desc = "Enable to set a custom default position for the Quest window",
+                name = "Use Custom Quest/Dialogue Position",
+                desc = "Enable to set a custom default position for Quest and Dialogue/Gossip windows",
                 type = "toggle",
                 order = 14,
                 set = function(_, v)
@@ -703,7 +721,7 @@ function Tweaks:GetOptions()
                 end,
             },
             questFrameX = {
-                name = "Quest Frame Horizontal Position",
+                name = "Quest/Dialogue Horizontal Position",
                 desc = "Horizontal offset from center of screen (negative = left, positive = right)",
                 type = "range",
                 min = -800,
@@ -717,7 +735,7 @@ function Tweaks:GetOptions()
                 end,
             },
             questFrameY = {
-                name = "Quest Frame Vertical Position",
+                name = "Quest/Dialogue Vertical Position",
                 desc = "Vertical offset from center of screen (negative = down, positive = up)",
                 type = "range",
                 min = -500,
