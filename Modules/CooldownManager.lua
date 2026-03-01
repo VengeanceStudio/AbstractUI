@@ -134,7 +134,6 @@ function CooldownManager:StartOverlayPolling()
     print("DEBUG: Starting overlay polling")
     
     local debugOnce = false
-    local lastOverlayCount = 0
     
     -- Poll every 0.5 seconds to check for highlights on action buttons
     self.overlayTimer = C_Timer.NewTicker(0.5, function()
@@ -143,22 +142,52 @@ function CooldownManager:StartOverlayPolling()
             return
         end
         
-        -- Debug: Check if assisted highlight is even enabled
+        -- Debug button structure once
         if not debugOnce then
             debugOnce = true
-            local setting = C_CVar.GetCVarBool("SpellActivationOverlayOpacity")
-            print("DEBUG: SpellActivationOverlayOpacity enabled:", setting)
-            print("DEBUG: Checking action buttons for overlay highlights...")
+            print("DEBUG: Checking button structure...")
+            
+            -- Check a Dominos button
+            local testButton = _G["DominosActionButton1"]
+            if testButton then
+                print("  DominosActionButton1 found, checking for overlay-related properties:")
+                for k, v in pairs(testButton) do
+                    if type(k) == "string" and (k:lower():find("overlay") or k:lower():find("alert") or k:lower():find("glow")) then
+                        print("    " .. k .. " =", type(v))
+                    end
+                end
+            end
+            
+            -- Check a standard button
+            local stdButton = _G["ActionButton1"]
+            if stdButton then
+                print("  ActionButton1 found, checking for overlay-related properties:")
+                for k, v in pairs(stdButton) do
+                    if type(k) == "string" and (k:lower():find("overlay") or k:lower():find("alert") or k:lower():find("glow")) then
+                        print("    " .. k .. " =", type(v))
+                    end
+                end
+            end
         end
         
-        -- Check Dominos buttons for active overlays
+        -- Check Dominos buttons for active overlays/alerts
         local foundHighlights = {}
         
         for i = 1, 180 do
             local button = _G["DominosActionButton" .. i]
             if button and button:IsVisible() then
-                -- Check for overlay child frame
+                -- Check various possible overlay frames
+                local hasOverlay = false
+                
                 if button.overlay and button.overlay:IsShown() then
+                    hasOverlay = true
+                elseif button.SpellActivationAlert and button.SpellActivationAlert:IsShown() then
+                    hasOverlay = true
+                elseif button.spellActivationAlert and button.spellActivationAlert:IsShown() then
+                    hasOverlay = true
+                end
+                
+                if hasOverlay then
                     local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                     if action then
                         local actionType, id = GetActionInfo(action)
@@ -166,7 +195,7 @@ function CooldownManager:StartOverlayPolling()
                             foundHighlights[id] = true
                             
                             if not self.highlightedSpells[id] then
-                                print("DEBUG: Found highlighted spell on button", i, "- spellID:", id, C_Spell.GetSpellName(id))
+                                print("DEBUG: Found highlighted spell on DominosActionButton" .. i, "- spellID:", id, C_Spell.GetSpellName(id))
                                 self.highlightedSpells[id] = true
                                 self:UpdateSpellHighlight(id, true)
                             end
@@ -184,7 +213,17 @@ function CooldownManager:StartOverlayPolling()
             for i = 1, 12 do
                 local button = _G[pattern .. i]
                 if button and button:IsVisible() then
+                    local hasOverlay = false
+                    
                     if button.overlay and button.overlay:IsShown() then
+                        hasOverlay = true
+                    elseif button.SpellActivationAlert and button.SpellActivationAlert:IsShown() then
+                        hasOverlay = true
+                    elseif button.spellActivationAlert and button.spellActivationAlert:IsShown() then
+                        hasOverlay = true
+                    end
+                    
+                    if hasOverlay then
                         local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                         if action then
                             local actionType, id = GetActionInfo(action)
