@@ -213,17 +213,21 @@ function GetColor()
     -- FIX: Ensure DB is loaded if Helper is called early
     if not BrokerBar.db then return 1, 1, 1 end
     
-    -- Use theme colors if available
-    if ColorPalette then
-        return ColorPalette:GetColor('text-primary')
-    end
-    
     local db = BrokerBar.db.profile
+    
+    -- Check useClassColor setting first
     if db.useClassColor then
         local _, class = UnitClass("player")
         local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class]
         return color.r, color.g, color.b
     end
+    
+    -- Use theme colors if available
+    if ColorPalette then
+        return ColorPalette:GetColor('text-primary')
+    end
+    
+    -- Fallback to custom font color
     return db.fontColor.r, db.fontColor.g, db.fontColor.b
 end
 
