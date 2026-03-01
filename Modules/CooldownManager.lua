@@ -255,6 +255,11 @@ function CooldownManager:GetSpellKeybind(spellID)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
+            -- Debug: Show all slots for spell 217832
+            if spellID == 217832 then
+                print("DEBUG: Spell", spellID, "found in", #slots, "slots:", table.concat(slots, ", "))
+            end
+            
             -- If spell is in multiple slots, try to find one with a keybind
             -- Prefer keybinds with modifiers (Ctrl, Shift, Alt) over plain keys
             local bestSlot = nil
@@ -263,12 +268,21 @@ function CooldownManager:GetSpellKeybind(spellID)
             
             for _, slot in ipairs(slots) do
                 local keybind = self:GetActionSlotBinding(slot)
+                
+                if spellID == 217832 then
+                    print("  Slot", slot, "keybind:", keybind or "NIL")
+                end
+                
                 if keybind then
                     -- Score the keybind: modifiers are better than plain keys
                     local score = 0
                     if keybind:find("C") then score = score + 3 end  -- Ctrl
                     if keybind:find("A") then score = score + 2 end  -- Alt  
                     if keybind:find("S") then score = score + 1 end  -- Shift
+                    
+                    if spellID == 217832 then
+                        print("    Score:", score, "Best so far:", bestScore)
+                    end
                     
                     if score > bestScore or (score == bestScore and not bestKeybind) then
                         bestScore = score
@@ -279,6 +293,10 @@ function CooldownManager:GetSpellKeybind(spellID)
                     -- No keybind yet, use this slot as fallback
                     bestSlot = slot
                 end
+            end
+            
+            if spellID == 217832 then
+                print("  RESULT: Using slot", bestSlot, "with keybind:", bestKeybind or "NIL")
             end
             
             if bestKeybind then
