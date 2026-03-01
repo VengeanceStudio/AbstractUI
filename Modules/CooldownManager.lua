@@ -32,6 +32,7 @@ local defaults = {
             font = "Friz Quadrata TT",
             fontSize = 14,
             fontFlag = "OUTLINE",
+            showKeybinds = true,
         },
         
         -- Utility Cooldowns
@@ -48,6 +49,7 @@ local defaults = {
             font = "Friz Quadrata TT",
             fontSize = 12,
             fontFlag = "OUTLINE",
+            showKeybinds = true,
         },
         
         -- Font settings
@@ -172,6 +174,28 @@ end
 -- Frame Styling
 --------------------------------------------------------------------------------
 
+function CooldownManager:GetSpellKeybind(spellID)
+    if not spellID then return nil end
+    
+    -- Search all action bar slots for this spell
+    for slot = 1, 120 do
+        local slotType, id = GetActionInfo(slot)
+        if slotType == "spell" and id == spellID then
+            -- Found the spell, get its keybind
+            local binding = GetBindingKey("ACTIONBUTTON" .. slot)
+            if binding then
+                -- Shorten common modifiers
+                binding = binding:gsub("SHIFT%-", "S-")
+                binding = binding:gsub("CTRL%-", "C-")
+                binding = binding:gsub("ALT%-", "A-")
+                return binding
+            end
+        end
+    end
+    
+    return nil
+end
+
 function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
     local db = self.db.profile[displayType]
     
@@ -209,6 +233,37 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
         childFrame.customBackground:SetPoint("TOPLEFT", childFrame, "TOPLEFT", db.borderThickness, -db.borderThickness)
         childFrame.customBackground:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -db.borderThickness, db.borderThickness)
         childFrame.customBackground:SetVertexColor(db.backgroundColor[1], db.backgroundColor[2], db.backgroundColor[3], db.backgroundColor[4])
+    end
+    
+    -- Add keybind text if enabled
+    if db.showKeybinds then
+        if not childFrame.customKeybind then
+            childFrame.customKeybind = childFrame:CreateFontString(nil, "OVERLAY")
+            childFrame.customKeybind:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 2, -2)
+            childFrame.customKeybind:SetJustifyH("LEFT")
+        end
+        
+        local fontPath = LSM:Fetch("font", db.font)
+        childFrame.customKeybind:SetFont(fontPath, math.max(8, db.fontSize - 4), db.fontFlag)
+        childFrame.customKeybind:SetTextColor(0.7, 0.7, 0.7, 1)
+        
+        -- Get the spell ID and find its keybind
+        local spellID = childFrame.spellID
+        if spellID then
+            local keybind = self:GetSpellKeybind(spellID)
+            if keybind then
+                childFrame.customKeybind:SetText(keybind)
+                childFrame.customKeybind:Show()
+            else
+                childFrame.customKeybind:SetText("")
+                childFrame.customKeybind:Hide()
+            end
+        else
+            childFrame.customKeybind:SetText("")
+            childFrame.customKeybind:Hide()
+        end
+    elseif childFrame.customKeybind then
+        childFrame.customKeybind:Hide()
     end
     
     -- Style charge count text
@@ -319,6 +374,17 @@ function CooldownManager:GetOptions()
                     self:UpdateCooldownManager()
                 end,
             },
+            essentialShowKeybinds = {
+                type = "toggle",
+                name = "Show Keybinds",
+                desc = "Display action bar keybinds on essential cooldown icons",
+                order = 15,
+                get = function() return self.db.profile.essential.showKeybinds end,
+                set = function(_, value)
+                    self.db.profile.essential.showKeybinds = value
+                    self:UpdateCooldownManager()
+                end,
+            },
             utilityHeader = {
                 type = "header",
                 name = "Utility Cooldowns",
@@ -374,6 +440,17 @@ function CooldownManager:GetOptions()
                 get = function() return self.db.profile.utility.maxPerRow end,
                 set = function(_, value)
                     self.db.profile.utility.maxPerRow = value
+                    self:UpdateCooldownManager()
+                end,
+            },
+            utilityShowKeybinds = {
+                type = "toggle",
+                name = "Show Keybinds",
+                desc = "Display action bar keybinds on utility cooldown icons",
+                order = 25,
+                get = function() return self.db.profile.utility.showKeybinds end,
+                set = function(_, value)
+                    self.db.profile.utility.showKeybinds = value
                     self:UpdateCooldownManager()
                 end,
             },
