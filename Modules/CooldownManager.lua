@@ -249,6 +249,52 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         return binding
     end
     
+    -- Last resort: Check for CLICK bindings on Blizzard UI buttons
+    -- Dominos may bind keys to these buttons directly
+    local blizzardButtons = {
+        "ActionButton",
+        "MultiBarBottomLeftButton",
+        "MultiBarBottomRightButton", 
+        "MultiBarRightButton",
+        "MultiBarLeftButton",
+        "MultiBarRightActionButton",
+        "MultiBarLeftActionButton",
+    }
+    
+    for _, buttonPattern in ipairs(blizzardButtons) do
+        for i = 1, 12 do
+            local buttonName = buttonPattern .. i
+            local button = _G[buttonName]
+            if button then
+                local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                
+                if buttonAction == actionSlot then
+                    -- Try various CLICK binding formats
+                    local bindFormats = {
+                        "CLICK " .. buttonName .. ":HOTKEY",
+                        "CLICK " .. buttonName .. ":LeftButton",
+                    }
+                    
+                    for _, bindFormat in ipairs(bindFormats) do
+                        local k1, k2 = GetBindingKey(bindFormat)
+                        local clickBind = k1 or k2
+                        
+                        if isDebugSlot then
+                            print("DEBUG slot", actionSlot, "trying", bindFormat, "result:", clickBind)
+                        end
+                        
+                        if clickBind then
+                            clickBind = clickBind:gsub("SHIFT%-", "S")
+                            clickBind = clickBind:gsub("CTRL%-", "C")
+                            clickBind = clickBind:gsub("ALT%-", "A")
+                            return clickBind
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
     return nil
 end
 
