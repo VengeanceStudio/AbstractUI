@@ -192,10 +192,12 @@ end
 function Tweaks:HookCutscenes()
     if self.cutscenesHooked then return end
     
+    local module = self
+    
     -- Hook cinematic frame (in-game cinematics)
     if CinematicFrame then
         CinematicFrame:HookScript("OnShow", function()
-            if Tweaks.db.profile.skipCutscenes then
+            if module.db and module.db.profile.skipCutscenes then
                 CinematicFrame_CancelCinematic()
             end
         end)
@@ -204,7 +206,7 @@ function Tweaks:HookCutscenes()
     -- Hook movie frame (pre-rendered movies)
     if MovieFrame then
         MovieFrame:HookScript("OnShow", function()
-            if Tweaks.db.profile.skipCutscenes then
+            if module.db and module.db.profile.skipCutscenes then
                 MovieFrame:StopMovie()
             end
         end)
@@ -253,6 +255,8 @@ end
 function Tweaks:HookAutoDelete()
     if self.autoDeleteHooked then return end
     
+    local module = self
+    
     -- Hook StaticPopup_Show to auto-fill when dialog opens
     self:SecureHook("StaticPopup_Show", function(which, ...)
         if not which then return end
@@ -260,7 +264,7 @@ function Tweaks:HookAutoDelete()
         if (which == "DELETE_ITEM" or which == "DELETE_GOOD_ITEM" or 
             which == "DELETE_QUEST_ITEM" or which == "DELETE_GOOD_QUEST_ITEM") then
             
-            if Tweaks.db.profile.autoDelete then
+            if module.db and module.db.profile.autoDelete then
                 C_Timer.After(0.1, function()
                     -- STATICPOPUP_NUMDIALOGS doesn't exist in modern WoW, default to 4
                     local numDialogs = 4
