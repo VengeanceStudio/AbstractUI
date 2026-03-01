@@ -321,35 +321,52 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                 if show then
                     -- Add blue border outline like Blizzard's assisted highlight
                     if not childFrame.assistedHighlight then
-                        -- Create border overlay frame
+                        -- Create border frame
                         childFrame.assistedHighlight = CreateFrame("Frame", nil, childFrame)
                         childFrame.assistedHighlight:SetAllPoints(childFrame)
                         childFrame.assistedHighlight:SetFrameLevel(childFrame:GetFrameLevel() + 10)
                         
-                        -- Create the border texture using Blizzard's spell activation texture
-                        childFrame.assistedHighlightTex = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY", nil, 7)
-                        childFrame.assistedHighlightTex:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
-                        childFrame.assistedHighlightTex:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
-                        childFrame.assistedHighlightTex:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -12, 12)
-                        childFrame.assistedHighlightTex:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", 12, -12)
+                        local thickness = 2
+                        local extend = 1  -- How much to extend beyond the icon
                         
-                        -- Blue color
-                        childFrame.assistedHighlightTex:SetVertexColor(0.4, 0.7, 1.0)
-                        childFrame.assistedHighlightTex:SetBlendMode("ADD")
+                        -- Create 4 border edges as color textures
+                        childFrame.assistedHighlightTop = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY")
+                        childFrame.assistedHighlightTop:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+                        childFrame.assistedHighlightTop:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -extend, extend)
+                        childFrame.assistedHighlightTop:SetPoint("TOPRIGHT", childFrame, "TOPRIGHT", extend, extend)
+                        childFrame.assistedHighlightTop:SetHeight(thickness)
                         
-                        -- Pulse animation
+                        childFrame.assistedHighlightBottom = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY")
+                        childFrame.assistedHighlightBottom:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+                        childFrame.assistedHighlightBottom:SetPoint("BOTTOMLEFT", childFrame, "BOTTOMLEFT", -extend, -extend)
+                        childFrame.assistedHighlightBottom:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", extend, -extend)
+                        childFrame.assistedHighlightBottom:SetHeight(thickness)
+                        
+                        childFrame.assistedHighlightLeft = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY")
+                        childFrame.assistedHighlightLeft:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+                        childFrame.assistedHighlightLeft:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -extend, extend)
+                        childFrame.assistedHighlightLeft:SetPoint("BOTTOMLEFT", childFrame, "BOTTOMLEFT", -extend, -extend)
+                        childFrame.assistedHighlightLeft:SetWidth(thickness)
+                        
+                        childFrame.assistedHighlightRight = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY")
+                        childFrame.assistedHighlightRight:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+                        childFrame.assistedHighlightRight:SetPoint("TOPRIGHT", childFrame, "TOPRIGHT", extend, extend)
+                        childFrame.assistedHighlightRight:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", extend, -extend)
+                        childFrame.assistedHighlightRight:SetWidth(thickness)
+                        
+                        -- Gentle pulse animation
                         if not childFrame.assistedHighlightAnim then
-                            childFrame.assistedHighlightAnim = childFrame.assistedHighlightTex:CreateAnimationGroup()
+                            childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
                             local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
-                            alpha1:SetFromAlpha(0.7)
+                            alpha1:SetFromAlpha(0.85)
                             alpha1:SetToAlpha(1.0)
-                            alpha1:SetDuration(0.5)
+                            alpha1:SetDuration(1.0)
                             alpha1:SetOrder(1)
                             
                             local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
                             alpha2:SetFromAlpha(1.0)
-                            alpha2:SetToAlpha(0.7)
-                            alpha2:SetDuration(0.5)
+                            alpha2:SetToAlpha(0.85)
+                            alpha2:SetDuration(1.0)
                             alpha2:SetOrder(2)
                             
                             childFrame.assistedHighlightAnim:SetLooping("REPEAT")
