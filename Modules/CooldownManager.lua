@@ -199,6 +199,12 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
+    -- Debug for slot 16
+    if actionSlot == 16 then
+        print("DEBUG: Slot 16 binding name:", bindingName)
+        print("  GetBindingKey returned:", GetBindingKey(bindingName) or "NIL")
+    end
+    
     local binding = GetBindingKey(bindingName)
     if binding then
         -- Shorten modifier names to save space
@@ -228,6 +234,15 @@ function CooldownManager:GetSpellKeybind(spellID)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
+            -- Debug: Show what we found
+            if spellID == 217832 then
+                print("DEBUG: Spell", spellID, "found in slots:", table.concat(slots, ", "))
+                for _, slot in ipairs(slots) do
+                    local binding = self:GetActionSlotBinding(slot)
+                    print("  Slot", slot, "keybind:", binding or "NIL")
+                end
+            end
+            
             -- Return the keybind for the first slot found
             return self:GetActionSlotBinding(slots[1])
         end
