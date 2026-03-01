@@ -1635,7 +1635,8 @@ function AbstractUI:GetOptions()
                             local refWidth = AbstractUI.REFERENCE_WIDTH
                             local refHeight = AbstractUI.REFERENCE_HEIGHT
                             
-                            local resInfo = "UI Resolution (effective): |cffffaa00" .. screenWidth .. "x" .. screenHeight .. "|r\n"
+                            local resInfo = "UI Resolution: |cffffaa00" .. physicalWidth .. "x" .. physicalHeight .. "|r\n"
+                            resInfo = resInfo .. "UI Resolution (effective): |cffffaa00" .. screenWidth .. "x" .. screenHeight .. "|r\n"
                             if physicalWidth ~= screenWidth or physicalHeight ~= screenHeight then
                                 resInfo = resInfo .. "UI Scale: |cffcccccc" .. string.format("%.1f%%", uiScale * 100) .. "|r\n\n"
                             end
