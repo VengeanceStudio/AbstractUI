@@ -177,11 +177,15 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
+    -- Get spell name for comparison
+    local spellName = C_Spell.GetSpellName(spellID)
+    
     -- Search all action bar slots manually (up to 180 for all bars including hidden ones)
     for actionSlot = 1, 180 do
         local slotType, id = GetActionInfo(actionSlot)
+        
         if slotType == "spell" and id == spellID then
-            -- Found the spell, get its keybind
+            -- Found the spell directly
             local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
             if binding then
                 binding = binding:gsub("SHIFT%-", "S-")
@@ -189,12 +193,21 @@ function CooldownManager:GetSpellKeybind(spellID)
                 binding = binding:gsub("ALT%-", "A-")
                 return binding
             end
-        elseif slotType == "macro" then
-            -- Check if macro contains this spell
-            local macroSpell = GetActionText(actionSlot)
-            if macroSpell then
-                local macroSpellID = select(7, GetSpellInfo(macroSpell))
-                if macroSpellID == spellID then
+        elseif slotType == "macro" and id then
+            -- Check if macro casts this spell
+            local macroSpellID = GetMacroSpell(id)
+            if macroSpellID == spellID then
+                local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
+                if binding then
+                    binding = binding:gsub("SHIFT%-", "S-")
+                    binding = binding:gsub("CTRL%-", "C-")
+                    binding = binding:gsub("ALT%-", "A-")
+                    return binding
+                end
+            elseif spellName then
+                -- Check macro body for spell name
+                local macroBody = GetMacroBody(id)
+                if macroBody and macroBody:find(spellName, 1, true) then
                     local binding = GetBindingKey("ACTIONBUTTON" .. actionSlot)
                     if binding then
                         binding = binding:gsub("SHIFT%-", "S-")
