@@ -175,68 +175,75 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Map action slots to their correct keybinding command
-    local bindingName
+    -- Check for Dominos action bar buttons first
+    local button = _G["DominosActionButton" .. actionSlot]
     
-    if actionSlot >= 1 and actionSlot <= 12 then
-        -- Main action bar
-        bindingName = "ACTIONBUTTON" .. actionSlot
-    elseif actionSlot >= 13 and actionSlot <= 24 then
-        -- Bottom Left MultiBar (Bar 2)
-        bindingName = "MULTIACTIONBAR1BUTTON" .. (actionSlot - 12)
-    elseif actionSlot >= 25 and actionSlot <= 36 then
-        -- Bottom Right MultiBar (Bar 3)
-        bindingName = "MULTIACTIONBAR2BUTTON" .. (actionSlot - 24)
-    elseif actionSlot >= 37 and actionSlot <= 48 then
-        -- Right MultiBar (Bar 4)
-        bindingName = "MULTIACTIONBAR3BUTTON" .. (actionSlot - 36)
-    elseif actionSlot >= 49 and actionSlot <= 60 then
-        -- Right MultiBar 2 (Bar 5)
-        bindingName = "MULTIACTIONBAR4BUTTON" .. (actionSlot - 48)
-    elseif actionSlot >= 61 and actionSlot <= 72 then
-        -- Bar 6
-        bindingName = "MULTIACTIONBAR5BUTTON" .. (actionSlot - 60)
-    elseif actionSlot >= 73 and actionSlot <= 84 then
-        -- Bar 7
-        bindingName = "MULTIACTIONBAR6BUTTON" .. (actionSlot - 72)
-    elseif actionSlot >= 85 and actionSlot <= 96 then
-        -- Bar 8
-        bindingName = "MULTIACTIONBAR7BUTTON" .. (actionSlot - 84)
-    else
-        -- Try the simple format for other slots
-        bindingName = "ACTIONBUTTON" .. actionSlot
+    -- Fall back to Blizzard buttons if Dominos isn't found
+    if not button then
+        if actionSlot >= 1 and actionSlot <= 12 then
+            button = _G["ActionButton" .. actionSlot]
+        elseif actionSlot >= 13 and actionSlot <= 24 then
+            button = _G["MultiBarBottomLeftButton" .. (actionSlot - 12)]
+        elseif actionSlot >= 25 and actionSlot <= 36 then
+            button = _G["MultiBarBottomRightButton" .. (actionSlot - 24)]
+        elseif actionSlot >= 37 and actionSlot <= 48 then
+            button = _G["MultiBarRightButton" .. (actionSlot - 36)]
+        elseif actionSlot >= 49 and actionSlot <= 60 then
+            button = _G["MultiBarLeftButton" .. (actionSlot - 48)]
+        end
     end
     
-    -- Debug for slot 19
-    if actionSlot == 19 then
-        print("|cff00ff00[CooldownManager]|r Slot 19 checking binding:", bindingName)
+    -- Get hotkey text from the button itself
+    if button then
+        -- Try the HotKey fontstring (most common location)
+        local hotkeyText = button.HotKey or _G[button:GetName() .. "HotKey"]
+        if hotkeyText and hotkeyText.GetText then
+            local hotkey = hotkeyText:GetText()
+            if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
+                return hotkey
+            end
+        end
+        
+        -- Try GetHotkey method if available
+        if button.GetHotkey then
+            local hotkey = button:GetHotkey()
+            if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
+                return hotkey
+            end
+        end
+    end
+    
+    -- Fallback to standard WoW keybinding lookup
+    local bindingName
+    if actionSlot >= 1 and actionSlot <= 12 then
+        bindingName = "ACTIONBUTTON" .. actionSlot
+    elseif actionSlot >= 13 and actionSlot <= 24 then
+        bindingName = "MULTIACTIONBAR1BUTTON" .. (actionSlot - 12)
+    elseif actionSlot >= 25 and actionSlot <= 36 then
+        bindingName = "MULTIACTIONBAR2BUTTON" .. (actionSlot - 24)
+    elseif actionSlot >= 37 and actionSlot <= 48 then
+        bindingName = "MULTIACTIONBAR3BUTTON" .. (actionSlot - 36)
+    elseif actionSlot >= 49 and actionSlot <= 60 then
+        bindingName = "MULTIACTIONBAR4BUTTON" .. (actionSlot - 48)
+    elseif actionSlot >= 61 and actionSlot <= 72 then
+        bindingName = "MULTIACTIONBAR5BUTTON" .. (actionSlot - 60)
+    elseif actionSlot >= 73 and actionSlot <= 84 then
+        bindingName = "MULTIACTIONBAR6BUTTON" .. (actionSlot - 72)
+    elseif actionSlot >= 85 and actionSlot <= 96 then
+        bindingName = "MULTIACTIONBAR7BUTTON" .. (actionSlot - 84)
+    else
+        bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
     local binding = GetBindingKey(bindingName)
-    
-    if actionSlot == 19 then
-        print("|cff00ff00[CooldownManager]|r Slot 19 GetBindingKey result:", binding or "NIL")
-        
-        -- Try all possible binding names for slot 19
-        for i = 1, 7 do
-            local testName = "MULTIACTIONBAR" .. i .. "BUTTON7"
-            local testBinding = GetBindingKey(testName)
-            print("|cff00ff00[CooldownManager]|r Testing", testName, "=", testBinding or "NIL")
-        end
-        
-        -- Also check click bindings
-        local clickName = "CLICK ActionButton19:LeftButton"
-        local clickBinding = GetBindingKey(clickName)
-        print("|cff00ff00[CooldownManager]|r Testing", clickName, "=", clickBinding or "NIL")
-    end
-    
     if binding then
         binding = binding:gsub("SHIFT%-", "S-")
         binding = binding:gsub("CTRL%-", "C-")
         binding = binding:gsub("ALT%-", "A-")
+        return binding
     end
     
-    return binding
+    return nil
 end
 
 function CooldownManager:GetSpellKeybind(spellID)
