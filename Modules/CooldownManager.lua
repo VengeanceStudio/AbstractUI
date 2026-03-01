@@ -240,9 +240,9 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
     
     local binding = GetBindingKey(bindingName)
     if binding then
-        binding = binding:gsub("SHIFT%-", "S-")
-        binding = binding:gsub("CTRL%-", "C-")
-        binding = binding:gsub("ALT%-", "A-")
+        binding = binding:gsub("SHIFT%-", "S")
+        binding = binding:gsub("CTRL%-", "C")
+        binding = binding:gsub("ALT%-", "A")
         return binding
     end
     
@@ -255,8 +255,9 @@ function CooldownManager:CleanKeybindText(text)
     -- Remove WoW formatting codes
     text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
     
-    -- Replace Dominos modifier symbol (● = bytes 226,151,143) with C-
-    text = text:gsub("[\226][\151][\143]", "C-")
+    -- Replace Dominos modifier symbols while preserving the rest of the text
+    -- Bullet symbol (●) = bytes 226,151,143 - used for Ctrl
+    text = text:gsub("([\226][\151][\143])(.)", "C%2")
     
     return text
 end
@@ -299,11 +300,31 @@ function CooldownManager:GetSpellKeybind(spellID)
     -- Second approach: Check Dominos buttons directly
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
-        if button and button.GetSpellID then
-            -- Check if this button shows our spell
-            local buttonSpellID = button:GetSpellID()
-            if buttonSpellID == spellID then
+        if button then
+            -- Check what action this button has
+            local actionType, actionID = button:GetAction and button:GetAction()
+            if actionType == "spell" and actionID == spellID then
                 return self:GetActionSlotBinding(i)
+            elseif actionType == "macro" and actionID then
+                -- Check if the macro casts our spell
+                local macroName, macroSpellID = GetMacroSpell(actionID)
+                if macroSpellID == spellID then
+                    return self:GetActionSlotBinding(i)
+                elseif spellName then
+                    local macroBody = GetMacroBody(actionID)
+                    if macroBody and (macroBody:lower():find(spellName:lower(), 1, true) or
+                       macroBody:find("spell:" .. spellID)) then
+                        return self:GetActionSlotBinding(i)
+                    end
+                end
+            end
+            
+            -- Also check if GetSpellID works (some addons override this)
+            if button.GetSpellID then
+                local buttonSpellID = button:GetSpellID()
+                if buttonSpellID == spellID then
+                    return self:GetActionSlotBinding(i)
+                end
             end
         end
     end
