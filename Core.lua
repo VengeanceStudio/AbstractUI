@@ -1629,16 +1629,19 @@ function AbstractUI:GetOptions()
                         name = function()
                             local screenWidth = math.floor(GetScreenWidth())
                             local screenHeight = math.floor(GetScreenHeight())
-                            local physicalWidth = math.floor(GetScreenWidth() * UIParent:GetEffectiveScale())
-                            local physicalHeight = math.floor(GetScreenHeight() * UIParent:GetEffectiveScale())
+                            local physicalWidth, physicalHeight = GetPhysicalScreenSize()
+                            physicalWidth = math.floor(physicalWidth)
+                            physicalHeight = math.floor(physicalHeight)
                             local uiScale = UIParent:GetEffectiveScale()
                             local refWidth = AbstractUI.REFERENCE_WIDTH
                             local refHeight = AbstractUI.REFERENCE_HEIGHT
                             
                             local resInfo = "UI Resolution: |cffffaa00" .. physicalWidth .. "x" .. physicalHeight .. "|r\n"
                             resInfo = resInfo .. "UI Resolution (effective): |cffffaa00" .. screenWidth .. "x" .. screenHeight .. "|r\n"
-                            if physicalWidth ~= screenWidth or physicalHeight ~= screenHeight then
+                            if math.abs(uiScale - 1.0) > 0.01 then  -- Only show UI Scale if it's not 100%
                                 resInfo = resInfo .. "UI Scale: |cffcccccc" .. string.format("%.1f%%", uiScale * 100) .. "|r\n\n"
+                            else
+                                resInfo = resInfo .. "\n"
                             end
                             
                             if screenWidth == refWidth and screenHeight == refHeight then
