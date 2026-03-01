@@ -177,18 +177,6 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- Try FindActionSlot first (most direct method)
-    local slot = FindActionSlot(spellID)
-    if slot then
-        local binding = GetBindingKey("ACTIONBUTTON" .. slot)
-        if binding then
-            binding = binding:gsub("SHIFT%-", "S-")
-            binding = binding:gsub("CTRL%-", "C-")
-            binding = binding:gsub("ALT%-", "A-")
-            return binding
-        end
-    end
-    
     -- Search all action bar slots manually (up to 180 for all bars including hidden ones)
     for actionSlot = 1, 180 do
         local slotType, id = GetActionInfo(actionSlot)
