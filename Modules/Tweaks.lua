@@ -257,36 +257,47 @@ function Tweaks:HookAutoDelete()
     
     local module = self
     
+    print("|cff00ff00[AbstractUI]|r Auto-Delete hook being installed...")
+    
     -- Hook the OnShow event of all StaticPopup dialogs
     for i = 1, 4 do
         local dialog = _G["StaticPopup" .. i]
         if dialog then
-            dialog:HookScript("OnShow", function(self)
+            dialog:HookScript("OnShow", function(dialogFrame)
                 if not module.db or not module.db.profile.autoDelete then return end
                 
-                local which = self.which
+                local which = dialogFrame.which
                 if not which then return end
+                
+                print("|cff00ff00[AbstractUI]|r Dialog shown:", which)
                 
                 -- Check if this is a delete confirmation dialog
                 if (which == "DELETE_ITEM" or which == "DELETE_GOOD_ITEM" or 
                     which == "DELETE_QUEST_ITEM" or which == "DELETE_GOOD_QUEST_ITEM") then
                     
+                    print("|cff00ff00[AbstractUI]|r Delete dialog detected, auto-filling...")
+                    
                     C_Timer.After(0.05, function()
-                        if self:IsShown() and self.editBox then
-                            -- Set the text to DELETE
-                            self.editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
-                            
-                            -- Enable the accept button immediately
-                            if self.button1 then
-                                self.button1:Enable()
-                            end
-                            
-                            -- Focus management
-                            C_Timer.After(0, function()
-                                if self.editBox then
-                                    self.editBox:ClearFocus()
+                        if dialogFrame:IsShown() then
+                            local editBox = dialogFrame.editBox
+                            if editBox then
+                                print("|cff00ff00[AbstractUI]|r Setting text to:", DELETE_ITEM_CONFIRM_STRING)
+                                editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+                                
+                                -- Enable the accept button immediately
+                                if dialogFrame.button1 then
+                                    dialogFrame.button1:Enable()
                                 end
-                            end)
+                                
+                                -- Focus management
+                                C_Timer.After(0, function()
+                                    if editBox then
+                                        editBox:ClearFocus()
+                                    end
+                                end)
+                            else
+                                print("|cffff6b6b[AbstractUI]|r ERROR: No editBox found on dialog")
+                            end
                         end
                     end)
                 end
@@ -295,6 +306,7 @@ function Tweaks:HookAutoDelete()
     end
     
     self.autoDeleteHooked = true
+    print("|cff00ff00[AbstractUI]|r Auto-Delete hook installed successfully!")
 end
 
 function Tweaks:HideBagBar()
