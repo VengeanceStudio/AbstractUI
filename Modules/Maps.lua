@@ -145,36 +145,37 @@ function Maps:SetupMinimapBorder()
 end
 
 function Maps:SetupMinimapPosition()
-    -- Only override SetPoint once - prevent function wrapping on zone changes
+    -- Only hook SetPoint once - prevent multiple hooks on zone changes
     if self.minimapPositionInitialized then
         return
     end
     
-    -- Store original SetPoint function
-    if not self.origSetPoint then
-        self.origSetPoint = Minimap.SetPoint
-    end
-    
-    -- Override SetPoint to add our offsets
-    Minimap.SetPoint = function(frame, ...)
-        local point, relativeTo, relativePoint, x, y = ...
-        
-        if x and y then
-            local db = Maps.db.profile
-            Maps.origSetPoint(frame, point, relativeTo, relativePoint, x + db.offsetX, y + db.offsetY)
-        else
-            Maps.origSetPoint(frame, ...)
+    -- Hook SetPoint to reapply our custom position after external calls
+    hooksecurefunc(Minimap, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
+        -- Ignore if we're the ones setting the position
+        if Maps.isApplyingPosition then
+            return
         end
-    end
+        
+        -- Reapply our custom position after a brief delay
+        C_Timer.After(0.01, function()
+            Maps:ApplyMinimapOffset()
+        end)
+    end)
     
     self.minimapPositionInitialized = true
     self:ApplyMinimapOffset()
 end
 
 function Maps:ApplyMinimapOffset()
+    -- Set flag to prevent hook recursion
+    self.isApplyingPosition = true
+    
     local db = self.db.profile
     Minimap:ClearAllPoints()
-    self.origSetPoint(Minimap, "CENTER", MinimapCluster, "CENTER", db.offsetX, db.offsetY)
+    Minimap:SetPoint("CENTER", MinimapCluster, "CENTER", db.offsetX, db.offsetY)
+    
+    self.isApplyingPosition = false
 end
 
 -- -----------------------------------------------------------------------------
