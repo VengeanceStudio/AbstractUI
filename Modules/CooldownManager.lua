@@ -121,10 +121,35 @@ function CooldownManager:StartOverlayPolling()
                     if actionType == "spell" and id then
                         spellID = id
                     elseif actionType == "macro" and id then
+                        print("DEBUG: Found highlighted macro button, macro ID:", id)
                         -- Get spell from macro
                         local macroSpell = GetMacroSpell(id)
+                        print("  GetMacroSpell returned:", macroSpell)
                         if macroSpell then
-                            spellID = select(7, C_Spell.GetSpellInfo(macroSpell))
+                            local spellInfo = C_Spell.GetSpellInfo(macroSpell)
+                            if spellInfo then
+                                spellID = spellInfo.spellID
+                                print("  Extracted spell ID:", spellID, spellInfo.name)
+                            end
+                        end
+                        
+                        -- If that didn't work, try scanning the macro body
+                        if not spellID then
+                            local macroName, _, macroBody = GetMacroInfo(id)
+                            print("  Macro name:", macroName, "scanning body for #showtooltip")
+                            if macroBody then
+                                -- Look for #showtooltip spell
+                                local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
+                                print("  Found in #showtooltip:", tooltipSpell)
+                                if tooltipSpell then
+                                    tooltipSpell = strtrim(tooltipSpell)
+                                    local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
+                                    if tooltipInfo then
+                                        spellID = tooltipInfo.spellID
+                                        print("  Using spell from #showtooltip:", spellID, tooltipInfo.name)
+                                    end
+                                end
+                            end
                         end
                     end
                     
@@ -134,6 +159,10 @@ function CooldownManager:StartOverlayPolling()
                         if not self.highlightedSpells[spellID] then
                             self.highlightedSpells[spellID] = true
                             self:UpdateSpellHighlight(spellID, true)
+                        end
+                    else
+                        if actionType == "macro" then
+                            print("  FAILED to extract spell ID from macro")
                         end
                     end
                 end
@@ -159,7 +188,26 @@ function CooldownManager:StartOverlayPolling()
                             -- Get spell from macro
                             local macroSpell = GetMacroSpell(id)
                             if macroSpell then
-                                spellID = select(7, C_Spell.GetSpellInfo(macroSpell))
+                                local spellInfo = C_Spell.GetSpellInfo(macroSpell)
+                                if spellInfo then
+                                    spellID = spellInfo.spellID
+                                end
+                            end
+                            
+                            -- If that didn't work, try scanning the macro body
+                            if not spellID then
+                                local macroName, _, macroBody = GetMacroInfo(id)
+                                if macroBody then
+                                    -- Look for #showtooltip spell
+                                    local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
+                                    if tooltipSpell then
+                                        tooltipSpell = strtrim(tooltipSpell)
+                                        local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
+                                        if tooltipInfo then
+                                            spellID = tooltipInfo.spellID
+                                        end
+                                    end
+                                end
                             end
                         end
                         
