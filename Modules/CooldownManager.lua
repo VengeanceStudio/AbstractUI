@@ -100,28 +100,11 @@ function CooldownManager:HookSpellActivationOverlays()
 end
 
 function CooldownManager:StartOverlayPolling()
-    print("DEBUG: Starting AssistedCombatHighlightFrame polling")
-    
-    local debugOnce = false
-    
     -- Poll every 0.3 seconds to check for AssistedCombatHighlightFrame
     self.overlayTimer = C_Timer.NewTicker(0.3, function()
         if not self.db.profile.essential.showAssistedHighlight and 
            not self.db.profile.utility.showAssistedHighlight then
             return
-        end
-        
-        -- Debug once to verify the frame exists
-        if not debugOnce then
-            debugOnce = true
-            print("DEBUG: Checking for AssistedCombatHighlightFrame...")
-            
-            local testButton = _G["DominosActionButton1"] or _G["ActionButton1"]
-            if testButton and testButton.AssistedCombatHighlightFrame then
-                print("  Found AssistedCombatHighlightFrame on button!")
-            else
-                print("  AssistedCombatHighlightFrame NOT found on test button")
-            end
         end
         
         local foundHighlights = {}
@@ -137,7 +120,6 @@ function CooldownManager:StartOverlayPolling()
                         foundHighlights[id] = true
                         
                         if not self.highlightedSpells[id] then
-                            print("DEBUG: Found assisted highlight on DominosActionButton" .. i, "- spellID:", id, C_Spell.GetSpellName(id))
                             self.highlightedSpells[id] = true
                             self:UpdateSpellHighlight(id, true)
                         end
@@ -161,7 +143,6 @@ function CooldownManager:StartOverlayPolling()
                             foundHighlights[id] = true
                             
                             if not self.highlightedSpells[id] then
-                                print("DEBUG: Found assisted highlight on", pattern .. i, "- spellID:", id, C_Spell.GetSpellName(id))
                                 self.highlightedSpells[id] = true
                                 self:UpdateSpellHighlight(id, true)
                             end
@@ -282,27 +263,19 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:UpdateSpellHighlight(spellID, show)
-    print("DEBUG: UpdateSpellHighlight called for spellID:", spellID, "show:", show)
-    
     -- Update Essential Cooldowns
     if self.db.profile.essential.enabled and self.db.profile.essential.showAssistedHighlight then
-        print("  Checking Essential Cooldowns")
         local frame = _G["EssentialCooldownViewer"]
         if frame then
             self:ApplyHighlightToViewer(frame, spellID, show)
-        else
-            print("  EssentialCooldownViewer not found!")
         end
     end
     
     -- Update Utility Cooldowns
     if self.db.profile.utility.enabled and self.db.profile.utility.showAssistedHighlight then
-        print("  Checking Utility Cooldowns")
         local frame = _G["UtilityCooldownViewer"]
         if frame then
             self:ApplyHighlightToViewer(frame, spellID, show)
-        else
-            print("  UtilityCooldownViewer not found!")
         end
     end
 end
@@ -310,23 +283,30 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
-    print("  ApplyHighlightToViewer: Looking for spellID", spellID, "in viewer")
-    local foundCount = 0
-    
     -- Search through child frames to find ones with this spell ID
     for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
-        local frameSpellID = childFrame.spellID 
+        -- Try multiple possible spell ID properties
+        local frameSpellID = childFrame.cooldownID -- Try cooldownID first (seen in error)
+            or childFrame.spellID 
             or childFrame.spellId 
             or (childFrame.spell and childFrame.spell:GetSpellID())
             or (childFrame.GetSpellID and childFrame:GetSpellID())
         
+        -- Safely compare, handling potential taint
+        local isMatch = false
         if frameSpellID then
-            print("    Found frame with spellID:", frameSpellID, C_Spell.GetSpellName(frameSpellID))
+            local success, result = pcall(function() return frameSpellID == spellID end)
+            if success then
+                isMatch = result
+            else
+                -- Tainted comparison, try converting to string
+                local frameIDStr = tostring(frameSpellID)
+                local spellIDStr = tostring(spellID)
+                isMatch = (frameIDStr == spellIDStr)
+            end
         end
         
-        if frameSpellID == spellID then
-            foundCount = foundCount + 1
-            print("    MATCH! Applying highlight, show:", show)
+        if isMatch then
             
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
@@ -371,8 +351,6 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             end
         end
     end
-    
-    print("  ApplyHighlightToViewer: Found", foundCount, "matching frames")
 end
 
 function CooldownManager:RefreshAllHighlights(viewerFrame)
