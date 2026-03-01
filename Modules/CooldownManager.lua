@@ -252,14 +252,28 @@ end
 function CooldownManager:CleanKeybindText(text)
     if not text then return nil end
     
+    -- Debug: Print the raw text and its bytes
+    if text:find("[\128-\255]") then  -- Contains non-ASCII characters
+        print("DEBUG: Raw keybind text:", text)
+        local bytes = ""
+        for i = 1, #text do
+            bytes = bytes .. string.format("%d,", text:byte(i))
+        end
+        print("  Byte sequence:", bytes)
+    end
+    
     -- Remove WoW formatting codes
     text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
     
-    -- Replace Dominos Unicode modifier symbols with text
-    text = text:gsub("⌃", "C-")  -- Ctrl symbol
-    text = text:gsub("⇧", "S-")  -- Shift symbol
-    text = text:gsub("⌥", "A-")  -- Alt symbol
-    text = text:gsub("⌘", "M-")  -- Meta/Command symbol
+    -- Replace Dominos Unicode modifier symbols with text (using byte patterns)
+    -- Dominos might use special UTF-8 characters, try multiple encodings
+    text = text:gsub("[\226][\140][\131]", "C-")  -- ⌃ UTF-8 bytes for Ctrl
+    text = text:gsub("[\226][\135][\167]", "S-")  -- ⇧ UTF-8 bytes for Shift
+    text = text:gsub("[\226][\140][\165]", "A-")  -- ⌥ UTF-8 bytes for Alt
+    text = text:gsub("[\226][\140][\152]", "M-")  -- ⌘ UTF-8 bytes for Meta
+    
+    -- Also try common ASCII representations
+    text = text:gsub("^C%-", "C-"):gsub("^S%-", "S-"):gsub("^A%-", "A-")
     
     return text
 end
@@ -279,7 +293,17 @@ function CooldownManager:GetSpellKeybind(spellID)
             return self:GetActionSlotBinding(actionSlot)
         elseif slotType == "macro" and id then
             -- Check if macro casts this spell
-            local _, macroSpellID = GetMacroSpell(id)
+            local macroName, macroSpellID = GetMacroSpell(id)
+            
+            -- Debug output
+            if spellID == 217832 then  -- Debug for a specific spell
+                print("DEBUG: Found macro at slot", actionSlot, "macro ID:", id)
+                print("  GetMacroSpell returned:", macroName or "nil", macroSpellID or "nil")
+                print("  Looking for spell:", spellName, spellID)
+                local body = GetMacroBody(id)
+                if body then print("  Macro body:", body) end
+            end
+            
             if macroSpellID == spellID then
                 return self:GetActionSlotBinding(actionSlot)
             elseif spellName then
