@@ -920,7 +920,13 @@ end
 local function HookBlizzardPlayerFrame(self)
     if PlayerFrame and not PlayerFrame._AbstractUIHooked then
         hooksecurefunc(PlayerFrame, "Show", function()
-            if self.db and self.db.profile and self.db.profile.showPlayer then PlayerFrame:Hide() end
+            if self.db and self.db.profile and self.db.profile.showPlayer then
+                -- Use a timer to avoid taint issues with protected functions
+                C_Timer.After(0, function()
+                    if InCombatLockdown() then return end
+                    PlayerFrame:Hide()
+                end)
+            end
         end)
         PlayerFrame._AbstractUIHooked = true
     end
