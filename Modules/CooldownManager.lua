@@ -175,14 +175,25 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
+    -- Debug for slot 19
+    if actionSlot == 19 then
+        print("DEBUG: Looking for button displaying action slot 19")
+    end
+    
     -- First, try to find the button that displays this action slot
     -- Check Dominos buttons
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
         if button then
             local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
+            if actionSlot == 19 and i <= 24 then
+                print("  DominosActionButton" .. i .. " action:", buttonAction or "NIL")
+            end
             if buttonAction == actionSlot then
                 -- Found the Dominos button displaying this action slot
+                if actionSlot == 19 then
+                    print("  FOUND: DominosActionButton" .. i .. " displays slot 19")
+                end
                 -- Try CLICK binding first (Dominos style)
                 local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":LeftButton")
                 if clickBinding then
@@ -190,9 +201,13 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
                     if actionSlot == 19 then
-                        print("DEBUG: Slot 19 -> DominosActionButton" .. i .. " -> keybind:", clickBinding)
+                        print("  Keybind:", clickBinding)
                     end
                     return clickBinding
+                else
+                    if actionSlot == 19 then
+                        print("  But GetBindingKey returned NIL for CLICK binding")
+                    end
                 end
             end
         end
