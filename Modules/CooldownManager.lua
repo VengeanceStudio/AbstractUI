@@ -183,48 +183,13 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
             local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
             if buttonAction == actionSlot then
                 -- Found the Dominos button displaying this action slot
-                if actionSlot == 19 then
-                    print("DEBUG: Found DominosActionButton" .. i .. " displays slot 19")
-                    print("  Checking all possible binding formats...")
-                    
-                    -- Try different binding formats
-                    local formats = {
-                        "CLICK DominosActionButton" .. i .. ":LeftButton",
-                        "DominosActionButton" .. i,
-                        button:GetName(),
-                    }
-                    
-                    for _, format in ipairs(formats) do
-                        local test = GetBindingKey(format)
-                        print("    " .. format .. " = " .. (test or "NIL"))
-                    end
-                    
-                    -- Try to find ANY binding that references this button
-                    print("  Searching ALL bindings for button", i)
-                    for k = 1, GetNumBindings() do
-                        local command, cat, key1, key2 = GetBinding(k)
-                        if command and (command:find("DominosActionButton" .. i) or command:find(tostring(buttonAction))) then
-                            print("    Found:", command, "=", key1 or "NIL", key2 or "")
-                        end
-                    end
-                end
-                
-                -- Try CLICK binding
-                local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":LeftButton")
+                -- Dominos uses :HOTKEY for keybindings
+                local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":HOTKEY")
                 if clickBinding then
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
                     return clickBinding
-                end
-                
-                -- Try without CLICK prefix
-                local directBinding = GetBindingKey("DominosActionButton" .. i)
-                if directBinding then
-                    directBinding = directBinding:gsub("SHIFT%-", "S")
-                    directBinding = directBinding:gsub("CTRL%-", "C")
-                    directBinding = directBinding:gsub("ALT%-", "A")
-                    return directBinding
                 end
             end
         end
@@ -281,15 +246,6 @@ function CooldownManager:GetSpellKeybind(spellID)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
-            -- Debug: Show what we found
-            if spellID == 217832 then
-                print("DEBUG: Spell", spellID, "found in slots:", table.concat(slots, ", "))
-                for _, slot in ipairs(slots) do
-                    local binding = self:GetActionSlotBinding(slot)
-                    print("  Slot", slot, "keybind:", binding or "NIL")
-                end
-            end
-            
             -- Return the keybind for the first slot found
             return self:GetActionSlotBinding(slots[1])
         end
