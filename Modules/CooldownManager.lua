@@ -263,10 +263,13 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:UpdateSpellHighlight(spellID, show)
+    print("UpdateSpellHighlight: spellID", spellID, C_Spell.GetSpellName(spellID), "show:", show)
+    
     -- Update Essential Cooldowns
     if self.db.profile.essential.enabled and self.db.profile.essential.showAssistedHighlight then
         local frame = _G["EssentialCooldownViewer"]
         if frame then
+            print("  Updating Essential Cooldowns viewer")
             self:ApplyHighlightToViewer(frame, spellID, show)
         end
     end
@@ -275,6 +278,7 @@ function CooldownManager:UpdateSpellHighlight(spellID, show)
     if self.db.profile.utility.enabled and self.db.profile.utility.showAssistedHighlight then
         local frame = _G["UtilityCooldownViewer"]
         if frame then
+            print("  Updating Utility Cooldowns viewer")
             self:ApplyHighlightToViewer(frame, spellID, show)
         end
     end
@@ -307,17 +311,20 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
         end
         
         if isMatch then
+            print("  MATCH FOUND! spellID:", spellID, "show:", show, "frame:", childFrame:GetName())
             
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
                 if not childFrame.assistedHighlight then
-                    childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 1)
-                    childFrame.assistedHighlight:SetAllPoints(childFrame)
+                    print("    Creating highlight texture...")
+                    childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
+                    childFrame.assistedHighlight:SetAllPoints(childFrame.Icon or childFrame)
                     childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
                     childFrame.assistedHighlight:SetBlendMode("ADD")
                     
                     -- Blue color to match Blizzard's highlight
                     childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 0.8)
+                    print("    Highlight texture created")
                     
                     -- Pulse animation
                     if not childFrame.assistedHighlightAnim then
@@ -335,13 +342,17 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                         alpha2:SetOrder(2)
                         
                         childFrame.assistedHighlightAnim:SetLooping("REPEAT")
+                        print("    Animation created")
                     end
                 end
                 
+                print("    Showing highlight and playing animation")
                 childFrame.assistedHighlight:Show()
                 childFrame.assistedHighlightAnim:Play()
+                print("    Highlight visible:", childFrame.assistedHighlight:IsShown())
             else
                 -- Remove highlight
+                print("    Hiding highlight")
                 if childFrame.assistedHighlight then
                     childFrame.assistedHighlight:Hide()
                 end
