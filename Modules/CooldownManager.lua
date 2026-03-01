@@ -319,29 +319,36 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             local success, err = pcall(function()
                 
                 if show then
-                    -- Add blue glow like Blizzard's assisted highlight
+                    -- Add blue border outline like Blizzard's assisted highlight
                     if not childFrame.assistedHighlight then
-                        -- Use ARTWORK layer with highest sublevel instead of OVERLAY
-                        childFrame.assistedHighlight = childFrame:CreateTexture(nil, "ARTWORK", nil, 100)
+                        -- Create border overlay frame
+                        childFrame.assistedHighlight = CreateFrame("Frame", nil, childFrame)
                         childFrame.assistedHighlight:SetAllPoints(childFrame)
-                        childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
-                        childFrame.assistedHighlight:SetBlendMode("ADD")
+                        childFrame.assistedHighlight:SetFrameLevel(childFrame:GetFrameLevel() + 10)
                         
-                        -- Brighter blue color
-                        childFrame.assistedHighlight:SetVertexColor(0.4, 0.8, 1.0, 1.0)
+                        -- Create the border texture using Blizzard's spell activation texture
+                        childFrame.assistedHighlightTex = childFrame.assistedHighlight:CreateTexture(nil, "OVERLAY", nil, 7)
+                        childFrame.assistedHighlightTex:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+                        childFrame.assistedHighlightTex:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+                        childFrame.assistedHighlightTex:SetPoint("TOPLEFT", childFrame, "TOPLEFT", -10, 10)
+                        childFrame.assistedHighlightTex:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", 10, -10)
+                        
+                        -- Blue color
+                        childFrame.assistedHighlightTex:SetVertexColor(0.4, 0.7, 1.0)
+                        childFrame.assistedHighlightTex:SetBlendMode("ADD")
                         
                         -- Pulse animation
                         if not childFrame.assistedHighlightAnim then
-                            childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
+                            childFrame.assistedHighlightAnim = childFrame.assistedHighlightTex:CreateAnimationGroup()
                             local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
-                            alpha1:SetFromAlpha(0.6)
+                            alpha1:SetFromAlpha(0.7)
                             alpha1:SetToAlpha(1.0)
                             alpha1:SetDuration(0.5)
                             alpha1:SetOrder(1)
                             
                             local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
                             alpha2:SetFromAlpha(1.0)
-                            alpha2:SetToAlpha(0.6)
+                            alpha2:SetToAlpha(0.7)
                             alpha2:SetDuration(0.5)
                             alpha2:SetOrder(2)
                             
@@ -350,7 +357,6 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                     end
                     
                     childFrame.assistedHighlight:Show()
-                    childFrame.assistedHighlight:SetDrawLayer("ARTWORK", 100)
                     childFrame.assistedHighlightAnim:Play()
                 else
                     -- Remove highlight
