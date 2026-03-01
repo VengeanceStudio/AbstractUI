@@ -1362,7 +1362,22 @@ function AbstractOptionsPanel:CreateDescription(parent, option, xOffset, yOffset
     local desc = parent:CreateFontString(nil, "OVERLAY")
     desc:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, -yOffset)
     desc:SetPoint("RIGHT", parent, "RIGHT", -20, 0)
-    desc:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+    
+    -- Set font size based on option.fontSize if provided
+    local fontSize = 12  -- default
+    if option.fontSize == "large" then
+        fontSize = 16
+    elseif option.fontSize == "medium" then
+        fontSize = 14
+    elseif option.fontSize == "small" then
+        fontSize = 10
+    elseif option.fontSize == "huge" then
+        fontSize = 20
+    elseif type(option.fontSize) == "number" then
+        fontSize = option.fontSize
+    end
+    
+    desc:SetFont("Fonts\\FRIZQT__.TTF", fontSize, "")
     desc:SetText(EvaluateValue(option.name) or "")
     desc:SetTextColor(ColorPalette:GetColor('text-primary'))
     desc:SetJustifyH("LEFT")
