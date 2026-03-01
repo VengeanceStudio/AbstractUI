@@ -300,8 +300,19 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
             frameSpellID = childFrame.auraSpellID
         end
         
-        -- Compare spell IDs
-        if frameSpellID and frameSpellID == spellID then
+        -- Safely compare spell IDs (handles taint)
+        local isMatch = false
+        if frameSpellID then
+            -- Use pcall to handle potential taint in comparison
+            local success, result = pcall(function() 
+                return frameSpellID == spellID 
+            end)
+            if success and result then
+                isMatch = true
+            end
+        end
+        
+        if isMatch then
             
             if show then
                 -- Add blue glow like Blizzard's assisted highlight
