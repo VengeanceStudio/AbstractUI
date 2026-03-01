@@ -248,14 +248,35 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
         childFrame.customKeybind:SetFont(fontPath, math.max(8, db.fontSize - 4), db.fontFlag)
         childFrame.customKeybind:SetTextColor(0.7, 0.7, 0.7, 1)
         
-        -- Get the spell ID - try multiple possible properties
-        local spellID = childFrame.spellID or childFrame.spellId or (childFrame.spell and childFrame.spell:GetSpellID())
+        -- Debug: dump all properties of the first frame only once
+        if not self.dumpedFrame then
+            print("|cff00ff00[CooldownManager]|r Dumping childFrame properties:")
+            for k, v in pairs(childFrame) do
+                if type(v) ~= "function" and type(v) ~= "table" then
+                    print("  ", k, "=", tostring(v))
+                elseif type(v) == "table" and k ~= "0" then
+                    print("  ", k, "= [table]")
+                end
+            end
+            
+            -- Check specific spell-related methods
+            if childFrame.GetSpellID then
+                print("|cff00ff00[CooldownManager]|r Frame has GetSpellID method")
+                local spellID = childFrame:GetSpellID()
+                print("|cff00ff00[CooldownManager]|r GetSpellID() returned:", spellID)
+            end
+            
+            self.dumpedFrame = true
+        end
         
-        -- Debug: print what we find
+        -- Get the spell ID - try multiple possible properties
+        local spellID = childFrame.spellID 
+            or childFrame.spellId 
+            or (childFrame.spell and childFrame.spell:GetSpellID())
+            or (childFrame.GetSpellID and childFrame:GetSpellID())
+        
         if spellID then
-            print("|cff00ff00[CooldownManager]|r Found spellID:", spellID)
             local keybind = self:GetSpellKeybind(spellID)
-            print("|cff00ff00[CooldownManager]|r Keybind for spell", spellID, ":", keybind or "none")
             if keybind then
                 childFrame.customKeybind:SetText(keybind)
                 childFrame.customKeybind:Show()
@@ -264,7 +285,6 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
                 childFrame.customKeybind:Hide()
             end
         else
-            print("|cffff6b6b[CooldownManager]|r No spellID found on frame")
             childFrame.customKeybind:SetText("")
             childFrame.customKeybind:Hide()
         end
