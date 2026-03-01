@@ -250,16 +250,32 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
+    -- Debug spells
+    local debugSpells = {179057, 202137, 187827, 207684, 258920, 217832}
+    local isDebugSpell = false
+    for _, id in ipairs(debugSpells) do
+        if id == spellID then
+            isDebugSpell = true
+            break
+        end
+    end
+    
     -- Use WoW's C_ActionBar API to find all action slots containing this spell
     -- This works with macros AND is addon-agnostic (works with any action bar addon)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
-        if slots and #slots > 0 then
-            -- Debug: Show all slots for spell 217832
-            if spellID == 217832 then
-                print("DEBUG: Spell", spellID, "found in", #slots, "slots:", table.concat(slots, ", "))
+        
+        if isDebugSpell then
+            local spellName = C_Spell.GetSpellName(spellID)
+            if slots and #slots > 0 then
+                print("DEBUG:", spellName, "(" .. spellID .. ") found in", #slots, "slots:", table.concat(slots, ", "))
+            else
+                print("DEBUG:", spellName, "(" .. spellID .. ") NOT FOUND in any action slots")
+                return nil
             end
-            
+        end
+        
+        if slots and #slots > 0 then
             -- If spell is in multiple slots, try to find one with a keybind
             -- Prefer keybinds with modifiers (Ctrl, Shift, Alt) over plain keys
             local bestSlot = nil
@@ -269,7 +285,7 @@ function CooldownManager:GetSpellKeybind(spellID)
             for _, slot in ipairs(slots) do
                 local keybind = self:GetActionSlotBinding(slot)
                 
-                if spellID == 217832 then
+                if isDebugSpell then
                     print("  Slot", slot, "keybind:", keybind or "NIL")
                 end
                 
@@ -279,10 +295,6 @@ function CooldownManager:GetSpellKeybind(spellID)
                     if keybind:find("C") then score = score + 3 end  -- Ctrl
                     if keybind:find("A") then score = score + 2 end  -- Alt  
                     if keybind:find("S") then score = score + 1 end  -- Shift
-                    
-                    if spellID == 217832 then
-                        print("    Score:", score, "Best so far:", bestScore)
-                    end
                     
                     if score > bestScore or (score == bestScore and not bestKeybind) then
                         bestScore = score
@@ -295,7 +307,7 @@ function CooldownManager:GetSpellKeybind(spellID)
                 end
             end
             
-            if spellID == 217832 then
+            if isDebugSpell then
                 print("  RESULT: Using slot", bestSlot, "with keybind:", bestKeybind or "NIL")
             end
             
