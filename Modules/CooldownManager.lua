@@ -321,27 +321,28 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                 if show then
                     -- Add blue glow like Blizzard's assisted highlight
                     if not childFrame.assistedHighlight then
-                        childFrame.assistedHighlight = childFrame:CreateTexture(nil, "OVERLAY", nil, 7)
+                        -- Use ARTWORK layer with highest sublevel instead of OVERLAY
+                        childFrame.assistedHighlight = childFrame:CreateTexture(nil, "ARTWORK", nil, 100)
                         childFrame.assistedHighlight:SetAllPoints(childFrame)
                         childFrame.assistedHighlight:SetTexture("Interface\\Cooldown\\star4")
                         childFrame.assistedHighlight:SetBlendMode("ADD")
                         
-                        -- Blue color to match Blizzard's highlight
-                        childFrame.assistedHighlight:SetVertexColor(0.3, 0.7, 1.0, 1.0)
+                        -- Brighter blue color
+                        childFrame.assistedHighlight:SetVertexColor(0.4, 0.8, 1.0, 1.0)
                         
                         -- Pulse animation
                         if not childFrame.assistedHighlightAnim then
                             childFrame.assistedHighlightAnim = childFrame.assistedHighlight:CreateAnimationGroup()
                             local alpha1 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
-                            alpha1:SetFromAlpha(0.5)
+                            alpha1:SetFromAlpha(0.6)
                             alpha1:SetToAlpha(1.0)
-                            alpha1:SetDuration(0.6)
+                            alpha1:SetDuration(0.5)
                             alpha1:SetOrder(1)
                             
                             local alpha2 = childFrame.assistedHighlightAnim:CreateAnimation("Alpha")
                             alpha2:SetFromAlpha(1.0)
-                            alpha2:SetToAlpha(0.5)
-                            alpha2:SetDuration(0.6)
+                            alpha2:SetToAlpha(0.6)
+                            alpha2:SetDuration(0.5)
                             alpha2:SetOrder(2)
                             
                             childFrame.assistedHighlightAnim:SetLooping("REPEAT")
@@ -349,6 +350,7 @@ function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
                     end
                     
                     childFrame.assistedHighlight:Show()
+                    childFrame.assistedHighlight:SetDrawLayer("ARTWORK", 100)
                     childFrame.assistedHighlightAnim:Play()
                 else
                     -- Remove highlight
