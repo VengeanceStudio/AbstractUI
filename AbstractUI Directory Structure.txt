@@ -14,11 +14,13 @@ AbstractUI/
 │       └── Atlas/                          # Atlas texture files
 │
 ├── Framework/                              # Core framework systems
+│   ├── AbstractOptionsPanel.lua            # Custom options panel framework (zero AceGUI dependency)
 │   ├── Atlas.lua                           # Texture atlas management
 │   ├── ColorPalette.lua                    # Theme color system
 │   ├── FontKit.lua                         # Font management system
 │   ├── FrameFactory.lua                    # Frame creation utilities
 │   ├── LayoutHelper.lua                    # Layout positioning helpers
+│   ├── ScrollFrame.lua                     # Scrollable frame container
 │   └── README.md                           # Framework documentation
 │
 ├── Themes/                                 # Color theme definitions
@@ -43,27 +45,17 @@ AbstractUI/
 │   ├── AbstractWarrior.lua                 # Warrior class theme (tan)
 │   └── README.md                           # Theme documentation
 │
-├── Widgets/                                # Custom AceGUI widgets
-│   ├── AbstractButton.lua                  # Styled button widget
-│   ├── AbstractCheckBox.lua                # Styled checkbox widget
-│   ├── AbstractColorPicker.lua             # Color picker widget
-│   ├── AbstractDropdown.lua                # Styled dropdown widget
-│   ├── AbstractDropdown-Pullout.lua        # Dropdown pullout menu
-│   ├── AbstractEditBox.lua                 # Styled text input widget
-│   ├── AbstractHeading.lua                 # Heading text widget
-│   ├── AbstractInlineGroup.lua             # Inline group container
-│   ├── AbstractMultiLineEditBox.lua        # Multi-line text input widget
-│   ├── AbstractSlider.lua                  # Styled slider widget
-│   └── AbstractTabGroup.lua                # Tab group container
-│
 ├── Modules/                                # Core addon modules
 │   ├── ActionBars.lua                      # Action bar customization & skinning
 │   ├── BrokerBar.lua                       # Info bars & LibDataBroker widgets system
+│   ├── CastBar.lua                         # Player cast bar module
 │   ├── Chat.lua                            # Chat frame enhancements
-│   ├── Cooldowns.lua                       # Cooldown timer manager (WIP)
+│   ├── CooldownManager.lua                 # Cooldown timer display & management
 │   ├── FrameworkDemo.lua                   # Framework demo module
+│   ├── Mailbox.lua                         # Mailbox enhancements
 │   ├── Maps.lua                            # Minimap customization
 │   ├── Movable.lua                         # Frame positioning & movement system
+│   ├── ResourceBars.lua                    # Class resource bars (combo points, runes, etc.)
 │   ├── Setup.lua                           # First-time setup wizard
 │   ├── Skins.lua                           # Skin system (Abstract/Blizzard/Glass/Flat)
 │   ├── Tooltips.lua                        # Tooltip styling & customization
@@ -203,9 +195,10 @@ AbstractUI/
 SUMMARY
 ================================================================================
 
-Total Modules: 13
-  - ActionBars, BrokerBar (Info Bars), Chat, Cooldowns, FrameworkDemo, Maps, 
-    Movable, Setup, Skins, Tooltips, Tweaks, UIButtons, UnitFrames
+Total Modules: 15
+  - ActionBars, BrokerBar (Info Bars), CastBar, Chat, CooldownManager, 
+    FrameworkDemo, Mailbox, Maps, Movable, ResourceBars, Setup, Skins, 
+    Tooltips, Tweaks, UIButtons, UnitFrames
 
 Total Unit Frame Types: 6
   - Player, Target, Target of Target, Pet, Focus, Boss (1-5)
@@ -227,14 +220,14 @@ Built-in Themes (19):
     AbstractPaladin, AbstractPriest, AbstractRogue, AbstractShaman, AbstractWarlock,
     AbstractWarrior
 
-Custom Widgets (11):
-  - AbstractButton, AbstractCheckBox, AbstractColorPicker, AbstractDropdown,
-    AbstractEditBox, AbstractHeading, AbstractInlineGroup, AbstractMultiLineEditBox,
-    AbstractSlider, AbstractTabGroup
-
-Framework Systems (5):
-  - Atlas (texture management), ColorPalette (theme colors), FontKit (fonts),
-    FrameFactory (frame creation), LayoutHelper (positioning)
+Framework Systems (7):
+  - AbstractOptionsPanel (custom options UI with zero AceGUI dependency)
+  - Atlas (texture management)
+  - ColorPalette (theme colors)
+  - FontKit (fonts)
+  - FrameFactory (frame creation)
+  - LayoutHelper (positioning)
+  - ScrollFrame (scrollable containers)
 
 Supported Skins: 4
   - Abstract (default), Blizzard, Glass, Flat
