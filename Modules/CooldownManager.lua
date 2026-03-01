@@ -241,16 +241,21 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
             childFrame.customKeybind = childFrame:CreateFontString(nil, "OVERLAY")
             childFrame.customKeybind:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 2, -2)
             childFrame.customKeybind:SetJustifyH("LEFT")
+            childFrame.customKeybind:SetDrawLayer("OVERLAY", 7)  -- High sublayer to be on top
         end
         
         local fontPath = LSM:Fetch("font", db.font)
         childFrame.customKeybind:SetFont(fontPath, math.max(8, db.fontSize - 4), db.fontFlag)
         childFrame.customKeybind:SetTextColor(0.7, 0.7, 0.7, 1)
         
-        -- Get the spell ID and find its keybind
-        local spellID = childFrame.spellID
+        -- Get the spell ID - try multiple possible properties
+        local spellID = childFrame.spellID or childFrame.spellId or (childFrame.spell and childFrame.spell:GetSpellID())
+        
+        -- Debug: print what we find
         if spellID then
+            print("|cff00ff00[CooldownManager]|r Found spellID:", spellID)
             local keybind = self:GetSpellKeybind(spellID)
+            print("|cff00ff00[CooldownManager]|r Keybind for spell", spellID, ":", keybind or "none")
             if keybind then
                 childFrame.customKeybind:SetText(keybind)
                 childFrame.customKeybind:Show()
@@ -259,6 +264,7 @@ function CooldownManager:SkinBlizzardFrame(childFrame, displayType)
                 childFrame.customKeybind:Hide()
             end
         else
+            print("|cffff6b6b[CooldownManager]|r No spellID found on frame")
             childFrame.customKeybind:SetText("")
             childFrame.customKeybind:Hide()
         end
