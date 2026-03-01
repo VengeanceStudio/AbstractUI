@@ -193,46 +193,8 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         end
     end
     
-    -- Get hotkey text from the button itself
-    if button then
-        -- Try the HotKey fontstring (most common location)
-        local hotkeyText = button.HotKey or _G[button:GetName() .. "HotKey"]
-        if hotkeyText and hotkeyText.GetText then
-            local hotkey = hotkeyText:GetText()
-            
-            -- Debug: Check all regions on the button to find the key
-            if hotkey and hotkey:find("[\128-\255]") then
-                print("DEBUG Button hotkey structure for", button:GetName())
-                print("  HotKey text:", hotkey)
-                for i = 1, button:GetNumRegions() do
-                    local region = select(i, button:GetRegions())
-                    if region and region.GetText then
-                        local text = region:GetText()
-                        if text and text ~= "" then
-                            print("  Region", i, "text:", text)
-                        end
-                    end
-                end
-            end
-            
-            if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
-                -- Clean up the hotkey text
-                hotkey = self:CleanKeybindText(hotkey)
-                return hotkey
-            end
-        end
-        
-        -- Try GetHotkey method if available
-        if button.GetHotkey then
-            local hotkey = button:GetHotkey()
-            if hotkey and hotkey ~= "" and hotkey ~= "NONE" then
-                hotkey = self:CleanKeybindText(hotkey)
-                return hotkey
-            end
-        end
-    end
-    
-    -- Fallback to standard WoW keybinding lookup
+    -- For Dominos or other action bar addons, use WoW's binding database directly
+    -- Get all bindings for this action slot
     local bindingName
     if actionSlot >= 1 and actionSlot <= 12 then
         bindingName = "ACTIONBUTTON" .. actionSlot
@@ -254,8 +216,10 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
+    -- Get the first keybind for this action
     local binding = GetBindingKey(bindingName)
     if binding then
+        -- Shorten modifier names to save space
         binding = binding:gsub("SHIFT%-", "S")
         binding = binding:gsub("CTRL%-", "C")
         binding = binding:gsub("ALT%-", "A")
@@ -268,28 +232,10 @@ end
 function CooldownManager:CleanKeybindText(text)
     if not text then return nil end
     
-    local originalText = text
-    
     -- Remove WoW formatting codes
     text = text:gsub("|c........", ""):gsub("|r", ""):gsub("|T.-|t", "")
     
-    -- Debug: check for non-ASCII
-    if text:find("[\128-\255]") then
-        local bytes = ""
-        for i = 1, #text do
-            bytes = bytes .. string.format("%d,", text:byte(i))
-        end
-        print("DEBUG Keybind: Original=", originalText, "Cleaned=", text, "Bytes=", bytes)
-    end
-    
-    -- Replace Dominos modifier symbols while preserving the rest of the text
-    -- Bullet symbol (\u25cf) = bytes 226,151,143 - used for Ctrl
-    local newText = text:gsub("[\226][\151][\143](.)", "C%1")
-    if newText ~= text then
-        print("  After replacement:", newText)
-    end
-    
-    return newText
+    return text
 end
 
 function CooldownManager:GetSpellKeybind(spellID)
@@ -327,43 +273,38 @@ function CooldownManager:GetSpellKeybind(spellID)
         end
     end
     
-    -- Second approach: Check Dominos buttons directly
-    if spellID == 217832 then print("DEBUG: Checking Dominos buttons for spell", spellID) end
-    
+    -- Second approach: Check Dominos buttons directly  
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
         if button then
-            -- Check what action this button has
-            if button.GetAction then
-                local actionType, actionID = button:GetAction()
-                if spellID == 217832 and (actionType or actionID) then
-                    print("  Button", i, "action type=", actionType or "nil", "ID=", actionID or "nil")
-                end
-                if actionType == "spell" and actionID == spellID then
-                    return self:GetActionSlotBinding(i)
-                elseif actionType == "macro" and actionID then
-                    -- Check if the macro casts our spell
-                    local macroName, macroSpellID = GetMacroSpell(actionID)
-                    if macroSpellID == spellID then
-                        return self:GetActionSlotBinding(i)
-                    elseif spellName then
-                        local macroBody = GetMacroBody(actionID)
-                        if macroBody and (macroBody:lower():find(spellName:lower(), 1, true) or
-                           macroBody:find("spell:" .. spellID)) then
-                            return self:GetActionSlotBinding(i)
-                        end
-                    end
-                end
-            end
-            
-            -- Also check if GetSpellID works (some addons override this)
+            -- Check if GetSpellID works (some addons override this)
             if button.GetSpellID then
                 local buttonSpellID = button:GetSpellID()
                 if spellID == 217832 and buttonSpellID then
-                    print("  Button", i, "GetSpellID returned", buttonSpellID)
+                    print("DEBUG: DominosActionButton", i, "GetSpellID returned", buttonSpellID)
                 end
                 if buttonSpellID == spellID then
                     return self:GetActionSlotBinding(i)
+                end
+            end
+        end
+    end
+    
+    -- Fallback: Check actual button actions via HasAction
+    for i = 1, 180 do
+        if HasAction(i) then
+            local actionText = GetActionText(i)
+            local actionTexture = GetActionTexture(i)
+            if spellID == 217832 then
+                print("DEBUG: Slot", i, "has action, text=", actionText or "nil", "texture=", actionTexture or "nil")
+            end
+            
+            -- Try to get spell from action slot
+            if C_ActionBar and C_ActionBar.FindSpellActionButtons then
+                local slots = C_ActionBar.FindSpellActionButtons(spellID)
+                if slots and #slots > 0 then
+                    print("DEBUG: Found spell in action slots:", table.concat(slots, ","))
+                    return self:GetActionSlotBinding(slots[1])
                 end
             end
         end
