@@ -175,28 +175,10 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- First, check if any Dominos button is showing this action slot
-    for i = 1, 180 do
-        local button = _G["DominosActionButton" .. i]
-        if button then
-            -- Check if this Dominos button is mapped to our action slot
-            local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
-            if buttonAction == actionSlot then
-                -- Found the Dominos button for this action slot - use WoW's API for its keybind
-                local bindingName = "CLICK DominosActionButton" .. i .. ":LeftButton"
-                local binding = GetBindingKey(bindingName)
-                if binding then
-                    binding = binding:gsub("SHIFT%-", "S")
-                    binding = binding:gsub("CTRL%-", "C")
-                    binding = binding:gsub("ALT%-", "A")
-                    return binding
-                end
-            end
-        end
-    end
-    
-    -- Fall back to standard Blizzard action bar bindings
+    -- Map action slots to their standard WoW keybinding names
+    -- This works regardless of action bar addon (Dominos, Bartender, ElvUI, etc.)
     local bindingName
+    
     if actionSlot >= 1 and actionSlot <= 12 then
         bindingName = "ACTIONBUTTON" .. actionSlot
     elseif actionSlot >= 13 and actionSlot <= 24 then
@@ -217,7 +199,6 @@ function CooldownManager:GetActionSlotBinding(actionSlot)
         bindingName = "ACTIONBUTTON" .. actionSlot
     end
     
-    -- Get the first keybind for this action
     local binding = GetBindingKey(bindingName)
     if binding then
         -- Shorten modifier names to save space
@@ -242,70 +223,13 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID then return nil end
     
-    -- For Dominos users: Check each Dominos button to see if it shows this spell
-    for i = 1, 120 do
-        local button = _G["DominosActionButton" .. i]
-        if button then
-            local actionSlot = button.action or (button.GetAttribute and button:GetAttribute("action"))
-            if actionSlot and HasAction(actionSlot) then
-                -- Check if this action slot contains our spell using WoW's API
-                if C_ActionBar and C_ActionBar.FindSpellActionButtons then
-                    local slots = C_ActionBar.FindSpellActionButtons(spellID)
-                    if slots then
-                        for _, slot in ipairs(slots) do
-                            if slot == actionSlot then
-                                -- This Dominos button shows our spell, get its keybind
-                                local bindingName = "CLICK DominosActionButton" .. i .. ":LeftButton"
-                                local binding = GetBindingKey(bindingName)
-                                if binding then
-                                    binding = binding:gsub("SHIFT%-", "S")
-                                    binding = binding:gsub("CTRL%-", "C")
-                                    binding = binding:gsub("ALT%-", "A")
-                                    return binding
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- Fallback for standard Blizzard action bars
+    -- Use WoW's C_ActionBar API to find all action slots containing this spell
+    -- This works with macros AND is addon-agnostic (works with any action bar addon)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         if slots and #slots > 0 then
+            -- Return the keybind for the first slot found
             return self:GetActionSlotBinding(slots[1])
-        end
-    end
-    
-    -- Manual search as final fallback
-    local spellName = C_Spell.GetSpellName(spellID)
-    
-    for actionSlot = 1, 180 do
-        local slotType, id, subType = GetActionInfo(actionSlot)
-        
-        if slotType == "spell" and id == spellID then
-            return self:GetActionSlotBinding(actionSlot)
-        elseif slotType == "macro" and id and id <= 1000 then
-            local macroName, macroSpellID = GetMacroSpell(id)
-            
-            if macroSpellID == spellID then
-                return self:GetActionSlotBinding(actionSlot)
-            elseif spellName then
-                local macroBody = GetMacroBody(id)
-                if macroBody then
-                    if macroBody:lower():find(spellName:lower(), 1, true) or
-                       macroBody:find("spell:" .. spellID) then
-                        return self:GetActionSlotBinding(actionSlot)
-                    end
-                end
-            end
-        elseif slotType == "item" and id then
-            local itemSpellID = C_Item.GetItemSpell(id)
-            if itemSpellID == spellID then
-                return self:GetActionSlotBinding(actionSlot)
-            end
         end
     end
     
