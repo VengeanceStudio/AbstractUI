@@ -147,7 +147,6 @@ function Maps:SetupMinimapPosition()
     -- Hook MinimapCluster.Layout to reapply after EditMode finishes
     if MinimapCluster.Layout then
         hooksecurefunc(MinimapCluster, "Layout", function()
-            print("|cffff00ff[AbstractUI Maps]|r MinimapCluster.Layout called")
             -- Wait for EditMode to finish all its positioning
             C_Timer.After(0.05, function()
                 Maps:ApplyMinimapOffset()
@@ -157,7 +156,6 @@ function Maps:SetupMinimapPosition()
     
     -- Hook MinimapCluster SetPoint to reapply when cluster moves
     hooksecurefunc(MinimapCluster, "SetPoint", function(frame, point, relativeTo, relativePoint, x, y)
-        print("|cffff00ff[AbstractUI Maps]|r MinimapCluster.SetPoint called:", point, relativeTo and relativeTo:GetName() or "nil", relativePoint, x, y)
         -- Reapply after cluster positioning settles
         C_Timer.After(0.05, function()
             Maps:ApplyMinimapOffset()
@@ -166,7 +164,6 @@ function Maps:SetupMinimapPosition()
     
     -- Override Minimap.Layout to use our custom positioning
     Minimap.Layout = function()
-        print("|cff00ff00[AbstractUI Maps]|r Minimap.Layout called")
         Maps:ApplyMinimapOffset()
     end
     
@@ -176,7 +173,6 @@ end
 
 function Maps:ApplyMinimapOffset()
     local db = self.db.profile
-    print("|cff00ff00[AbstractUI Maps]|r ApplyMinimapOffset - offsetX:", db.offsetX, "offsetY:", db.offsetY)
     Minimap:ClearAllPoints()
     -- Anchor to UIParent instead of MinimapCluster to avoid EditMode interference
     Minimap:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", db.offsetX, db.offsetY)
