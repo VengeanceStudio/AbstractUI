@@ -175,39 +175,56 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownManager:GetActionSlotBinding(actionSlot)
-    -- Debug for slot 19
-    if actionSlot == 19 then
-        print("DEBUG: Looking for button displaying action slot 19")
-    end
-    
     -- First, try to find the button that displays this action slot
     -- Check Dominos buttons
     for i = 1, 180 do
         local button = _G["DominosActionButton" .. i]
         if button then
             local buttonAction = button.action or (button.GetAttribute and button:GetAttribute("action"))
-            if actionSlot == 19 and i <= 24 then
-                print("  DominosActionButton" .. i .. " action:", buttonAction or "NIL")
-            end
             if buttonAction == actionSlot then
                 -- Found the Dominos button displaying this action slot
                 if actionSlot == 19 then
-                    print("  FOUND: DominosActionButton" .. i .. " displays slot 19")
+                    print("DEBUG: Found DominosActionButton" .. i .. " displays slot 19")
+                    print("  Checking all possible binding formats...")
+                    
+                    -- Try different binding formats
+                    local formats = {
+                        "CLICK DominosActionButton" .. i .. ":LeftButton",
+                        "DominosActionButton" .. i,
+                        button:GetName(),
+                    }
+                    
+                    for _, format in ipairs(formats) do
+                        local test = GetBindingKey(format)
+                        print("    " .. format .. " = " .. (test or "NIL"))
+                    end
+                    
+                    -- Try to find ANY binding that references this button
+                    print("  Searching ALL bindings for button", i)
+                    for k = 1, GetNumBindings() do
+                        local command, cat, key1, key2 = GetBinding(k)
+                        if command and (command:find("DominosActionButton" .. i) or command:find(tostring(buttonAction))) then
+                            print("    Found:", command, "=", key1 or "NIL", key2 or "")
+                        end
+                    end
                 end
-                -- Try CLICK binding first (Dominos style)
+                
+                -- Try CLICK binding
                 local clickBinding = GetBindingKey("CLICK DominosActionButton" .. i .. ":LeftButton")
                 if clickBinding then
                     clickBinding = clickBinding:gsub("SHIFT%-", "S")
                     clickBinding = clickBinding:gsub("CTRL%-", "C")
                     clickBinding = clickBinding:gsub("ALT%-", "A")
-                    if actionSlot == 19 then
-                        print("  Keybind:", clickBinding)
-                    end
                     return clickBinding
-                else
-                    if actionSlot == 19 then
-                        print("  But GetBindingKey returned NIL for CLICK binding")
-                    end
+                end
+                
+                -- Try without CLICK prefix
+                local directBinding = GetBindingKey("DominosActionButton" .. i)
+                if directBinding then
+                    directBinding = directBinding:gsub("SHIFT%-", "S")
+                    directBinding = directBinding:gsub("CTRL%-", "C")
+                    directBinding = directBinding:gsub("ALT%-", "A")
+                    return directBinding
                 end
             end
         end
