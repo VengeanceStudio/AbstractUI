@@ -236,22 +236,35 @@ function FrameFactory:CreateCheckbox(parent, size)
     checkbox.borderColor = {ColorPalette:GetColor("primary")}
     checkbox.checkColor = {ColorPalette:GetColor("primary")}
     
-    -- Checkmark symbol
-    checkbox.check = checkbox:CreateFontString(nil, "ARTWORK")
-    checkbox.check:SetFont(FontKit:GetFont("primary"), (size or 16) - 2, "OUTLINE")
-    checkbox.check:SetPoint("CENTER", 0, 1)
-    checkbox.check:SetText("✓")
-    checkbox.check:SetTextColor(unpack(checkbox.checkColor))
-    checkbox.check:Hide()
+    -- Checkmark made from two line textures forming a check shape
+    local checkSize = (size or 16) - 6
+    
+    -- Short stroke (bottom left part of check)
+    checkbox.checkLine1 = checkbox:CreateTexture(nil, "ARTWORK")
+    checkbox.checkLine1:SetSize(2, checkSize * 0.4)
+    checkbox.checkLine1:SetPoint("BOTTOMLEFT", checkbox, "CENTER", -checkSize * 0.3, -checkSize * 0.15)
+    checkbox.checkLine1:SetColorTexture(unpack(checkbox.checkColor))
+    checkbox.checkLine1:SetRotation(math.rad(45))
+    checkbox.checkLine1:Hide()
+    
+    -- Long stroke (bottom right part of check)
+    checkbox.checkLine2 = checkbox:CreateTexture(nil, "ARTWORK")
+    checkbox.checkLine2:SetSize(2, checkSize * 0.8)
+    checkbox.checkLine2:SetPoint("BOTTOMLEFT", checkbox, "CENTER", -checkSize * 0.15, -checkSize * 0.25)
+    checkbox.checkLine2:SetColorTexture(unpack(checkbox.checkColor))
+    checkbox.checkLine2:SetRotation(math.rad(-45))
+    checkbox.checkLine2:Hide()
     
     checkbox.checked = false
     
     function checkbox:SetChecked(checked)
         self.checked = checked
         if checked then
-            self.check:Show()
+            self.checkLine1:Show()
+            self.checkLine2:Show()
         else
-            self.check:Hide()
+            self.checkLine1:Hide()
+            self.checkLine2:Hide()
         end
     end
     
