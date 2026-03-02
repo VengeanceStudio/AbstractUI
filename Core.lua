@@ -69,6 +69,7 @@ function AbstractUI:OnInitialize()
     self:RegisterChatCommand("demo", "OpenDemo")
     self:RegisterChatCommand("auimemory", "ToggleMemoryDebug")
     self:RegisterChatCommand("auigc", "ForceGarbageCollection")
+    self:RegisterChatCommand("addonsort", "TestAddonSort")
 end
 
 function AbstractUI:OnEnable()
@@ -247,6 +248,17 @@ function AbstractUI:OpenDemo()
         demo:Toggle()
     else
         self:Print("Framework Demo module not loaded.")
+    end
+end
+
+function AbstractUI:TestAddonSort()
+    print("|cff9482c9AbstractUI:|r Testing addon sort button creation...")
+    local tweaks = self:GetModule("Tweaks", true)
+    if tweaks then
+        tweaks:SetupAddonListSorting()
+        tweaks:CreateAddonSortButton()
+    else
+        print("|cffff0000AbstractUI:|r Tweaks module not loaded!")
     end
 end
 

@@ -103,6 +103,17 @@ function Tweaks:OnDBReady()
     
     -- Apply quest frame scaling on load
     self:ApplyQuestFrameScale()
+    
+    -- Try to setup addon list sorting
+    C_Timer.After(2, function()
+        self:SetupAddonListSorting()
+    end)
+    C_Timer.After(5, function()
+        self:SetupAddonListSorting()
+    end)
+    C_Timer.After(10, function()
+        self:SetupAddonListSorting()
+    end)
 end
 
 function Tweaks:UPDATE_INVENTORY_DURABILITY()
@@ -244,35 +255,46 @@ function Tweaks:SetupAddonListSorting()
 end
 
 function Tweaks:CreateAddonSortButton()
+    print("|cff9482c9AbstractUI:|r CreateAddonSortButton called")
+    
     -- Don't create if it already exists
-    if self.addonSortButton then 
-        print("|cff9482c9AbstractUI:|r Sort button already exists, showing it...")
-        -- Just update its checked state and make sure it's visible
+    if self.addonSortButton and self.addonSortButton:IsShown() then 
+        print("|cff9482c9AbstractUI:|r Sort button already exists and is shown")
         self.addonSortButton:SetChecked(self.db.profile.addonListSortByName)
-        self.addonSortButton:Show()
         return 
     end
     
     local addonFrame = AddonList or _G["AddonList"] or _G["AddOnList"]
     if not addonFrame then 
-        print("|cff9482c9AbstractUI:|r ERROR: Cannot find addon list frame!")
+        print("|cffff0000AbstractUI:|r ERROR: Cannot find addon list frame!")
         return 
     end
     
-    print("|cff9482c9AbstractUI:|r Creating sort button on frame: " .. (addonFrame:GetName() or "Unknown"))
+    print("|cff00ff00AbstractUI:|r Found addon frame: " .. tostring(addonFrame:GetName()))
+    
+    -- Destroy old button if it exists but isn't shown
+    if self.addonSortButton then
+        self.addonSortButton:Hide()
+        self.addonSortButton = nil
+    end
     
     local button = CreateFrame("CheckButton", "AbstractUI_AddonSortButton", UIParent, "InterfaceOptionsCheckButtonTemplate")
-    -- Position relative to the addon frame
-    button:SetPoint("BOTTOMLEFT", addonFrame, "BOTTOMLEFT", 20, 45)
-    button:SetSize(26, 26)
-    button:SetFrameStrata("DIALOG")
-    button:SetFrameLevel(1000)
+    -- Position relative to the addon frame, much lower to be visible
+    button:SetPoint("TOP", addonFrame, "BOTTOM", 0, -10)
+    button:SetSize(32, 32)
+    button:SetFrameStrata("TOOLTIP")
+    button:SetFrameLevel(9999)
+    
+    -- Create background for visibility
+    local bg = button:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(button)
+    bg:SetColorTexture(0, 0, 0, 0.8)
     
     -- Create label text
-    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
     label:SetPoint("LEFT", button, "RIGHT", 4, 0)
     label:SetText("Sort by Name")
-    label:SetTextColor(1, 1, 1)
+    label:SetTextColor(1, 0.8, 0)
     button.Text = label
     
     -- Set initial state from saved variable
@@ -281,13 +303,13 @@ function Tweaks:CreateAddonSortButton()
     -- Make sure it's shown
     button:Show()
     
-    print("|cff9482c9AbstractUI:|r Sort button created at BOTTOMLEFT+20,45. IsShown: " .. tostring(button:IsShown()))
+    print("|cff00ff00AbstractUI:|r Sort button created! Position: TOP of AddonList, BOTTOM -10. Size: 32x32. IsShown: " .. tostring(button:IsShown()))
     
     -- Click handler
     button:SetScript("OnClick", function(self)
         local checked = self:GetChecked()
         Tweaks.db.profile.addonListSortByName = checked
-        print("|cff9482c9AbstractUI:|r Sort by name: " .. tostring(checked))
+        print("|cff9482c9AbstractUI:|r Sort by name toggled: " .. tostring(checked))
         
         -- Immediately apply or remove sorting
         if checked then
@@ -303,12 +325,11 @@ function Tweaks:CreateAddonSortButton()
         end
     end)
     
-    -- Hide when addon list closes
+    -- Show/hide with addon frame
     addonFrame:HookScript("OnHide", function()
         button:Hide()
     end)
     
-    -- Show when addon list opens
     addonFrame:HookScript("OnShow", function()
         button:Show()
     end)
@@ -317,7 +338,8 @@ function Tweaks:CreateAddonSortButton()
     
     -- Apply sorting if enabled
     if self.db.profile.addonListSortByName then
-        C_Timer.After(0.2, function()
+        print("|cff9482c9AbstractUI:|r Applying initial sort...")
+        C_Timer.After(0.3, function()
             self:ApplyAddonListSort()
         end)
     end
