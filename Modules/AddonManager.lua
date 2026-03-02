@@ -640,15 +640,8 @@ function AddonManager:CreateUI()
     -- Bottom buttons
     local buttonY = 25
     
-    local disableAllBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Disable All")
-    disableAllBtn:SetPoint("BOTTOMLEFT", 20, buttonY)
-    disableAllBtn:SetScript("OnClick", function()
-        DisableAllAddOns()
-        AddonManager:UpdateDisplay()
-    end)
-    
     local enableAllBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Enable All")
-    enableAllBtn:SetPoint("LEFT", disableAllBtn, "RIGHT", 5, 0)
+    enableAllBtn:SetPoint("BOTTOMLEFT", 20, buttonY)
     enableAllBtn:SetScript("OnClick", function()
         for i = 1, GetNumAddOns() do
             EnableAddOn(i)
@@ -656,16 +649,23 @@ function AddonManager:CreateUI()
         AddonManager:UpdateDisplay()
     end)
     
-    local reloadBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Reload UI")
-    reloadBtn:SetPoint("BOTTOMRIGHT", -20, buttonY)
-    reloadBtn:SetScript("OnClick", function()
-        C_UI.Reload()
+    local disableAllBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Disable All")
+    disableAllBtn:SetPoint("LEFT", enableAllBtn, "RIGHT", 5, 0)
+    disableAllBtn:SetScript("OnClick", function()
+        DisableAllAddOns()
+        AddonManager:UpdateDisplay()
     end)
     
     local closeBottomBtn = FrameFactory:CreateButton(mainFrame, 80, 25, "Close")
-    closeBottomBtn:SetPoint("RIGHT", reloadBtn, "LEFT", -5, 0)
+    closeBottomBtn:SetPoint("BOTTOMRIGHT", -20, buttonY)
     closeBottomBtn:SetScript("OnClick", function()
         mainFrame:Hide()
+    end)
+    
+    local reloadBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Reload UI")
+    reloadBtn:SetPoint("RIGHT", closeBottomBtn, "LEFT", -5, 0)
+    reloadBtn:SetScript("OnClick", function()
+        C_UI.Reload()
     end)
     
     mainFrame:SetScript("OnShow", function()
