@@ -98,6 +98,9 @@ function Tooltips:Initialize()
     -- Hook for dynamic tooltips
     self:SecureHook("GameTooltip_SetDefaultAnchor")
     
+    -- Hook GameTooltip to handle quest reward positioning
+    self:HookScript(GameTooltip, "OnShow", "OnGameTooltipShow")
+    
     -- Hook tooltip show events for cursor following
     if self.db.profile.cursorFollow then
         self:EnableCursorFollow()
@@ -409,6 +412,54 @@ end
 function Tooltips:OnThemeChanged()
     -- Reapply styling when theme changes
     self:StyleTooltips()
+end
+
+-- ============================================================================
+-- Quest Reward Tooltip Positioning
+-- ============================================================================
+
+function Tooltips:OnGameTooltipShow(tooltip)
+    -- Don't interfere with cursor follow mode
+    if self.db.profile.cursorFollow then
+        return
+    end
+    
+    -- Check if this tooltip is being shown from a quest frame element
+    local owner = tooltip:GetOwner()
+    if not owner then return end
+    
+    -- Detect if the owner is part of the quest frame hierarchy
+    local isQuestTooltip = false
+    local frame = owner
+    while frame do
+        local frameName = frame:GetName()
+        if frameName then
+            -- Check for QuestFrame, QuestInfo, or Gossip frame parents
+            if frameName:find("Quest") or frameName:find("Gossip") then
+                isQuestTooltip = true
+                break
+            end
+        end
+        frame = frame:GetParent()
+    end
+    
+    if not isQuestTooltip then return end
+    
+    -- Get the Tweaks module to check quest frame position
+    local Tweaks = AbstractUI:GetModule("Tweaks", true)
+    if not Tweaks or not Tweaks.db then return end
+    
+    local useCustomPos = Tweaks.db.profile.questFrameCustomPosition
+    local questX = Tweaks.db.profile.questFrameX or 0
+    
+    -- If quest frame is using custom position and is on the right side of screen
+    -- (positive X offset), anchor tooltip to the left instead of right
+    if useCustomPos and questX > 100 then
+        -- Clear existing anchors and reposition to the left
+        tooltip:ClearAllPoints()
+        tooltip:SetOwner(owner, "ANCHOR_NONE")
+        tooltip:SetPoint("TOPRIGHT", owner, "TOPLEFT", -2, 0)
+    end
 end
 
 -- ============================================================================
