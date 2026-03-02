@@ -100,6 +100,12 @@ function CooldownManager:HookSpellActivationOverlays()
 end
 
 function CooldownManager:StartOverlayPolling()
+    -- Cancel existing timer if it exists to prevent duplicates
+    if self.overlayTimer then
+        self.overlayTimer:Cancel()
+        self.overlayTimer = nil
+    end
+    
     -- Poll every 0.3 seconds to check for AssistedCombatHighlightFrame
     self.overlayTimer = C_Timer.NewTicker(0.3, function()
         if not self.db.profile.essential.showAssistedHighlight and 

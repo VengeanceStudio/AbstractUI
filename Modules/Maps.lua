@@ -357,6 +357,11 @@ function Maps:SetupElements()
         self.clock = Minimap:CreateFontString(nil, "OVERLAY")
         self.clock:SetFont(font, size, flag)
         
+        -- Cancel existing clock ticker if it exists
+        if self.clockTicker then
+            self.clockTicker:Cancel()
+        end
+        
         self.clockTicker = C_Timer.NewTicker(1, function()
             local h, m = tonumber(date("%H")), tonumber(date("%M"))
             local timeStr = ""
@@ -377,6 +382,11 @@ function Maps:SetupElements()
     if not self.coords then
         self.coords = Minimap:CreateFontString(nil, "OVERLAY")
         self.coords:SetFont(font, size, flag)
+        
+        -- Cancel existing coords ticker if it exists
+        if self.coordsTicker then
+            self.coordsTicker:Cancel()
+        end
         
         self.coordsTicker = C_Timer.NewTicker(0.2, function()
             local mapID = C_Map.GetBestMapForUnit("player")

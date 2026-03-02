@@ -1071,7 +1071,11 @@ function BrokerBar:OnDBReady()
         C_WowTokenPublic.UpdateMarketPrice()
     end)
     
-    C_Timer.NewTicker(1.0, function() self:UpdateAllModules() end)
+    -- Cancel existing update ticker if it exists
+    if self.updateTicker then
+        self.updateTicker:Cancel()
+    end
+    self.updateTicker = C_Timer.NewTicker(1.0, function() self:UpdateAllModules() end)
     
     C_Timer.After(1.0, function() 
         for id in pairs(bars) do 
