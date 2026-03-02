@@ -574,8 +574,9 @@ function AddonManager:CreateUI()
     title:SetTextColor(ColorPalette:GetColor("text-primary"))
     
     -- Close button
-    local closeBtn = FrameFactory:CreateButton(mainFrame, 30, 30, "X")
-    closeBtn:SetPoint("TOPRIGHT", -5, -5)
+    local closeBtn = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
+    closeBtn:SetPoint("TOPRIGHT", 5, 5)
+    closeBtn:SetSize(29, 29)
     closeBtn:SetScript("OnClick", function()
         mainFrame:Hide()
     end)
