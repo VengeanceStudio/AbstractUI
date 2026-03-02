@@ -573,10 +573,36 @@ function AddonManager:CreateUI()
     title:SetText("Addon Manager")
     title:SetTextColor(ColorPalette:GetColor("text-primary"))
     
-    -- Close button
-    local closeBtn = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", 5, 5)
-    closeBtn:SetSize(29, 29)
+    -- Close button (matching AbstractUI options style)
+    local closeBtn = CreateFrame("Button", nil, mainFrame, "BackdropTemplate")
+    closeBtn:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -12, -12)
+    closeBtn:SetSize(32, 32)
+    closeBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    closeBtn:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+    closeBtn:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    
+    -- Close button text (X)
+    closeBtn.text = closeBtn:CreateFontString(nil, "OVERLAY")
+    closeBtn.text:SetFont("Fonts\\FRIZQT__.TTF", 28, "OUTLINE")
+    closeBtn.text:SetText("×")
+    closeBtn.text:SetPoint("CENTER", 0, 1)
+    closeBtn.text:SetTextColor(0.7, 0.7, 0.7, 1)
+    
+    -- Hover effects
+    closeBtn:SetScript("OnEnter", function(self)
+        local r, g, b = ColorPalette:GetColor('accent-primary')
+        self:SetBackdropColor(r, g, b, 0.15)
+        self.text:SetTextColor(1, 1, 1, 1)
+    end)
+    closeBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+        self.text:SetTextColor(0.7, 0.7, 0.7, 1)
+    end)
     closeBtn:SetScript("OnClick", function()
         mainFrame:Hide()
     end)
