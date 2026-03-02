@@ -255,11 +255,11 @@ function Tweaks:ApplyAddonListSort()
     local dataProvider = AddonList.ScrollBox:GetDataProvider()
     if not dataProvider then return end
     
-    -- Get all elements from the data provider
+    -- Get all elements from the data provider (false = include collapsed nodes)
     local elements = {}
     dataProvider:Enumerate(function(element)
         table.insert(elements, element)
-    end)
+    end, false)
     
     -- Sort by addon name
     table.sort(elements, function(a, b)
