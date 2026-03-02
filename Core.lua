@@ -176,20 +176,6 @@ function AbstractUI:ToggleMemoryDebug()
             
             table.insert(diagnostics, string.format("Tickers: %d", tickerCount))
             
-            -- Count frames created by AbstractUI (expensive, so cache result)
-            if not self.memoryDebugFrameCountCache or (GetTime() - (self.memoryDebugFrameCountTime or 0)) > 30 then
-                local frameCount = 0
-                for i = 1, 10000 do
-                    local frame = _G["AbstractUI" .. i] or _G["AbstractUIFrame" .. i] or _G["AbstractUIButton_" .. i]
-                    if frame then frameCount = frameCount + 1 end
-                end
-                self.memoryDebugFrameCountCache = frameCount
-                self.memoryDebugFrameCountTime = GetTime()
-            end
-            if self.memoryDebugFrameCountCache > 0 then
-                table.insert(diagnostics, string.format("Frames: %d", self.memoryDebugFrameCountCache))
-            end
-            
             -- Count highlighted spells (potential leak source)
             if CooldownMgr and CooldownMgr.highlightedSpells then
                 local count = 0

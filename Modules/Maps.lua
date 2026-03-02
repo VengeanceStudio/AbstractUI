@@ -388,17 +388,30 @@ function Maps:SetupElements()
             self.coordsTicker:Cancel()
         end
         
+        -- Track last coordinates to avoid updating when stationary
+        self.lastCoordX = nil
+        self.lastCoordY = nil
+        
         -- Reduced from 0.2s to 0.5s to minimize memory allocations (was 5/sec, now 2/sec)
         self.coordsTicker = C_Timer.NewTicker(0.5, function()
             local mapID = C_Map.GetBestMapForUnit("player")
             if mapID then
                 local pos = C_Map.GetPlayerMapPosition(mapID, "player")
                 if pos then
-                    self.coords:SetFormattedText("%.1f, %.1f", pos.x * 100, pos.y * 100)
+                    local x, y = pos.x * 100, pos.y * 100
+                    -- Only update if coordinates changed by at least 0.1 to reduce string allocations
+                    if not self.lastCoordX or math.abs(x - self.lastCoordX) >= 0.1 or math.abs(y - self.lastCoordY) >= 0.1 then
+                        self.lastCoordX, self.lastCoordY = x, y
+                        self.coords:SetFormattedText("%.1f, %.1f", x, y)
+                    end
                     return
                 end
             end
-            self.coords:SetText("")
+            -- Clear if no position available
+            if self.lastCoordX then
+                self.coords:SetText("")
+                self.lastCoordX, self.lastCoordY = nil, nil
+            end
         end)
     end
     

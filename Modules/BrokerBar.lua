@@ -503,9 +503,13 @@ function BrokerBar:UpdateAllModules()
     end
 
     -- SYSTEM (FPS/MS) - Color Logic for Bar Text
+    -- Add tolerance to prevent updates on minor fluctuations (reduces string allocations)
     local _, _, _, world = GetNetStats()
     local fps = math.floor(GetFramerate())
-    if fps ~= lastState.fps or world ~= lastState.ms then
+    local fpsChanged = not lastState.fps or math.abs(fps - lastState.fps) >= 2
+    local msChanged = not lastState.ms or math.abs(world - lastState.ms) >= 5
+    
+    if fpsChanged or msChanged then
         lastState.fps, lastState.ms = fps, world
         
         -- Custom FPS Colors: Red < 20, Orange < 40, Yellow < 60, Green >= 60

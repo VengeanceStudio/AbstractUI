@@ -77,6 +77,9 @@ function CooldownManager:OnInitialize()
     
     -- Track highlighted spells for assisted highlight feature
     self.highlightedSpells = {}
+    
+    -- Reusable table for highlight polling to avoid allocation every second
+    self.foundHighlightsCache = {}
 end
 
 function CooldownManager:OnEnable()
@@ -152,7 +155,9 @@ function CooldownManager:StartOverlayPolling()
             return
         end
         
-        local foundHighlights = {}
+        -- Reuse table to avoid allocation every second
+        local foundHighlights = self.foundHighlightsCache
+        wipe(foundHighlights)
         
         -- Check Dominos buttons (with early termination for non-existent ranges)
         local consecutiveNils = 0
