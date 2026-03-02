@@ -288,7 +288,9 @@ function Tweaks:CreateAddonSortButton()
     button.Text = label
     
     -- Disable the button for now
-    button:Disable()false) -- Always unchecked since feature is disabled
+    button:Disable()
+    button:SetChecked(false) -- Always unchecked since feature is disabled
+    button:SetAlpha(0.5)
     
     -- Make sure it's shown
     button:Show()
@@ -299,11 +301,7 @@ function Tweaks:CreateAddonSortButton()
     button:SetScript("OnClick", function(self)
         self:SetChecked(false)
         print("|cffff8800AbstractUI:|r Addon list sorting is not yet implemented.")
-        print("|cffff8800AbstractUI:|r This feature requires a complete reimplementation of the addon list UI.") local af = AddonList or _G["AddonList"] or _G["AddOnList"]
-            if af and af.Update then
-                af:Update()
-            end
-        end
+        print("|cffff8800AbstractUI:|r This feature requires a complete reimplementation of the addon list UI.")
     end)
     
     -- Show/hide with addon frame
