@@ -359,8 +359,12 @@ function Maps:SetupElements()
         
         -- Cancel existing clock ticker if it exists
         if self.clockTicker then
+            print("|cffff0000[AbstractUI DEBUG]|r Maps: CANCELLING existing clockTicker")
             self.clockTicker:Cancel()
+        else
+            print("|cffff0000[AbstractUI DEBUG]|r Maps: No existing clockTicker to cancel")
         end
+        print("|cffff0000[AbstractUI DEBUG]|r Maps: Creating NEW clockTicker")
         
         self.clockTicker = C_Timer.NewTicker(1, function()
             local h, m = tonumber(date("%H")), tonumber(date("%M"))
@@ -391,6 +395,14 @@ function Maps:SetupElements()
         -- Track last coordinates to avoid updating when stationary
         self.lastCoordX = nil
         self.lastCoordY = nil
+        
+        if self.coordsTicker then
+            print("|cffff0000[AbstractUI DEBUG]|r Maps: CANCELLING existing coordsTicker")
+            self.coordsTicker:Cancel()
+        else
+            print("|cffff0000[AbstractUI DEBUG]|r Maps: No existing coordsTicker to cancel")
+        end
+        print("|cffff0000[AbstractUI DEBUG]|r Maps: Creating NEW coordsTicker")
         
         -- Reduced from 0.2s to 0.5s to minimize memory allocations (was 5/sec, now 2/sec)
         self.coordsTicker = C_Timer.NewTicker(0.5, function()

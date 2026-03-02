@@ -994,6 +994,7 @@ end
 function BrokerBar:CreateWidget(name, obj)
     local btn = widgets[name]
     if not btn then
+        print("|cffff0000[AbstractUI DEBUG]|r CreateWidget: Creating NEW widget '", name, "'")
         btn = CreateFrame("Button", nil, UIParent)
         btn:RegisterForClicks("AnyUp") -- CRITICAL FIX: ENABLE RIGHT CLICK
         btn.icon = btn:CreateTexture(nil, "ARTWORK")
@@ -1002,6 +1003,8 @@ function BrokerBar:CreateWidget(name, obj)
             masqueGroup:AddButton(btn, { Icon = btn.icon }) 
         end
         widgets[name] = btn
+    else
+        print("|cff00ff00[AbstractUI DEBUG]|r CreateWidget: REUSING existing widget '", name, "'")
     end
     btn:SetScript("OnEnter", function(self) 
         if obj.OnEnter then 
@@ -1105,8 +1108,12 @@ function BrokerBar:OnDBReady()
     
     -- Cancel existing update ticker if it exists
     if self.updateTicker then
+        print("|cffff0000[AbstractUI DEBUG]|r BrokerBar: CANCELLING existing updateTicker")
         self.updateTicker:Cancel()
+    else
+        print("|cffff0000[AbstractUI DEBUG]|r BrokerBar: No existing updateTicker to cancel")
     end
+    print("|cffff0000[AbstractUI DEBUG]|r BrokerBar: Creating NEW updateTicker")
     self.updateTicker = C_Timer.NewTicker(1.0, function() self:UpdateAllModules() end)
     
     C_Timer.After(1.0, function() 
@@ -1117,6 +1124,21 @@ function BrokerBar:OnDBReady()
 end
 
 function BrokerBar:PLAYER_ENTERING_WORLD()
+    print("|cffff0000[AbstractUI DEBUG]|r PLAYER_ENTERING_WORLD fired")
+    
+    -- Count widgets
+    local widgetCount = 0
+    for _ in pairs(widgets) do widgetCount = widgetCount + 1 end
+    print("  Total widgets:", widgetCount)
+    
+    -- Count bars and their children
+    for barID, bar in pairs(bars) do
+        local childCount = bar:GetNumChildren()
+        print("  Bar", barID, "frame children:", childCount)
+    end
+    
+    print("  Active updateTicker:", self.updateTicker and "YES" or "NO")
+    
     -- Initialize all modules with current values
     self:UpdateAllModules()
     

@@ -144,9 +144,13 @@ end
 function CooldownManager:StartOverlayPolling()
     -- Cancel existing timer if it exists to prevent duplicates
     if self.overlayTimer then
+        print("|cffff0000[AbstractUI DEBUG]|r CooldownManager: CANCELLING existing overlayTimer")
         self.overlayTimer:Cancel()
         self.overlayTimer = nil
+    else
+        print("|cffff0000[AbstractUI DEBUG]|r CooldownManager: No existing overlayTimer to cancel")
     end
+    print("|cffff0000[AbstractUI DEBUG]|r CooldownManager: Creating NEW overlayTimer")
     
     -- Poll every 1.0 seconds to check for AssistedCombatHighlightFrame (reduced from 0.3s to minimize memory churn)
     self.overlayTimer = C_Timer.NewTicker(1.0, function()
