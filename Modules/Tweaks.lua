@@ -87,7 +87,7 @@ function Tweaks:OnDBReady()
     -- Setup talent import immediately
     if self.db.profile.importOverwriteEnabled then
         C_Timer.After(2, function() 
-            self:HookTalentImportDialog()
+            self:SetupTalentImportHook()
         end)
     end
     
@@ -382,7 +382,7 @@ function Tweaks:PLAYER_ENTERING_WORLD()
     -- Setup talent import overwrite hook when dialog is shown
     if self.db.profile.importOverwriteEnabled then
         C_Timer.After(2, function() 
-            self:HookTalentImportDialog()
+            self:SetupTalentImportHook()
         end)
     end
 end
@@ -862,7 +862,7 @@ function Tweaks:GetOptions()
                 set = function(_, v) 
                     self.db.profile.importOverwriteEnabled = v
                     if v then
-                        self:HookTalentImportDialog()
+                        self:SetupTalentImportHook()
                     else
                         self:DisableTalentImportHook()
                     end
