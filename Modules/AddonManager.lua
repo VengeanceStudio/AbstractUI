@@ -1013,3 +1013,100 @@ function AddonManager:Hide()
         mainFrame:Hide()
     end
 end
+
+-- ============================================================================
+-- OPTIONS
+-- ============================================================================
+
+function AddonManager:GetOptions()
+    return {
+        type = "group",
+        name = "Addon Manager",
+        get = function(info) return self.db.profile[info[#info]] end,
+        set = function(info, value) self.db.profile[info[#info]] = value end,
+        args = {
+            header = {
+                type = "header",
+                name = "Addon Manager",
+                order = 1,
+            },
+            description = {
+                type = "description",
+                name = "Manage your addons in-game with sorting and filtering options. Access the addon manager with /auiaddon or /auiam commands.",
+                order = 2,
+                fontSize = "medium",
+            },
+            openManager = {
+                type = "execute",
+                name = "Open Addon Manager",
+                desc = "Open the addon manager window",
+                order = 3,
+                func = function()
+                    self:Show()
+                end,
+            },
+            spacer1 = {
+                type = "description",
+                name = " ",
+                order = 3.5,
+            },
+            settingsHeader = {
+                type = "header",
+                name = "Settings",
+                order = 4,
+            },
+            defaultSorter = {
+                type = "select",
+                name = "Default Sort Method",
+                desc = "Choose the default sorting method when opening the addon manager",
+                order = 5,
+                values = {
+                    [SORT_DEFAULT] = "Default (Categories)",
+                    [SORT_TITLES] = "Alphabetical by Title",
+                    [SORT_AUTHOR] = "Group by Author",
+                    [SORT_SEPARATE_LOD] = "Separate Load on Demand",
+                    [SORT_GROUP_BY_NAME] = "Group by Name Prefix",
+                },
+                get = function()
+                    return self.db.profile.sorter or SORT_DEFAULT
+                end,
+                set = function(_, value)
+                    self.db.profile.sorter = value
+                    currentSorter = value
+                    if mainFrame and mainFrame:IsShown() then
+                        self:ReloadAddonList()
+                    end
+                end,
+            },
+            noRecurse = {
+                type = "toggle",
+                name = "Disable Recursive Dependencies",
+                desc = "When enabled, enabling an addon will NOT automatically enable its dependencies. Hold Shift while clicking to temporarily invert this behavior.",
+                order = 6,
+                get = function()
+                    return self.db.profile.noRecurse or false
+                end,
+                set = function(_, value)
+                    self.db.profile.noRecurse = value
+                    NoRecurse = value
+                end,
+            },
+            spacer2 = {
+                type = "description",
+                name = " ",
+                order = 6.5,
+            },
+            infoHeader = {
+                type = "header",
+                name = "Information",
+                order = 7,
+            },
+            infoText = {
+                type = "description",
+                name = "The Addon Manager provides a convenient way to enable/disable addons, manage load-on-demand addons, and organize your addon list with various sorting options. Changes take effect after a UI reload.\n\n|cff00ff00Features:|r\n• Multiple sorting options\n• Load-on-demand addon support\n• Dependency auto-enabling\n• Blizzard addon management\n• Collapsible categories",
+                order = 8,
+                fontSize = "medium",
+            },
+        },
+    }
+end

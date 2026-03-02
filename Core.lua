@@ -1938,7 +1938,11 @@ function AbstractUI:GetOptions()
                         set = function(_, v) self.db.profile.modules.castBar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
                     tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "full",
                         get = function() return self.db.profile.modules.tweaks end,
-                        set = function(_, v) self.db.profile.modules.tweaks = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
+                        set = function(_, v) self.db.profile.modules.tweaks = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    addonmanager = { name = "Addon Manager", type = "toggle", order = 9.1, width = "full",
+                        desc = "In-game addon management with sorting and filtering options",
+                        get = function() return self.db.profile.modules.addonmanager end,
+                        set = function(_, v) self.db.profile.modules.addonmanager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
             },  -- closes general group
             themes = {
@@ -2117,6 +2121,8 @@ function AbstractUI:GetOptions()
             dbKey = "resourceBars"
         elseif name == "CastBar" then
             dbKey = "castBar"
+        elseif name == "AddonManager" then
+            dbKey = "addonmanager"
         else
             dbKey = string.lower(name)
         end
@@ -2135,6 +2141,8 @@ function AbstractUI:GetOptions()
                 displayName = "Action Bars"
             elseif name == "ResourceBars" then
                 displayName = "Resource Bars"
+            elseif name == "AddonManager" then
+                displayName = "Addon Manager"
             end
             
             -- Set module order based on name
@@ -2163,6 +2171,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 12
             elseif name == "Tweaks" then
                 moduleOrder = 13
+            elseif name == "AddonManager" then
+                moduleOrder = 14
             elseif name == "Setup" then
                 moduleOrder = 15
             end
