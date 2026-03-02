@@ -581,6 +581,7 @@ function UIButtons:GetOptions()
             },
             addons = {
                 name = "Addons (A)", type = "toggle", order = 14,
+                width = "normal",
                 get = function() 
                     if not self.db.profile.UIButtons.addons then return true end
                     return self.db.profile.UIButtons.addons.enabled 
@@ -592,7 +593,7 @@ function UIButtons:GetOptions()
                 desc = "When enabled, the Addons button will open AbstractUI's Addon Manager instead of Blizzard's addon list",
                 type = "toggle",
                 order = 14.5,
-                width = "full",
+                width = "normal",
                 get = function() return self.db.profile.useAbstractUIAddonManager end,
                 set = function(_, v) self.db.profile.useAbstractUIAddonManager = v end
             },
