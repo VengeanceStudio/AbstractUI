@@ -58,11 +58,16 @@ local defaults = {
 function AbstractUI:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("AbstractUIDB", defaults, true)
     
+    -- Memory debug tracking
+    self.memoryDebugEnabled = false
+    self.memoryDebugTicker = nil
+    
     -- Register slash commands
     self:RegisterChatCommand("aui", "SlashCommand")
     self:RegisterChatCommand("AbstractUI", "SlashCommand")
     self:RegisterChatCommand("auimove", "ToggleMoveMode")
     self:RegisterChatCommand("demo", "OpenDemo")
+    self:RegisterChatCommand("auimemory", "ToggleMemoryDebug")
 end
 
 function AbstractUI:OnEnable()
@@ -122,6 +127,39 @@ function AbstractUI:SlashCommand(input)
         self:ToggleMoveMode()
     else
         self:OpenConfig()
+    end
+end
+
+function AbstractUI:ToggleMemoryDebug()
+    self.memoryDebugEnabled = not self.memoryDebugEnabled
+    
+    if self.memoryDebugEnabled then
+        -- Cancel existing ticker if any
+        if self.memoryDebugTicker then
+            self.memoryDebugTicker:Cancel()
+        end
+        
+        -- Create new ticker that runs every 10 seconds
+        self.memoryDebugTicker = C_Timer.NewTicker(10, function()
+            UpdateAddOnMemoryUsage()
+            local memory = GetAddOnMemoryUsage("AbstractUI")
+            local memoryMB = memory / 1024
+            print(string.format("|cff00ff00AbstractUI Memory:|r %.2f MB (%.0f KB)", memoryMB, memory))
+        end)
+        
+        -- Print initial value
+        UpdateAddOnMemoryUsage()
+        local memory = GetAddOnMemoryUsage("AbstractUI")
+        local memoryMB = memory / 1024
+        print(string.format("|cff00ff00AbstractUI Memory Debug Enabled|r - Current: %.2f MB (%.0f KB)", memoryMB, memory))
+        print("|cff00ff00AbstractUI:|r Memory will be printed every 10 seconds. Use /auimemory to disable.")
+    else
+        -- Cancel ticker
+        if self.memoryDebugTicker then
+            self.memoryDebugTicker:Cancel()
+            self.memoryDebugTicker = nil
+        end
+        print("|cff00ff00AbstractUI Memory Debug Disabled|r")
     end
 end
 
