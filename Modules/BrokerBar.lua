@@ -586,7 +586,8 @@ function BrokerBar:UpdateFriendsCount()
             end
         end
     end
-    if wowOnline ~= lastState.friends then 
+    -- Always update if not initialized, or if value changed
+    if not lastState.friends or wowOnline ~= lastState.friends then 
         lastState.friends = wowOnline
         friendObj.text = tostring(wowOnline) 
     end
@@ -603,7 +604,8 @@ function BrokerBar:UpdateDurability()
         end 
     end
     low = math.floor(low)
-    if low ~= lastState.dura then 
+    -- Always update if not initialized, or if value changed
+    if not lastState.dura or low ~= lastState.dura then 
         lastState.dura = low
         duraObj.text = low.."%" 
     end
@@ -612,7 +614,8 @@ end
 function BrokerBar:UpdateGuildCount()
     if not guildObj then return end
     local _, online = GetNumGuildMembers()
-    if online ~= lastState.guild then 
+    -- Always update if not initialized, or if value changed
+    if not lastState.guild or online ~= lastState.guild then 
         lastState.guild = online
         guildObj.text = tostring(online or 0) 
     end
@@ -628,7 +631,8 @@ function BrokerBar:UpdateBagCount()
             total = total + s 
         end 
     end
-    if free ~= lastState.bagFree or total ~= lastState.bagTotal then 
+    -- Always update if not initialized, or if values changed
+    if not lastState.bagFree or free ~= lastState.bagFree or total ~= lastState.bagTotal then 
         lastState.bagFree, lastState.bagTotal = free, total
         bagObj.text = (total-free).."/"..total 
     end
@@ -637,7 +641,8 @@ end
 function BrokerBar:UpdateLocation()
     if not locObj then return end
     local z = GetZoneText() or "Unknown"
-    if z ~= lastState.zone then 
+    -- Always update if lastState.zone is not set (initialization), or if zone changed
+    if not lastState.zone or z ~= lastState.zone then 
         lastState.zone = z
         locObj.text = z 
     end
@@ -1114,12 +1119,14 @@ function BrokerBar:PLAYER_ENTERING_WORLD()
     -- Initialize all modules with current values
     self:UpdateAllModules()
     
-    -- Initialize event-driven values on first load
-    self:UpdateLocation()
-    self:UpdateBagCount()
-    self:UpdateGuildCount()
-    self:UpdateFriendsCount()
-    self:UpdateDurability()
+    -- Initialize event-driven values on first load (use C_Timer.After to ensure brokers are ready)
+    C_Timer.After(0.1, function()
+        self:UpdateLocation()
+        self:UpdateBagCount()
+        self:UpdateGuildCount()
+        self:UpdateFriendsCount()
+        self:UpdateDurability()
+    end)
 end
 
 function BrokerBar:UpdateGoldData()
