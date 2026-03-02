@@ -565,10 +565,18 @@ function BrokerBar:UpdateAllModules()
         lastState.vol = v
         volObj.text = string.format("%d%%", v) -- Force integer display
     end
+    
+    -- Call event-driven update functions to ensure values are initialized
+    self:UpdateLocation()
+    self:UpdateBagCount()
+    self:UpdateGuildCount()
+    self:UpdateFriendsCount()
+    self:UpdateDurability()
 end
 
 -- Event-driven update functions to avoid expensive polling
 function BrokerBar:UpdateFriendsCount()
+    if not friendObj then return end
     -- Count only online WoW Retail friends
     local wowOnline = 0
     local numBNet = BNGetNumFriends() or 0
@@ -588,6 +596,7 @@ function BrokerBar:UpdateFriendsCount()
 end
 
 function BrokerBar:UpdateDurability()
+    if not duraObj then return end
     local low = 100
     for i = 1, 18 do 
         local c, m = GetInventoryItemDurability(i)
@@ -604,6 +613,7 @@ function BrokerBar:UpdateDurability()
 end
 
 function BrokerBar:UpdateGuildCount()
+    if not guildObj then return end
     local _, online = GetNumGuildMembers()
     if online ~= lastState.guild then 
         lastState.guild = online
@@ -612,6 +622,7 @@ function BrokerBar:UpdateGuildCount()
 end
 
 function BrokerBar:UpdateBagCount()
+    if not bagObj then return end
     local free, total = 0, 0
     for i = 0, 5 do 
         local s = C_Container.GetContainerNumSlots(i)
@@ -627,6 +638,7 @@ function BrokerBar:UpdateBagCount()
 end
 
 function BrokerBar:UpdateLocation()
+    if not locObj then return end
     local z = GetZoneText() or "Unknown"
     if z ~= lastState.zone then 
         lastState.zone = z
