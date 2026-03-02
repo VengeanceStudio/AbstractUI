@@ -420,8 +420,8 @@ function FrameFactory:CreateDropdown(parent, width, height)
         if not self.closeHandler then
             self.closeHandler = CreateFrame("Frame")
             self.closeHandler:SetScript("OnUpdate", function(handler)
-                if not MouseIsOver(dropdown) and not MouseIsOver(self) then
-                    if GetMouseFocus() then
+                if IsMouseButtonDown() then
+                    if not MouseIsOver(dropdown) and not MouseIsOver(self) then
                         self:Hide()
                         handler:SetScript("OnUpdate", nil)
                     end
@@ -429,8 +429,8 @@ function FrameFactory:CreateDropdown(parent, width, height)
             end)
         else
             self.closeHandler:SetScript("OnUpdate", function(handler)
-                if not MouseIsOver(dropdown) and not MouseIsOver(self) then
-                    if GetMouseFocus() then
+                if IsMouseButtonDown() then
+                    if not MouseIsOver(dropdown) and not MouseIsOver(self) then
                         self:Hide()
                         handler:SetScript("OnUpdate", nil)
                     end
