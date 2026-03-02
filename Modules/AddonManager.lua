@@ -743,12 +743,6 @@ function AddonManager:CreateEntryFrame(parent, id)
             collapsedAddons[category] = not collapsedAddons[category]
             AddonManager:RebuildSortedAddonList()
             AddonManager:UpdateDisplay()
-            
-            if collapsedAddons[category] then
-                self.arrow:SetTexCoord(0, 1, 1, 0)  -- Point right when collapsed
-            else
-                self.arrow:SetTexCoord(0, 1, 0, 1)  -- Point down when expanded
-            end
         end
     end)
     
@@ -867,9 +861,9 @@ function AddonManager:UpdateDisplay()
                 
                 -- Rotate arrow for collapsed/expanded state
                 if collapsedAddons[item] then
-                    entry.collapseBtn:GetNormalTexture():SetRotation(math.rad(-90)) -- Point right when collapsed
+                    entry.collapseBtn.arrow:SetRotation(math.rad(-90)) -- Point right when collapsed
                 else
-                    entry.collapseBtn:GetNormalTexture():SetRotation(0) -- Point down when expanded
+                    entry.collapseBtn.arrow:SetRotation(0) -- Point down when expanded
                 end
             else
                 -- Addon entry
