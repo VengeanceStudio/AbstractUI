@@ -1,9 +1,10 @@
 ## Interface: 120001
 ## Title: Abstract UI
-## Version: 12.0.1.121
+## Version: 12.0.1.122
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
+## X-Curse-Project-ID: 1474403
 ## IconTexture: Interface\AddOns\AbstractUI\icon.png
 ## SavedVariables: AbstractUIDB
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, Masque

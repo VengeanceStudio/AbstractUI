@@ -90,6 +90,10 @@ function Skin:PLAYER_ENTERING_WORLD()
     -- DISABLED - Action bar skinning disabled
     return
     
+    -- Only run setup once, not on every zone change
+    if self.skinsInitialized then return end
+    self.skinsInitialized = true
+    
     -- Wait for UI to fully load
     C_Timer.After(2, function()
         if not self.db or not self.db.profile then return end

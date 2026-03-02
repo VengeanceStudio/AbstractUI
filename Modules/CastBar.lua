@@ -110,6 +110,10 @@ function CastBar:OnDisable()
 end
 
 function CastBar:PLAYER_ENTERING_WORLD()
+    -- Only run setup once, not on every zone change
+    if self.castBarInitialized then return end
+    self.castBarInitialized = true
+    
     C_Timer.After(0.5, function()
         if self.db and self.db.profile then
             self:SetupCastBar()

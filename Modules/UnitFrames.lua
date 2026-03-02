@@ -1536,7 +1536,12 @@ end
             return
         end
         
-        HookBlizzardPlayerFrame(self)
+        -- Only run initialization once, not on every zone change
+        if not self.unitFramesInitialized then
+            HookBlizzardPlayerFrame(self)
+            self.unitFramesInitialized = true
+        end
+        
         -- Only create frames if they don't already exist to prevent recreation on every zone change
         if self.db.profile.showPlayer and not _G["AbstractUI_PlayerFrame"] then self:CreatePlayerFrame() end
         if self.db.profile.showTarget and not _G["AbstractUI_TargetFrame"] then self:CreateTargetFrame() end

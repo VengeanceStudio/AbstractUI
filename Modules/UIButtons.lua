@@ -70,6 +70,10 @@ function UIButtons:OnDBReady()
 end
 
 function UIButtons:PLAYER_ENTERING_WORLD()
+    -- Only run setup once, not on every zone change
+    if self.uiButtonsInitialized then return end
+    self.uiButtonsInitialized = true
+    
     self:CreateContainer()
     self:CreateButtons()
     self:UpdateLayout()

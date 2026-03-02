@@ -93,6 +93,10 @@ function Maps:OnDBReady()
 end
 
 function Maps:PLAYER_ENTERING_WORLD()
+    -- Only run setup once, not on every zone change
+    if self.mapsInitialized then return end
+    self.mapsInitialized = true
+    
     self:SetupMinimapBorder()
     self:SetupMinimapPosition()
     self:SetupMinimapDragging()

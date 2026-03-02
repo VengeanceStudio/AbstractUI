@@ -186,6 +186,10 @@ function Tweaks:ADDON_LOADED(event, addonName)
 end
 
 function Tweaks:PLAYER_ENTERING_WORLD()
+    -- Only run tweaks setup once, not on every zone change
+    if self.tweaksInitialized then return end
+    self.tweaksInitialized = true
+    
     -- Apply tweaks with delays
     C_Timer.After(0.1, function() self:ApplyTweaks() end)
     C_Timer.After(0.5, function() self:ApplyTweaks() end)

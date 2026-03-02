@@ -137,6 +137,10 @@ function ResourceBars:OnDBReady()
 end
 
 function ResourceBars:PLAYER_ENTERING_WORLD()
+    -- Only run setup once, not on every zone change
+    if self.resourceBarsInitialized then return end
+    self.resourceBarsInitialized = true
+    
     C_Timer.After(0.5, function()
         if self.db and self.db.profile then
             self:SetupPrimaryResourceBar()
