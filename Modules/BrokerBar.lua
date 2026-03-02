@@ -47,7 +47,7 @@ local friendObj, guildObj, diffObj, clockObj, sysObj, goldObj, bagObj, duraObj, 
 local lastState = { 
     timeH = -1, timeM = -1, fps = -1, ms = -1, 
     bagFree = -1, bagTotal = -1, gold = -1, dura = -1, 
-    friends = -1, guild = -1, zone = "", diffID = -1, 
+    friends = -1, guild = -1, zone = nil, diffID = -1, 
     diffPlayers = -1, vol = -1, token = -1, ilvl = -1
 }
 
