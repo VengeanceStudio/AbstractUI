@@ -90,6 +90,7 @@ function Skin:PLAYER_ENTERING_WORLD()
     -- DISABLED - Action bar skinning disabled
     return
     
+    --[[ DISABLED CODE - keeping for reference
     -- Only run setup once, not on every zone change
     if self.skinsInitialized then return end
     self.skinsInitialized = true
@@ -123,6 +124,7 @@ function Skin:PLAYER_ENTERING_WORLD()
         -- Hook frame show events to skin frames as they appear
         self:SetupDynamicSkinning()
     end)
+    --]]
 end
 
 -- ============================================================================
