@@ -1,6 +1,6 @@
 ## Interface: 120001
 ## Title: Abstract UI
-## Version: 12.0.1.112
+## Version: 12.0.1.113
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
@@ -68,7 +68,6 @@ Themes\NeonSciFi.lua
 Modules\Chat.lua
 Modules\Skins.lua
 Modules\Movable.lua
-Modules\BrokerBar.lua
 Modules\Brokers\Friends.lua
 Modules\Brokers\Guild.lua
 Modules\Brokers\Gold.lua
@@ -81,6 +80,7 @@ Modules\Brokers\Location.lua
 Modules\Brokers\Difficulty.lua
 Modules\Brokers\ItemLevel.lua
 Modules\Brokers\Clock.lua
+Modules\BrokerBar.lua
 Modules\UIButtons.lua
 Modules\Tooltips.lua
 Modules\Mailbox.lua
