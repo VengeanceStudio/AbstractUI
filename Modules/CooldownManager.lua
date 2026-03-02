@@ -10,6 +10,12 @@ local CooldownManager = AbstractUI:NewModule("CooldownManager", "AceEvent-3.0", 
 -- Module reference for global access
 _G.CooldownManager = CooldownManager
 
+-- Constants for button patterns to avoid table recreation
+local STANDARD_BUTTON_PATTERNS = {
+    "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", 
+    "MultiBarRightButton", "MultiBarLeftButton", "MultiBarRightActionButton", "MultiBarLeftActionButton"
+}
+
 --------------------------------------------------------------------------------
 -- Defaults
 --------------------------------------------------------------------------------
@@ -148,13 +154,19 @@ function CooldownManager:StartOverlayPolling()
         
         local foundHighlights = {}
         
-        -- Check Dominos buttons (only check buttons that exist to minimize table lookups)
+        -- Check Dominos buttons (with early termination for non-existent ranges)
+        local consecutiveNils = 0
         for i = 1, 180 do
             local button = _G["DominosActionButton" .. i]
             if not button then
-                -- If we hit a nil button, subsequent buttons in sequence likely don't exist either
-                -- Continue checking but expect fewer hits
-            elseif button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
+                consecutiveNils = consecutiveNils + 1
+                -- If we've seen 20 consecutive nil buttons, assume the rest don't exist
+                if consecutiveNils > 20 then
+                    break
+                end
+            else
+                consecutiveNils = 0  -- Reset counter when we find a button
+                if button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
                 local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                 if action then
                     local actionType, id = GetActionInfo(action)
@@ -178,11 +190,8 @@ function CooldownManager:StartOverlayPolling()
             end
         end
         
-        -- Check standard action buttons
-        local buttonPatterns = {"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", 
-                                "MultiBarRightButton", "MultiBarLeftButton", "MultiBarRightActionButton", "MultiBarLeftActionButton"}
-        
-        for _, pattern in ipairs(buttonPatterns) do
+        -- Check standard action buttons using constant pattern list
+        for _, pattern in ipairs(STANDARD_BUTTON_PATTERNS) do
             for i = 1, 12 do
                 local button = _G[pattern .. i]
                 if button and button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then

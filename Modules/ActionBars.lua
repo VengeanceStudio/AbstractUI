@@ -86,17 +86,23 @@ end
 
 function AB:OnInitialize()
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
-    -- Use OnUpdate polling to detect cursor changes for showing empty buttons
+    -- Use throttled OnUpdate polling to detect cursor changes for showing empty buttons
     -- Show empty buttons whenever any icon is being dragged from any UI page (Spellbook, Talents, Macros, Mounts, Pets, Heirlooms, Bags, etc.)
     if not self.cursorUpdateFrame then
         self.cursorUpdateFrame = CreateFrame("Frame")
         self.cursorUpdateFrame.lastCursorActive = false
-        self.cursorUpdateFrame:SetScript("OnUpdate", function()
+        self.cursorUpdateFrame.throttle = 0
+        -- Throttled to 0.1s instead of every frame to reduce memory pressure
+        self.cursorUpdateFrame:SetScript("OnUpdate", function(self, elapsed)
+            self.throttle = self.throttle + elapsed
+            if self.throttle < 0.1 then return end
+            self.throttle = 0
+            
             -- Use pcall to handle secret values from GetCursorInfo
             local success, cursorType = pcall(GetCursorInfo)
             local dragging = success and cursorType ~= nil
-            if dragging ~= self.cursorUpdateFrame.lastCursorActive then
-                self.cursorUpdateFrame.lastCursorActive = dragging
+            if dragging ~= self.lastCursorActive then
+                self.lastCursorActive = dragging
                 AB:CURSOR_UPDATE()
             end
         end)

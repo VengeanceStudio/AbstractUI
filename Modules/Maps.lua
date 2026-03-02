@@ -388,7 +388,8 @@ function Maps:SetupElements()
             self.coordsTicker:Cancel()
         end
         
-        self.coordsTicker = C_Timer.NewTicker(0.2, function()
+        -- Reduced from 0.2s to 0.5s to minimize memory allocations (was 5/sec, now 2/sec)
+        self.coordsTicker = C_Timer.NewTicker(0.5, function()
             local mapID = C_Map.GetBestMapForUnit("player")
             if mapID then
                 local pos = C_Map.GetPlayerMapPosition(mapID, "player")
