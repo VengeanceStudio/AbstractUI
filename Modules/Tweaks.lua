@@ -25,6 +25,7 @@ local defaults = {
         questFrameX = 0,
         questFrameY = 0,
         questFrameCustomPosition = false,
+        addonListSortByName = false,
     }
 }
 
@@ -182,6 +183,109 @@ function Tweaks:ADDON_LOADED(event, addonName)
                 self:HideBagBar()
             end)
         end
+    end
+    
+    -- Hook AddOn Manager when it loads
+    if addonName == "Blizzard_AddOnManager" then
+        C_Timer.After(0.1, function()
+            self:SetupAddonListSorting()
+        end)
+    end
+end
+
+-- ============================================================================
+-- AddOn List Sorting
+-- ============================================================================
+
+function Tweaks:SetupAddonListSorting()
+    if not AddonList then return end
+    
+    -- Create sort toggle button if it doesn't exist
+    if not self.addonSortButton then
+        local button = CreateFrame("CheckButton", "AbstractUI_AddonSortButton", AddonList, "InterfaceOptionsCheckButtonTemplate")
+        button:SetPoint("BOTTOMLEFT", AddonList, "BOTTOMLEFT", 20, 10)
+        button:SetSize(24, 24)
+        
+        -- Create label text
+        local label = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("LEFT", button, "RIGHT", 2, 0)
+        label:SetText("Sort by Name")
+        button.Text = label
+        
+        -- Set initial state from saved variable
+        button:SetChecked(self.db.profile.addonListSortByName)
+        
+        -- Click handler
+        button:SetScript("OnClick", function(self)
+            local checked = self:GetChecked()
+            Tweaks.db.profile.addonListSortByName = checked
+            
+            -- Force refresh the addon list
+            Tweaks:RefreshAddonList()
+        end)
+        
+        self.addonSortButton = button
+    end
+    
+    -- Hook the addon list's update function to apply our sorting
+    if AddonList.ScrollBox then
+        if not self:IsHooked(AddonList.ScrollBox, "Update") then
+            self:SecureHook(AddonList.ScrollBox, "Update", function()
+                if self.db.profile.addonListSortByName then
+                    C_Timer.After(0, function()
+                        self:ApplyAddonListSort()
+                    end)
+                end
+            end)
+        end
+    end
+    
+    -- Apply sorting immediately if enabled
+    if self.db.profile.addonListSortByName then
+        self:RefreshAddonList()
+    end
+end
+
+function Tweaks:ApplyAddonListSort()
+    if not self.db.profile.addonListSortByName then return end
+    if not AddonList or not AddonList.ScrollBox then return end
+    
+    local dataProvider = AddonList.ScrollBox:GetDataProvider()
+    if not dataProvider then return end
+    
+    -- Get all elements from the data provider
+    local elements = {}
+    dataProvider:Enumerate(function(element)
+        table.insert(elements, element)
+    end)
+    
+    -- Sort by addon name
+    table.sort(elements, function(a, b)
+        local nameA = a.Name or a.Title or ""
+        local nameB = b.Name or b.Title or ""
+        return nameA:lower() < nameB:lower()
+    end)
+    
+    -- Clear and re-insert in sorted order
+    dataProvider:Flush()
+    for _, element in ipairs(elements) do
+        dataProvider:Insert(element)
+    end
+end
+
+function Tweaks:RefreshAddonList()
+    if not AddonList then return end
+    
+    -- Force the addon list to rebuild
+    if AddonList.Update then
+        AddonList:Update()
+    end
+    
+    -- Apply our custom sorting after the update
+    if self.db.profile.addonListSortByName then
+        C_Timer.After(0.1, function()
+            self:ApplyAddonListSort()
+        end)
     end
 end
 
@@ -748,6 +852,19 @@ function Tweaks:GetOptions()
                 set = function(_, v)
                     self.db.profile.questFrameY = v
                     self:ApplyQuestFrameScale()
+                end,
+            },
+            addonListSortByName = {
+                name = "Sort AddOn List by Name",
+                desc = "Adds a checkbox to the Blizzard AddOn List to sort addons alphabetically by name instead of by category",
+                type = "toggle",
+                order = 17,
+                set = function(_, v)
+                    self.db.profile.addonListSortByName = v
+                    if self.addonSortButton then
+                        self.addonSortButton:SetChecked(v)
+                    end
+                    self:RefreshAddonList()
                 end,
             },
         }
