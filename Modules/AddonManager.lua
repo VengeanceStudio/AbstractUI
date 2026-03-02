@@ -619,6 +619,25 @@ function AddonManager:CreateUI()
     scrollFrame = CreateFrame("ScrollFrame", "AbstractUI_AddonManager_ScrollFrame", mainFrame, "FauxScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 20, -80)
     scrollFrame:SetPoint("BOTTOMRIGHT", -40, 70)
+    
+    -- Add backdrop to scroll area
+    if not scrollFrame.backdrop then
+        scrollFrame.backdrop = CreateFrame("Frame", nil, scrollFrame, "BackdropTemplate")
+        scrollFrame.backdrop:SetAllPoints(scrollFrame)
+        scrollFrame.backdrop:SetFrameLevel(scrollFrame:GetFrameLevel() - 1)
+        scrollFrame.backdrop:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            tileSize = 16,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        local r, g, b = ColorPalette:GetColor("bg-primary")
+        scrollFrame.backdrop:SetBackdropColor(r * 0.7, g * 0.7, b * 0.7, 0.9)
+        scrollFrame.backdrop:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+    end
+    
     scrollFrame:SetScript("OnVerticalScroll", function(self, offset)
         FauxScrollFrame_OnVerticalScroll(self, offset, LINEHEIGHT, function()
             AddonManager:UpdateDisplay()
