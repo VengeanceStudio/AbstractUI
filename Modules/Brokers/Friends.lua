@@ -9,7 +9,7 @@ local headerRefs = {}
 local friendObj
 
 -- Create the friends popup frame
-function BrokerBar:CreateFriendsFrame()
+local function CreateFriendsFrame()
     if friendsFrame then return end
     friendsFrame = CreateFrame("Frame", "AbstractFriendsPopup", UIParent, "BackdropTemplate")
     friendsFrame:SetSize(600, 400); friendsFrame:SetFrameStrata("DIALOG"); friendsFrame:EnableMouse(true); friendsFrame:Hide()
@@ -99,7 +99,7 @@ function BrokerBar:CreateFriendsFrame()
     end)
 end
 
-function BrokerBar:UpdateFriendList()
+local function UpdateFriendList()
     if not scrollChild then return end
     for _, child in ipairs({scrollChild:GetChildren()}) do 
         child:Hide() 
@@ -212,10 +212,10 @@ friendObj = LDB:NewDataObject("AbstractFriends", {
     OnClick = function() ToggleFriendsFrame(1) end,
     OnEnter = function(self) 
         if not friendsFrame then 
-            BrokerBar:CreateFriendsFrame() 
+            CreateFriendsFrame() 
         end
         friendsFrame.owner = self
-        BrokerBar:UpdateFriendList()
+        UpdateFriendList()
         SmartAnchor(friendsFrame, self)
         friendsFrame:Show() 
     end

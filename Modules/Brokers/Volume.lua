@@ -8,7 +8,7 @@ local volFrame
 local volObj
 
 -- Create the volume mixer popup
-function BrokerBar:CreateVolumeFrame()
+local function CreateVolumeFrame()
     if volFrame then return end
     volFrame = CreateFrame("Frame", "AbstractVolumePopout", UIParent, "BackdropTemplate")
     volFrame:SetSize(220, 320); volFrame:SetFrameStrata("DIALOG"); volFrame:EnableMouse(true); volFrame:Hide()
@@ -108,7 +108,7 @@ volObj = LDB:NewDataObject("AbstractVolume", {
     OnClick = function(self, button) 
         if button == "RightButton" then 
             if not volFrame then 
-                BrokerBar:CreateVolumeFrame() 
+                CreateVolumeFrame() 
             end
             volFrame.owner = self
             SmartAnchor(volFrame, self)

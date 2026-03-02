@@ -9,7 +9,7 @@ local guildHeaderRefs = {}
 local guildObj
 
 -- Create the guild popup frame
-function BrokerBar:CreateGuildFrame()
+local function CreateGuildFrame()
     if guildFrame then return end
     guildFrame = CreateFrame("Frame", "AbstractGuildPopup", UIParent, "BackdropTemplate")
     guildFrame:SetSize(600, 450); guildFrame:SetFrameStrata("DIALOG"); guildFrame:EnableMouse(true); guildFrame:Hide()
@@ -105,7 +105,7 @@ function BrokerBar:CreateGuildFrame()
     end)
 end
 
-function BrokerBar:UpdateGuildList()
+local function UpdateGuildList()
     if not gScrollChild then return end
     for _, child in ipairs({gScrollChild:GetChildren()}) do 
         child:Hide() 
@@ -167,10 +167,10 @@ guildObj = LDB:NewDataObject("AbstractGuild", {
         if IsInGuild() then 
             C_GuildInfo.GuildRoster()
             if not guildFrame then 
-                BrokerBar:CreateGuildFrame() 
+                CreateGuildFrame() 
             end
             guildFrame.owner = self
-            BrokerBar:UpdateGuildList()
+            UpdateGuildList()
             SmartAnchor(guildFrame, self)
             guildFrame:Show() 
         end 
