@@ -335,7 +335,8 @@ function FrameFactory:CreateDropdown(parent, width, height)
         edgeSize = 1,
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
-    dropdown.menu:SetBackdropColor(ColorPalette:GetColor("panel-bg"))
+    local r, g, b = ColorPalette:GetColor("panel-bg")
+    dropdown.menu:SetBackdropColor(r, g, b, 1.0)
     dropdown.menu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     
     -- Menu items container
