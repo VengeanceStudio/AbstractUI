@@ -189,7 +189,7 @@ function Tweaks:ADDON_LOADED(event, addonName)
     
     -- Hook AddOn Manager when it loads
     if addonName == "Blizzard_AddOnManager" then
-        C_Timer.After(0.1, function()
+        C_Timer.After(0.5, function()
             self:SetupAddonListSorting()
         end)
     end
@@ -200,46 +200,29 @@ end
 -- ============================================================================
 
 function Tweaks:SetupAddonListSorting()
-    if not AddonList then return end
-    
-    -- Create sort toggle button if it doesn't exist
-    if not self.addonSortButton then
-        local button = CreateFrame("CheckButton", "AbstractUI_AddonSortButton", AddonList, "InterfaceOptionsCheckButtonTemplate")
-        button:SetPoint("BOTTOMLEFT", AddonList, "BOTTOMLEFT", 20, 10)
-        button:SetSize(24, 24)
-        
-        -- Create label text
-        local label = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-        label:SetPoint("LEFT", button, "RIGHT", 2, 0)
-        label:SetText("Sort by Name")
-        button.Text = label
-        
-        -- Set initial state from saved variable
-        button:SetChecked(self.db.profile.addonListSortByName)
-        
-        -- Click handler
-        button:SetScript("OnClick", function(self)
-            local checked = self:GetChecked()
-            Tweaks.db.profile.addonListSortByName = checked
-            
-            -- Immediately apply or remove sorting
-            if checked then
-                C_Timer.After(0.1, function()
-                    Tweaks:ApplyAddonListSort()
-                end)
-            else
-                -- Restore to default category sorting
-                if AddonList.Update then
-                    AddonList:Update()
-                end
-            end
+    if not AddonList then 
+        -- AddonList not available yet, try again later
+        C_Timer.After(1, function()
+            self:SetupAddonListSorting()
         end)
-        
-        self.addonSortButton = button
+        return 
+    end
+    
+    -- Hook the OnShow event to create the button when the list is actually displayed
+    if not self.addonListShowHooked then
+        AddonList:HookScript("OnShow", function()
+            self:CreateAddonSortButton()
+        end)
+        self.addonListShowHooked = true
+    end
+    
+    -- Try to create the button now if the list is already shown
+    if AddonList:IsShown() then
+        self:CreateAddonSortButton()
     end
     
     -- Hook the addon list's update function to reapply our sorting
-    if AddonList and AddonList.Update then
+    if AddonList.Update then
         if not self:IsHooked(AddonList, "Update") then
             self:SecureHook(AddonList, "Update", function()
                 if self.db.profile.addonListSortByName then
@@ -250,8 +233,62 @@ function Tweaks:SetupAddonListSorting()
             end)
         end
     end
+end
+
+function Tweaks:CreateAddonSortButton()
+    -- Don't create if it already exists
+    if self.addonSortButton then 
+        -- Just update its checked state and make sure it's visible
+        self.addonSortButton:SetChecked(self.db.profile.addonListSortByName)
+        self.addonSortButton:Show()
+        return 
+    end
     
-    -- Apply sorting immediately if enabled
+    if not AddonList then return end
+    
+    local button = CreateFrame("CheckButton", "AbstractUI_AddonSortButton", AddonList, "InterfaceOptionsCheckButtonTemplate")
+    -- Position above the bottom buttons
+    button:SetPoint("BOTTOMLEFT", AddonList, "BOTTOMLEFT", 20, 45)
+    button:SetSize(26, 26)
+    button:SetFrameStrata("HIGH")
+    button:SetFrameLevel(AddonList:GetFrameLevel() + 10)
+    
+    -- Create label text
+    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    label:SetPoint("LEFT", button, "RIGHT", 4, 0)
+    label:SetText("Sort by Name")
+    label:SetTextColor(1, 1, 1)
+    button.Text = label
+    
+    -- Set initial state from saved variable
+    button:SetChecked(self.db.profile.addonListSortByName)
+    
+    -- Make sure it's shown
+    button:Show()
+    
+    -- Click handler
+    button:SetScript("OnClick", function(self)
+        local checked = self:GetChecked()
+        Tweaks.db.profile.addonListSortByName = checked
+        
+        -- Immediately apply or remove sorting
+        if checked then
+            C_Timer.After(0.1, function()
+                Tweaks:ApplyAddonListSort()
+            end)
+        else
+            -- Restore to default category sorting
+            if AddonList.Update then
+                AddonList:Update()
+            end
+        end
+    end)
+    
+    self.addonSortButton = button
+    
+    print("|cff9482c9AbstractUI:|r Addon sort button created")
+    
+    -- Apply sorting if enabled
     if self.db.profile.addonListSortByName then
         C_Timer.After(0.2, function()
             self:ApplyAddonListSort()
