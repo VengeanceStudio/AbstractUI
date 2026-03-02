@@ -25,7 +25,6 @@ local defaults = {
         questFrameX = 0,
         questFrameY = 0,
         questFrameCustomPosition = false,
-        addonListSortByName = false,
     }
 }
 
@@ -103,17 +102,6 @@ function Tweaks:OnDBReady()
     
     -- Apply quest frame scaling on load
     self:ApplyQuestFrameScale()
-    
-    -- Try to setup addon list sorting
-    C_Timer.After(2, function()
-        self:SetupAddonListSorting()
-    end)
-    C_Timer.After(5, function()
-        self:SetupAddonListSorting()
-    end)
-    C_Timer.After(10, function()
-        self:SetupAddonListSorting()
-    end)
 end
 
 function Tweaks:UPDATE_INVENTORY_DURABILITY()
@@ -200,154 +188,7 @@ function Tweaks:ADDON_LOADED(event, addonName)
     
     -- Hook AddOn Manager when it loads
     if addonName == "Blizzard_AddOnManager" then
-        C_Timer.After(0.5, function()
-            self:SetupAddonListSorting()
-        end)
-    end
-end
-
--- ============================================================================
--- AddOn List Sorting
--- ============================================================================
-
-function Tweaks:SetupAddonListSorting()
-    -- Try multiple frame names as Blizzard may have changed it
-    local addonFrame = AddonList or _G["AddonList"] or _G["AddOnList"]
-    
-    if not addonFrame then 
-        print("|cff9482c9AbstractUI:|r AddonList frame not found yet, retrying...")
-        -- Try again later
-        C_Timer.After(1, function()
-            self:SetupAddonListSorting()
-        end)
-        return 
-    end
-    
-    print("|cff9482c9AbstractUI:|r Found addon list frame, setting up sort button...")
-    
-    -- Hook the OnShow event to create the button when the list is actually displayed
-    if not self.addonListShowHooked then
-        addonFrame:HookScript("OnShow", function()
-            print("|cff9482c9AbstractUI:|r Addon list shown, creating sort button...")
-            self:CreateAddonSortButton()
-        end)
-        self.addonListShowHooked = true
-    end
-    
-    -- Try to create the button now if the list is already shown
-    if addonFrame:IsShown() then
-        print("|cff9482c9AbstractUI:|r Addon list already showing, creating button now...")
-        self:CreateAddonSortButton()
-    end
-    
-    -- Hook the addon list's update function (disabled for now)
-    -- Sorting functionality will be reimplemented in a future update
-end
-
-function Tweaks:CreateAddonSortButton()
-    print("|cff9482c9AbstractUI:|r CreateAddonSortButton called")
-    
-    -- Don't create if it already exists
-    if self.addonSortButton and self.addonSortButton:IsShown() then 
-        print("|cff9482c9AbstractUI:|r Sort button already exists and is shown")
-        self.addonSortButton:SetChecked(self.db.profile.addonListSortByName)
-        return 
-    end
-    
-    local addonFrame = AddonList or _G["AddonList"] or _G["AddOnList"]
-    if not addonFrame then 
-        print("|cffff0000AbstractUI:|r ERROR: Cannot find addon list frame!")
-        return 
-    end
-    
-    print("|cff00ff00AbstractUI:|r Found addon frame: " .. tostring(addonFrame:GetName()))
-    
-    -- Destroy old button if it exists but isn't shown
-    if self.addonSortButton then
-        self.addonSortButton:Hide()
-        self.addonSortButton = nil
-    end
-    
-    local button = CreateFrame("CheckButton", "AbstractUI_AddonSortButton", UIParent, "InterfaceOptionsCheckButtonTemplate")
-    -- Position relative to the addon frame, much lower to be visible
-    button:SetPoint("TOP", addonFrame, "BOTTOM", 0, -10)
-    button:SetSize(32, 32)
-    button:SetFrameStrata("TOOLTIP")
-    button:SetFrameLevel(9999)
-    
-    -- Create background for visibility
-    local bg = button:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(button)
-    bg:SetColorTexture(0, 0, 0, 0.8)
-    
-    -- Create label text
-    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-    label:SetPoint("LEFT", button, "RIGHT", 4, 0)
-    label:SetText("Sort by Name (Coming Soon)")
-    label:SetTextColor(1, 0.8, 0)
-    button.Text = label
-    
-    -- Disable the button for now
-    button:Disable()
-    button:SetChecked(false) -- Always unchecked since feature is disabled
-    button:SetAlpha(0.5)
-    
-    -- Make sure it's shown
-    button:Show()
-    
-    print("|cff00ff00AbstractUI:|r Sort button created (feature currently disabled)")
-    
-    -- Click handler - just show a message
-    button:SetScript("OnClick", function(self)
-        self:SetChecked(false)
-        print("|cffff8800AbstractUI:|r Addon list sorting is not yet implemented.")
-        print("|cffff8800AbstractUI:|r This feature requires a complete reimplementation of the addon list UI.")
-    end)
-    
-    -- Show/hide with addon frame
-    addonFrame:HookScript("OnHide", function()
-        button:Hide()
-    end)
-    
-    addonFrame:HookScript("OnShow", function()
-        button:Show()
-    end)
-    
-    self.addonSortButton = button
-    
-    -- Apply sorting if enabled
-    if self.db.profile.addonListSortByName then
-        print("|cff9482c9AbstractUI:|r Applying initial sort...")
-        C_Timer.After(0.3, function()
-            self:ApplyAddonListSort()
-        end)
-    end
-end
-
-function Tweaks:ApplyAddonListSort()
-    if not self.db.profile.addonListSortByName then return end
-    if not AddonList or not AddonList.ScrollBox then return end
-    
-    -- Uncheck the button
-    if self.addonSortButton then
-        self.addonSortButton:SetChecked(false)
-        self.db.profile.addonListSortByName = false
-    end
-end
-
-function Tweaks:RefreshAddonList()
-    if not AddonList then return end
-    
-    if self.db.profile.addonListSortByName then
-        -- Apply sorting
-        C_Timer.After(0.05, function()
-            self:ApplyAddonListSort()
-        end)
-    else
-        -- Force the addon list to rebuild with default sorting
-        if AddonList.Update then
-            AddonList:Update()
-        end
+        -- Addon list sorting has been replaced by the AddonManager module
     end
 end
 
@@ -917,19 +758,6 @@ function Tweaks:GetOptions()
                 set = function(_, v)
                     self.db.profile.questFrameY = v
                     self:ApplyQuestFrameScale()
-                end,
-            },
-            addonListSortByName = {
-                name = "Sort AddOn List by Name",
-                desc = "Adds a checkbox to the Blizzard AddOn List to sort addons alphabetically by name instead of by category",
-                type = "toggle",
-                order = 17,
-                set = function(_, v)
-                    self.db.profile.addonListSortByName = v
-                    if self.addonSortButton then
-                        self.addonSortButton:SetChecked(v)
-                    end
-                    self:RefreshAddonList()
                 end,
             },
         }
