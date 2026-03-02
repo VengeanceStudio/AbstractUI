@@ -1,8 +1,6 @@
 -- AbstractUI Guild Broker
 -- Displays online guild members count and provides a popup with detailed member list
 
-if not BrokerBar then return end
-
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local LDB = LibStub("LibDataBroker-1.1")
 local LSM = LibStub("LibSharedMedia-3.0")

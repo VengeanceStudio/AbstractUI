@@ -1,8 +1,6 @@
 -- AbstractUI Clock Broker
 -- Displays current time (local or realm) with tooltip showing daily/weekly resets
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local clockObj
 

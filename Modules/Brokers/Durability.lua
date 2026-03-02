@@ -1,8 +1,6 @@
 -- AbstractUI Durability Broker
 -- Displays overall equipment durability percentage with detailed per-slot tooltip
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local duraObj
 

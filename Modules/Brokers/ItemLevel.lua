@@ -1,8 +1,6 @@
 -- AbstractUI Item Level Broker
 -- Displays average equipped item level with per-slot breakdown tooltip
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local ilvlObj
 

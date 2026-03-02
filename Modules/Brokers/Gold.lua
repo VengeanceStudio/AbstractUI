@@ -1,8 +1,6 @@
 -- AbstractUI Gold Broker
 -- Displays current character gold and provides account-wide summary tooltip
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local goldObj
 

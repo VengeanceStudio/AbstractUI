@@ -1,8 +1,6 @@
 -- AbstractUI Bags Broker
 -- Displays bag space usage and provides detailed tooltip with per-bag breakdown
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local bagObj
 

@@ -1,8 +1,6 @@
 -- AbstractUI System Broker
 -- Displays FPS and latency with color-coded tooltip showing top 60 addons by memory usage
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local sysObj
 

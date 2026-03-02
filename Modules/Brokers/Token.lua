@@ -1,8 +1,6 @@
 -- AbstractUI Token Broker
 -- Displays WoW Token price and price history with manual refresh on click
 
-if not BrokerBar then return end
-
 local LDB = LibStub("LibDataBroker-1.1")
 local tokenObj
 
