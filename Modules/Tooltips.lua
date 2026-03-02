@@ -81,6 +81,9 @@ function Tooltips:OnDisable()
 end
 
 function Tooltips:Initialize()
+    -- Only initialize once
+    if self.initialized then return end
+    
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
@@ -91,15 +94,20 @@ function Tooltips:Initialize()
     
     self.ColorPalette = ColorPalette
     self.FontKit = FontKit
+    self.initialized = true
     
     -- Apply styling to all tooltip frames
     self:StyleTooltips()
     
     -- Hook for dynamic tooltips
-    self:SecureHook("GameTooltip_SetDefaultAnchor")
+    if not self:IsHooked("GameTooltip_SetDefaultAnchor") then
+        self:SecureHook("GameTooltip_SetDefaultAnchor")
+    end
     
     -- Hook GameTooltip to handle quest reward positioning
-    self:HookScript(GameTooltip, "OnShow", "OnGameTooltipShow")
+    if not self:IsHooked(GameTooltip, "OnShow") then
+        self:HookScript(GameTooltip, "OnShow", "OnGameTooltipShow")
+    end
     
     -- Hook tooltip show events for cursor following
     if self.db.profile.cursorFollow then
@@ -117,12 +125,15 @@ function Tooltips:Initialize()
         end)
     else
         -- Fallback for older API - hook OnShow and check for unit
-        GameTooltip:HookScript("OnShow", function(tooltip)
-            local _, unit = tooltip:GetUnit()
-            if unit then
-                self:OnTooltipSetUnit(tooltip)
-            end
-        end)
+        if not self.fallbackUnitHooked then
+            GameTooltip:HookScript("OnShow", function(tooltip)
+                local _, unit = tooltip:GetUnit()
+                if unit then
+                    self:OnTooltipSetUnit(tooltip)
+                end
+            end)
+            self.fallbackUnitHooked = true
+        end
     end
     
     -- Hook for combat hiding
