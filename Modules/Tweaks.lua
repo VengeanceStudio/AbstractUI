@@ -240,18 +240,8 @@ function Tweaks:SetupAddonListSorting()
         self:CreateAddonSortButton()
     end
     
-    -- Hook the addon list's update function to reapply our sorting
-    if addonFrame.Update then
-        if not self:IsHooked(addonFrame, "Update") then
-            self:SecureHook(addonFrame, "Update", function()
-                if self.db.profile.addonListSortByName then
-                    C_Timer.After(0.1, function()
-                        self:ApplyAddonListSort()
-                    end)
-                end
-            end)
-        end
-    end
+    -- Hook the addon list's update function (disabled for now)
+    -- Sorting functionality will be reimplemented in a future update
 end
 
 function Tweaks:CreateAddonSortButton()
@@ -293,32 +283,23 @@ function Tweaks:CreateAddonSortButton()
     -- Create label text
     local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
     label:SetPoint("LEFT", button, "RIGHT", 4, 0)
-    label:SetText("Sort by Name")
+    label:SetText("Sort by Name (Coming Soon)")
     label:SetTextColor(1, 0.8, 0)
     button.Text = label
     
-    -- Set initial state from saved variable
-    button:SetChecked(self.db.profile.addonListSortByName)
+    -- Disable the button for now
+    button:Disable()false) -- Always unchecked since feature is disabled
     
     -- Make sure it's shown
     button:Show()
     
-    print("|cff00ff00AbstractUI:|r Sort button created! Position: TOP of AddonList, BOTTOM -10. Size: 32x32. IsShown: " .. tostring(button:IsShown()))
+    print("|cff00ff00AbstractUI:|r Sort button created (feature currently disabled)")
     
-    -- Click handler
+    -- Click handler - just show a message
     button:SetScript("OnClick", function(self)
-        local checked = self:GetChecked()
-        Tweaks.db.profile.addonListSortByName = checked
-        print("|cff9482c9AbstractUI:|r Sort by name toggled: " .. tostring(checked))
-        
-        -- Immediately apply or remove sorting
-        if checked then
-            C_Timer.After(0.1, function()
-                Tweaks:ApplyAddonListSort()
-            end)
-        else
-            -- Restore to default category sorting
-            local af = AddonList or _G["AddonList"] or _G["AddOnList"]
+        self:SetChecked(false)
+        print("|cffff8800AbstractUI:|r Addon list sorting is not yet implemented.")
+        print("|cffff8800AbstractUI:|r This feature requires a complete reimplementation of the addon list UI.") local af = AddonList or _G["AddonList"] or _G["AddOnList"]
             if af and af.Update then
                 af:Update()
             end
@@ -349,35 +330,10 @@ function Tweaks:ApplyAddonListSort()
     if not self.db.profile.addonListSortByName then return end
     if not AddonList or not AddonList.ScrollBox then return end
     
-    local dataProvider = AddonList.ScrollBox:GetDataProvider()
-    if not dataProvider then return end
-    
-    -- Build a list of all addons sorted by name
-    local sortedAddons = {}
-    local numAddons = C_AddOns.GetNumAddOns()
-    
-    for i = 1, numAddons do
-        local name, title = C_AddOns.GetAddOnInfo(i)
-        table.insert(sortedAddons, {
-            index = i,
-            name = title or name or ("Addon"..i),
-        })
-    end
-    
-    -- Sort by name
-    table.sort(sortedAddons, function(a, b)
-        return a.name:lower() < b.name:lower()
-    end)
-    
-    -- Clear and rebuild the list
-    dataProvider:Flush()
-    
-    for _, addon in ipairs(sortedAddons) do
-        -- Create data entry matching what AddonList expects
-        local data = {
-            index = addon.index,
-        }
-        dataProvider:Insert(data)
+    -- Uncheck the button
+    if self.addonSortButton then
+        self.addonSortButton:SetChecked(false)
+        self.db.profile.addonListSortByName = false
     end
 end
 
@@ -984,16 +940,14 @@ end
 
 -- ============================================================================
 -- TALENT IMPORT OVERWRITE FUNCTIONALITY
--- ============================================================================
-
-function Tweaks:HookTalentImportDialog()
-    if self.talentDialogHooked then return end
-    
-    -- Wait for the dialog to exist and hook its OnShow
-    if ClassTalentLoadoutImportDialog then
-        ClassTalentLoadoutImportDialog:HookScript("OnShow", function()
-            C_Timer.After(0.1, function()
-                self:SetupTalentImportHook()
+-- ============================================ (Coming Soon)",
+                desc = "This feature is currently disabled. Sorting the Blizzard addon list requires a complete UI reimplementation due to its complex hierarchical structure. Check back in a future update!",
+                type = "toggle",
+                order = 17,
+                disabled = true,
+                get = function() return false end,
+                set = function(_, v) 
+                    -- Disabled)
             end)
         end)
         self.talentDialogHooked = true

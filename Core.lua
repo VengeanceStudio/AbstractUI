@@ -47,7 +47,8 @@ local defaults = {
             resourceBars = true,
             castBar = true,
             tweaks = true,
-            setup = true
+            setup = true,
+            addonmanager = true
         }
     }
 }
