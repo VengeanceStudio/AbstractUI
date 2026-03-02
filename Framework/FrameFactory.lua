@@ -236,11 +236,12 @@ function FrameFactory:CreateCheckbox(parent, size)
     checkbox.borderColor = {ColorPalette:GetColor("primary")}
     checkbox.checkColor = {ColorPalette:GetColor("primary")}
     
-    -- Check texture
-    checkbox.check = checkbox:CreateTexture(nil, "ARTWORK")
-    checkbox.check:SetSize((size or 16) - 4, (size or 16) - 4)
-    checkbox.check:SetPoint("CENTER")
-    checkbox.check:SetColorTexture(unpack(checkbox.checkColor))
+    -- Checkmark symbol
+    checkbox.check = checkbox:CreateFontString(nil, "ARTWORK")
+    checkbox.check:SetFont(FontKit:GetFont("primary"), (size or 16) - 2, "OUTLINE")
+    checkbox.check:SetPoint("CENTER", 0, 1)
+    checkbox.check:SetText("✓")
+    checkbox.check:SetTextColor(unpack(checkbox.checkColor))
     checkbox.check:Hide()
     
     checkbox.checked = false
