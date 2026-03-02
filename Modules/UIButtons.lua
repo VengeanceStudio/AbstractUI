@@ -549,7 +549,7 @@ function UIButtons:GetOptions()
                     if not self.db.profile.UIButtons.reload then return true end
                     return self.db.profile.UIButtons.reload.enabled 
                 end,
-                set = function(_, v) self.db.profile.UIButtons.reload.enabled = v; ReloadUI() end
+                set = function(_, v) self.db.profile.UIButtons.reload.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
             },
             exit = {
                 name = "Edit Mode (E)", type = "toggle", order = 12,
@@ -557,7 +557,7 @@ function UIButtons:GetOptions()
                     if not self.db.profile.UIButtons.exit then return true end
                     return self.db.profile.UIButtons.exit.enabled 
                 end,
-                set = function(_, v) self.db.profile.UIButtons.exit.enabled = v; ReloadUI() end
+                set = function(_, v) self.db.profile.UIButtons.exit.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
             },
             options = {
                 name = "Options (O)", type = "toggle", order = 13,
@@ -565,7 +565,7 @@ function UIButtons:GetOptions()
                     if not self.db.profile.UIButtons.options then return true end
                     return self.db.profile.UIButtons.options.enabled 
                 end,
-                set = function(_, v) self.db.profile.UIButtons.options.enabled = v; ReloadUI() end
+                set = function(_, v) self.db.profile.UIButtons.options.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
             },
             addons = {
                 name = "Addons (A)", type = "toggle", order = 14,
@@ -573,7 +573,7 @@ function UIButtons:GetOptions()
                     if not self.db.profile.UIButtons.addons then return true end
                     return self.db.profile.UIButtons.addons.enabled 
                 end,
-                set = function(_, v) self.db.profile.UIButtons.addons.enabled = v; ReloadUI() end
+                set = function(_, v) self.db.profile.UIButtons.addons.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
             },
             move = {
                 name = "Move Mode (M)", type = "toggle", order = 15,
@@ -581,7 +581,7 @@ function UIButtons:GetOptions()
                     if not self.db.profile.UIButtons.move then return true end
                     return self.db.profile.UIButtons.move.enabled 
                 end,
-                set = function(_, v) self.db.profile.UIButtons.move.enabled = v; ReloadUI() end
+                set = function(_, v) self.db.profile.UIButtons.move.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
             }
         }
     }

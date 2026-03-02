@@ -782,7 +782,7 @@ function Skin:GetOptions()
                 set = function(_, v)
                     self.db.profile.globalSkin = v
                     -- Trigger reskin of everything
-                    C_UI.Reload()
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end
             },
             spacer1 = { type = "header", name = "Module-Specific Skinning", order = 10},
@@ -798,7 +798,7 @@ function Skin:GetOptions()
                     if v then
                         self:SkinActionBarButtons()
                     else
-                        C_UI.Reload()
+                        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                     end
                 end
             },
@@ -811,7 +811,7 @@ function Skin:GetOptions()
                 get = function() return self.db.profile.skinUnitFrames end,
                 set = function(_, v)
                     self.db.profile.skinUnitFrames = v
-                    C_UI.Reload()
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end
             },
             skinBags = {
@@ -826,7 +826,7 @@ function Skin:GetOptions()
                     if v then
                         self:SkinBags()
                     else
-                        C_UI.Reload()
+                        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                     end
                 end
             },
@@ -842,7 +842,7 @@ function Skin:GetOptions()
                     if v then
                         self:SkinBlizzardFrames()
                     else
-                        C_UI.Reload()
+                        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                     end
                 end
             },
@@ -869,7 +869,7 @@ function Skin:GetOptions()
                 get = function() return self.db.profile.skinChatFrames end,
                 set = function(_, v)
                     self.db.profile.skinChatFrames = v
-                    C_UI.Reload()
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end
             },
             spacer2 = { type = "header", name = "Button Styling", order = 20 },

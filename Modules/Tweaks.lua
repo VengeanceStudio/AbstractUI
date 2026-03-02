@@ -40,6 +40,8 @@ function Tweaks:OnInitialize()
         hideOnEscape = 1,
     }
     
+
+    
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
@@ -717,7 +719,10 @@ function Tweaks:GetOptions()
         args = {
             fastLoot = { name = "Fast Loot", type = "toggle", order = 1},
             hideGryphons = { name = "Hide Action Bar Art", type = "toggle", order = 2,
-                set = function(_, v) self.db.profile.hideGryphons = v; C_UI.Reload() end },
+                set = function(_, v) 
+                    self.db.profile.hideGryphons = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end },
             hideBagBar = { name = "Hide Bag Bar", type = "toggle", order = 3,
                 set = function(_, v) self.db.profile.hideBagBar = v; self:ApplyTweaks() end },
             autoRepair = {

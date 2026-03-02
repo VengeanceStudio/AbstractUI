@@ -976,7 +976,7 @@ function Maps:GetOptions()
             self.db.profile[info[#info]] = value
             if info[#info] == "shape" then
                 -- Changing shape requires a reload
-                ReloadUI()
+                StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
             else
                 self:UpdateLayout()
             end
