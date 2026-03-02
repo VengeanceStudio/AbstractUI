@@ -222,19 +222,28 @@ function Tweaks:SetupAddonListSorting()
             local checked = self:GetChecked()
             Tweaks.db.profile.addonListSortByName = checked
             
-            -- Force refresh the addon list
-            Tweaks:RefreshAddonList()
+            -- Immediately apply or remove sorting
+            if checked then
+                C_Timer.After(0.1, function()
+                    Tweaks:ApplyAddonListSort()
+                end)
+            else
+                -- Restore to default category sorting
+                if AddonList.Update then
+                    AddonList:Update()
+                end
+            end
         end)
         
         self.addonSortButton = button
     end
     
-    -- Hook the addon list's update function to apply our sorting
-    if AddonList.ScrollBox then
-        if not self:IsHooked(AddonList.ScrollBox, "Update") then
-            self:SecureHook(AddonList.ScrollBox, "Update", function()
+    -- Hook the addon list's update function to reapply our sorting
+    if AddonList and AddonList.Update then
+        if not self:IsHooked(AddonList, "Update") then
+            self:SecureHook(AddonList, "Update", function()
                 if self.db.profile.addonListSortByName then
-                    C_Timer.After(0, function()
+                    C_Timer.After(0.1, function()
                         self:ApplyAddonListSort()
                     end)
                 end
@@ -244,7 +253,9 @@ function Tweaks:SetupAddonListSorting()
     
     -- Apply sorting immediately if enabled
     if self.db.profile.addonListSortByName then
-        self:RefreshAddonList()
+        C_Timer.After(0.2, function()
+            self:ApplyAddonListSort()
+        end)
     end
 end
 
@@ -255,39 +266,48 @@ function Tweaks:ApplyAddonListSort()
     local dataProvider = AddonList.ScrollBox:GetDataProvider()
     if not dataProvider then return end
     
-    -- Get all elements from the data provider (false = include collapsed nodes)
-    local elements = {}
-    dataProvider:Enumerate(function(element)
-        table.insert(elements, element)
-    end, false)
+    -- Build a list of all addons sorted by name
+    local sortedAddons = {}
+    local numAddons = C_AddOns.GetNumAddOns()
     
-    -- Sort by addon name
-    table.sort(elements, function(a, b)
-        local nameA = a.Name or a.Title or ""
-        local nameB = b.Name or b.Title or ""
-        return nameA:lower() < nameB:lower()
+    for i = 1, numAddons do
+        local name, title = C_AddOns.GetAddOnInfo(i)
+        table.insert(sortedAddons, {
+            index = i,
+            name = title or name or ("Addon"..i),
+        })
+    end
+    
+    -- Sort by name
+    table.sort(sortedAddons, function(a, b)
+        return a.name:lower() < b.name:lower()
     end)
     
-    -- Clear and re-insert in sorted order
+    -- Clear and rebuild the list
     dataProvider:Flush()
-    for _, element in ipairs(elements) do
-        dataProvider:Insert(element)
+    
+    for _, addon in ipairs(sortedAddons) do
+        -- Create data entry matching what AddonList expects
+        local data = {
+            index = addon.index,
+        }
+        dataProvider:Insert(data)
     end
 end
 
 function Tweaks:RefreshAddonList()
     if not AddonList then return end
     
-    -- Force the addon list to rebuild
-    if AddonList.Update then
-        AddonList:Update()
-    end
-    
-    -- Apply our custom sorting after the update
     if self.db.profile.addonListSortByName then
-        C_Timer.After(0.1, function()
+        -- Apply sorting
+        C_Timer.After(0.05, function()
             self:ApplyAddonListSort()
         end)
+    else
+        -- Force the addon list to rebuild with default sorting
+        if AddonList.Update then
+            AddonList:Update()
+        end
     end
 end
 
