@@ -6,6 +6,6 @@ local locObj
 
 -- Register the broker
 locObj = LDB:NewDataObject("AbstractLocation", { 
-    type = "data source", text = "Loc", icon = "Interface\\Icons\\INV_Misc_Map02", 
+    type = "data source", text = GetZoneText() or "Unknown", icon = "Interface\\Icons\\INV_Misc_Map02", 
     OnClick = function() ToggleWorldMap() end 
 })
