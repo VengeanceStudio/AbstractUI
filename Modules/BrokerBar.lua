@@ -565,13 +565,6 @@ function BrokerBar:UpdateAllModules()
         lastState.vol = v
         volObj.text = string.format("%d%%", v) -- Force integer display
     end
-    
-    -- Call event-driven update functions to ensure values are initialized
-    self:UpdateLocation()
-    self:UpdateBagCount()
-    self:UpdateGuildCount()
-    self:UpdateFriendsCount()
-    self:UpdateDurability()
 end
 
 -- Event-driven update functions to avoid expensive polling
@@ -1114,8 +1107,15 @@ function BrokerBar:OnDBReady()
 end
 
 function BrokerBar:PLAYER_ENTERING_WORLD()
-    -- Just update modules, initialization already done
+    -- Initialize all modules with current values
     self:UpdateAllModules()
+    
+    -- Initialize event-driven values on first load
+    self:UpdateLocation()
+    self:UpdateBagCount()
+    self:UpdateGuildCount()
+    self:UpdateFriendsCount()
+    self:UpdateDurability()
 end
 
 function BrokerBar:UpdateGoldData()

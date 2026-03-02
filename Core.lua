@@ -68,6 +68,7 @@ function AbstractUI:OnInitialize()
     self:RegisterChatCommand("auimove", "ToggleMoveMode")
     self:RegisterChatCommand("demo", "OpenDemo")
     self:RegisterChatCommand("auimemory", "ToggleMemoryDebug")
+    self:RegisterChatCommand("auigc", "ForceGarbageCollection")
 end
 
 function AbstractUI:OnEnable()
@@ -139,28 +140,119 @@ function AbstractUI:ToggleMemoryDebug()
             self.memoryDebugTicker:Cancel()
         end
         
-        -- Create new ticker that runs every 10 seconds
+        -- Store baseline for delta tracking
+        UpdateAddOnMemoryUsage()
+        self.memoryDebugBaseline = GetAddOnMemoryUsage("AbstractUI")
+        self.memoryDebugLastReading = self.memoryDebugBaseline
+        
+        -- Create new ticker that runs every 10 seconds with detailed diagnostics
         self.memoryDebugTicker = C_Timer.NewTicker(10, function()
             UpdateAddOnMemoryUsage()
             local memory = GetAddOnMemoryUsage("AbstractUI")
             local memoryMB = memory / 1024
-            print(string.format("|cff00ff00AbstractUI Memory:|r %.2f MB (%.0f KB)", memoryMB, memory))
+            local delta = memory - self.memoryDebugLastReading
+            local deltaMB = delta / 1024
+            self.memoryDebugLastReading = memory
+            
+            -- Print memory with delta
+            print(string.format("|cff00ff00AbstractUI Memory:|r %.2f MB (%.0f KB) |cffffaa00[+%.2f MB/10s]|r", memoryMB, memory, deltaMB))
+            
+            -- Diagnostic information
+            local diagnostics = {}
+            
+            -- Count active C_Timer tickers (approximation via module checks)
+            local tickerCount = 0
+            local CooldownMgr = self:GetModule("CooldownManager", true)
+            if CooldownMgr and CooldownMgr.overlayTimer then tickerCount = tickerCount + 1 end
+            
+            local Maps = self:GetModule("Maps", true)
+            if Maps then
+                if Maps.clockTicker then tickerCount = tickerCount + 1 end
+                if Maps.coordsTicker then tickerCount = tickerCount + 1 end
+            end
+            
+            local BrokerBar = self:GetModule("BrokerBar", true)
+            if BrokerBar and BrokerBar.updateTicker then tickerCount = tickerCount + 1 end
+            
+            table.insert(diagnostics, string.format("Tickers: %d", tickerCount))
+            
+            -- Count frames created by AbstractUI (expensive, so cache result)
+            if not self.memoryDebugFrameCountCache or (GetTime() - (self.memoryDebugFrameCountTime or 0)) > 30 then
+                local frameCount = 0
+                for i = 1, 10000 do
+                    local frame = _G["AbstractUI" .. i] or _G["AbstractUIFrame" .. i] or _G["AbstractUIButton_" .. i]
+                    if frame then frameCount = frameCount + 1 end
+                end
+                self.memoryDebugFrameCountCache = frameCount
+                self.memoryDebugFrameCountTime = GetTime()
+            end
+            if self.memoryDebugFrameCountCache > 0 then
+                table.insert(diagnostics, string.format("Frames: %d", self.memoryDebugFrameCountCache))
+            end
+            
+            -- Count highlighted spells (potential leak source)
+            if CooldownMgr and CooldownMgr.highlightedSpells then
+                local count = 0
+                for _ in pairs(CooldownMgr.highlightedSpells) do count = count + 1 end
+                if count > 0 then
+                    table.insert(diagnostics, string.format("Highlights: %d", count))
+                end
+            end
+            
+            -- Count registered events
+            local ActionBars = self:GetModule("ActionBars", true)
+            if ActionBars and ActionBars.cursorUpdateFrame then
+                table.insert(diagnostics, "CursorFrame: Active")
+            end
+            
+            -- Print diagnostics if any
+            if #diagnostics > 0 then
+                print("|cff888888  → " .. table.concat(diagnostics, " | ") .. "|r")
+            end
         end)
         
         -- Print initial value
-        UpdateAddOnMemoryUsage()
-        local memory = GetAddOnMemoryUsage("AbstractUI")
-        local memoryMB = memory / 1024
-        print(string.format("|cff00ff00AbstractUI Memory Debug Enabled|r - Current: %.2f MB (%.0f KB)", memoryMB, memory))
-        print("|cff00ff00AbstractUI:|r Memory will be printed every 10 seconds. Use /auimemory to disable.")
+        local memoryMB = self.memoryDebugBaseline / 1024
+        print(string.format("|cff00ff00AbstractUI Memory Debug Enabled|r - Current: %.2f MB (%.0f KB)", memoryMB, self.memoryDebugBaseline))
+        print("|cff00ff00AbstractUI:|r Memory will be printed every 10 seconds with growth tracking. Use /auimemory to disable.")
     else
         -- Cancel ticker
         if self.memoryDebugTicker then
             self.memoryDebugTicker:Cancel()
             self.memoryDebugTicker = nil
         end
+        self.memoryDebugBaseline = nil
+        self.memoryDebugLastReading = nil
         print("|cff00ff00AbstractUI Memory Debug Disabled|r")
     end
+end
+
+function AbstractUI:ForceGarbageCollection()
+    -- Get memory before GC
+    UpdateAddOnMemoryUsage()
+    local beforeMemory = GetAddOnMemoryUsage("AbstractUI")
+    local beforeMB = beforeMemory / 1024
+    
+    -- Force garbage collection
+    collectgarbage("collect")
+    
+    -- Wait a moment for collection to complete
+    C_Timer.After(0.1, function()
+        UpdateAddOnMemoryUsage()
+        local afterMemory = GetAddOnMemoryUsage("AbstractUI")
+        local afterMB = afterMemory / 1024
+        local freed = beforeMemory - afterMemory
+        local freedMB = freed / 1024
+        
+        print(string.format("|cff00ff00AbstractUI Garbage Collection:|r"))
+        print(string.format("  Before: %.2f MB (%.0f KB)", beforeMB, beforeMemory))
+        print(string.format("  After:  %.2f MB (%.0f KB)", afterMB, afterMemory))
+        print(string.format("  Freed:  %.2f MB (%.0f KB)", freedMB, freed))
+        
+        if freedMB < 0.1 then
+            print("|cffff8800  ⚠ Warning: Very little memory freed - possible permanent leak!|r")
+        end
+    end)
 end
 
 function AbstractUI:OpenDemo()
