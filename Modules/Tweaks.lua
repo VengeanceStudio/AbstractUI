@@ -938,21 +938,7 @@ end
 
 -- ============================================================================
 -- TALENT IMPORT OVERWRITE FUNCTIONALITY
--- ============================================ (Coming Soon)",
-                desc = "This feature is currently disabled. Sorting the Blizzard addon list requires a complete UI reimplementation due to its complex hierarchical structure. Check back in a future update!",
-                type = "toggle",
-                order = 17,
-                disabled = true,
-                get = function() return false end,
-                set = function(_, v) 
-                    -- Disabled)
-            end)
-        end)
-        self.talentDialogHooked = true
-    else
-        C_Timer.After(2, function() self:HookTalentImportDialog() end)
-    end
-end
+-- ============================================================================
 
 function Tweaks:SetupTalentImportHook()
     if not ClassTalentLoadoutImportDialog then
