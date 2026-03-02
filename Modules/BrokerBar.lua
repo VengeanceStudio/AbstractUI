@@ -1089,6 +1089,7 @@ function BrokerBar:OnDBReady()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("BAG_UPDATE", "UpdateBagCount")
     self:RegisterEvent("ZONE_CHANGED", "UpdateLocation")
+    self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateLocation")
     self:RegisterEvent("UPDATE_INVENTORY_DURABILITY", "UpdateDurability")
     self:RegisterEvent("BN_FRIEND_ACCOUNT_ONLINE", "UpdateFriendsCount")
     self:RegisterEvent("BN_FRIEND_ACCOUNT_OFFLINE", "UpdateFriendsCount")
@@ -1119,9 +1120,11 @@ function BrokerBar:PLAYER_ENTERING_WORLD()
     -- Initialize all modules with current values
     self:UpdateAllModules()
     
-    -- Initialize event-driven values on first load (use C_Timer.After to ensure brokers are ready)
+    -- Update location immediately (zone changes need instant update)
+    self:UpdateLocation()
+    
+    -- Initialize other event-driven values with delay to ensure brokers are ready
     C_Timer.After(0.1, function()
-        self:UpdateLocation()
         self:UpdateBagCount()
         self:UpdateGuildCount()
         self:UpdateFriendsCount()
