@@ -494,7 +494,14 @@ end
 -- 6. UPDATE ENGINE
 -- ============================================================================
 
+-- Performance tracking
+local updateCallCount = 0
+local lastPerfReport = 0
+
 function BrokerBar:UpdateAllModules()
+    updateCallCount = updateCallCount + 1
+    local startTime = debugprofilestop()
+    
     -- CLOCK
     local h, m = tonumber(date("%H")), tonumber(date("%M"))
     if h ~= lastState.timeH or m ~= lastState.timeM then
@@ -568,6 +575,13 @@ function BrokerBar:UpdateAllModules()
     if v ~= lastState.vol then 
         lastState.vol = v
         volObj.text = string.format("%d%%", v) -- Force integer display
+    end
+    
+    -- Performance reporting every 60 calls (approximately every minute with 1s ticker)
+    local elapsed = debugprofilestop() - startTime
+    if updateCallCount - lastPerfReport >= 60 then
+        print("|cffff0000[AbstractUI DEBUG]|r UpdateAllModules() #", updateCallCount, "took", string.format("%.2f", elapsed), "ms (avg over 60 calls)")
+        lastPerfReport = updateCallCount
     end
 end
 
@@ -1139,8 +1153,26 @@ function BrokerBar:PLAYER_ENTERING_WORLD()
     
     print("  Active updateTicker:", self.updateTicker and "YES" or "NO")
     
+    -- Count ALL AbstractUI frames
+    local allFrames = 0
+    for i = 1, 10000 do
+        local frame = _G["AbstractUI_" .. i]
+        if frame then allFrames = allFrames + 1 end
+    end
+    print("  Total AbstractUI frames (global scan):", allFrames)
+    
+    -- Performance check
+    local fps = GetFramerate()
+    print("  Current FPS:", string.format("%.1f", fps))
+    
+    -- Time how long UpdateAllModules takes
+    local startTime = debugprofilestop()
+    
     -- Initialize all modules with current values
     self:UpdateAllModules()
+    
+    local elapsedMs = debugprofilestop() - startTime
+    print("  UpdateAllModules() took:", string.format("%.2f", elapsedMs), "ms")
     
     -- Update location immediately (zone changes need instant update)
     self:UpdateLocation()
