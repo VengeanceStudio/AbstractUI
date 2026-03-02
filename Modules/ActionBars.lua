@@ -89,17 +89,11 @@ function AB:OnInitialize()
     -- Use throttled OnUpdate polling to detect cursor changes for showing empty buttons
     -- Show empty buttons whenever any icon is being dragged from any UI page (Spellbook, Talents, Macros, Mounts, Pets, Heirlooms, Bags, etc.)
     if not self.cursorUpdateFrame then
-        print("|cffff0000[AbstractUI DEBUG]|r ActionBars: Creating NEW cursorUpdateFrame with OnUpdate")
         self.cursorUpdateFrame = CreateFrame("Frame")
         self.cursorUpdateFrame.lastCursorActive = false
         self.cursorUpdateFrame.throttle = 0
-        self.cursorUpdateFrame.updateCount = 0
         -- Throttled to 0.1s instead of every frame to reduce memory pressure
         self.cursorUpdateFrame:SetScript("OnUpdate", function(self, elapsed)
-            self.updateCount = self.updateCount + 1
-            if self.updateCount % 600 == 0 then -- Print every 60 seconds (600 * 0.1s)
-                print("|cffff0000[AbstractUI DEBUG]|r ActionBars OnUpdate: Executed", self.updateCount, "times")
-            end
             self.throttle = self.throttle + elapsed
             if self.throttle < 0.1 then return end
             self.throttle = 0
@@ -112,8 +106,6 @@ function AB:OnInitialize()
                 AB:CURSOR_UPDATE()
             end
         end)
-    else
-        print("|cff00ff00[AbstractUI DEBUG]|r ActionBars: REUSING existing cursorUpdateFrame (OnUpdate already set)")
     end
     -- Removed invalid UIParent:HookScript("OnCursorChanged"). Now handled by per-button drag event hooks.
 end
