@@ -65,6 +65,8 @@ for barKey, config in pairs(BAR_CONFIGS) do
         fadeInCombat = false,
         fadeOutCombat = false,
         fadeMouseover = false,
+        autoHide = false,
+        autoHideDelay = 0.5,
         columns = (barKey == "PetActionBar" or barKey == "StanceBar") and 10 or 12,
         buttonSize = 42, -- Blizzard default
         buttonSpacing = 4,
@@ -1291,9 +1293,34 @@ function AB:UpdateBarFading(barKey)
     container:SetScript("OnLeave", nil)
     container:SetScript("OnUpdate", nil)
     
-    if db.fadeMouseover then
+    -- Cancel any pending hide timers
+    if container.hideTimer then
+        container.hideTimer:Cancel()
+        container.hideTimer = nil
+    end
+    
+    if db.autoHide then
+        container:EnableMouse(true)
+        container:Hide()
+        
+        container:SetScript("OnEnter", function()
+            if container.hideTimer then
+                container.hideTimer:Cancel()
+                container.hideTimer = nil
+            end
+            container:Show()
+            container:SetAlpha(db.alpha)
+        end)
+        
+        container:SetScript("OnLeave", function()
+            container.hideTimer = C_Timer.NewTimer(db.autoHideDelay or 0.5, function()
+                container:Hide()
+            end)
+        end)
+    elseif db.fadeMouseover then
         container:EnableMouse(true)
         container:SetAlpha(db.fadeAlpha)
+        container:Show()
         
         container:SetScript("OnEnter", function()
             UIFrameFadeIn(container, 0.2, container:GetAlpha(), db.alpha)
@@ -1333,6 +1360,7 @@ function AB:UpdateBarFading(barKey)
         UpdateCombatFade()
     else
         container:EnableMouse(false)
+        container:Show()
         container:SetAlpha(db.alpha)
     end
 end
@@ -1698,11 +1726,43 @@ function AB:GetOptions()
                             self:UpdateEmptyButtons(barKey)
                         end
                     },
+                    autoHide = {
+                        name = "Auto Hide",
+                        desc = "Completely hide bar until you mouse over it",
+                        type = "toggle",
+                        order = 11,
+                        get = function() return self.db.profile.bars[barKey].autoHide end,
+                        set = function(_, v)
+                            self.db.profile.bars[barKey].autoHide = v
+                            if v then
+                                self.db.profile.bars[barKey].fadeMouseover = false
+                                self.db.profile.bars[barKey].fadeInCombat = false
+                                self.db.profile.bars[barKey].fadeOutCombat = false
+                            end
+                            self:UpdateBar(barKey)
+                        end
+                    },
+                    autoHideDelay = {
+                        name = "Auto Hide Delay",
+                        desc = "Seconds to wait before hiding after mouse leaves",
+                        type = "range",
+                        order = 11.5,
+                        min = 0,
+                        max = 2,
+                        step = 0.1,
+                        disabled = function() return not self.db.profile.bars[barKey].autoHide end,
+                        get = function() return self.db.profile.bars[barKey].autoHideDelay end,
+                        set = function(_, v)
+                            self.db.profile.bars[barKey].autoHideDelay = v
+                            self:UpdateBar(barKey)
+                        end
+                    },
                     fadeMouseover = {
                         name = "Fade on Mouseover",
                         desc = "Fade bar until you mouse over it",
                         type = "toggle",
-                        order = 11,
+                        order = 12,
+                        disabled = function() return self.db.profile.bars[barKey].autoHide end,
                         get = function() return self.db.profile.bars[barKey].fadeMouseover end,
                         set = function(_, v)
                             self.db.profile.bars[barKey].fadeMouseover = v
@@ -1717,8 +1777,8 @@ function AB:GetOptions()
                         name = "Fade In Combat",
                         desc = "Show bar fully in combat",
                         type = "toggle",
-                        order = 12,
-                        disabled = function() return self.db.profile.bars[barKey].fadeMouseover end,
+                        order = 13,
+                        disabled = function() return self.db.profile.bars[barKey].autoHide or self.db.profile.bars[barKey].fadeMouseover end,
                         get = function() return self.db.profile.bars[barKey].fadeInCombat end,
                         set = function(_, v)
                             self.db.profile.bars[barKey].fadeInCombat = v
@@ -1729,8 +1789,8 @@ function AB:GetOptions()
                         name = "Fade Out of Combat",
                         desc = "Fade bar when out of combat",
                         type = "toggle",
-                        order = 13,
-                        disabled = function() return self.db.profile.bars[barKey].fadeMouseover end,
+                        order = 14,
+                        disabled = function() return self.db.profile.bars[barKey].autoHide or self.db.profile.bars[barKey].fadeMouseover end,
                         get = function() return self.db.profile.bars[barKey].fadeOutCombat end,
                         set = function(_, v)
                             self.db.profile.bars[barKey].fadeOutCombat = v
@@ -1741,7 +1801,8 @@ function AB:GetOptions()
                         name = "Faded Opacity",
                         desc = "Opacity when faded",
                         type = "range",
-                        order = 14,
+                        order = 15,
+                        disabled = function() return self.db.profile.bars[barKey].autoHide end,
                         min = 0,
                         max = 1,
                         step = 0.05,
