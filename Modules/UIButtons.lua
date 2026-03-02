@@ -175,6 +175,12 @@ function UIButtons:CreateButtons()
     for key, data in pairs(buttonData) do
         local config = self.db.profile.UIButtons[key]
         if config and config.enabled then
+            -- Check if button already exists
+            if uiButtons[key] then
+                -- Button already exists, skip creation
+                goto continue
+            end
+            
             local btn
             
             -- For exit button, we need SecureActionButtonTemplate
@@ -347,6 +353,8 @@ function UIButtons:CreateButtons()
             btn:Show()
             btn:SetAlpha(1)
             uiButtons[key] = btn
+            
+            ::continue::
         end
     end
     self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")

@@ -1313,8 +1313,12 @@ function AB:UpdateBarFading(barKey)
         end)
         
         container:SetScript("OnLeave", function()
+            if container.hideTimer then
+                container.hideTimer:Cancel()
+            end
             container.hideTimer = C_Timer.NewTimer(db.autoHideDelay or 0.5, function()
                 container:Hide()
+                container.hideTimer = nil
             end)
         end)
     elseif db.fadeMouseover then
@@ -1333,6 +1337,7 @@ function AB:UpdateBarFading(barKey)
         -- CHANGED: Use event-driven updates instead of OnUpdate polling
         -- This prevents checking InCombatLockdown() every frame (60+ times/sec)
         container:EnableMouse(false)
+        container:Show()
         
         local function UpdateCombatFade()
             local inCombat = InCombatLockdown()
@@ -1349,12 +1354,14 @@ function AB:UpdateBarFading(barKey)
             end
         end
         
-        -- Store handler reference for potential cleanup
-        container.combatFadeHandler = UpdateCombatFade
-        container.combatFadeFrame = container.combatFadeFrame or CreateFrame("Frame", nil, container)
+        -- Create event frame only once
+        if not container.combatFadeFrame then
+            container.combatFadeFrame = CreateFrame("Frame", nil, container)
+            container.combatFadeFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+            container.combatFadeFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+        end
+        
         container.combatFadeFrame:SetScript("OnEvent", UpdateCombatFade)
-        container.combatFadeFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-        container.combatFadeFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
         
         -- Set initial state
         UpdateCombatFade()
@@ -1362,6 +1369,11 @@ function AB:UpdateBarFading(barKey)
         container:EnableMouse(false)
         container:Show()
         container:SetAlpha(db.alpha)
+        
+        -- Clean up combat fade frame if it exists
+        if container.combatFadeFrame then
+            container.combatFadeFrame:SetScript("OnEvent", nil)
+        end
     end
 end
 
