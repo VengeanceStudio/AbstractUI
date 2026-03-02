@@ -37,6 +37,7 @@ function UIButtons:OnDBReady()
                 y = -math.floor(GetScreenHeight() * 0.75) 
             },
             backgroundColor = { 0.1, 0.1, 0.1, 0.8 },
+            useAbstractUIAddonManager = false,
             UIButtons = {
                 reload = { enabled = true, order = 1 },
                 exit = { enabled = true, order = 2 },
@@ -283,20 +284,31 @@ function UIButtons:CreateButtons()
             if key == "addons" then
                 btn:RegisterForClicks("AnyUp")
                 btn:SetScript("OnClick", function(self)
-                    if not AddonList then
-                        if _G.LoadAddOn then
-                            local loaded, reason = _G.LoadAddOn("Blizzard_AddOnManager")
-                            if not loaded then
-                                UIErrorsFrame:AddMessage("Unable to load AddOn Manager: "..(reason or "unknown error"), 1, 0, 0)
-                                return
+                    -- Check if we should use AbstractUI's Addon Manager
+                    if UIButtons.db.profile.useAbstractUIAddonManager then
+                        local addonManager = AbstractUI:GetModule("AddonManager", true)
+                        if addonManager then
+                            addonManager:Toggle()
+                        else
+                            UIErrorsFrame:AddMessage("AbstractUI Addon Manager not available", 1, 0.8, 0)
+                        end
+                    else
+                        -- Use Blizzard's addon list
+                        if not AddonList then
+                            if _G.LoadAddOn then
+                                local loaded, reason = _G.LoadAddOn("Blizzard_AddOnManager")
+                                if not loaded then
+                                    UIErrorsFrame:AddMessage("Unable to load AddOn Manager: "..(reason or "unknown error"), 1, 0, 0)
+                                    return
+                                end
                             end
                         end
-                    end
-                    if AddonList then
-                        if AddonList:IsShown() then
-                            AddonList:Hide()
-                        else
-                            AddonList:Show()
+                        if AddonList then
+                            if AddonList:IsShown() then
+                                AddonList:Hide()
+                            else
+                                AddonList:Show()
+                            end
                         end
                     end
                     -- Reset button state after click
@@ -574,6 +586,15 @@ function UIButtons:GetOptions()
                     return self.db.profile.UIButtons.addons.enabled 
                 end,
                 set = function(_, v) self.db.profile.UIButtons.addons.enabled = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end
+            },
+            useAbstractUIAddonManager = {
+                name = "Use AbstractUI Addon Manager",
+                desc = "When enabled, the Addons button will open AbstractUI's Addon Manager instead of Blizzard's addon list",
+                type = "toggle",
+                order = 14.5,
+                width = "full",
+                get = function() return self.db.profile.useAbstractUIAddonManager end,
+                set = function(_, v) self.db.profile.useAbstractUIAddonManager = v end
             },
             move = {
                 name = "Move Mode (M)", type = "toggle", order = 15,
