@@ -586,32 +586,27 @@ function AddonManager:CreateUI()
     sortLabel:SetText("Sort by:")
     sortLabel:SetTextColor(ColorPalette:GetColor("text-secondary"))
     
-    local sortDropdown = CreateFrame("Frame", "AbstractUI_AddonManager_SortDropdown", mainFrame, "UIDropDownMenuTemplate")
-    sortDropdown:SetPoint("LEFT", sortLabel, "RIGHT", -15, -3)
-    UIDropDownMenu_SetWidth(sortDropdown, 150)
-    UIDropDownMenu_SetText(sortDropdown, currentSorter)
-    
-    UIDropDownMenu_Initialize(sortDropdown, function(self, level)
-        local info = UIDropDownMenu_CreateInfo()
-        
-        for _, sorter in ipairs({SORT_DEFAULT, SORT_TITLES, SORT_AUTHOR, SORT_SEPARATE_LOD, SORT_GROUP_BY_NAME}) do
-            info.text = sorter
-            info.checked = (currentSorter == sorter)
-            info.func = function()
-                currentSorter = sorter
-                UIDropDownMenu_SetText(sortDropdown, sorter)
-                AddonManager:ReloadAddonList()
-            end
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end)
+    local sortDropdown = FrameFactory:CreateDropdown(mainFrame, 180, 24)
+    sortDropdown:SetPoint("LEFT", sortLabel, "RIGHT", 10, 0)
+    sortDropdown:SetItems({
+        {value = SORT_DEFAULT, text = "Default (Categories)"},
+        {value = SORT_TITLES, text = "Alphabetical by Title"},
+        {value = SORT_AUTHOR, text = "Group by Author"},
+        {value = SORT_SEPARATE_LOD, text = "Separate Load on Demand"},
+        {value = SORT_GROUP_BY_NAME, text = "Group by Name Prefix"},
+    })
+    sortDropdown:SetValue(currentSorter)
+    sortDropdown.onChange = function(value)
+        currentSorter = value
+        AddonManager:ReloadAddonList()
+    end
     
     -- Recursive enable checkbox
-    local recurseCheck = CreateFrame("CheckButton", nil, mainFrame, "UICheckButtonTemplate")
-    recurseCheck:SetPoint("LEFT", sortDropdown, "RIGHT", 120, 3)
-    recurseCheck:SetSize(24, 24)
+    local recurseCheck = FrameFactory:CreateCheckbox(mainFrame, 16)
+    recurseCheck:SetPoint("LEFT", sortDropdown, "RIGHT", 140, 0)
     recurseCheck:SetChecked(not NoRecurse)
     recurseCheck:SetScript("OnClick", function(self)
+        self:Toggle()
         NoRecurse = not self:GetChecked()
     end)
     
@@ -684,20 +679,16 @@ function AddonManager:CreateEntryFrame(parent, id)
     entry:SetSize(620, LINEHEIGHT)
     
     -- Checkbox
-    entry.checkbox = CreateFrame("CheckButton", nil, entry)
+    entry.checkbox = FrameFactory:CreateCheckbox(entry, 16)
     entry.checkbox:SetPoint("LEFT", 5, 0)
-    entry.checkbox:SetSize(16, 16)
-    entry.checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
-    entry.checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
-    entry.checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight", "ADD")
-    entry.checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
-    entry.checkbox:SetDisabledCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check-Disabled")
     
     entry.checkbox:SetScript("OnClick", function(self)
         local addonIndex = self.addonIndex
         if addonIndex then
             local shift = IsShiftKeyDown()
             local ctrl = IsControlKeyDown()
+            
+            self:Toggle()
             
             if self:GetChecked() then
                 AddonManager:EnableAddon(addonIndex, shift, ctrl)
@@ -717,12 +708,34 @@ function AddonManager:CreateEntryFrame(parent, id)
     end)
     
     -- Collapse button (for categories)
-    entry.collapseBtn = CreateFrame("Button", nil, entry)
+    entry.collapseBtn = CreateFrame("Button", nil, entry, "BackdropTemplate")
     entry.collapseBtn:SetPoint("LEFT", 0, 0)
     entry.collapseBtn:SetSize(16, 16)
-    entry.collapseBtn:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
-    entry.collapseBtn:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
+    entry.collapseBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    entry.collapseBtn:SetBackdropColor(ColorPalette:GetColor("bg-secondary"))
+    entry.collapseBtn:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     entry.collapseBtn:Hide()
+    
+    -- Collapse arrow texture
+    entry.collapseBtn.arrow = entry.collapseBtn:CreateTexture(nil, "ARTWORK")
+    entry.collapseBtn.arrow:SetSize(10, 10)
+    entry.collapseBtn.arrow:SetPoint("CENTER")
+    entry.collapseBtn.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
+    entry.collapseBtn.arrow:SetVertexColor(ColorPalette:GetColor("text-primary"))
+    
+    entry.collapseBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    
+    entry.collapseBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("bg-secondary"))
+    end)
     
     entry.collapseBtn:SetScript("OnClick", function(self)
         local category = self.category
@@ -732,9 +745,9 @@ function AddonManager:CreateEntryFrame(parent, id)
             AddonManager:UpdateDisplay()
             
             if collapsedAddons[category] then
-                self:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
+                self.arrow:SetTexCoord(0, 1, 1, 0)  -- Point right when collapsed
             else
-                self:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
+                self.arrow:SetTexCoord(0, 1, 0, 1)  -- Point down when expanded
             end
         end
     end)
@@ -852,10 +865,11 @@ function AddonManager:UpdateDisplay()
                 entry.titleText:SetText("|cff" .. GetHexColor(ColorPalette:GetColor("text-primary")) .. item)
                 entry.addonIndex = nil
                 
+                -- Rotate arrow for collapsed/expanded state
                 if collapsedAddons[item] then
-                    entry.collapseBtn:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
+                    entry.collapseBtn:GetNormalTexture():SetRotation(math.rad(-90)) -- Point right when collapsed
                 else
-                    entry.collapseBtn:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
+                    entry.collapseBtn:GetNormalTexture():SetRotation(0) -- Point down when expanded
                 end
             else
                 -- Addon entry

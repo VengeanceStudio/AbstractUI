@@ -211,6 +211,237 @@ function FrameFactory:CreateScrollBar(parent, height)
 end
 
 -- ============================================================================
+-- CHECKBOX FACTORY
+-- ============================================================================
+
+function FrameFactory:CreateCheckbox(parent, size)
+    local checkbox = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    checkbox:SetSize(size or 16, size or 16)
+    
+    -- Box backdrop
+    checkbox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    checkbox:SetBackdropColor(ColorPalette:GetColor("bg-secondary"))
+    checkbox:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+    
+    -- Store colors
+    checkbox.normalBgColor = {ColorPalette:GetColor("bg-secondary")}
+    checkbox.hoverBgColor = {ColorPalette:GetColor("button-hover")}
+    checkbox.borderColor = {ColorPalette:GetColor("primary")}
+    checkbox.checkColor = {ColorPalette:GetColor("primary")}
+    
+    -- Check texture
+    checkbox.check = checkbox:CreateTexture(nil, "ARTWORK")
+    checkbox.check:SetSize((size or 16) - 4, (size or 16) - 4)
+    checkbox.check:SetPoint("CENTER")
+    checkbox.check:SetColorTexture(unpack(checkbox.checkColor))
+    checkbox.check:Hide()
+    
+    checkbox.checked = false
+    
+    function checkbox:SetChecked(checked)
+        self.checked = checked
+        if checked then
+            self.check:Show()
+        else
+            self.check:Hide()
+        end
+    end
+    
+    function checkbox:GetChecked()
+        return self.checked
+    end
+    
+    function checkbox:Toggle()
+        self:SetChecked(not self.checked)
+    end
+    
+    -- Hover effects
+    checkbox:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(unpack(self.hoverBgColor))
+    end)
+    
+    checkbox:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(unpack(self.normalBgColor))
+    end)
+    
+    -- Click handler (override this after creation)
+    checkbox:SetScript("OnClick", function(self)
+        self:Toggle()
+    end)
+    
+    return checkbox
+end
+
+-- ============================================================================
+-- DROPDOWN FACTORY
+-- ============================================================================
+
+function FrameFactory:CreateDropdown(parent, width, height)
+    local dropdown = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    dropdown:SetSize(width or 150, height or 24)
+    
+    -- Dropdown backdrop
+    dropdown:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    dropdown:SetBackdropColor(ColorPalette:GetColor("bg-secondary"))
+    dropdown:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+    
+    -- Button to open dropdown
+    dropdown.button = CreateFrame("Button", nil, dropdown)
+    dropdown.button:SetAllPoints()
+    
+    -- Selected text
+    dropdown.text = FontKit:CreateFontString(dropdown, "body", "normal")
+    dropdown.text:SetPoint("LEFT", 5, 0)
+    dropdown.text:SetPoint("RIGHT", -20, 0)
+    dropdown.text:SetJustifyH("LEFT")
+    dropdown.text:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Arrow indicator
+    dropdown.arrow = dropdown:CreateTexture(nil, "ARTWORK")
+    dropdown.arrow:SetSize(12, 12)
+    dropdown.arrow:SetPoint("RIGHT", -5, 0)
+    dropdown.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
+    dropdown.arrow:SetTexCoord(0, 1, 0, 1)
+    dropdown.arrow:SetVertexColor(ColorPalette:GetColor("text-secondary"))
+    
+    -- Menu frame
+    dropdown.menu = CreateFrame("Frame", nil, dropdown, "BackdropTemplate")
+    dropdown.menu:SetPoint("TOP", dropdown, "BOTTOM", 0, -2)
+    dropdown.menu:SetSize(width or 150, 100)
+    dropdown.menu:SetFrameStrata("DIALOG")
+    dropdown.menu:SetFrameLevel(dropdown:GetFrameLevel() + 5)
+    dropdown.menu:Hide()
+    
+    dropdown.menu:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    dropdown.menu:SetBackdropColor(ColorPalette:GetColor("panel-bg"))
+    dropdown.menu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+    
+    -- Menu items container
+    dropdown.menu.items = {}
+    dropdown.selectedValue = nil
+    dropdown.selectedText = nil
+    
+    function dropdown:SetItems(items)
+        -- Clear existing items
+        for _, item in ipairs(self.menu.items) do
+            item:Hide()
+            item:SetParent(nil)
+        end
+        wipe(self.menu.items)
+        
+        -- Create new items
+        local itemHeight = 20
+        for i, itemData in ipairs(items) do
+            local item = CreateFrame("Button", nil, self.menu, "BackdropTemplate")
+            item:SetSize(self.menu:GetWidth() - 4, itemHeight)
+            item:SetPoint("TOPLEFT", 2, -(i - 1) * itemHeight - 2)
+            
+            item:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                tile = false,
+            })
+            item:SetBackdropColor(0, 0, 0, 0)
+            
+            item.text = FontKit:CreateFontString(item, "body", "small")
+            item.text:SetPoint("LEFT", 5, 0)
+            item.text:SetText(itemData.text or itemData.value)
+            item.text:SetTextColor(ColorPalette:GetColor("text-primary"))
+            
+            item.value = itemData.value
+            item.text_display = itemData.text
+            
+            item:SetScript("OnEnter", function(self)
+                self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+            end)
+            
+            item:SetScript("OnLeave", function(self)
+                self:SetBackdropColor(0, 0, 0, 0)
+            end)
+            
+            item:SetScript("OnClick", function(self)
+                dropdown:SetValue(self.value, self.text_display)
+                dropdown.menu:Hide()
+                if dropdown.onChange then
+                    dropdown.onChange(self.value)
+                end
+            end)
+            
+            table.insert(self.menu.items, item)
+        end
+        
+        -- Adjust menu height
+        self.menu:SetHeight(math.min(#items * itemHeight + 4, 200))
+    end
+    
+    function dropdown:SetValue(value, text)
+        self.selectedValue = value
+        self.selectedText = text or value
+        self.text:SetText(self.selectedText)
+    end
+    
+    function dropdown:GetValue()
+        return self.selectedValue
+    end
+    
+    -- Toggle menu
+    dropdown.button:SetScript("OnClick", function(self)
+        local menu = dropdown.menu
+        if menu:IsShown() then
+            menu:Hide()
+        else
+            menu:Show()
+        end
+    end)
+    
+    -- Close menu when clicking outside
+    dropdown.menu:SetScript("OnShow", function(self)
+        if not self.closeHandler then
+            self.closeHandler = CreateFrame("Frame")
+            self.closeHandler:SetScript("OnUpdate", function(handler)
+                if not MouseIsOver(dropdown) and not MouseIsOver(self) then
+                    if GetMouseFocus() then
+                        self:Hide()
+                        handler:SetScript("OnUpdate", nil)
+                    end
+                end
+            end)
+        else
+            self.closeHandler:SetScript("OnUpdate", function(handler)
+                if not MouseIsOver(dropdown) and not MouseIsOver(self) then
+                    if GetMouseFocus() then
+                        self:Hide()
+                        handler:SetScript("OnUpdate", nil)
+                    end
+                end
+            end)
+        end
+    end)
+    
+    return dropdown
+end
+
+-- ============================================================================
 -- TOOLTIP FACTORY
 -- ============================================================================
 
