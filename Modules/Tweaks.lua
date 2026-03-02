@@ -462,8 +462,6 @@ function Tweaks:ShowBagBar()
             bagBar:SetAlpha(1)
         end
     end
-    
-    C_UI.Reload()
 end
 
 function Tweaks:ApplyTweaks()
