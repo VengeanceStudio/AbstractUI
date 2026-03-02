@@ -167,23 +167,24 @@ function CooldownManager:StartOverlayPolling()
             else
                 consecutiveNils = 0  -- Reset counter when we find a button
                 if button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
-                local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
-                if action then
-                    local actionType, id = GetActionInfo(action)
-                    local spellID = nil
-                    
-                    if actionType == "spell" and id then
-                        spellID = id
-                    elseif actionType == "macro" and id then
-                        spellID = self:ExtractSpellFromMacro(id)
-                    end
-                    
-                    if spellID then
-                        foundHighlights[spellID] = true
+                    local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
+                    if action then
+                        local actionType, id = GetActionInfo(action)
+                        local spellID = nil
                         
-                        if not self.highlightedSpells[spellID] then
-                            self.highlightedSpells[spellID] = true
-                            self:UpdateSpellHighlight(spellID, true)
+                        if actionType == "spell" and id then
+                            spellID = id
+                        elseif actionType == "macro" and id then
+                            spellID = self:ExtractSpellFromMacro(id)
+                        end
+                        
+                        if spellID then
+                            foundHighlights[spellID] = true
+                            
+                            if not self.highlightedSpells[spellID] then
+                                self.highlightedSpells[spellID] = true
+                                self:UpdateSpellHighlight(spellID, true)
+                            end
                         end
                     end
                 end
