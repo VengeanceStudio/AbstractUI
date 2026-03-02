@@ -524,19 +524,7 @@ function BrokerBar:UpdateAllModules()
         sysObj.text = string.format("FPS: |c%s%d|r MS: |c%s%d|r", color, fps, msColor, world)
     end
 
-    -- BAGS
-    local free, total = 0, 0
-    for i = 0, 5 do 
-        local s = C_Container.GetContainerNumSlots(i)
-        if s > 0 then 
-            free = free + C_Container.GetContainerNumFreeSlots(i)
-            total = total + s 
-        end 
-    end
-    if free ~= lastState.bagFree or total ~= lastState.bagTotal then 
-        lastState.bagFree, lastState.bagTotal = free, total
-        bagObj.text = (total-free).."/"..total 
-    end
+    -- Note: Bags count moved to UpdateBagCount() called by BAG_UPDATE event
 
     -- GOLD & TOKEN
     local money = GetMoney()
@@ -551,51 +539,8 @@ function BrokerBar:UpdateAllModules()
         tokenObj.text = FormatTokenPrice(price) 
     end
 
-    -- COUNTS
-    local _, online = GetNumGuildMembers()
-    if online ~= lastState.guild then 
-        lastState.guild = online
-        guildObj.text = tostring(online or 0) 
-    end
-    
-    -- FIXED FRIENDS COUNT: Count only online WoW Retail friends
-    local wowOnline = 0
-    local numBNet = BNGetNumFriends() or 0
-    for i = 1, numBNet do
-        local info = C_BattleNet.GetFriendAccountInfo(i)
-        if info and info.gameAccountInfo and info.gameAccountInfo.isOnline then
-            local g = info.gameAccountInfo
-            if (g.clientProgram == BNET_CLIENT_WOW) and (g.wowProjectID == 1) then
-                wowOnline = wowOnline + 1
-            end
-        end
-    end
-    if wowOnline ~= lastState.friends then 
-        lastState.friends = wowOnline
-        friendObj.text = tostring(wowOnline) 
-    end
-    
-    -- DURABILITY
-    local low = 100
-    for i = 1, 18 do 
-        local c, m = GetInventoryItemDurability(i)
-        if c and m then 
-            local p = (c/m)*100
-            if p < low then low = p end 
-        end 
-    end
-    low = math.floor(low)
-    if low ~= lastState.dura then 
-        lastState.dura = low
-        duraObj.text = low.."%" 
-    end
-    
-    -- LOCATION
-    local z = GetZoneText() or "Unknown"
-    if z ~= lastState.zone then 
-        lastState.zone = z
-        locObj.text = z 
-    end
+    -- Note: Counts (Guild, Friends, Durability) moved to event-driven update functions
+    -- Note: Location moved to UpdateLocation() called by ZONE_CHANGED event
     
     -- DIFFICULTY & FLEX
     local diff = GetDifficultyLabel()
@@ -619,6 +564,73 @@ function BrokerBar:UpdateAllModules()
     if v ~= lastState.vol then 
         lastState.vol = v
         volObj.text = string.format("%d%%", v) -- Force integer display
+    end
+end
+
+-- Event-driven update functions to avoid expensive polling
+function BrokerBar:UpdateFriendsCount()
+    -- Count only online WoW Retail friends
+    local wowOnline = 0
+    local numBNet = BNGetNumFriends() or 0
+    for i = 1, numBNet do
+        local info = C_BattleNet.GetFriendAccountInfo(i)
+        if info and info.gameAccountInfo and info.gameAccountInfo.isOnline then
+            local g = info.gameAccountInfo
+            if (g.clientProgram == BNET_CLIENT_WOW) and (g.wowProjectID == 1) then
+                wowOnline = wowOnline + 1
+            end
+        end
+    end
+    if wowOnline ~= lastState.friends then 
+        lastState.friends = wowOnline
+        friendObj.text = tostring(wowOnline) 
+    end
+end
+
+function BrokerBar:UpdateDurability()
+    local low = 100
+    for i = 1, 18 do 
+        local c, m = GetInventoryItemDurability(i)
+        if c and m then 
+            local p = (c/m)*100
+            if p < low then low = p end 
+        end 
+    end
+    low = math.floor(low)
+    if low ~= lastState.dura then 
+        lastState.dura = low
+        duraObj.text = low.."%" 
+    end
+end
+
+function BrokerBar:UpdateGuildCount()
+    local _, online = GetNumGuildMembers()
+    if online ~= lastState.guild then 
+        lastState.guild = online
+        guildObj.text = tostring(online or 0) 
+    end
+end
+
+function BrokerBar:UpdateBagCount()
+    local free, total = 0, 0
+    for i = 0, 5 do 
+        local s = C_Container.GetContainerNumSlots(i)
+        if s > 0 then 
+            free = free + C_Container.GetContainerNumFreeSlots(i)
+            total = total + s 
+        end 
+    end
+    if free ~= lastState.bagFree or total ~= lastState.bagTotal then 
+        lastState.bagFree, lastState.bagTotal = free, total
+        bagObj.text = (total-free).."/"..total 
+    end
+end
+
+function BrokerBar:UpdateLocation()
+    local z = GetZoneText() or "Unknown"
+    if z ~= lastState.zone then 
+        lastState.zone = z
+        locObj.text = z 
     end
 end
 
@@ -1059,10 +1071,15 @@ function BrokerBar:OnDBReady()
     -- REMOVED: self:RegisterEvent("PLAYER_LOGIN") - Not needed, no handler exists
     self:RegisterEvent("PLAYER_MONEY", "UpdateGoldData")
     self:RegisterEvent("TOKEN_MARKET_PRICE_UPDATED", "UpdateTokenHistory")
-    self:RegisterEvent("GUILD_ROSTER_UPDATE")
+    self:RegisterEvent("GUILD_ROSTER_UPDATE", "UpdateGuildCount")
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateAllModules")
-    self:RegisterEvent("BAG_UPDATE", "UpdateAllModules")
-    self:RegisterEvent("ZONE_CHANGED", "UpdateAllModules")
+    self:RegisterEvent("BAG_UPDATE", "UpdateBagCount")
+    self:RegisterEvent("ZONE_CHANGED", "UpdateLocation")
+    self:RegisterEvent("UPDATE_INVENTORY_DURABILITY", "UpdateDurability")
+    self:RegisterEvent("BN_FRIEND_ACCOUNT_ONLINE", "UpdateFriendsCount")
+    self:RegisterEvent("BN_FRIEND_ACCOUNT_OFFLINE", "UpdateFriendsCount")
+    self:RegisterEvent("BN_FRIEND_INFO_CHANGED", "UpdateFriendsCount")
+    self:RegisterEvent("FRIENDLIST_UPDATE", "UpdateFriendsCount")
     
     self:UpdateGoldData()
     

@@ -94,6 +94,39 @@ function CooldownManager:OnEnable()
     self:RegisterEvent("SPELLS_CHANGED", "UpdateCooldownManager")
 end
 
+function CooldownManager:ExtractSpellFromMacro(macroID)
+    -- For Dominos, GetActionInfo may return spell ID directly instead of macro slot
+    if macroID > 200 then
+        -- This is actually a spell ID, not a macro slot (macros are 1-138)
+        return macroID
+    end
+    
+    -- Normal macro slot, extract the spell
+    local macroSpell = GetMacroSpell(macroID)
+    if macroSpell then
+        local spellInfo = C_Spell.GetSpellInfo(macroSpell)
+        if spellInfo then
+            return spellInfo.spellID
+        end
+    end
+    
+    -- If that didn't work, try scanning the macro body
+    local macroName, _, macroBody = GetMacroInfo(macroID)
+    if macroBody then
+        -- Look for #showtooltip spell
+        local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
+        if tooltipSpell then
+            tooltipSpell = strtrim(tooltipSpell)
+            local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
+            if tooltipInfo then
+                return tooltipInfo.spellID
+            end
+        end
+    end
+    
+    return nil
+end
+
 function CooldownManager:HookSpellActivationOverlays()
     -- Start polling to check for AssistedCombatHighlightFrame
     self:StartOverlayPolling()
@@ -106,8 +139,8 @@ function CooldownManager:StartOverlayPolling()
         self.overlayTimer = nil
     end
     
-    -- Poll every 0.3 seconds to check for AssistedCombatHighlightFrame
-    self.overlayTimer = C_Timer.NewTicker(0.3, function()
+    -- Poll every 1.0 seconds to check for AssistedCombatHighlightFrame (reduced from 0.3s to minimize memory churn)
+    self.overlayTimer = C_Timer.NewTicker(1.0, function()
         if not self.db.profile.essential.showAssistedHighlight and 
            not self.db.profile.utility.showAssistedHighlight then
             return
@@ -115,10 +148,13 @@ function CooldownManager:StartOverlayPolling()
         
         local foundHighlights = {}
         
-        -- Check Dominos buttons
+        -- Check Dominos buttons (only check buttons that exist to minimize table lookups)
         for i = 1, 180 do
             local button = _G["DominosActionButton" .. i]
-            if button and button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
+            if not button then
+                -- If we hit a nil button, subsequent buttons in sequence likely don't exist either
+                -- Continue checking but expect fewer hits
+            elseif button:IsVisible() and button.AssistedCombatHighlightFrame and button.AssistedCombatHighlightFrame:IsShown() then
                 local action = button.action or (button.GetAttribute and button:GetAttribute("action"))
                 if action then
                     local actionType, id = GetActionInfo(action)
@@ -127,36 +163,7 @@ function CooldownManager:StartOverlayPolling()
                     if actionType == "spell" and id then
                         spellID = id
                     elseif actionType == "macro" and id then
-                        -- For Dominos, GetActionInfo may return spell ID directly instead of macro slot
-                        if id > 200 then
-                            -- This is actually a spell ID, not a macro slot (macros are 1-138)
-                            spellID = id
-                        else
-                            -- Normal macro slot, extract the spell
-                            local macroSpell = GetMacroSpell(id)
-                            if macroSpell then
-                                local spellInfo = C_Spell.GetSpellInfo(macroSpell)
-                                if spellInfo then
-                                    spellID = spellInfo.spellID
-                                end
-                            end
-                            
-                            -- If that didn't work, try scanning the macro body
-                            if not spellID then
-                                local macroName, _, macroBody = GetMacroInfo(id)
-                                if macroBody then
-                                    -- Look for #showtooltip spell
-                                    local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
-                                    if tooltipSpell then
-                                        tooltipSpell = strtrim(tooltipSpell)
-                                        local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
-                                        if tooltipInfo then
-                                            spellID = tooltipInfo.spellID
-                                        end
-                                    end
-                                end
-                            end
-                        end
+                        spellID = self:ExtractSpellFromMacro(id)
                     end
                     
                     if spellID then
@@ -187,36 +194,7 @@ function CooldownManager:StartOverlayPolling()
                         if actionType == "spell" and id then
                             spellID = id
                         elseif actionType == "macro" and id then
-                            -- For Dominos, GetActionInfo may return spell ID directly instead of macro slot
-                            if id > 200 then
-                                -- This is actually a spell ID, not a macro slot (macros are 1-138)
-                                spellID = id
-                            else
-                                -- Normal macro slot, extract the spell
-                                local macroSpell = GetMacroSpell(id)
-                                if macroSpell then
-                                    local spellInfo = C_Spell.GetSpellInfo(macroSpell)
-                                    if spellInfo then
-                                        spellID = spellInfo.spellID
-                                    end
-                                end
-                                
-                                -- If that didn't work, try scanning the macro body
-                                if not spellID then
-                                    local macroName, _, macroBody = GetMacroInfo(id)
-                                    if macroBody then
-                                        -- Look for #showtooltip spell
-                                        local tooltipSpell = macroBody:match("#showtooltip%s+([^\n\r]+)")
-                                        if tooltipSpell then
-                                            tooltipSpell = strtrim(tooltipSpell)
-                                            local tooltipInfo = C_Spell.GetSpellInfo(tooltipSpell)
-                                            if tooltipInfo then
-                                                spellID = tooltipInfo.spellID
-                                            end
-                                        end
-                                    end
-                                end
-                            end
+                            spellID = self:ExtractSpellFromMacro(id)
                         end
                         
                         if spellID then
@@ -363,8 +341,10 @@ end
 function CooldownManager:ApplyHighlightToViewer(viewerFrame, spellID, show)
     if not viewerFrame then return end
     
-    -- Search through child frames to find ones with this spell ID
-    for _, childFrame in ipairs({viewerFrame:GetChildren()}) do
+    -- Get children directly without creating intermediate table (avoids memory churn)
+    local numChildren = viewerFrame:GetNumChildren()
+    for i = 1, numChildren do
+        local childFrame = select(i, viewerFrame:GetChildren())
         -- Try cooldownInfo.spellID first
         local frameSpellID = nil
         if childFrame.cooldownInfo and childFrame.cooldownInfo.spellID then
