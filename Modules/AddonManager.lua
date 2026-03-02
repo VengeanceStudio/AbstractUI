@@ -780,19 +780,35 @@ function AddonManager:CreateEntryFrame(parent, id)
         if self.addonIndex and type(self.addonIndex) == "number" then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             
-            local name, title, notes = GetAddOnInfo(self.addonIndex)
+            local index = self.addonIndex
+            local name, title, notes
+            
+            -- Check if this is a Blizzard addon
+            if index > GetNumAddOns() then
+                local blizzIndex = index - GetNumAddOns()
+                local blizzName = BLIZZARD_ADDONS[blizzIndex]
+                if blizzName then
+                    name, title, notes = GetAddOnInfo(blizzName)
+                end
+            else
+                name, title, notes = GetAddOnInfo(index)
+            end
+            
             if name then
                 GameTooltip:SetText(title or name, 1, 1, 1)
                 if notes then
                     GameTooltip:AddLine(notes, nil, nil, nil, true)
                 end
                 
-                local deps = {GetAddOnDependencies(self.addonIndex)}
-                if #deps > 0 then
-                    GameTooltip:AddLine(" ")
-                    GameTooltip:AddLine("Dependencies:", 0.7, 0.7, 1)
-                    for _, dep in ipairs(deps) do
-                        GameTooltip:AddLine("  " .. dep, 1, 1, 1)
+                -- Only show dependencies for non-Blizzard addons
+                if index <= GetNumAddOns() then
+                    local deps = {GetAddOnDependencies(index)}
+                    if #deps > 0 then
+                        GameTooltip:AddLine(" ")
+                        GameTooltip:AddLine("Dependencies:", 0.7, 0.7, 1)
+                        for _, dep in ipairs(deps) do
+                            GameTooltip:AddLine("  " .. dep, 1, 1, 1)
+                        end
                     end
                 end
                 
