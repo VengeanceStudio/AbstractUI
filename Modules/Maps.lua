@@ -201,39 +201,33 @@ function Maps:SetupConfigButton()
     end
     
     if not self.configButton then
-        -- Create a standard minimap button (will be collected by button bar)
+        -- Create a standard minimap button using LibDBIcon structure
         self.configButton = CreateFrame("Button", "AbstractUI_MinimapButton", Minimap)
-        self.configButton:SetSize(20, 20) -- Standard minimap button size
+        self.configButton:SetSize(31, 31)
         self.configButton:SetFrameLevel(8)
         self.configButton:SetFrameStrata("MEDIUM")
         
-        -- Use AbstractUI's custom icon
-        self.configButton:SetNormalTexture("Interface\\AddOns\\AbstractUI\\Media\\icon")
-        self.configButton:SetHighlightTexture("Interface\\AddOns\\AbstractUI\\Media\\icon", "ADD")
-        self.configButton:SetPushedTexture("Interface\\AddOns\\AbstractUI\\Media\\icon")
+        -- Icon layer
+        local icon = self.configButton:CreateTexture(nil, "BACKGROUND")
+        icon:SetSize(20, 20)
+        icon:SetPoint("CENTER", 0, 0)
+        icon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\icon")
+        icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+        self.configButton.icon = icon
         
-        -- Get the textures and apply standard minimap button cropping
-        local normalTexture = self.configButton:GetNormalTexture()
-        local highlightTexture = self.configButton:GetHighlightTexture()
-        local pushedTexture = self.configButton:GetPushedTexture()
+        -- Border overlay (makes it circular)
+        local border = self.configButton:CreateTexture(nil, "OVERLAY")
+        border:SetSize(53, 53)
+        border:SetPoint("TOPLEFT", 0, 0)
+        border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+        self.configButton.border = border
         
-        if normalTexture then
-            normalTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        end
-        if highlightTexture then
-            highlightTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            highlightTexture:SetAlpha(0.5)
-        end
-        if pushedTexture then
-            pushedTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        end
-        
-        -- Create circular mask overlay
-        local overlay = self.configButton:CreateTexture(nil, "OVERLAY")
-        overlay:SetSize(53, 53)
-        overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-        overlay:SetPoint("TOPLEFT", self.configButton, "TOPLEFT", -16, 16)
-        self.configButton.overlay = overlay
+        -- Highlight
+        local highlight = self.configButton:CreateTexture(nil, "HIGHLIGHT")
+        highlight:SetSize(31, 31)
+        highlight:SetPoint("CENTER", 0, 0)
+        highlight:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+        highlight:SetBlendMode("ADD")
         
         -- Hover effect
         self.configButton:SetScript("OnEnter", function(self)
