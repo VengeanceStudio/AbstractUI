@@ -36,7 +36,7 @@ FILE ORGANIZATION:
      - PLAYER_REGEN_ENABLED: Combat exit cleanup
      - PLAYER_TARGET_CHANGED, PLAYER_FOCUS_CHANGED: Target changes
      - INSTANCE_ENCOUNTER_ENGAGE_UNIT: Boss frame updates
-     - UNIT_HEALTH, UNIT_POWER_UPDATE, UNIT_DISPLAYPOWER: Stat updates
+     - UNIT_HEALTH, UNIT_HEALTH_FREQUENT, UNIT_POWER_UPDATE, UNIT_POWER_FREQUENT, UNIT_DISPLAYPOWER: Stat updates
      - UNIT_TARGET, UNIT_PET: Secondary unit updates
   
   7. Default Configuration (lines 1520-1780)
@@ -2900,6 +2900,11 @@ end
                     self:UNIT_HEALTH(event, unit)
                 end
 
+                function UnitFrames:UNIT_HEALTH_FREQUENT(event, unit)
+                    -- Frequent health updates for smooth regeneration display
+                    self:UNIT_HEALTH(event, unit)
+                end
+
                 function UnitFrames:UNIT_POWER_UPDATE(event, unit)
                     if unit == "player" and self.db.profile.showPlayer then self:UpdateUnitFrame("PlayerFrame", "player") end
                     if unit == "target" and self.db.profile.showTarget then self:UpdateUnitFrame("TargetFrame", "target") end
@@ -2913,6 +2918,11 @@ end
                         end
                     end
                     -- Do NOT call SetBlizzardFramesHidden - causes catastrophic state driver accumulation
+                end
+
+                function UnitFrames:UNIT_POWER_FREQUENT(event, unit)
+                    -- Frequent power updates for smooth regeneration display
+                    self:UNIT_POWER_UPDATE(event, unit)
                 end
 
                 function UnitFrames:UNIT_DISPLAYPOWER(event, unit)
@@ -2946,8 +2956,10 @@ end
                     
                     -- CRITICAL: Unregister events first to prevent duplicate handlers on reload
                     self:UnregisterEvent("UNIT_HEALTH")
+                    self:UnregisterEvent("UNIT_HEALTH_FREQUENT")
                     self:UnregisterEvent("UNIT_MAXHEALTH")
                     self:UnregisterEvent("UNIT_POWER_UPDATE")
+                    self:UnregisterEvent("UNIT_POWER_FREQUENT")
                     self:UnregisterEvent("UNIT_DISPLAYPOWER")
                     self:UnregisterEvent("PLAYER_TARGET_CHANGED")
                     self:UnregisterEvent("PLAYER_FOCUS_CHANGED")
@@ -2960,8 +2972,10 @@ end
                     
                     -- Now register them cleanly
                     self:RegisterEvent("UNIT_HEALTH")
+                    self:RegisterEvent("UNIT_HEALTH_FREQUENT")
                     self:RegisterEvent("UNIT_MAXHEALTH")
                     self:RegisterEvent("UNIT_POWER_UPDATE")
+                    self:RegisterEvent("UNIT_POWER_FREQUENT")
                     self:RegisterEvent("UNIT_DISPLAYPOWER")
                     self:RegisterEvent("PLAYER_TARGET_CHANGED")
                     self:RegisterEvent("PLAYER_FOCUS_CHANGED")
