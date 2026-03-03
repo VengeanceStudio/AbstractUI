@@ -1265,7 +1265,8 @@ function BrokerBar:GetPluginOptions()
         AbstractDiff = "Abstract Difficulty", 
         AbstractToken = "Abstract Token", 
         AbstractVolume = "Abstract Volume", 
-        AbstractILvl = "Abstract Item Level" 
+        AbstractILvl = "Abstract Item Level",
+        AbstractTimePlayed = "Abstract Time Played" 
     }
 
     for name in pairs(widgets) do
