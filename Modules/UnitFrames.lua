@@ -462,7 +462,7 @@ local function GetTagValue(tagName, unit)
             local maxNum = tonumber(maxHp)
             
             if hpNum and maxNum and type(hpNum) == "number" and type(maxNum) == "number" and maxNum > 0 then
-                local ok, pct = pcall(function() return math.floor((hpNum / maxNum) * 100) end)
+                local ok, pct = pcall(function() return math.floor((hpNum / maxNum) * 100 + 0.5) end)
                 if ok and pct and type(pct) == "number" then
                     return tostring(pct)
                 end
@@ -527,7 +527,7 @@ local function GetTagValue(tagName, unit)
             local maxNum = tonumber(maxPp)
             
             if ppNum and maxNum and type(ppNum) == "number" and type(maxNum) == "number" and maxNum > 0 then
-                local ok, pct = pcall(function() return math.floor((ppNum / maxNum) * 100) end)
+                local ok, pct = pcall(function() return math.floor((ppNum / maxNum) * 100 + 0.5) end)
                 if ok and pct and type(pct) == "number" then
                     return string.format("%.0f", pct)
                 end
@@ -723,7 +723,7 @@ local function ProcessTags_OLD(template, unit, safeCurhp, safeMaxhp, hpPct, safe
     
     -- Health percentage
     if freshHpPct and type(freshHpPct) == "number" then
-        local ok, pctStr = pcall(function() return tostring(math.floor(freshHpPct)) end)
+        local ok, pctStr = pcall(function() return tostring(math.floor(freshHpPct + 0.5)) end)
         tagValues["perhp"] = (ok and type(pctStr) == "string") and pctStr or "?"
     else
         tagValues["perhp"] = "?"
@@ -808,7 +808,7 @@ local function ProcessTags_OLD(template, unit, safeCurhp, safeMaxhp, hpPct, safe
     
     -- Power percentage
     if freshPpPct and type(freshPpPct) == "number" then
-        local ok, pctStr = pcall(function() return tostring(math.floor(freshPpPct)) end)
+        local ok, pctStr = pcall(function() return tostring(math.floor(freshPpPct + 0.5)) end)
         tagValues["perpp"] = (ok and type(pctStr) == "string") and pctStr or "0"
     else
         tagValues["perpp"] = "0"
