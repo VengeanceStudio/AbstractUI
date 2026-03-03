@@ -719,17 +719,17 @@ function AccountPlayed:CreatePopup()
     br:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
     br:EnableMouse(true)
     
-    -- Visual indicator (only visible on hover)
+    -- Visual indicator (always visible)
     br.indicator = br:CreateTexture(nil, "OVERLAY")
     br.indicator:SetAllPoints()
     br.indicator:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\resize")
-    br.indicator:SetAlpha(0)
+    br.indicator:SetAlpha(0.3)
     
     br:SetScript("OnEnter", function(self)
-        self.indicator:SetAlpha(0.3)
+        self.indicator:SetAlpha(0.5)
     end)
     br:SetScript("OnLeave", function(self)
-        self.indicator:SetAlpha(0)
+        self.indicator:SetAlpha(0.3)
     end)
     br:SetScript("OnMouseDown", function(self) 
         f:StartSizing("BOTTOMRIGHT")
@@ -738,9 +738,9 @@ function AccountPlayed:CreatePopup()
     br:SetScript("OnMouseUp", function(self) 
         f:StopMovingOrSizing()
         if self:IsMouseOver() then
-            self.indicator:SetAlpha(0.3)
+            self.indicator:SetAlpha(0.5)
         else
-            self.indicator:SetAlpha(0)
+            self.indicator:SetAlpha(0.3)
         end
     end)
     
