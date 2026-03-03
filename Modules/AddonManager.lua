@@ -1407,51 +1407,77 @@ end
 function AddonManager:HookGameMenuButton()
     if self.gameMenuHooked then return end
     
-    -- Hook the GameMenuFrame to update button when menu opens
+    -- Use hooksecurefunc to hook the button click without replacing it
     local function ApplyHook()
-        -- Find the Addons button in the GameMenuFrame
-        local addonsButton = GameMenuButtonAddons
+        -- The button is created dynamically, so we need to find it
+        -- Try common names first
+        local addonsButton = _G["GameMenuButtonAddons"] or _G["GameMenuButtonAddOns"]
         
-        if addonsButton then
-            -- Store original script if not already stored
-            if not self.originalGameMenuScript then
-                self.originalGameMenuScript = addonsButton:GetScript("OnClick")
+        -- If not found by name, search GameMenuFrame children
+        if not addonsButton and GameMenuFrame then
+            for i = 1, GameMenuFrame:GetNumChildren() do
+                local child = select(i, GameMenuFrame:GetChildren())
+                if child and child:IsObjectType("Button") then
+                    local text = child:GetText and child:GetText()
+                    if text and (text == "AddOns" or text == "Addons" or text:find("Addon")) then
+                        addonsButton = child
+                        break
+                    end
+                    
+                    -- Also check button name
+                    local name = child:GetName()
+                    if name and (name:find("Addon") or name:find("AddOn")) then
+                        addonsButton = child
+                        break
+                    end
+                end
             end
+        end
+        
+        if addonsButton and not self.buttonHooked then
+            -- Store reference to the button
+            self.hookedButton = addonsButton
             
-            -- Replace the OnClick handler
-            addonsButton:SetScript("OnClick", function()
-                HideUIPanel(GameMenuFrame)
+            -- Hook the OnClick script using hooksecurefunc approach
+            addonsButton:HookScript("OnClick", function()
+                -- Only intercept if setting is enabled
+                if not AddonManager.db.profile.replaceGameMenuButton then
+                    return
+                end
+                
+                -- Hide the default addon list if it opens
+                if AddonList and AddonList:IsShown() then
+                    HideUIPanel(AddonList)
+                end
+                
+                -- Show our addon manager
                 AddonManager:Show()
             end)
-        else
-            AbstractUI:Print("Game Menu Addons button not found")
+            
+            self.buttonHooked = true
+            AbstractUI:Print("Game Menu Addons button hooked: " .. (addonsButton:GetName() or "unnamed"))
         end
     end
     
-    -- Hook to reapply each time menu opens (Blizzard might reset scripts)
+    -- Try to apply hook when GameMenuFrame is shown
     if GameMenuFrame then
-        if not self.originalGameMenuOnShow then
-            self.originalGameMenuOnShow = GameMenuFrame:GetScript("OnShow")
-        end
-        
-        GameMenuFrame:SetScript("OnShow", function(frame)
-            -- Call original OnShow
-            if AddonManager.originalGameMenuOnShow then
-                AddonManager.originalGameMenuOnShow(frame)
+        GameMenuFrame:HookScript("OnShow", function()
+            if not self.buttonHooked then
+                C_Timer.After(0.1, ApplyHook)
             end
-            
-            -- Apply our hook after menu is shown
-            C_Timer.After(0, ApplyHook)
         end)
         
         self.gameMenuHooked = true
-        AbstractUI:Print("Game Menu Addons button hook installed")
+        AbstractUI:Print("Game Menu hook installed - will search for button when menu opens")
+        
+        -- Try immediately in case menu is already shown
+        if GameMenuFrame:IsShown() then
+            C_Timer.After(0.1, ApplyHook)
+        end
     else
-        -- If GameMenuFrame doesn't exist yet, try again later
+        -- Try again later if frame doesn't exist
         C_Timer.After(1, function()
-            if not self.gameMenuHooked then
-                self:HookGameMenuButton()
-            end
+            self:HookGameMenuButton()
         end)
     end
 end
@@ -1459,19 +1485,13 @@ end
 function AddonManager:UnhookGameMenuButton()
     if not self.gameMenuHooked then return end
     
-    -- Restore original GameMenuFrame OnShow
-    if GameMenuFrame and self.originalGameMenuOnShow then
-        GameMenuFrame:SetScript("OnShow", self.originalGameMenuOnShow)
-        self.originalGameMenuOnShow = nil
-    end
-    
-    -- Restore original button OnClick
-    if GameMenuButtonAddons and self.originalGameMenuScript then
-        GameMenuButtonAddons:SetScript("OnClick", self.originalGameMenuScript)
-        self.originalGameMenuScript = nil
-    end
-    
+    -- Since we used HookScript, the hooks are permanent and can't be easily removed
+    -- We just set the flags to prevent re-hooking
     self.gameMenuHooked = false
+    self.buttonHooked = false
+    self.hookedButton = nil
+    
+    AbstractUI:Print("Game Menu hook disabled (takes effect after reload)")
 end
 
 -- ============================================================================
@@ -1681,7 +1701,7 @@ function AddonManager:GetOptions()
             replaceGameMenuButton = {
                 type = "toggle",
                 name = "Replace Game Menu Addons Button",
-                desc = "When enabled, the Addons button in the Game Menu (ESC key) will open AbstractUI's Addon Manager instead of Blizzard's addon list. Requires a UI reload to take effect.",
+                desc = "When enabled, the Addons button in the Game Menu (ESC key) will open AbstractUI's Addon Manager instead of Blizzard's addon list. Takes effect immediately when enabled, but requires reload when disabled.",
                 order = 6.5,
                 get = function()
                     return self.db.profile.replaceGameMenuButton or false
