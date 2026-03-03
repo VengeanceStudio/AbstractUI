@@ -9,7 +9,7 @@ local AddonManager = AbstractUI:NewModule("AddonManager", "AceEvent-3.0")
 -- LOCAL VARIABLES
 -- ============================================================================
 
-local LINEHEIGHT = 16
+local LINEHEIGHT = 22
 local SET_SIZE = 25
 local MAXADDONS = 20
 local DEFAULT_SET = 0
@@ -794,9 +794,9 @@ function AddonManager:CreateEntryFrame(parent, id)
     
     -- Title text
     entry.titleText = FontKit:CreateFontString(entry, "body", "normal")
-    entry.titleText:SetPoint("LEFT", 30, 0)
+    entry.titleText:SetPoint("LEFT", 45, 0)
     entry.titleText:SetJustifyH("LEFT")
-    entry.titleText:SetWidth(350)
+    entry.titleText:SetWidth(335)
     
     -- Status text
     entry.statusText = FontKit:CreateFontString(entry, "body", "small")
