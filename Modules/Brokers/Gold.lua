@@ -13,20 +13,16 @@ local function FormatMoneyAligned(amount)
     local silver = math.floor((amount % 10000) / 100)
     local copper = amount % 100
     
-    -- Build string in parts for maximum consistency
-    local parts = {}
-    
-    -- Format gold amount (right-aligned to handle varying lengths with commas)
+    -- Format gold with commas
     local goldStr = tostring(gold)
-    -- Add commas
     while true do
         goldStr, k = goldStr:gsub("^(%d+)(%d%d%d)", '%1,%2')
         if k == 0 then break end
     end
     
-    -- Build final string piece by piece with consistent spacing
-    -- Format: "GGGGGGGGG|icon SS|icon CC|icon"
-    return string.format("%9s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
+    -- Don't pad - let monospaced font handle alignment
+    -- Always show all three denominations
+    return string.format("%s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
         goldStr, silver, copper)
 end
 
@@ -55,18 +51,24 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         local totalLine = GameTooltip:NumLines() + 1
         GameTooltip:AddDoubleLine("Total", FormatMoneyAligned(total), 1, 0.82, 0)
         
-        -- Apply monospaced font to right-side text (money amounts)  
+        -- Apply tooltip styling first
+        ApplyTooltipStyle(GameTooltip)
+        
+        -- Then apply monospaced font to right-side text (money amounts) AFTER styling
+        -- This ensures our font changes aren't overridden
         for i = startLine, GameTooltip:NumLines() do
             local rightText = _G["GameTooltipTextRight"..i]
-            if rightText and rightText:GetText() and rightText:GetText():find("|T") then
-                -- Use WoW's actual monospaced font
-                rightText:SetFont("Fonts\\skurri.ttf", 11)
-                rightText:SetJustifyH("RIGHT")
-                rightText:SetSpacing(0)
+            if rightText then
+                local text = rightText:GetText()
+                -- Only apply to lines with money icons
+                if text and text:find("|T") then
+                    -- Use ARIALN.TTF - a true monospaced font that's less likely to be replaced
+                    rightText:SetFont("Fonts\\ARIALN.TTF", 12, "OUTLINE")
+                    rightText:SetJustifyH("RIGHT")
+                end
             end
         end
         
-        ApplyTooltipStyle(GameTooltip)
         GameTooltip:Show()
     end,
     OnLeave = function() 
