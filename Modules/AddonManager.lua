@@ -1407,39 +1407,68 @@ end
 function AddonManager:HookGameMenuButton()
     if self.gameMenuHooked then return end
     
-    -- Hook runs after ADDON_LIST_UPDATE event to ensure button exists
-    local function TryHook()
-        if GameMenuButtonAddons then
+    -- Hook the GameMenuFrame to update button when menu opens
+    local function ApplyHook()
+        -- Find the Addons button in the GameMenuFrame
+        local addonsButton = GameMenuButtonAddons
+        
+        if addonsButton then
             -- Store original script if not already stored
             if not self.originalGameMenuScript then
-                self.originalGameMenuScript = GameMenuButtonAddons:GetScript("OnClick")
+                self.originalGameMenuScript = addonsButton:GetScript("OnClick")
             end
             
             -- Replace the OnClick handler
-            GameMenuButtonAddons:SetScript("OnClick", function()
+            addonsButton:SetScript("OnClick", function()
                 HideUIPanel(GameMenuFrame)
                 AddonManager:Show()
             end)
-            
-            self.gameMenuHooked = true
-            return true
+        else
+            AbstractUI:Print("Game Menu Addons button not found")
         end
-        return false
     end
     
-    -- Try immediately
-    if not TryHook() then
-        -- If button doesn't exist yet, wait for it
-        C_Timer.After(0.5, TryHook)
+    -- Hook to reapply each time menu opens (Blizzard might reset scripts)
+    if GameMenuFrame then
+        if not self.originalGameMenuOnShow then
+            self.originalGameMenuOnShow = GameMenuFrame:GetScript("OnShow")
+        end
+        
+        GameMenuFrame:SetScript("OnShow", function(frame)
+            -- Call original OnShow
+            if AddonManager.originalGameMenuOnShow then
+                AddonManager.originalGameMenuOnShow(frame)
+            end
+            
+            -- Apply our hook after menu is shown
+            C_Timer.After(0, ApplyHook)
+        end)
+        
+        self.gameMenuHooked = true
+        AbstractUI:Print("Game Menu Addons button hook installed")
+    else
+        -- If GameMenuFrame doesn't exist yet, try again later
+        C_Timer.After(1, function()
+            if not self.gameMenuHooked then
+                self:HookGameMenuButton()
+            end
+        end)
     end
 end
 
 function AddonManager:UnhookGameMenuButton()
     if not self.gameMenuHooked then return end
     
-    -- Restore original OnClick handler
+    -- Restore original GameMenuFrame OnShow
+    if GameMenuFrame and self.originalGameMenuOnShow then
+        GameMenuFrame:SetScript("OnShow", self.originalGameMenuOnShow)
+        self.originalGameMenuOnShow = nil
+    end
+    
+    -- Restore original button OnClick
     if GameMenuButtonAddons and self.originalGameMenuScript then
         GameMenuButtonAddons:SetScript("OnClick", self.originalGameMenuScript)
+        self.originalGameMenuScript = nil
     end
     
     self.gameMenuHooked = false
@@ -1511,9 +1540,19 @@ function AddonManager:OnInitialize()
 end
 
 function AddonManager:OnEnable()
-    -- Hook Game Menu Addons button if enabled
+    -- Register event to hook game menu button after world enters
     if self.db.profile.replaceGameMenuButton then
+        -- Try to hook immediately
         self:HookGameMenuButton()
+        
+        -- Also hook after entering world to ensure it works
+        self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+            C_Timer.After(1, function()
+                if self.db.profile.replaceGameMenuButton and not self.gameMenuHooked then
+                    self:HookGameMenuButton()
+                end
+            end)
+        end)
     end
 end
 
