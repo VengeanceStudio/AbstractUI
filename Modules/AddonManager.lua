@@ -882,10 +882,10 @@ function AddonManager:CreateUI()
     mainFrame:SetBackdropColor(ColorPalette:GetColor("panel-bg"))
     mainFrame:SetBackdropBorderColor(ColorPalette:GetColor("panel-border"))
     
-    -- Title bar
+    -- Title bar (inset from border)
     local titleBg = mainFrame:CreateTexture(nil, "ARTWORK")
-    titleBg:SetPoint("TOPLEFT", 0, 0)
-    titleBg:SetPoint("TOPRIGHT", 0, 0)
+    titleBg:SetPoint("TOPLEFT", 2, -2)
+    titleBg:SetPoint("TOPRIGHT", -2, -2)
     titleBg:SetHeight(40)
     titleBg:SetColorTexture(ColorPalette:GetColor("bg-secondary"))
     
@@ -896,7 +896,7 @@ function AddonManager:CreateUI()
     
     -- Close button (matching AbstractUI options style)
     local closeBtn = CreateFrame("Button", nil, mainFrame, "BackdropTemplate")
-    closeBtn:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -12, -12)
+    closeBtn:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -6, -6)
     closeBtn:SetSize(32, 32)
     closeBtn:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
