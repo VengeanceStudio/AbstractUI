@@ -155,6 +155,7 @@ function Tooltips:Initialize()
     -- Hook all tooltips including addon tooltips (safe delayed scan)
     C_Timer.After(2, function()
         self:HookAllTooltips()
+        self:HookMicroMenuButtons()
     end)
 end
 
@@ -184,6 +185,69 @@ function Tooltips:HookAllTooltips()
                 self:HookScript(tooltip, "OnShow", function(tip)
                     self:StyleTooltip(tip)
                 end)
+            end
+        end
+    end
+end
+
+function Tooltips:HookMicroMenuButtons()
+    -- Don't hook during combat to avoid taint
+    if InCombatLockdown() then
+        C_Timer.After(2, function()
+            self:HookMicroMenuButtons()
+        end)
+        return
+    end
+    
+    -- Hook the Micro Menu buttons to respect tooltip anchor
+    local microButtons = {
+        CharacterMicroButton,
+        SpellbookMicroButton,
+        TalentMicroButton,
+        AchievementMicroButton,
+        QuestLogMicroButton,
+        GuildMicroButton,
+        LFDMicroButton,
+        CollectionsMicroButton,
+        EJMicroButton,
+        StoreMicroButton,
+        MainMenuMicroButton,
+        HelpMicroButton,
+        ProfessionMicroButton,
+    }
+    
+    for _, button in ipairs(microButtons) do
+        if button and not button.abstractTooltipHooked then
+            -- Hook the OnEnter script to reposition tooltip
+            if button:HasScript("OnEnter") then
+                button:HookScript("OnEnter", function(self)
+                    -- Wait a frame for the tooltip to be shown
+                    C_Timer.After(0, function()
+                        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+                            -- Reposition using our custom anchor
+                            local Tooltips = AbstractUI:GetModule("Tooltips", true)
+                            if Tooltips then
+                                if Tooltips.db.profile.cursorFollow then
+                                    -- Use cursor follow positioning
+                                    GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                                else
+                                    -- Use custom anchor position
+                                    local pos = Tooltips.db.profile.anchorPosition
+                                    local scale = Tooltips.db.profile.scale or 1.0
+                                    GameTooltip:SetScale(scale)
+                                    GameTooltip:ClearAllPoints()
+                                    GameTooltip:SetPoint("BOTTOMLEFT", UIParent, pos.point, pos.x, pos.y)
+                                end
+                                
+                                -- Apply styling
+                                if Tooltips.StyleTooltip then
+                                    Tooltips:StyleTooltip(GameTooltip)
+                                end
+                            end
+                        end
+                    end)
+                end)
+                button.abstractTooltipHooked = true
             end
         end
     end
