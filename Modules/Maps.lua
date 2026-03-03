@@ -208,11 +208,21 @@ function Maps:SetupConfigButton()
         self.configButton:SetFrameLevel(8)
         self.configButton:SetFrameStrata("MEDIUM")
         
-        -- Add icon using AbstractUI's icon.png
-        local icon = self.configButton:CreateTexture(nil, "ARTWORK")
-        icon:SetAllPoints()
-        icon:SetTexture("Interface\\AddOns\\AbstractUI\\icon")
-        self.configButton.icon = icon
+        -- Use AbstractUI's custom icon
+        self.configButton:SetNormalTexture("Interface\\AddOns\\AbstractUI\\Media\\icon")
+        self.configButton:SetHighlightTexture("Interface\\AddOns\\AbstractUI\\Media\\icon", "ADD")
+        
+        -- Get the textures and apply standard minimap button cropping
+        local normalTexture = self.configButton:GetNormalTexture()
+        local highlightTexture = self.configButton:GetHighlightTexture()
+        
+        if normalTexture then
+            normalTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        end
+        if highlightTexture then
+            highlightTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            highlightTexture:SetAlpha(0.5)
+        end
         
         -- Hover effect
         self.configButton:SetScript("OnEnter", function(self)
@@ -234,6 +244,8 @@ function Maps:SetupConfigButton()
         end)
         
         self.configButton:RegisterForClicks("LeftButtonUp")
+        self.configButton:RegisterForDrag("LeftButton")
+        self.configButton:SetMovable(true)
     end
     
     -- Position the button (this will be overridden if button bar is active and collects it)
@@ -241,8 +253,11 @@ function Maps:SetupConfigButton()
     self.configButton:SetPoint("CENTER", Minimap, "BOTTOM", db.configButtonX, db.configButtonY)
     self.configButton:Show()
     
+    print("|cff00ff00AbstractUI:|r Config button created/shown at", db.configButtonX, db.configButtonY)
+    
     -- If button bar is enabled, trigger a re-collection to include this button
     if db.buttonBarEnabled and self.buttonBar then
+        print("|cff00ff00AbstractUI:|r Button bar is enabled, will collect config button")
         C_Timer.After(0.1, function()
             self:CollectMinimapButtons()
         end)
