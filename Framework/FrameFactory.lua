@@ -315,8 +315,7 @@ function FrameFactory:CreateDropdown(parent, width, height)
     dropdown.arrow = dropdown:CreateTexture(nil, "ARTWORK")
     dropdown.arrow:SetSize(12, 12)
     dropdown.arrow:SetPoint("RIGHT", -5, 0)
-    dropdown.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
-    dropdown.arrow:SetTexCoord(0, 1, 0, 1)
+    dropdown.arrow:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\dropdown")
     dropdown.arrow:SetVertexColor(ColorPalette:GetColor("text-secondary"))
     
     -- Menu frame
