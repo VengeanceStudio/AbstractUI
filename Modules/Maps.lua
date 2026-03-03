@@ -56,10 +56,6 @@ local defaults = {
         buttonBarGrowthDirection = "right",
         buttonBarIconScale = 0.5,
         buttonBarSpacing = 2,
-        
-        -- Minimap Config Button
-        showConfigButton = true,
-        configButtonAngle = 225, -- Angle position around minimap (0-360)
     }
 }
 
@@ -108,7 +104,6 @@ function Maps:PLAYER_ENTERING_WORLD()
     self:SetupElements()
     self:SkinBlizzardButtons()
     self:SetupButtonBar()
-    self:SetupConfigButton()
     self:UpdateLayout()
 end
 
@@ -185,116 +180,6 @@ function Maps:ApplyMinimapOffset()
     Minimap:ClearAllPoints()
     -- Anchor to UIParent instead of MinimapCluster to avoid EditMode interference
     Minimap:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", db.offsetX, db.offsetY)
-end
-
--- -----------------------------------------------------------------------------
--- MINIMAP CONFIG BUTTON
--- -----------------------------------------------------------------------------
-function Maps:SetupConfigButton()
-    local db = self.db.profile
-    
-    if not db.showConfigButton then
-        if self.configButton then
-            self.configButton:Hide()
-        end
-        return
-    end
-    
-    if not self.configButton then
-        -- Create a standard minimap button using LibDBIcon structure
-        self.configButton = CreateFrame("Button", "AbstractUI_MinimapButton", Minimap)
-        self.configButton:SetSize(31, 31)
-        self.configButton:SetFrameLevel(8)
-        self.configButton:SetFrameStrata("MEDIUM")
-        
-        -- Icon layer
-        local icon = self.configButton:CreateTexture(nil, "BACKGROUND")
-        icon:SetSize(20, 20)
-        icon:SetPoint("CENTER", 0, 0)
-        icon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\icon")
-        icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
-        self.configButton.icon = icon
-        
-        -- Border overlay (makes it circular)
-        local border = self.configButton:CreateTexture(nil, "OVERLAY")
-        border:SetSize(53, 53)
-        border:SetPoint("TOPLEFT", 0, 0)
-        border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-        self.configButton.border = border
-        
-        -- Highlight
-        local highlight = self.configButton:CreateTexture(nil, "HIGHLIGHT")
-        highlight:SetSize(31, 31)
-        highlight:SetPoint("CENTER", 0, 0)
-        highlight:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-        highlight:SetBlendMode("ADD")
-        
-        -- Hover effect
-        self.configButton:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-            GameTooltip:SetText("|cff00ff00AbstractUI|r", 1, 1, 1)
-            GameTooltip:AddLine("Click to open settings", 1, 1, 1)
-            GameTooltip:AddLine("Drag to reposition", 0.7, 0.7, 0.7)
-            GameTooltip:Show()
-        end)
-        
-        self.configButton:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
-        
-        -- Click handler
-        self.configButton:SetScript("OnClick", function(self, button)
-            if button == "LeftButton" then
-                AbstractUI:OpenConfig()
-            end
-        end)
-        
-        -- Drag handler - drag around the edge of minimap
-        self.configButton:RegisterForClicks("LeftButtonUp")
-        self.configButton:RegisterForDrag("LeftButton")
-        
-        self.configButton:SetScript("OnDragStart", function(self)
-            self.isDragging = true
-            self:SetScript("OnUpdate", function(self)
-                local mx, my = Minimap:GetCenter()
-                local px, py = GetCursorPosition()
-                local scale = Minimap:GetEffectiveScale()
-                px, py = px / scale, py / scale
-                
-                -- Calculate angle
-                local angle = math.deg(math.atan2(py - my, px - mx))
-                Maps.db.profile.configButtonAngle = angle
-                Maps:UpdateConfigButtonPosition()
-            end)
-        end)
-        
-        self.configButton:SetScript("OnDragStop", function(self)
-            self.isDragging = false
-            self:SetScript("OnUpdate", nil)
-        end)
-    end
-    
-    self:UpdateConfigButtonPosition()
-    self.configButton:Show()
-    
-    -- If button bar is enabled, trigger a re-collection to include this button
-    if db.buttonBarEnabled and self.buttonBar then
-        C_Timer.After(0.2, function()
-            self:CollectMinimapButtons()
-        end)
-    end
-end
-
-function Maps:UpdateConfigButtonPosition()
-    if not self.configButton then return end
-    
-    local angle = math.rad(self.db.profile.configButtonAngle or 225)
-    local radius = 80 -- Distance from minimap center
-    local x = math.cos(angle) * radius
-    local y = math.sin(angle) * radius
-    
-    self.configButton:ClearAllPoints()
-    self.configButton:SetPoint("CENTER", Minimap, "CENTER", x, y)
 end
 
 -- -----------------------------------------------------------------------------
@@ -670,9 +555,6 @@ function Maps:UpdateLayout()
     self:PlaceButton(ExpansionLandingPageMinimapButton, "BOTTOMLEFT", 5, 5, db.showMissions)
     self:PlaceButton(QueueStatusMinimapButton, "BOTTOMRIGHT", -5, 5, db.showQueue)
     self:PlaceButton(MinimapCluster.InstanceDifficulty, "TOPRIGHT", db.difficultyOffsetX or -65, db.difficultyOffsetY or -5, db.showDifficulty)
-    
-    -- Config Button
-    self:SetupConfigButton()
     
     self.layoutInitialized = true
 end
@@ -1272,26 +1154,6 @@ function Maps:GetOptions()
                 order = 26.2,
                 get = function() return self.db.profile.difficultyOffsetY or -5 end,
                 set = function(_, v) self.db.profile.difficultyOffsetY = v; self:UpdateLayout() end,
-            },
-            
-            headerConfigButton = { type = "header", name = "Config Button", order = 27},
-            showConfigButton = {
-                name = "Show Config Button",
-                desc = "Display a button on the minimap that opens AbstractUI settings",
-                type = "toggle",
-                order = 27.1,
-                get = function() return self.db.profile.showConfigButton end,
-                set = function(_, v) self.db.profile.showConfigButton = v; self:SetupConfigButton() end,
-            },
-            configButtonAngle = {
-                type = "range",
-                name = "Button Position",
-                desc = "Angle around the minimap (0-360 degrees). You can also drag the button to reposition it.",
-                width = "double",
-                min = 0, max = 360, step = 1,
-                order = 27.2,
-                get = function() return self.db.profile.configButtonAngle or 225 end,
-                set = function(_, v) self.db.profile.configButtonAngle = v; self:UpdateConfigButtonPosition() end,
             },
             
             headerButtonBar = { type = "header", name = "Minimap Button Bar", order = 30},
