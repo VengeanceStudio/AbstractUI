@@ -820,8 +820,12 @@ function AccountPlayed:UpdatePopupDisplay()
     local totals = self:GetClassTotals()
     local accountTotal = self:GetAccountTotal()
     
-    if f.formatCheckbox then
-        f.formatCheckbox:SetChecked(AccountPlayedPopupDB.useYears)
+    if f.formatCheckbox and f.formatCheckbox.check then
+        if AccountPlayedPopupDB.useYears then
+            f.formatCheckbox.check:Show()
+        else
+            f.formatCheckbox.check:Hide()
+        end
     end
     
     if accountTotal == 0 then
