@@ -4,6 +4,30 @@
 local LDB = LibStub("LibDataBroker-1.1")
 local goldObj
 
+-- Format money for aligned display in tooltips (always shows all denominations)
+local function FormatMoneyAligned(amount)
+    if not amount then 
+        return "       0|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t 00|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t 00|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t"
+    end
+    local gold = math.floor(amount / 10000)
+    local silver = math.floor((amount % 10000) / 100)
+    local copper = amount % 100
+    
+    -- Format gold with commas
+    local goldStr = tostring(gold)
+    while true do
+        goldStr, k = goldStr:gsub("^(%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    
+    -- Pad gold string to 8 characters for alignment (handles up to 9,999,999 gold)
+    goldStr = string.format("%8s", goldStr)
+    
+    -- Always show all three denominations for consistent alignment
+    return string.format("%s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
+        goldStr, silver, copper)
+end
+
 -- Register the broker
 goldObj = LDB:NewDataObject("AbstractGold", { 
     type = "data source", text = "0g", icon = "Interface\\Icons\\INV_Misc_Coin_01",
@@ -14,6 +38,7 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         GameTooltip:AddLine("Account Gold Summary", r, g, b)
         GameTooltip:AddLine(" ")
         local total = 0
+        local startLine = GameTooltip:NumLines() + 1  -- Track starting line for font changes
         for charKey, data in pairs(BrokerBar.db.profile.goldData) do
             local charColor = {r=1, g=1, b=1}
             if type(data) == "table" and data.class then 
@@ -22,10 +47,21 @@ goldObj = LDB:NewDataObject("AbstractGold", {
             end
             local amt = type(data) == "table" and data.amount or data
             total = total + amt
-            GameTooltip:AddDoubleLine(charKey:match("^(.-) %-") or charKey, FormatMoney(amt), charColor.r, charColor.g, charColor.b)
+            GameTooltip:AddDoubleLine(charKey:match("^(.-) %-") or charKey, FormatMoneyAligned(amt), charColor.r, charColor.g, charColor.b)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddDoubleLine("Total", FormatMoney(total), 1, 0.82, 0)
+        local totalLine = GameTooltip:NumLines() + 1
+        GameTooltip:AddDoubleLine("Total", FormatMoneyAligned(total), 1, 0.82, 0)
+        
+        -- Apply monospaced font to right-side text (money amounts)
+        for i = startLine, GameTooltip:NumLines() do
+            local rightText = _G["GameTooltipTextRight"..i]
+            if rightText and rightText:GetText() then
+                -- Use ARIALN which is a narrower, more consistent font for numbers
+                rightText:SetFont("Fonts\\ARIALN.TTF", 12, "MONOCHROME")
+            end
+        end
+        
         ApplyTooltipStyle(GameTooltip)
         GameTooltip:Show()
     end,
