@@ -768,12 +768,11 @@ function AddonManager:CreateEntryFrame(parent, id)
     entry.collapseBtn:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     entry.collapseBtn:Hide()
     
-    -- Collapse arrow texture
-    entry.collapseBtn.arrow = entry.collapseBtn:CreateTexture(nil, "ARTWORK")
-    entry.collapseBtn.arrow:SetSize(10, 10)
-    entry.collapseBtn.arrow:SetPoint("CENTER")
-    entry.collapseBtn.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
-    entry.collapseBtn.arrow:SetVertexColor(ColorPalette:GetColor("text-primary"))
+    -- Collapse icon texture (plus/minus)
+    entry.collapseBtn.icon = entry.collapseBtn:CreateTexture(nil, "ARTWORK")
+    entry.collapseBtn.icon:SetSize(10, 10)
+    entry.collapseBtn.icon:SetPoint("CENTER")
+    entry.collapseBtn.icon:SetVertexColor(ColorPalette:GetColor("text-primary"))
     
     entry.collapseBtn:SetScript("OnEnter", function(self)
         self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
@@ -904,11 +903,11 @@ function AddonManager:UpdateDisplay()
                 entry.titleText:SetText("|cff" .. GetHexColor(ColorPalette:GetColor("text-primary")) .. item)
                 entry.addonIndex = nil
                 
-                -- Rotate arrow for collapsed/expanded state
+                -- Set icon based on collapsed/expanded state
                 if collapsedAddons[item] then
-                    entry.collapseBtn.arrow:SetRotation(math.rad(-90)) -- Point right when collapsed
+                    entry.collapseBtn.icon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\plus")
                 else
-                    entry.collapseBtn.arrow:SetRotation(0) -- Point down when expanded
+                    entry.collapseBtn.icon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\minus")
                 end
             else
                 -- Addon entry
