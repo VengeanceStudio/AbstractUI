@@ -38,16 +38,37 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         local r, g, b = GetColor()
         GameTooltip:AddLine("Account Gold Summary", r, g, b)
         GameTooltip:AddLine(" ")
+        
+        -- Build sorted character list
+        local charList = {}
         local total = 0
         for charKey, data in pairs(BrokerBar.db.profile.goldData) do
-            local charColor = {r=1, g=1, b=1}
-            if type(data) == "table" and data.class then 
-                local c = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[data.class]
-                if c then charColor = c end 
-            end
             local amt = type(data) == "table" and data.amount or data
             total = total + amt
-            GameTooltip:AddDoubleLine(charKey:match("^(.-) %-") or charKey, FormatMoneyTable(amt), charColor.r, charColor.g, charColor.b)
+            table.insert(charList, {
+                key = charKey,
+                amount = amt,
+                class = type(data) == "table" and data.class or nil
+            })
+        end
+        
+        -- Sort based on user preference
+        local sortBy = BrokerBar.db.profile.goldSortBy or "name"
+        if sortBy == "amount" then
+            table.sort(charList, function(a, b) return a.amount > b.amount end)
+        else -- sort by name
+            table.sort(charList, function(a, b) return a.key < b.key end)
+        end
+        
+        -- Display sorted list
+        for _, charData in ipairs(charList) do
+            local charColor = {r=1, g=1, b=1}
+            if charData.class then
+                local c = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[charData.class]
+                if c then charColor = c end
+            end
+            local displayName = charData.key:match("^(.-) %-") or charData.key
+            GameTooltip:AddDoubleLine(displayName, FormatMoneyTable(charData.amount), charColor.r, charColor.g, charColor.b)
         end
         GameTooltip:AddLine(" ")
         GameTooltip:AddDoubleLine("Total", FormatMoneyTable(total), 1, 0.82, 0)

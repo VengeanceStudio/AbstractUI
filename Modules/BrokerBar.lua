@@ -165,6 +165,7 @@ local defaults = {
         useClassColor = false,
         useStandardTime = true,
         spacing = 15,
+        goldSortBy = "name",
         goldData = {},      
         tokenHistory = {},
         brokers = {}, -- Initialize empty brokers table
@@ -1373,6 +1374,14 @@ function BrokerBar:GetPluginOptions()
                     values = { [0.01] = "1%", [0.05] = "5%" },
                     get = function() return self.db.profile.brokers[name].volumeStep or 0.01 end,
                     set = function(_, v) self.db.profile.brokers[name].volumeStep = v end
+                } or nil,
+                goldSort = isGold and {
+                    name = "Sort By",
+                    type = "select",
+                    order = 12,
+                    values = { ["name"] = "Name (A-Z)", ["amount"] = "Gold Amount (High to Low)" },
+                    get = function() return self.db.profile.goldSortBy or "name" end,
+                    set = function(_, v) self.db.profile.goldSortBy = v end
                 } or nil,
                 deleteChar = isGold and { 
                     name = "Delete Character Data", 
