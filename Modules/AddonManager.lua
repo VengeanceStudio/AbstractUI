@@ -507,7 +507,14 @@ function AddonManager:LoadSet(set)
     
     DisableAllAddOns()
     
+    -- Enable addons from the set
     for _, addonName in ipairs(addonSets[set].addons) do
+        EnableAddOn(addonName)
+    end
+    
+    -- Always enable AbstractUI and protected addons
+    EnableAddOn("AbstractUI")
+    for addonName, _ in pairs(protectedAddons) do
         EnableAddOn(addonName)
     end
     
@@ -521,8 +528,171 @@ function AddonManager:GetSetName(set)
     return "Set " .. set
 end
 
+function AddonManager:RenameSet(set, newName)
+    if not addonSets[set] then
+        addonSets[set] = { addons = {} }
+    end
+    addonSets[set].name = newName
+    self:Print("Set renamed to: " .. newName)
+end
+
+function AddonManager:AddToSet(set)
+    if not addonSets[set] then
+        addonSets[set] = { name = "Set " .. set, addons = {} }
+    end
+    
+    for i = 1, GetNumAddOns() do
+        if GetAddOnEnableState(UnitGUID("player"), i) > 0 then
+            local addonName = GetAddOnInfo(i)
+            local found = false
+            for _, name in ipairs(addonSets[set].addons) do
+                if name == addonName then
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                table.insert(addonSets[set].addons, addonName)
+            end
+        end
+    end
+    self:Print("Added current addons to " .. self:GetSetName(set))
+end
+
+function AddonManager:RemoveFromSet(set)
+    if not addonSets[set] or not addonSets[set].addons then
+        return
+    end
+    
+    for i = 1, GetNumAddOns() do
+        if GetAddOnEnableState(UnitGUID("player"), i) > 0 then
+            local addonName = GetAddOnInfo(i)
+            for j = #addonSets[set].addons, 1, -1 do
+                if addonSets[set].addons[j] == addonName then
+                    table.remove(addonSets[set].addons, j)
+                end
+            end
+        end
+    end
+    self:Print("Removed current addons from " .. self:GetSetName(set))
+end
+
+function AddonManager:GetSetCount(set)
+    if addonSets[set] and addonSets[set].addons then
+        return #addonSets[set].addons
+    end
+    return 0
+end
+
 function AddonManager:Print(msg)
     print("|cff9d7bffAbstractUI Addon Manager:|r " .. msg)
+end
+
+function AddonManager:ShowSetsMenu(button)
+    if not self.setsDropdown then
+        self.setsDropdown = CreateFrame("Frame", "AbstractUI_AddonManager_SetsDropdown", UIParent, "UIDropDownMenuTemplate")
+    end
+    
+    UIDropDownMenu_Initialize(self.setsDropdown, function(frame, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        if level == 1 then
+            -- Add numbered sets 1-25
+            for i = 1, 25 do
+                info = UIDropDownMenu_CreateInfo()
+                info.text = string.format("%s (%d)", AddonManager:GetSetName(i), AddonManager:GetSetCount(i))
+                info.value = i
+                info.hasArrow = true
+                info.notCheckable = true
+                UIDropDownMenu_AddButton(info, level)
+            end
+            
+            -- Add class set
+            local playerClass = select(2, UnitClass("player"))
+            info = UIDropDownMenu_CreateInfo()
+            info.text = string.format("%s (%d)", playerClass, AddonManager:GetSetCount(playerClass))
+            info.value = playerClass
+            info.hasArrow = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Add default set
+            info = UIDropDownMenu_CreateInfo()
+            info.text = string.format("Default (%d)", AddonManager:GetSetCount("Default"))
+            info.value = "Default"
+            info.hasArrow = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+        elseif level == 2 then
+            local setID = UIDROPDOWNMENU_MENU_VALUE
+            local setName = AddonManager:GetSetName(setID)
+            
+            -- Submenu header
+            info = UIDropDownMenu_CreateInfo()
+            info.text = setName
+            info.isTitle = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Save option
+            info = UIDropDownMenu_CreateInfo()
+            info.text = "Save"
+            info.func = function()
+                AddonManager:SaveSet(setID, setName)
+                AddonManager:Print("Saved current addons to " .. setName)
+                CloseDropDownMenus()
+            end
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Load option
+            info = UIDropDownMenu_CreateInfo()
+            info.text = "Load"
+            info.func = function()
+                AddonManager:LoadSet(setID)
+                AddonManager:Print("Loaded " .. setName)
+                CloseDropDownMenus()
+            end
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Add to current selection
+            info = UIDropDownMenu_CreateInfo()
+            info.text = "Add to current selection"
+            info.func = function()
+                AddonManager:AddToSet(setID)
+                CloseDropDownMenus()
+            end
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Remove from current selection
+            info = UIDropDownMenu_CreateInfo()
+            info.text = "Remove from current selection"
+            info.func = function()
+                AddonManager:RemoveFromSet(setID)
+                CloseDropDownMenus()
+            end
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+            
+            -- Rename option (not for Default set)
+            if setID ~= "Default" then
+                info = UIDropDownMenu_CreateInfo()
+                info.text = "Rename"
+                info.func = function()
+                    AddonManager.renamingSet = setID
+                    StaticPopup_Show("ABSTRACTUI_ADDONMANAGER_RENAMESET", setName)
+                    CloseDropDownMenus()
+                end
+                info.notCheckable = true
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end
+    end, "MENU")
+    
+    ToggleDropDownMenu(1, nil, self.setsDropdown, button, 0, 0)
 end
 
 -- ============================================================================
@@ -705,6 +875,13 @@ function AddonManager:CreateUI()
             EnableAddOn(addonName)
         end
         AddonManager:UpdateDisplay()
+    end)
+    
+    -- Sets button
+    local setsBtn = FrameFactory:CreateButton(mainFrame, 80, 25, "Sets")
+    setsBtn:SetPoint("LEFT", disableAllBtn, "RIGHT", 5, 0)
+    setsBtn:SetScript("OnClick", function(self)
+        AddonManager:ShowSetsMenu(self)
     end)
     
     local closeBottomBtn = FrameFactory:CreateButton(mainFrame, 80, 25, "Close")
@@ -1082,6 +1259,35 @@ function AddonManager:OnInitialize()
     collapsedAddons = self.db.profile.collapsedCategories or {}
     addonSets = self.db.profile.sets or {}
     protectedAddons = self.db.profile.protectedAddons or {}
+    
+    -- Register static popup for renaming sets
+    StaticPopupDialogs["ABSTRACTUI_ADDONMANAGER_RENAMESET"] = {
+        text = "Enter the new name for %s:",
+        button1 = "Okay",
+        button2 = "Cancel",
+        OnAccept = function(self)
+            local text = self.editBox:GetText()
+            if text and text ~= "" then
+                AddonManager:RenameSet(AddonManager.renamingSet, text)
+            end
+        end,
+        EditBoxOnEnterPressed = function(self)
+            local text = self:GetText()
+            if text and text ~= "" then
+                AddonManager:RenameSet(AddonManager.renamingSet, text)
+            end
+            self:GetParent():Hide()
+        end,
+        EditBoxOnEscapePressed = function(self)
+            self:GetParent():Hide()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        hasEditBox = true,
+        exclusive = true,
+        preferredIndex = 3,
+    }
     
     -- Register slash command
     SLASH_ABSTRACTADDONMANAGER1 = "/auiaddon"
