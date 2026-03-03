@@ -862,7 +862,7 @@ function AddonManager:CreateUI()
     mainFrame = CreateFrame("Frame", "AbstractUI_AddonManager", UIParent, "BackdropTemplate")
     mainFrame:SetSize(700, 600)
     mainFrame:SetPoint("CENTER")
-    mainFrame:SetFrameStrata("DIALOG")
+    mainFrame:SetFrameStrata("FULLSCREEN_DIALOG")
     mainFrame:EnableMouse(true)
     mainFrame:SetMovable(true)
     mainFrame:RegisterForDrag("LeftButton")
@@ -1447,6 +1447,9 @@ function AddonManager:HookGameMenuButton()
                 if not AddonManager.db.profile.replaceGameMenuButton then
                     return
                 end
+                
+                -- Hide the Game Menu
+                HideUIPanel(GameMenuFrame)
                 
                 -- Hide the default addon list if it opens
                 if AddonList and AddonList:IsShown() then
