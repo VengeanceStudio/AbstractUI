@@ -570,24 +570,19 @@ function AccountPlayed:CreatePopup()
         charPanelClass = nil
     end)
     
-    -- ScrollFrame container
-    local scrollFrame = CreateFrame("ScrollFrame", nil, f)
-    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -50)
-    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 60)
-    f.scrollFrame = scrollFrame
+    -- ScrollFrame container with AbstractUI styling
+    local ScrollFrameLib = _G.AbstractUI_ScrollFrame
+    local scrollFrameWrapper = ScrollFrameLib.CreateScrollFrame(f)
+    scrollFrameWrapper:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -50)
+    scrollFrameWrapper:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 60)
+    f.scrollFrame = scrollFrameWrapper.scrollArea
+    f.scrollbar = scrollFrameWrapper.scrollbar
+    f.scrollFrameWrapper = scrollFrameWrapper
     
-    local content = CreateFrame("Frame", nil, scrollFrame)
+    local content = CreateFrame("Frame", nil, scrollFrameWrapper.scrollArea)
     content:SetSize(1, 1)
-    scrollFrame:SetScrollChild(content)
+    scrollFrameWrapper:SetScrollChild(content)
     f.content = content
-    
-    scrollFrame:EnableMouseWheel(true)
-    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local step = 20
-        local new = self:GetVerticalScroll() - delta * step
-        new = math.max(0, math.min(new, self:GetVerticalScrollRange()))
-        self:SetVerticalScroll(new)
-    end)
     
     -- Total row at bottom
     f.totalRow = FontKit:CreateFontString(f, "heading", "normal")
@@ -718,33 +713,36 @@ function AccountPlayed:CreatePopup()
         f:SetResizeBounds(MIN_W, MIN_H, MAX_W, MAX_H)
     end
     
-    -- Resize grabber (AbstractUI style)
-    local br = CreateFrame("Button", nil, f, "BackdropTemplate")
-    br:SetSize(20, 20)
-    br:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
-    br:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        tile = false,
-    })
-    br:SetBackdropColor(ColorPalette:GetColor('panel-border'))
+    -- Resize grabber (minimal, nearly invisible)
+    local br = CreateFrame("Button", nil, f)
+    br:SetSize(16, 16)
+    br:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
+    br:EnableMouse(true)
     
-    -- Diagonal lines for resize indicator
-    for i = 1, 3 do
-        local line = br:CreateTexture(nil, "OVERLAY")
-        line:SetSize(12, 1)
-        line:SetColorTexture(ColorPalette:GetColor('text-secondary'))
-        line:SetPoint("BOTTOMRIGHT", br, "BOTTOMRIGHT", -2 - (i * 3), 2 + (i * 3))
-        line:SetRotation(math.rad(-45))
-    end
+    -- Visual indicator (only visible on hover)
+    br.indicator = br:CreateTexture(nil, "OVERLAY")
+    br.indicator:SetAllPoints()
+    br.indicator:SetColorTexture(ColorPalette:GetColor('panel-border'))
+    br.indicator:SetAlpha(0)
     
     br:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(ColorPalette:GetColor('accent-primary'))
+        self.indicator:SetAlpha(0.3)
     end)
     br:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(ColorPalette:GetColor('panel-border'))
+        self.indicator:SetAlpha(0)
     end)
-    br:SetScript("OnMouseDown", function(self) f:StartSizing("BOTTOMRIGHT") end)
-    br:SetScript("OnMouseUp", function(self) f:StopMovingOrSizing() end)
+    br:SetScript("OnMouseDown", function(self) 
+        f:StartSizing("BOTTOMRIGHT")
+        self.indicator:SetAlpha(0.5)
+    end)
+    br:SetScript("OnMouseUp", function(self) 
+        f:StopMovingOrSizing()
+        if self:IsMouseOver() then
+            self.indicator:SetAlpha(0.3)
+        else
+            self.indicator:SetAlpha(0)
+        end
+    end)
     
     f:SetScript("OnSizeChanged", function(self, w, h)
         if w < MIN_W then self:SetWidth(MIN_W) end
@@ -761,7 +759,12 @@ function AccountPlayed:CreatePopup()
             row:SetWidth(cw)
         end
         
-        AccountPlayed:UpdateScrollBarVisibility(self)
+        -- Update scrollbar visibility
+        if self.scrollFrameWrapper and self.scrollFrameWrapper.UpdateScroll then
+            C_Timer.After(0, function()
+                self.scrollFrameWrapper:UpdateScroll()
+            end)
+        end
     end)
     
     f:Hide()
@@ -880,19 +883,6 @@ function AccountPlayed:CreateRow(parent, width, height)
     return row
 end
 
-function AccountPlayed:UpdateScrollBarVisibility(frame)
-    local sf = frame.scrollFrame
-    local sb = sf and (sf.ScrollBar or sf.scrollBar)
-    if not sb then return end
-    
-    if sf:GetVerticalScrollRange() > 0 then
-        sb:Show()
-    else
-        sb:Hide()
-        sf:SetVerticalScroll(0)
-    end
-end
-
 function AccountPlayed:UpdatePopupDisplay()
     local f = self:CreatePopup()
     local accountTotal = self:GetAccountTotal()
@@ -988,7 +978,14 @@ function AccountPlayed:UpdatePopupDisplay()
     end
     
     f.content:SetHeight(#sorted * 22)
-    self:UpdateScrollBarVisibility(f)
+    
+    -- Update scrollbar
+    if f.scrollFrameWrapper and f.scrollFrameWrapper.UpdateScroll then
+        C_Timer.After(0, function()
+            f.scrollFrameWrapper:UpdateScroll()
+        end)
+    end
+    
     f.totalRow:SetText(L.TOTAL .. self:FormatTimeTotal(accountTotal, AccountPlayedPopupDB.useYears))
     
     if charPanel and charPanel:IsShown() and charPanelClass then
