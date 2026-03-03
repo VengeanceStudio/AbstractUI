@@ -1401,6 +1401,51 @@ function AddonManager:UpdateDisplay()
 end
 
 -- ============================================================================
+-- GAME MENU HOOK
+-- ============================================================================
+
+function AddonManager:HookGameMenuButton()
+    if self.gameMenuHooked then return end
+    
+    -- Hook runs after ADDON_LIST_UPDATE event to ensure button exists
+    local function TryHook()
+        if GameMenuButtonAddons then
+            -- Store original script if not already stored
+            if not self.originalGameMenuScript then
+                self.originalGameMenuScript = GameMenuButtonAddons:GetScript("OnClick")
+            end
+            
+            -- Replace the OnClick handler
+            GameMenuButtonAddons:SetScript("OnClick", function()
+                HideUIPanel(GameMenuFrame)
+                AddonManager:Show()
+            end)
+            
+            self.gameMenuHooked = true
+            return true
+        end
+        return false
+    end
+    
+    -- Try immediately
+    if not TryHook() then
+        -- If button doesn't exist yet, wait for it
+        C_Timer.After(0.5, TryHook)
+    end
+end
+
+function AddonManager:UnhookGameMenuButton()
+    if not self.gameMenuHooked then return end
+    
+    -- Restore original OnClick handler
+    if GameMenuButtonAddons and self.originalGameMenuScript then
+        GameMenuButtonAddons:SetScript("OnClick", self.originalGameMenuScript)
+    end
+    
+    self.gameMenuHooked = false
+end
+
+-- ============================================================================
 -- MODULE INITIALIZATION
 -- ============================================================================
 
@@ -1413,6 +1458,7 @@ function AddonManager:OnInitialize()
             collapsedCategories = {},
             sets = {},
             protectedAddons = {},
+            replaceGameMenuButton = false,
         }
     }
     
@@ -1465,7 +1511,10 @@ function AddonManager:OnInitialize()
 end
 
 function AddonManager:OnEnable()
-    -- Module enabled
+    -- Hook Game Menu Addons button if enabled
+    if self.db.profile.replaceGameMenuButton then
+        self:HookGameMenuButton()
+    end
 end
 
 function AddonManager:OnDisable()
@@ -1590,10 +1639,27 @@ function AddonManager:GetOptions()
                     NoRecurse = value
                 end,
             },
+            replaceGameMenuButton = {
+                type = "toggle",
+                name = "Replace Game Menu Addons Button",
+                desc = "When enabled, the Addons button in the Game Menu (ESC key) will open AbstractUI's Addon Manager instead of Blizzard's addon list. Requires a UI reload to take effect.",
+                order = 6.5,
+                get = function()
+                    return self.db.profile.replaceGameMenuButton or false
+                end,
+                set = function(_, value)
+                    self.db.profile.replaceGameMenuButton = value
+                    if value then
+                        self:HookGameMenuButton()
+                    else
+                        self:UnhookGameMenuButton()
+                    end
+                end,
+            },
             spacer2 = {
                 type = "description",
                 name = " ",
-                order = 6.5,
+                order = 6.8,
             },
             infoHeader = {
                 type = "header",
