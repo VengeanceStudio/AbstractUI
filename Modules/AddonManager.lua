@@ -1418,14 +1418,17 @@ function AddonManager:HookGameMenuButton()
             for i = 1, GameMenuFrame:GetNumChildren() do
                 local child = select(i, GameMenuFrame:GetChildren())
                 if child and child:IsObjectType("Button") then
-                    local text = child.GetText and child:GetText()
-                    if text and (text == "AddOns" or text == "Addons" or text:find("Addon")) then
-                        addonsButton = child
-                        break
+                    -- Check button text
+                    if child.GetText then
+                        local text = child:GetText()
+                        if text and (text == "AddOns" or text == "Addons" or text:find("Addon")) then
+                            addonsButton = child
+                            break
+                        end
                     end
                     
                     -- Also check button name
-                    local name = child:GetName and child:GetName()
+                    local name = child:GetName()
                     if name and (name:find("Addon") or name:find("AddOn")) then
                         addonsButton = child
                         break
