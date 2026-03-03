@@ -589,110 +589,256 @@ function AddonManager:Print(msg)
 end
 
 function AddonManager:ShowSetsMenu(button)
-    if not self.setsDropdown then
-        self.setsDropdown = CreateFrame("Frame", "AbstractUI_AddonManager_SetsDropdown", UIParent, "UIDropDownMenuTemplate")
+    -- Close existing menu if open
+    if self.setsMenu and self.setsMenu:IsShown() then
+        self.setsMenu:Hide()
+        return
     end
     
-    UIDropDownMenu_Initialize(self.setsDropdown, function(frame, level)
-        local info = UIDropDownMenu_CreateInfo()
+    -- Create menu frame if it doesn't exist
+    if not self.setsMenu then
+        local FrameFactory = AbstractUI.FrameFactory
+        local ColorPalette = _G.AbstractUI_ColorPalette
+        local FontKit = AbstractUI.FontKit
         
-        if level == 1 then
-            -- Add numbered sets 1-25
-            for i = 1, 25 do
-                info = UIDropDownMenu_CreateInfo()
-                info.text = string.format("%s (%d)", AddonManager:GetSetName(i), AddonManager:GetSetCount(i))
-                info.value = i
-                info.hasArrow = true
-                info.notCheckable = true
-                UIDropDownMenu_AddButton(info, level)
+        local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+        menu:SetSize(250, 450)
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            tileSize = 16,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        local r, g, b = ColorPalette:GetColor("panel-bg")
+        menu:SetBackdropColor(r, g, b, 1.0)
+        menu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+        menu:EnableMouse(true)
+        menu:Hide()
+        
+        -- Scroll area for sets
+        menu.scrollFrame = CreateFrame("ScrollFrame", nil, menu)
+        menu.scrollFrame:SetPoint("TOPLEFT", 5, -5)
+        menu.scrollFrame:SetPoint("BOTTOMRIGHT", -5, 5)
+        menu.scrollFrame:EnableMouseWheel(true)
+        menu.scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+            local current = self:GetVerticalScroll()
+            local maxScroll = self:GetVerticalScrollRange()
+            local newScroll = math.max(0, math.min(current - (delta * 20), maxScroll))
+            self:SetVerticalScroll(newScroll)
+        end)
+        
+        menu.scrollChild = CreateFrame("Frame", nil, menu.scrollFrame)
+        menu.scrollChild:SetSize(240, 1)
+        menu.scrollFrame:SetScrollChild(menu.scrollChild)
+        
+        menu.buttons = {}
+        
+        -- Create invisible backdrop to catch outside clicks
+        menu.backdrop = CreateFrame("Frame", nil, UIParent)
+        menu.backdrop:SetFrameStrata("FULLSCREEN")
+        menu.backdrop:SetFrameLevel(1)
+        menu.backdrop:SetAllPoints()
+        menu.backdrop:EnableMouse(true)
+        menu.backdrop:Hide()
+        menu.backdrop:SetScript("OnMouseDown", function()
+            menu:Hide()
+        end)
+        
+        menu:SetFrameLevel(100)
+        
+        -- Close when clicking outside
+        menu:SetScript("OnShow", function()
+            menu.backdrop:Show()
+        end)
+        
+        menu:SetScript("OnHide", function()
+            menu.backdrop:Hide()
+            if menu.submenu then
+                menu.submenu:Hide()
             end
-            
-            -- Add class set
-            local playerClass = select(2, UnitClass("player"))
-            info = UIDropDownMenu_CreateInfo()
-            info.text = string.format("%s (%d)", playerClass, AddonManager:GetSetCount(playerClass))
-            info.value = playerClass
-            info.hasArrow = true
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Add default set
-            info = UIDropDownMenu_CreateInfo()
-            info.text = string.format("Default (%d)", AddonManager:GetSetCount("Default"))
-            info.value = "Default"
-            info.hasArrow = true
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-        elseif level == 2 then
-            local setID = UIDROPDOWNMENU_MENU_VALUE
-            local setName = AddonManager:GetSetName(setID)
-            
-            -- Submenu header
-            info = UIDropDownMenu_CreateInfo()
-            info.text = setName
-            info.isTitle = true
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Save option
-            info = UIDropDownMenu_CreateInfo()
-            info.text = "Save"
-            info.func = function()
-                AddonManager:SaveSet(setID, setName)
-                AddonManager:Print("Saved current addons to " .. setName)
-                CloseDropDownMenus()
-            end
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Load option
-            info = UIDropDownMenu_CreateInfo()
-            info.text = "Load"
-            info.func = function()
-                AddonManager:LoadSet(setID)
-                AddonManager:Print("Loaded " .. setName)
-                CloseDropDownMenus()
-            end
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Add to current selection
-            info = UIDropDownMenu_CreateInfo()
-            info.text = "Add to current selection"
-            info.func = function()
-                AddonManager:AddToSet(setID)
-                CloseDropDownMenus()
-            end
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Remove from current selection
-            info = UIDropDownMenu_CreateInfo()
-            info.text = "Remove from current selection"
-            info.func = function()
-                AddonManager:RemoveFromSet(setID)
-                CloseDropDownMenus()
-            end
-            info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
-            
-            -- Rename option (not for Default set)
-            if setID ~= "Default" then
-                info = UIDropDownMenu_CreateInfo()
-                info.text = "Rename"
-                info.func = function()
-                    AddonManager.renamingSet = setID
-                    StaticPopup_Show("ABSTRACTUI_ADDONMANAGER_RENAMESET", setName)
-                    CloseDropDownMenus()
-                end
-                info.notCheckable = true
-                UIDropDownMenu_AddButton(info, level)
-            end
-        end
-    end, "MENU")
+        end)
+        
+        self.setsMenu = menu
+    end
     
-    ToggleDropDownMenu(1, nil, self.setsDropdown, button, 0, 0)
+    -- Clear existing buttons
+    for _, btn in ipairs(self.setsMenu.buttons) do
+        btn:Hide()
+    end
+    wipe(self.setsMenu.buttons)
+    
+    -- Populate menu
+    local FrameFactory = AbstractUI.FrameFactory
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = AbstractUI.FontKit
+    local yOffset = 0
+    
+    -- Add numbered sets 1-25
+    for i = 1, 25 do
+        local btn = self:CreateSetMenuButton(i, yOffset)
+        table.insert(self.setsMenu.buttons, btn)
+        yOffset = yOffset + 25
+    end
+    
+    -- Add default set
+    local defaultBtn = self:CreateSetMenuButton("Default", yOffset)
+    table.insert(self.setsMenu.buttons, defaultBtn)
+    yOffset = yOffset + 25
+    
+    self.setsMenu.scrollChild:SetHeight(yOffset)
+    
+    -- Position menu relative to button
+    self.setsMenu:ClearAllPoints()
+    self.setsMenu:SetPoint("BOTTOM", button, "TOP", 0, 5)
+    self.setsMenu:Show()
+end
+
+function AddonManager:CreateSetMenuButton(setID, yOffset)
+    local FrameFactory = AbstractUI.FrameFactory
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = AbstractUI.FontKit
+    
+    local parent = self.setsMenu.scrollChild
+    local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    btn:SetSize(230, 22)
+    btn:SetPoint("TOPLEFT", 5, -yOffset)
+    
+    btn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+    })
+    btn:SetBackdropColor(0, 0, 0, 0)
+    
+    btn.text = FontKit:CreateFontString(btn, "body", "small")
+    btn.text:SetPoint("LEFT", 5, 0)
+    btn.text:SetText(string.format("%s (%d)", self:GetSetName(setID), self:GetSetCount(setID)))
+    btn.text:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Arrow indicator
+    btn.arrow = btn:CreateTexture(nil, "ARTWORK")
+    btn.arrow:SetSize(12, 12)
+    btn.arrow:SetPoint("RIGHT", -5, 0)
+    btn.arrow:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\dropdown")
+    btn.arrow:SetRotation(math.rad(-90))
+    btn.arrow:SetVertexColor(ColorPalette:GetColor("text-secondary"))
+    
+    btn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    
+    btn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0, 0, 0, 0)
+    end)
+    
+    btn:SetScript("OnClick", function(self)
+        AddonManager:ShowSetSubmenu(self, setID)
+    end)
+    
+    return btn
+end
+
+function AddonManager:ShowSetSubmenu(button, setID)
+    -- Close existing submenu
+    if self.setsMenu.submenu then
+        self.setsMenu.submenu:Hide()
+    end
+    
+    local FrameFactory = AbstractUI.FrameFactory
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = AbstractUI.FontKit
+    
+    -- Create submenu frame
+    local submenu = CreateFrame("Frame", nil, self.setsMenu, "BackdropTemplate")
+    submenu:SetSize(200, 150)
+    submenu:SetFrameStrata("FULLSCREEN_DIALOG")
+    submenu:SetFrameLevel(self.setsMenu:GetFrameLevel() + 10)
+    submenu:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    local r, g, b = ColorPalette:GetColor("panel-bg")
+    submenu:SetBackdropColor(r, g, b, 1.0)
+    submenu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
+    submenu:EnableMouse(true)
+    
+    -- Position submenu
+    submenu:SetPoint("TOPLEFT", self.setsMenu, "TOPRIGHT", 5, 0)
+    
+    local setName = self:GetSetName(setID)
+    local yOffset = 5
+    
+    -- Helper function to create submenu buttons
+    local function CreateSubmenuButton(text, func)
+        local btn = CreateFrame("Button", nil, submenu, "BackdropTemplate")
+        btn:SetSize(190, 22)
+        btn:SetPoint("TOP", 0, -yOffset)
+        yOffset = yOffset + 25
+        
+        btn:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+        })
+        btn:SetBackdropColor(0, 0, 0, 0)
+        
+        btn.text = FontKit:CreateFontString(btn, "body", "small")
+        btn.text:SetPoint("LEFT", 5, 0)
+        btn.text:SetText(text)
+        btn.text:SetTextColor(ColorPalette:GetColor("text-primary"))
+        
+        btn:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+        end)
+        
+        btn:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(0, 0, 0, 0)
+        end)
+        
+        btn:SetScript("OnClick", function()
+            func()
+            self.setsMenu:Hide()
+        end)
+    end
+    
+    -- Save button
+    CreateSubmenuButton("Save", function()
+        self:SaveSet(setID, setName)
+        self:Print("Saved current addons to " .. setName)
+    end)
+    
+    -- Load button
+    CreateSubmenuButton("Load", function()
+        self:LoadSet(setID)
+        self:Print("Loaded " .. setName)
+    end)
+    
+    -- Add to current selection
+    CreateSubmenuButton("Add to current", function()
+        self:AddToSet(setID)
+    end)
+    
+    -- Remove from current selection
+    CreateSubmenuButton("Remove from current", function()
+        self:RemoveFromSet(setID)
+    end)
+    
+    -- Rename (not for Default)
+    if setID ~= "Default" then
+        CreateSubmenuButton("Rename", function()
+            self.renamingSet = setID
+            StaticPopup_Show("ABSTRACTUI_ADDONMANAGER_RENAMESET", setName)
+        end)
+    end
+    
+    submenu:SetHeight(yOffset)
+    self.setsMenu.submenu = submenu
+    submenu:Show()
 end
 
 -- ============================================================================
