@@ -202,33 +202,20 @@ function Maps:SetupConfigButton()
     end
     
     if not self.configButton then
-        -- Create the button
-        self.configButton = CreateFrame("Button", "AbstractUI_MinimapConfigButton", Minimap, "BackdropTemplate")
+        -- Create a standard minimap button (will be collected by button bar)
+        self.configButton = CreateFrame("Button", "AbstractUI_MinimapButton", Minimap)
         self.configButton:SetSize(32, 32)
-        self.configButton:SetFrameLevel(Minimap:GetFrameLevel() + 10)
+        self.configButton:SetFrameLevel(8)
         self.configButton:SetFrameStrata("MEDIUM")
         
-        -- Add background
-        self.configButton:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            tile = false,
-            edgeSize = 1,
-            insets = { left = 0, right = 0, top = 0, bottom = 0 }
-        })
-        self.configButton:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
-        self.configButton:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
-        
-        -- Add icon
+        -- Add icon using AbstractUI's icon.png
         local icon = self.configButton:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints()
-        icon:SetTexture("Interface\\Icons\\Trade_Engineering")
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        icon:SetTexture("Interface\\AddOns\\AbstractUI\\icon")
         self.configButton.icon = icon
         
         -- Hover effect
         self.configButton:SetScript("OnEnter", function(self)
-            self:SetBackdropBorderColor(0.8, 0.8, 0.8, 1)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:SetText("|cff00ff00AbstractUI|r", 1, 1, 1)
             GameTooltip:AddLine("Click to open settings", 1, 1, 1)
@@ -236,7 +223,6 @@ function Maps:SetupConfigButton()
         end)
         
         self.configButton:SetScript("OnLeave", function(self)
-            self:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
             GameTooltip:Hide()
         end)
         
@@ -250,10 +236,17 @@ function Maps:SetupConfigButton()
         self.configButton:RegisterForClicks("LeftButtonUp")
     end
     
-    -- Position the button
+    -- Position the button (this will be overridden if button bar is active and collects it)
     self.configButton:ClearAllPoints()
     self.configButton:SetPoint("CENTER", Minimap, "BOTTOM", db.configButtonX, db.configButtonY)
     self.configButton:Show()
+    
+    -- If button bar is enabled, trigger a re-collection to include this button
+    if db.buttonBarEnabled and self.buttonBar then
+        C_Timer.After(0.1, function()
+            self:CollectMinimapButtons()
+        end)
+    end
 end
 
 -- -----------------------------------------------------------------------------
