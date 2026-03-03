@@ -963,33 +963,40 @@ function AddonManager:CreateUI()
     recurseLabel:SetText("Enable Dependencies")
     recurseLabel:SetTextColor(ColorPalette:GetColor("text-secondary"))
     
-    -- Scroll frame
-    scrollFrame = CreateFrame("ScrollFrame", "AbstractUI_AddonManager_ScrollFrame", mainFrame, "FauxScrollFrameTemplate")
+    -- Scroll frame (custom, not FauxScrollFrame)
+    scrollFrame = CreateFrame("Frame", "AbstractUI_AddonManager_ScrollFrame", mainFrame, "BackdropTemplate")
     scrollFrame:SetPoint("TOPLEFT", 20, -80)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 70)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -56, 70)
     
     -- Add backdrop to scroll area
-    if not scrollFrame.backdrop then
-        scrollFrame.backdrop = CreateFrame("Frame", nil, scrollFrame, "BackdropTemplate")
-        scrollFrame.backdrop:SetAllPoints(scrollFrame)
-        scrollFrame.backdrop:SetFrameLevel(scrollFrame:GetFrameLevel() - 1)
-        scrollFrame.backdrop:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            tile = false,
-            tileSize = 16,
-            edgeSize = 1,
-            insets = { left = 1, right = 1, top = 1, bottom = 1 }
-        })
-        local r, g, b = ColorPalette:GetColor("bg-primary")
-        scrollFrame.backdrop:SetBackdropColor(r * 0.7, g * 0.7, b * 0.7, 0.9)
-        scrollFrame.backdrop:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
-    end
+    scrollFrame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    local r, g, b = ColorPalette:GetColor("bg-primary")
+    scrollFrame:SetBackdropColor(r * 0.7, g * 0.7, b * 0.7, 0.9)
+    scrollFrame:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     
-    scrollFrame:SetScript("OnVerticalScroll", function(self, offset)
-        FauxScrollFrame_OnVerticalScroll(self, offset, LINEHEIGHT, function()
-            AddonManager:UpdateDisplay()
-        end)
+    -- Custom scrollbar
+    local scrollbar = FrameFactory:CreateScrollBar(mainFrame)
+    scrollbar:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -20, -80)
+    scrollbar:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -20, 70)
+    scrollbar:SetScript("OnValueChanged", function(self, value)
+        AddonManager:UpdateDisplay()
+    end)
+    mainFrame.scrollbar = scrollbar
+    
+    -- Mouse wheel support
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local current = scrollbar:GetValue()
+        local min, max = scrollbar:GetMinMaxValues()
+        local newValue = math.max(min, math.min(max, current - delta))
+        scrollbar:SetValue(newValue)
     end)
     
     -- Create entry frames
@@ -1277,9 +1284,21 @@ function AddonManager:UpdateDisplay()
     
     local ColorPalette = _G.AbstractUI_ColorPalette
     local numAddons = #sortedAddonList
-    local offset = FauxScrollFrame_GetOffset(scrollFrame)
+    local scrollbar = mainFrame.scrollbar
+    local offset = scrollbar and math.floor(scrollbar:GetValue()) or 0
     
-    FauxScrollFrame_Update(scrollFrame, numAddons, NUM_ENTRIES, LINEHEIGHT)
+    -- Update scrollbar range
+    if scrollbar then
+        local maxOffset = math.max(0, numAddons - NUM_ENTRIES)
+        scrollbar:SetMinMaxValues(0, maxOffset)
+        if numAddons <= NUM_ENTRIES then
+            scrollbar:Hide()
+            scrollFrame:SetPoint("BOTTOMRIGHT", -40, 70)
+        else
+            scrollbar:Show()
+            scrollFrame:SetPoint("BOTTOMRIGHT", -56, 70)
+        end
+    end
     
     for i = 1, NUM_ENTRIES do
         local entry = entries[i]
