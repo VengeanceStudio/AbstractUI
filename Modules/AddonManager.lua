@@ -808,7 +808,6 @@ function AddonManager:CreateEntryFrame(parent, id)
     entry.securityIcon = entry:CreateTexture(nil, "ARTWORK")
     entry.securityIcon:SetPoint("LEFT", 25, 0)
     entry.securityIcon:SetSize(16, 16)
-    entry.securityIcon:SetTexture("Interface\\Glues\\CharacterSelect\\Glues-AddOn-Icons")
     entry.securityIcon:Hide()
     
     -- Load button (for LOD addons)
@@ -967,14 +966,14 @@ function AddonManager:UpdateDisplay()
                         end
                         
                         -- Security icon
-                        if security == "BANNED" then
+                        if security == "BANNED" or security == "INSECURE" then
+                            entry.securityIcon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\Locked")
+                            entry.securityIcon:SetVertexColor(ColorPalette:GetColor("text-primary"))
                             entry.securityIcon:Show()
-                            entry.securityIcon:SetTexCoord(0, 0.25, 0, 1)
-                        elseif security == "INSECURE" then
-                            entry.securityIcon:Show()
-                            entry.securityIcon:SetTexCoord(0.25, 0.5, 0, 1)
                         else
-                            entry.securityIcon:Hide()
+                            entry.securityIcon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\Unlocked")
+                            entry.securityIcon:SetVertexColor(ColorPalette:GetColor("text-primary"))
+                            entry.securityIcon:Show()
                         end
                     end
                 end

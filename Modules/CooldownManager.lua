@@ -623,10 +623,10 @@ function CooldownManager:GetSpellKeybind(spellID)
     
     -- First, try to get direct spell keybind (for spells bound directly, not via action bars)
     local spellName = C_Spell.GetSpellName(spellID)
-    if spellName then
+    if spellName and type(spellName) == "string" then
         local key1, key2 = GetBindingKey("SPELL " .. spellName)
-        local directBind = key1 or key2
-        if directBind then
+        if key1 or key2 then
+            local directBind = key1 or key2
             directBind = directBind:gsub("SHIFT%-", "S")
             directBind = directBind:gsub("CTRL%-", "C")
             directBind = directBind:gsub("ALT%-", "A")
