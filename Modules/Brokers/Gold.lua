@@ -54,20 +54,22 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         -- Apply tooltip styling first
         ApplyTooltipStyle(GameTooltip)
         
-        -- Then apply monospaced font to right-side text (money amounts) AFTER styling
-        -- This ensures our font changes aren't overridden
-        for i = startLine, GameTooltip:NumLines() do
-            local rightText = _G["GameTooltipTextRight"..i]
-            if rightText then
-                local text = rightText:GetText()
-                -- Only apply to lines with money icons
-                if text and text:find("|T") then
-                    -- Use ARIALN.TTF - a true monospaced font that's less likely to be replaced
-                    rightText:SetFont("Fonts\\ARIALN.TTF", 12, "OUTLINE")
-                    rightText:SetJustifyH("RIGHT")
+        -- Delay font application to ensure it's not overridden
+        C_Timer.After(0, function()
+            -- Apply monospaced font to right-side text (money amounts) AFTER all styling
+            for i = startLine, GameTooltip:NumLines() do
+                local rightText = _G["GameTooltipTextRight"..i]
+                if rightText then
+                    local text = rightText:GetText()
+                    -- Only apply to lines with money icons
+                    if text and text:find("|T") then
+                        -- Use standard monospaced font that exists on all systems
+                        rightText:SetFont("Fonts\\ARIALN.TTF", 12, "OUTLINE")
+                        rightText:SetJustifyH("RIGHT")
+                    end
                 end
             end
-        end
+        end)
         
         GameTooltip:Show()
     end,

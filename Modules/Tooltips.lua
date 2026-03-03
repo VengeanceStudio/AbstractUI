@@ -199,57 +199,49 @@ function Tooltips:HookMicroMenuButtons()
         return
     end
     
-    -- Hook the Micro Menu buttons to respect tooltip anchor
-    local microButtons = {
-        CharacterMicroButton,
-        SpellbookMicroButton,
-        TalentMicroButton,
-        AchievementMicroButton,
-        QuestLogMicroButton,
-        GuildMicroButton,
-        LFDMicroButton,
-        CollectionsMicroButton,
-        EJMicroButton,
-        StoreMicroButton,
-        MainMenuMicroButton,
-        HelpMicroButton,
-        ProfessionMicroButton,
-    }
-    
-    for _, button in ipairs(microButtons) do
-        if button and not button.abstractTooltipHooked then
-            -- Hook the OnEnter script to reposition tooltip
-            if button:HasScript("OnEnter") then
-                button:HookScript("OnEnter", function(self)
-                    -- Wait a frame for the tooltip to be shown
-                    C_Timer.After(0, function()
-                        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-                            -- Reposition using our custom anchor
-                            local Tooltips = AbstractUI:GetModule("Tooltips", true)
-                            if Tooltips then
-                                if Tooltips.db.profile.cursorFollow then
-                                    -- Use cursor follow positioning
-                                    GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-                                else
-                                    -- Use custom anchor position
-                                    local pos = Tooltips.db.profile.anchorPosition
-                                    local scale = Tooltips.db.profile.scale or 1.0
-                                    GameTooltip:SetScale(scale)
-                                    GameTooltip:ClearAllPoints()
-                                    GameTooltip:SetPoint("BOTTOMLEFT", UIParent, pos.point, pos.x, pos.y)
-                                end
+    -- Hook GameTooltip:SetOwner to intercept micro menu button tooltips
+    if not self.microMenuHooked then
+        hooksecurefunc(GameTooltip, "SetOwner", function(tooltip, owner, anchor)
+            if not owner then return end
+            
+            -- Check if owner is a micro button
+            local ownerName = owner:GetName()
+            if ownerName and ownerName:find("MicroButton") then
+                -- Delay repositioning to let Blizzard finish setting up the tooltip
+                C_Timer.After(0, function()
+                    if tooltip:IsShown() then
+                        local Tooltips = AbstractUI:GetModule("Tooltips", true)
+                        if Tooltips and Tooltips.db then
+                            tooltip:ClearAllPoints()
+                            
+                            if Tooltips.db.profile.cursorFollow then
+                                -- Use cursor follow positioning
+                                local scale = Tooltips.db.profile.scale or 1.0
+                                tooltip:SetScale(scale)
                                 
-                                -- Apply styling
-                                if Tooltips.StyleTooltip then
-                                    Tooltips:StyleTooltip(GameTooltip)
-                                end
+                                local x, y = GetCursorPosition()
+                                local uiScale = UIParent:GetEffectiveScale()
+                                x = x / uiScale
+                                y = y / uiScale
+                                
+                                local cursorAnchor = Tooltips.db.profile.cursorAnchor or "BOTTOMRIGHT"
+                                local offsetX = Tooltips.db.profile.offsetX or 0
+                                local offsetY = Tooltips.db.profile.offsetY or 0
+                                
+                                tooltip:SetPoint(cursorAnchor, UIParent, "BOTTOMLEFT", x + offsetX, y + offsetY)
+                            else
+                                -- Use custom anchor position
+                                local pos = Tooltips.db.profile.anchorPosition
+                                local scale = Tooltips.db.profile.scale or 1.0
+                                tooltip:SetScale(scale)
+                                tooltip:SetPoint("BOTTOMLEFT", UIParent, pos.point, pos.x, pos.y)
                             end
                         end
-                    end)
+                    end
                 end)
-                button.abstractTooltipHooked = true
             end
-        end
+        end)
+        self.microMenuHooked = true
     end
 end
 
