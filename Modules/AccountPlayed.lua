@@ -11,6 +11,7 @@ AccountPlayedPopupDB = AccountPlayedPopupDB or {
     x = 0,
     y = 0,
     useYears = false,
+    showCharacters = false,
 }
 
 -- Module state
@@ -44,6 +45,9 @@ local L = {
     TIME_FORMAT_TITLE = "Time Format",
     TIME_FORMAT_YEARS = "Checked: Show days and years",
     TIME_FORMAT_HOURS = "Unchecked: Show hours and minutes",
+    SHOW_CHARS_LABEL = "Show Characters",
+    SHOW_CHARS_TITLE = "Display Mode",
+    SHOW_CHARS_DESC = "Show individual characters instead of class totals",
     CMD_DELETE_CONFIRM = "Delete time tracking for %s?",
     CMD_DELETE_SUCCESS = "Deleted: %s",
     CMD_DELETE_NOT_FOUND = "Character not found: %s",
@@ -654,6 +658,60 @@ function AccountPlayed:CreatePopup()
     
     f.formatCheckbox = checkBox
     
+    -- Show Characters checkbox
+    local showCharsBox = CreateFrame("Button", nil, f, "BackdropTemplate")
+    showCharsBox:SetSize(16, 16)
+    showCharsBox:SetPoint("RIGHT", checkBox.text, "LEFT", -20, 0)
+    showCharsBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    showCharsBox:SetBackdropColor(ColorPalette:GetColor('bg-secondary'))
+    showCharsBox:SetBackdropBorderColor(ColorPalette:GetColor('primary'))
+    
+    showCharsBox.check = showCharsBox:CreateTexture(nil, "OVERLAY")
+    showCharsBox.check:SetSize(10, 10)
+    showCharsBox.check:SetPoint("CENTER")
+    showCharsBox.check:SetColorTexture(ColorPalette:GetColor('accent-primary'))
+    showCharsBox.check:Hide()
+    
+    showCharsBox.text = FontKit:CreateFontString(showCharsBox, "body", "small")
+    showCharsBox.text:SetPoint("RIGHT", showCharsBox, "LEFT", -6, 0)
+    showCharsBox.text:SetText(L.SHOW_CHARS_LABEL)
+    showCharsBox.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+    
+    showCharsBox:SetScript("OnEnter", function(self)
+        self:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L.SHOW_CHARS_TITLE, 1, 1, 1)
+        GameTooltip:AddLine(L.SHOW_CHARS_DESC, 0.8, 0.8, 0.8)
+        GameTooltip:Show()
+    end)
+    
+    showCharsBox:SetScript("OnLeave", function(self)
+        self:SetBackdropBorderColor(ColorPalette:GetColor('primary'))
+        GameTooltip:Hide()
+    end)
+    
+    showCharsBox:SetScript("OnClick", function(self)
+        AccountPlayedPopupDB.showCharacters = not AccountPlayedPopupDB.showCharacters
+        if AccountPlayedPopupDB.showCharacters then
+            self.check:Show()
+        else
+            self.check:Hide()
+        end
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        AccountPlayed:UpdatePopupDisplay()
+    end)
+    
+    if AccountPlayedPopupDB.showCharacters then
+        showCharsBox.check:Show()
+    end
+    
+    f.showCharsCheckbox = showCharsBox
+    
     -- Resize support
     f:SetResizable(true)
     if f.SetResizeBounds then
@@ -749,7 +807,22 @@ function AccountPlayed:CreateRow(parent, width, height)
     
     row:SetScript("OnEnter", function(self)
         self.highlight:Show()
-        if self.className then
+        if self.charKey then
+            -- Character mode - show simple tooltip
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            local data = AccountPlayedDB[self.charKey]
+            if data then
+                local realm = self.charKey:match("^([^%-]+)")
+                local name = self.charKey:match("%-(.+)$") or self.charKey
+                local color = RAID_CLASS_COLORS[self.className] or { r = 1, g = 1, b = 1 }
+                GameTooltip:AddLine(name, color.r, color.g, color.b)
+                GameTooltip:AddLine(realm, 0.7, 0.7, 0.7)
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddDoubleLine("Time Played:", AccountPlayed:FormatTimeDetailed(data.time, AccountPlayedPopupDB.useYears), 1, 1, 1, 1, 1, 1)
+            end
+            GameTooltip:Show()
+        elseif self.className then
+            -- Class mode - show all characters in class
             local chars = AccountPlayed:GetCharactersByClass(self.className)
             if #chars > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -776,6 +849,11 @@ function AccountPlayed:CreateRow(parent, width, height)
     end)
     
     row:SetScript("OnClick", function(self, button)
+        if self.charKey then
+            -- Character mode - no special click behavior
+            return
+        end
+        
         if not self.className then return end
         
         if button == "RightButton" then
@@ -817,14 +895,22 @@ end
 
 function AccountPlayed:UpdatePopupDisplay()
     local f = self:CreatePopup()
-    local totals = self:GetClassTotals()
     local accountTotal = self:GetAccountTotal()
     
+    -- Update checkbox states
     if f.formatCheckbox and f.formatCheckbox.check then
         if AccountPlayedPopupDB.useYears then
             f.formatCheckbox.check:Show()
         else
             f.formatCheckbox.check:Hide()
+        end
+    end
+    
+    if f.showCharsCheckbox and f.showCharsCheckbox.check then
+        if AccountPlayedPopupDB.showCharacters then
+            f.showCharsCheckbox.check:Show()
+        else
+            f.showCharsCheckbox.check:Hide()
         end
     end
     
@@ -838,12 +924,31 @@ function AccountPlayed:UpdatePopupDisplay()
     end
     
     local sorted = {}
-    for class, time in pairs(totals) do
-        table.insert(sorted, { class = class, time = time })
-    end
-    table.sort(sorted, function(a, b) return a.time > b.time end)
+    local topTime = 0
     
-    local topTime = sorted[1].time
+    if AccountPlayedPopupDB.showCharacters then
+        -- Show individual characters
+        for charKey, data in pairs(AccountPlayedDB) do
+            if type(data) == "table" and data.time and data.class then
+                table.insert(sorted, { 
+                    key = charKey, 
+                    time = data.time, 
+                    class = data.class,
+                    name = charKey:match("%-(.+)$") or charKey
+                })
+                if data.time > topTime then topTime = data.time end
+            end
+        end
+        table.sort(sorted, function(a, b) return a.time > b.time end)
+    else
+        -- Show class totals
+        local totals = self:GetClassTotals()
+        for class, time in pairs(totals) do
+            table.insert(sorted, { class = class, time = time })
+            if time > topTime then topTime = time end
+        end
+        table.sort(sorted, function(a, b) return a.time > b.time end)
+    end
     
     for i, row in ipairs(popupRows) do
         local entry = sorted[i]
@@ -852,16 +957,32 @@ function AccountPlayed:UpdatePopupDisplay()
             local barPercent = entry.time / topTime
             local color = RAID_CLASS_COLORS[entry.class] or { r = 1, g = 1, b = 1 }
             
-            row.className = entry.class
-            row.classText:SetText(self:GetLocalizedClass(entry.class))
-            row.classText:SetTextColor(color.r, color.g, color.b)
-            row.bar:SetValue(barPercent)
-            row.bar:SetStatusBarColor(color.r, color.g, color.b)
-            row.valueText:SetText(string.format("%5.1f%% - %s", percent * 100, 
-                self:FormatTimeSmart(entry.time, AccountPlayedPopupDB.useYears)))
-            row:Show()
+            if AccountPlayedPopupDB.showCharacters then
+                -- Character mode
+                row.className = entry.class
+                row.charKey = entry.key
+                row.classText:SetText(entry.name)
+                row.classText:SetTextColor(color.r, color.g, color.b)
+                row.bar:SetValue(barPercent)
+                row.bar:SetStatusBarColor(color.r, color.g, color.b)
+                row.valueText:SetText(string.format("%5.1f%% - %s", percent * 100, 
+                    self:FormatTimeSmart(entry.time, AccountPlayedPopupDB.useYears)))
+                row:Show()
+            else
+                -- Class mode
+                row.className = entry.class
+                row.charKey = nil
+                row.classText:SetText(self:GetLocalizedClass(entry.class))
+                row.classText:SetTextColor(color.r, color.g, color.b)
+                row.bar:SetValue(barPercent)
+                row.bar:SetStatusBarColor(color.r, color.g, color.b)
+                row.valueText:SetText(string.format("%5.1f%% - %s", percent * 100, 
+                    self:FormatTimeSmart(entry.time, AccountPlayedPopupDB.useYears)))
+                row:Show()
+            end
         else
             row.className = nil
+            row.charKey = nil
             row:Hide()
         end
     end
