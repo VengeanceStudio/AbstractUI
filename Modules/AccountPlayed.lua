@@ -29,7 +29,7 @@ local defaults = {
 
 -- Localization (basic English)
 local L = {
-    WINDOW_TITLE = "Account Played",
+    WINDOW_TITLE = "Time Played",
     TOTAL = "Total: ",
     NO_DATA = "No data available",
     TIME_UNIT_YEAR = "y",
@@ -48,8 +48,8 @@ local L = {
     CMD_DELETE_SUCCESS = "Deleted: %s",
     CMD_DELETE_NOT_FOUND = "Character not found: %s",
     CMD_DELETE_USAGE = "Usage: /apdelete CharacterName-RealmName",
-    DB_CORRUPTED = "AccountPlayed database corrupted, resetting...",
-    DEBUG_HEADER = "Account Played - Tracked Characters:",
+    DB_CORRUPTED = "Time Played database corrupted, resetting...",
+    DEBUG_HEADER = "Time Played - Tracked Characters:",
 }
 
 -- -----------------------------------------------------------------------------
@@ -270,10 +270,13 @@ end
 function AccountPlayed:CreateCharPanel()
     if charPanel then return charPanel end
     
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
+    
     local CPANEL_W = 230
     local CPANEL_ROW_H = 22
-    local CPANEL_HEADER_H = 28
-    local CPANEL_PAD = 6
+    local CPANEL_HEADER_H = 32
+    local CPANEL_PAD = 8
     
     local p = CreateFrame("Frame", "AccountPlayedCharPanel", UIParent, "BackdropTemplate")
     p:SetWidth(CPANEL_W)
@@ -282,24 +285,47 @@ function AccountPlayed:CreateCharPanel()
     p:SetFrameLevel(110)
     p:SetClampedToScreen(true)
     
+    -- AbstractUI styling
     p:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 24,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
     })
-    p:SetBackdropColor(0.05, 0.05, 0.05, 0.92)
+    p:SetBackdropColor(ColorPalette:GetColor('panel-bg'))
+    p:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
     
     -- Title
-    p.titleText = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    p.titleText = FontKit:CreateFontString(p, "heading", "normal")
     p.titleText:SetPoint("TOPLEFT", p, "TOPLEFT", 12, -10)
-    p.titleText:SetPoint("TOPRIGHT", p, "TOPRIGHT", -26, -10)
+    p.titleText:SetPoint("TOPRIGHT", p, "TOPRIGHT", -32, -10)
     p.titleText:SetJustifyH("LEFT")
     
-    -- Close button
-    local closeBtn = CreateFrame("Button", nil, p, "UIPanelCloseButton")
-    closeBtn:SetSize(20, 20)
-    closeBtn:SetPoint("TOPRIGHT", p, "TOPRIGHT", -2, -2)
+    -- Close button (AbstractUI style)
+    local closeBtn = CreateFrame("Button", nil, p, "BackdropTemplate")
+    closeBtn:SetSize(24, 24)
+    closeBtn:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -4)
+    closeBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    closeBtn:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    closeBtn:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+    
+    closeBtn.text = closeBtn:CreateFontString(nil, "OVERLAY")
+    closeBtn.text:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE")
+    closeBtn.text:SetText("×")
+    closeBtn.text:SetPoint("CENTER", 0, 1)
+    closeBtn.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+    
+    closeBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('button-hover'))
+    end)
+    closeBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    end)
     closeBtn:SetScript("OnClick", function()
         p:Hide()
         charPanelClass = nil
@@ -308,9 +334,9 @@ function AccountPlayed:CreateCharPanel()
     -- Divider
     local div = p:CreateTexture(nil, "ARTWORK")
     div:SetHeight(1)
-    div:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -(CPANEL_HEADER_H - 2))
-    div:SetPoint("TOPRIGHT", p, "TOPRIGHT", -10, -(CPANEL_HEADER_H - 2))
-    div:SetColorTexture(0.4, 0.4, 0.4, 0.8)
+    div:SetPoint("TOPLEFT", p, "TOPLEFT", 8, -(CPANEL_HEADER_H - 2))
+    div:SetPoint("TOPRIGHT", p, "TOPRIGHT", -8, -(CPANEL_HEADER_H - 2))
+    div:SetColorTexture(ColorPalette:GetColor('panel-border'))
     
     -- Character rows
     p.charRows = {}
@@ -318,43 +344,52 @@ function AccountPlayed:CreateCharPanel()
         local yOff = -(CPANEL_HEADER_H + CPANEL_PAD + (i - 1) * CPANEL_ROW_H)
         local row = CreateFrame("Frame", nil, p)
         row:SetHeight(CPANEL_ROW_H)
-        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, yOff)
-        row:SetPoint("TOPRIGHT", p, "TOPRIGHT", -10, yOff)
+        row:SetPoint("TOPLEFT", p, "TOPLEFT", 8, yOff)
+        row:SetPoint("TOPRIGHT", p, "TOPRIGHT", -8, yOff)
         
         row.bg = row:CreateTexture(nil, "BACKGROUND")
         row.bg:SetAllPoints()
-        row.bg:SetColorTexture(1, 1, 1, 0)
+        row.bg:SetColorTexture(0, 0, 0, 0)
         
-        row.nameText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        row.nameText:SetPoint("LEFT", row, "LEFT", 0, 0)
+        row.nameText = FontKit:CreateFontString(row, "body", "small")
+        row.nameText:SetPoint("LEFT", row, "LEFT", 2, 0)
         row.nameText:SetPoint("RIGHT", row, "RIGHT", -110, 0)
         row.nameText:SetJustifyH("LEFT")
         row.nameText:SetWordWrap(false)
         
-        row.timeText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        row.timeText = FontKit:CreateFontString(row, "body", "small")
         row.timeText:SetPoint("RIGHT", row, "RIGHT", -52, 0)
         row.timeText:SetWidth(72)
         row.timeText:SetJustifyH("RIGHT")
-        row.timeText:SetTextColor(0.75, 0.75, 0.75)
+        row.timeText:SetTextColor(ColorPalette:GetColor('text-secondary'))
         
-        local trashBtn = CreateFrame("Button", nil, row)
+        local trashBtn = CreateFrame("Button", nil, row, "BackdropTemplate")
         trashBtn:SetSize(44, 18)
         trashBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+        trashBtn:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = nil,
+            tile = false,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        trashBtn:SetBackdropColor(0, 0, 0, 0)
         
-        local trashLabel = trashBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        trashLabel:SetAllPoints()
+        local trashLabel = trashBtn:CreateFontString(nil, "OVERLAY")
+        trashLabel:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         trashLabel:SetText("|cffff4040" .. DELETE .. "|r")
+        trashLabel:SetPoint("CENTER")
         trashLabel:SetJustifyH("CENTER")
-        trashBtn:SetWidth(trashLabel:GetStringWidth() + 8)
         
         trashBtn:SetScript("OnEnter", function()
-            row.bg:SetColorTexture(1, 0.25, 0.25, 0.15)
+            row.bg:SetColorTexture(0.8, 0.2, 0.2, 0.2)
+            trashBtn:SetBackdropColor(0.8, 0.2, 0.2, 0.3)
             GameTooltip:SetOwner(trashBtn, "ANCHOR_RIGHT")
             GameTooltip:SetText(L.CHAR_PANEL_REMOVE_TIP, 1, 0.35, 0.35)
             GameTooltip:Show()
         end)
         trashBtn:SetScript("OnLeave", function()
-            row.bg:SetColorTexture(1, 1, 1, 0)
+            row.bg:SetColorTexture(0, 0, 0, 0)
+            trashBtn:SetBackdropColor(0, 0, 0, 0)
             GameTooltip:Hide()
         end)
         trashBtn:SetScript("OnClick", function()
@@ -438,6 +473,9 @@ end
 function AccountPlayed:CreatePopup()
     if popupFrame then return popupFrame end
     
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
+    
     local START_W = AccountPlayedPopupDB.width or 540
     local START_H = AccountPlayedPopupDB.height or 300
     local MIN_W, MIN_H = 420, 200
@@ -457,48 +495,65 @@ function AccountPlayed:CreatePopup()
     f:SetFrameLevel(100)
     f:SetMovable(true)
     f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local point, _, _, x, y = self:GetPoint()
+    f:SetClampedToScreen(true)
+    
+    -- AbstractUI styling
+    f:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    f:SetBackdropColor(ColorPalette:GetColor('panel-bg'))
+    f:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
+    
+    -- Title
+    f.title = FontKit:CreateFontString(f, "heading", "large")
+    f.title:SetPoint("TOP", f, "TOP", 0, -16)
+    f.title:SetText(L.WINDOW_TITLE)
+    f.title:SetTextColor(ColorPalette:GetColor('text-primary'))
+    
+    -- Drag area (top portion for moving window)
+    f.dragArea = CreateFrame("Frame", nil, f)
+    f.dragArea:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+    f.dragArea:SetPoint("TOPRIGHT", f, "TOPRIGHT", -40, 0)
+    f.dragArea:SetHeight(40)
+    f.dragArea:EnableMouse(true)
+    f.dragArea:RegisterForDrag("LeftButton")
+    f.dragArea:SetScript("OnDragStart", function(self) f:StartMoving() end)
+    f.dragArea:SetScript("OnDragStop", function(self)
+        f:StopMovingOrSizing()
+        local point, _, _, x, y = f:GetPoint()
         AccountPlayedPopupDB.point = point
         AccountPlayedPopupDB.x = x
         AccountPlayedPopupDB.y = y
     end)
     
-    f:SetResizable(true)
-    if f.SetResizeBounds then
-        f:SetResizeBounds(MIN_W, MIN_H, MAX_W, MAX_H)
-    end
-    f:SetClampedToScreen(true)
-    
-    -- Resize grabber
-    local br = CreateFrame("Button", nil, f)
-    br:SetSize(16, 16)
-    br:SetPoint("BOTTOMRIGHT", -6, 6)
-    br:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-    br:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-    br:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-    br:SetScript("OnMouseDown", function(self) self:GetParent():StartSizing("BOTTOMRIGHT") end)
-    br:SetScript("OnMouseUp", function(self) self:GetParent():StopMovingOrSizing() end)
-    
-    f:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 }
+    -- Close button (AbstractUI style)
+    local close = CreateFrame("Button", nil, f, "BackdropTemplate")
+    close:SetSize(32, 32)
+    close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -6)
+    close:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
-    f:SetBackdropColor(0, 0, 0, 0.5)
+    close:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    close:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
     
-    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-    f.title:SetPoint("TOP", f, "TOP", 0, -12)
-    f.title:SetText(L.WINDOW_TITLE)
+    close.text = close:CreateFontString(nil, "OVERLAY")
+    close.text:SetFont("Fonts\\FRIZQT__.TTF", 28, "OUTLINE")
+    close.text:SetText("×")
+    close.text:SetPoint("CENTER", 0, 1)
+    close.text:SetTextColor(ColorPalette:GetColor('text-primary'))
     
-    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -10, -10)
+    close:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('button-hover'))
+    end)
+    close:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    end)
     close:SetScript("OnClick", function()
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
         f:Hide()
@@ -511,10 +566,10 @@ function AccountPlayed:CreatePopup()
         charPanelClass = nil
     end)
     
-    -- ScrollFrame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 15, -40)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 50)
+    -- ScrollFrame container
+    local scrollFrame = CreateFrame("ScrollFrame", nil, f)
+    scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -50)
+    scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 60)
     f.scrollFrame = scrollFrame
     
     local content = CreateFrame("Frame", nil, scrollFrame)
@@ -530,18 +585,108 @@ function AccountPlayed:CreatePopup()
         self:SetVerticalScroll(new)
     end)
     
-    f.totalRow = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    f.totalRow:SetPoint("BOTTOMLEFT", 15, 18)
-    f.totalRow:SetTextColor(1, 0.82, 0)
+    -- Total row at bottom
+    f.totalRow = FontKit:CreateFontString(f, "heading", "normal")
+    f.totalRow:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 12, 38)
+    f.totalRow:SetTextColor(ColorPalette:GetColor('accent-primary'))
     
     -- Create rows
     local rowHeight = 22
     for i = 1, 20 do
-        local row = self:CreateRow(content, START_W - 60, rowHeight)
+        local row = self:CreateRow(content, START_W - 20, rowHeight)
         row:SetPoint("TOPLEFT", 0, -(i - 1) * rowHeight)
         row:Hide()
         popupRows[i] = row
     end
+    
+    -- Format toggle checkbox (AbstractUI style)
+    local checkBox = CreateFrame("Button", nil, f, "BackdropTemplate")
+    checkBox:SetSize(16, 16)
+    checkBox:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -12, 38)
+    checkBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    checkBox:SetBackdropColor(ColorPalette:GetColor('bg-secondary'))
+    checkBox:SetBackdropBorderColor(ColorPalette:GetColor('primary'))
+    
+    checkBox.check = checkBox:CreateTexture(nil, "OVERLAY")
+    checkBox.check:SetSize(10, 10)
+    checkBox.check:SetPoint("CENTER")
+    checkBox.check:SetColorTexture(ColorPalette:GetColor('accent-primary'))
+    checkBox.check:Hide()
+    
+    checkBox.text = FontKit:CreateFontString(checkBox, "body", "small")
+    checkBox.text:SetPoint("RIGHT", checkBox, "LEFT", -6, 0)
+    checkBox.text:SetText(L.USE_YEARS_LABEL)
+    checkBox.text:SetTextColor(ColorPalette:GetColor('text-primary'))
+    
+    checkBox:SetScript("OnEnter", function(self)
+        self:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L.TIME_FORMAT_TITLE, 1, 1, 1)
+        GameTooltip:AddLine(L.TIME_FORMAT_YEARS, 0.8, 0.8, 0.8)
+        GameTooltip:AddLine(L.TIME_FORMAT_HOURS, 0.8, 0.8, 0.8)
+        GameTooltip:Show()
+    end)
+    
+    checkBox:SetScript("OnLeave", function(self)
+        self:SetBackdropBorderColor(ColorPalette:GetColor('primary'))
+        GameTooltip:Hide()
+    end)
+    
+    checkBox:SetScript("OnClick", function(self)
+        AccountPlayedPopupDB.useYears = not AccountPlayedPopupDB.useYears
+        if AccountPlayedPopupDB.useYears then
+            self.check:Show()
+        else
+            self.check:Hide()
+        end
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        AccountPlayed:UpdatePopupDisplay()
+    end)
+    
+    if AccountPlayedPopupDB.useYears then
+        checkBox.check:Show()
+    end
+    
+    f.formatCheckbox = checkBox
+    
+    -- Resize support
+    f:SetResizable(true)
+    if f.SetResizeBounds then
+        f:SetResizeBounds(MIN_W, MIN_H, MAX_W, MAX_H)
+    end
+    
+    -- Resize grabber (AbstractUI style)
+    local br = CreateFrame("Button", nil, f, "BackdropTemplate")
+    br:SetSize(20, 20)
+    br:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
+    br:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+    })
+    br:SetBackdropColor(ColorPalette:GetColor('panel-border'))
+    
+    -- Diagonal lines for resize indicator
+    for i = 1, 3 do
+        local line = br:CreateTexture(nil, "OVERLAY")
+        line:SetSize(12, 1)
+        line:SetColorTexture(ColorPalette:GetColor('text-secondary'))
+        line:SetPoint("BOTTOMRIGHT", br, "BOTTOMRIGHT", -2 - (i * 3), 2 + (i * 3))
+        line:SetRotation(math.rad(-45))
+    end
+    
+    br:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('accent-primary'))
+    end)
+    br:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor('panel-border'))
+    end)
+    br:SetScript("OnMouseDown", function(self) f:StartSizing("BOTTOMRIGHT") end)
+    br:SetScript("OnMouseUp", function(self) f:StopMovingOrSizing() end)
     
     f:SetScript("OnSizeChanged", function(self, w, h)
         if w < MIN_W then self:SetWidth(MIN_W) end
@@ -561,40 +706,15 @@ function AccountPlayed:CreatePopup()
         AccountPlayed:UpdateScrollBarVisibility(self)
     end)
     
-    -- Format toggle checkbox
-    local checkBox = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-    checkBox:SetSize(24, 24)
-    checkBox:SetPoint("BOTTOMRIGHT", -28, 20)
-    checkBox:SetChecked(AccountPlayedPopupDB.useYears)
-    
-    checkBox.text = checkBox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    checkBox.text:SetPoint("RIGHT", checkBox, "LEFT", -4, 0)
-    checkBox.text:SetText(L.USE_YEARS_LABEL)
-    checkBox.text:SetTextColor(0.9, 0.9, 0.9)
-    
-    checkBox:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine(L.TIME_FORMAT_TITLE, 1, 1, 1)
-        GameTooltip:AddLine(L.TIME_FORMAT_YEARS, 0.8, 0.8, 0.8)
-        GameTooltip:AddLine(L.TIME_FORMAT_HOURS, 0.8, 0.8, 0.8)
-        GameTooltip:Show()
-    end)
-    
-    checkBox:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    
-    checkBox:SetScript("OnClick", function(self)
-        AccountPlayedPopupDB.useYears = self:GetChecked()
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        AccountPlayed:UpdatePopupDisplay()
-    end)
-    
-    f.formatCheckbox = checkBox
     f:Hide()
     popupFrame = f
     return f
 end
 
 function AccountPlayed:CreateRow(parent, width, height)
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    local FontKit = _G.AbstractUI_FontKit
+    
     local row = CreateFrame("Button", nil, parent)
     row:SetSize(width, height)
     row:EnableMouse(true)
@@ -602,11 +722,11 @@ function AccountPlayed:CreateRow(parent, width, height)
     
     row.highlight = row:CreateTexture(nil, "BACKGROUND")
     row.highlight:SetAllPoints()
-    row.highlight:SetColorTexture(1, 1, 1, 0.1)
+    row.highlight:SetColorTexture(ColorPalette:GetColor('button-hover'))
     row.highlight:Hide()
     
-    row.classText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    row.classText:SetPoint("LEFT", 0, 0)
+    row.classText = FontKit:CreateFontString(row, "body", "normal")
+    row.classText:SetPoint("LEFT", 4, 0)
     row.classText:SetWidth(120)
     row.classText:SetJustifyH("LEFT")
     
@@ -616,13 +736,13 @@ function AccountPlayed:CreateRow(parent, width, height)
     row.bar:SetHeight(height - 4)
     row.bar:SetMinMaxValues(0, 1)
     row.bar:SetValue(0)
-    row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    row.bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     
     row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
     row.bar.bg:SetAllPoints()
-    row.bar.bg:SetColorTexture(0, 0, 0, 0.4)
+    row.bar.bg:SetColorTexture(ColorPalette:GetColor('bg-tertiary'))
     
-    row.valueText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.valueText = FontKit:CreateFontString(row, "body", "normal")
     row.valueText:SetPoint("LEFT", row.bar, "RIGHT", 8, 0)
     row.valueText:SetWidth(170)
     row.valueText:SetJustifyH("LEFT")
@@ -768,7 +888,7 @@ end
 -- -----------------------------------------------------------------------------
 
 function AccountPlayed:RegisterBroker()
-    local broker = LDB:NewDataObject("AbstractAccountPlayed", {
+    local broker = LDB:NewDataObject("AbstractTimePlayed", {
         type = "data source",
         text = "0h",
         icon = "Interface\\Icons\\INV_Misc_PocketWatch_01",
@@ -779,7 +899,7 @@ function AccountPlayed:RegisterBroker()
         end,
         OnTooltipShow = function(tooltip)
             local total = AccountPlayed:GetAccountTotal()
-            tooltip:AddLine("|cffffffffAccount Played|r")
+            tooltip:AddLine("|cffffffffTime Played|r")
             tooltip:AddLine(" ")
             tooltip:AddDoubleLine("Total Time:", AccountPlayed:FormatTimeTotal(total, AccountPlayedPopupDB.useYears), 1, 1, 1, 1, 1, 1)
             tooltip:AddLine(" ")
@@ -864,12 +984,12 @@ end
 function AccountPlayed:GetOptions()
     return {
         type = "group",
-        name = "Account Played",
+        name = "Time Played",
         order = 50,
         args = {
             header = {
                 type = "header",
-                name = "Account Played Time Tracker",
+                name = "Time Played Tracker",
                 order = 1,
             },
             desc = {
@@ -881,7 +1001,7 @@ function AccountPlayed:GetOptions()
             showWindow = {
                 type = "execute",
                 name = "Show Window",
-                desc = "Open the Account Played window",
+                desc = "Open the Time Played window",
                 order = 3,
                 func = function() AccountPlayed:ToggleWindow() end,
             },
