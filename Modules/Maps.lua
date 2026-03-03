@@ -228,6 +228,13 @@ function Maps:SetupConfigButton()
             pushedTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         end
         
+        -- Create circular mask overlay
+        local overlay = self.configButton:CreateTexture(nil, "OVERLAY")
+        overlay:SetSize(53, 53)
+        overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+        overlay:SetPoint("TOPLEFT", self.configButton, "TOPLEFT", -16, 16)
+        self.configButton.overlay = overlay
+        
         -- Hover effect
         self.configButton:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
