@@ -1,12 +1,12 @@
 ## Interface: 120001
 ## Title: Abstract UI
-## Version: 12.0.1.70
+## Version: 12.0.1.71
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
 ## X-Curse-Project-ID: 1474403
 ## IconTexture: Interface\AddOns\AbstractUI\icon.png
-## SavedVariables: AbstractUIDB
+## SavedVariables: AbstractUIDB, AccountPlayedDB, AccountPlayedPopupDB
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, LibDataBroker-1.1, Masque
 
 # ------------------------------------------------------------------------------
@@ -82,6 +82,7 @@ Modules\Brokers\Difficulty.lua
 Modules\Brokers\ItemLevel.lua
 Modules\Brokers\Clock.lua
 Modules\BrokerBar.lua
+Modules\AccountPlayed.lua
 Modules\UIButtons.lua
 Modules\Tooltips.lua
 Modules\Mailbox.lua
