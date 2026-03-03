@@ -56,6 +56,11 @@ local defaults = {
         buttonBarGrowthDirection = "right",
         buttonBarIconScale = 0.5,
         buttonBarSpacing = 2,
+        
+        -- Minimap Config Button
+        showConfigButton = true,
+        configButtonX = 0,
+        configButtonY = -75,
     }
 }
 
@@ -104,6 +109,7 @@ function Maps:PLAYER_ENTERING_WORLD()
     self:SetupElements()
     self:SkinBlizzardButtons()
     self:SetupButtonBar()
+    self:SetupConfigButton()
     self:UpdateLayout()
 end
 
@@ -180,6 +186,74 @@ function Maps:ApplyMinimapOffset()
     Minimap:ClearAllPoints()
     -- Anchor to UIParent instead of MinimapCluster to avoid EditMode interference
     Minimap:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", db.offsetX, db.offsetY)
+end
+
+-- -----------------------------------------------------------------------------
+-- MINIMAP CONFIG BUTTON
+-- -----------------------------------------------------------------------------
+function Maps:SetupConfigButton()
+    local db = self.db.profile
+    
+    if not db.showConfigButton then
+        if self.configButton then
+            self.configButton:Hide()
+        end
+        return
+    end
+    
+    if not self.configButton then
+        -- Create the button
+        self.configButton = CreateFrame("Button", "AbstractUI_MinimapConfigButton", Minimap, "BackdropTemplate")
+        self.configButton:SetSize(32, 32)
+        self.configButton:SetFrameLevel(Minimap:GetFrameLevel() + 10)
+        self.configButton:SetFrameStrata("MEDIUM")
+        
+        -- Add background
+        self.configButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        self.configButton:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+        self.configButton:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+        
+        -- Add icon
+        local icon = self.configButton:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints()
+        icon:SetTexture("Interface\\Icons\\Trade_Engineering")
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        self.configButton.icon = icon
+        
+        -- Hover effect
+        self.configButton:SetScript("OnEnter", function(self)
+            self:SetBackdropBorderColor(0.8, 0.8, 0.8, 1)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:SetText("|cff00ff00AbstractUI|r", 1, 1, 1)
+            GameTooltip:AddLine("Click to open settings", 1, 1, 1)
+            GameTooltip:Show()
+        end)
+        
+        self.configButton:SetScript("OnLeave", function(self)
+            self:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+            GameTooltip:Hide()
+        end)
+        
+        -- Click handler
+        self.configButton:SetScript("OnClick", function(self, button)
+            if button == "LeftButton" then
+                AbstractUI:OpenConfig()
+            end
+        end)
+        
+        self.configButton:RegisterForClicks("LeftButtonUp")
+    end
+    
+    -- Position the button
+    self.configButton:ClearAllPoints()
+    self.configButton:SetPoint("CENTER", Minimap, "BOTTOM", db.configButtonX, db.configButtonY)
+    self.configButton:Show()
 end
 
 -- -----------------------------------------------------------------------------
@@ -555,6 +629,9 @@ function Maps:UpdateLayout()
     self:PlaceButton(ExpansionLandingPageMinimapButton, "BOTTOMLEFT", 5, 5, db.showMissions)
     self:PlaceButton(QueueStatusMinimapButton, "BOTTOMRIGHT", -5, 5, db.showQueue)
     self:PlaceButton(MinimapCluster.InstanceDifficulty, "TOPRIGHT", db.difficultyOffsetX or -65, db.difficultyOffsetY or -5, db.showDifficulty)
+    
+    -- Config Button
+    self:SetupConfigButton()
     
     self.layoutInitialized = true
 end
@@ -1154,6 +1231,36 @@ function Maps:GetOptions()
                 order = 26.2,
                 get = function() return self.db.profile.difficultyOffsetY or -5 end,
                 set = function(_, v) self.db.profile.difficultyOffsetY = v; self:UpdateLayout() end,
+            },
+            
+            headerConfigButton = { type = "header", name = "Config Button", order = 27},
+            showConfigButton = {
+                name = "Show Config Button",
+                desc = "Display a button on the minimap that opens AbstractUI settings",
+                type = "toggle",
+                order = 27.1,
+                get = function() return self.db.profile.showConfigButton end,
+                set = function(_, v) self.db.profile.showConfigButton = v; self:SetupConfigButton() end,
+            },
+            configButtonX = {
+                type = "range",
+                name = "Config Button X Offset",
+                desc = "Horizontal offset from center-bottom of minimap",
+                width = "inline",
+                min = -100, max = 100, step = 1,
+                order = 27.2,
+                get = function() return self.db.profile.configButtonX or 0 end,
+                set = function(_, v) self.db.profile.configButtonX = v; self:SetupConfigButton() end,
+            },
+            configButtonY = {
+                type = "range",
+                name = "Config Button Y Offset",
+                desc = "Vertical offset from center-bottom of minimap. Negative = down.",
+                width = "inline",
+                min = -200, max = 200, step = 1,
+                order = 27.3,
+                get = function() return self.db.profile.configButtonY or -75 end,
+                set = function(_, v) self.db.profile.configButtonY = v; self:SetupConfigButton() end,
             },
             
             headerButtonBar = { type = "header", name = "Minimap Button Bar", order = 30},
