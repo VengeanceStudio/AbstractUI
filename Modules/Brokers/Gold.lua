@@ -7,24 +7,26 @@ local goldObj
 -- Format money for aligned display in tooltips (always shows all denominations)
 local function FormatMoneyAligned(amount)
     if not amount then 
-        return "       0|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t 00|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t 00|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t"
+        amount = 0
     end
     local gold = math.floor(amount / 10000)
     local silver = math.floor((amount % 10000) / 100)
     local copper = amount % 100
     
-    -- Format gold with commas
+    -- Build string in parts for maximum consistency
+    local parts = {}
+    
+    -- Format gold amount (right-aligned to handle varying lengths with commas)
     local goldStr = tostring(gold)
+    -- Add commas
     while true do
         goldStr, k = goldStr:gsub("^(%d+)(%d%d%d)", '%1,%2')
         if k == 0 then break end
     end
     
-    -- Pad gold string to 8 characters for alignment (handles up to 9,999,999 gold)
-    goldStr = string.format("%8s", goldStr)
-    
-    -- Always show all three denominations for consistent alignment
-    return string.format("%s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
+    -- Build final string piece by piece with consistent spacing
+    -- Format: "GGGGGGGGG|icon SS|icon CC|icon"
+    return string.format("%9s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
         goldStr, silver, copper)
 end
 
@@ -53,12 +55,14 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         local totalLine = GameTooltip:NumLines() + 1
         GameTooltip:AddDoubleLine("Total", FormatMoneyAligned(total), 1, 0.82, 0)
         
-        -- Apply monospaced font to right-side text (money amounts)
+        -- Apply monospaced font to right-side text (money amounts)  
         for i = startLine, GameTooltip:NumLines() do
             local rightText = _G["GameTooltipTextRight"..i]
-            if rightText and rightText:GetText() then
-                -- Use ARIALN which is a narrower, more consistent font for numbers
-                rightText:SetFont("Fonts\\ARIALN.TTF", 12, "MONOCHROME")
+            if rightText and rightText:GetText() and rightText:GetText():find("|T") then
+                -- Use WoW's actual monospaced font
+                rightText:SetFont("Fonts\\skurri.ttf", 11)
+                rightText:SetJustifyH("RIGHT")
+                rightText:SetSpacing(0)
             end
         end
         
