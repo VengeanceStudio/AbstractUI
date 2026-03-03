@@ -14,6 +14,7 @@ local SET_SIZE = 25
 local MAXADDONS = 20
 local DEFAULT_SET = 0
 local NUM_ENTRIES = 20
+local protectedAddons = {}
 
 -- API wrappers for compatibility
 local C_AddOns = C_AddOns
@@ -520,6 +521,10 @@ function AddonManager:GetSetName(set)
     return "Set " .. set
 end
 
+function AddonManager:Print(msg)
+    print("|cff9d7bffAbstractUI Addon Manager:|r " .. msg)
+end
+
 -- ============================================================================
 -- UI CREATION
 -- ============================================================================
@@ -694,6 +699,11 @@ function AddonManager:CreateUI()
     disableAllBtn:SetPoint("LEFT", enableAllBtn, "RIGHT", 5, 0)
     disableAllBtn:SetScript("OnClick", function()
         DisableAllAddOns()
+        -- Re-enable AbstractUI and protected addons
+        EnableAddOn("AbstractUI")
+        for addonName, _ in pairs(protectedAddons) do
+            EnableAddOn(addonName)
+        end
         AddonManager:UpdateDisplay()
     end)
     
@@ -730,7 +740,25 @@ function AddonManager:CreateEntryFrame(parent, id)
     
     entry.checkbox:SetScript("OnClick", function(self)
         local addonIndex = self.addonIndex
-        if addonIndex then
+        if not addonIndex then return end
+        
+        if addonIndex > 0 then
+            -- Check if addon is protected
+            local addonName
+            if addonIndex > GetNumAddOns() then
+                local blizzIndex = addonIndex - GetNumAddOns()
+                addonName = BLIZZARD_ADDONS[blizzIndex]
+            else
+                addonName = GetAddOnInfo(addonIndex)
+            end
+            
+            if protectedAddons[addonName] then
+                -- Protected addon, revert checkbox and show message
+                self:SetChecked(true)
+                AddonManager:Print("|cffff0000" .. addonName .. " is protected and cannot be disabled.|r")
+                return
+            end
+            
             local shift = IsShiftKeyDown()
             local ctrl = IsControlKeyDown()
             
@@ -803,11 +831,57 @@ function AddonManager:CreateEntryFrame(parent, id)
     entry.statusText:SetJustifyH("LEFT")
     entry.statusText:SetWidth(200)
     
-    -- Security icon
-    entry.securityIcon = entry:CreateTexture(nil, "ARTWORK")
-    entry.securityIcon:SetPoint("LEFT", 25, 0)
-    entry.securityIcon:SetSize(16, 16)
-    entry.securityIcon:Hide()
+    -- Security/Protection icon button
+    entry.securityBtn = CreateFrame("Button", nil, entry, "BackdropTemplate")
+    entry.securityBtn:SetPoint("LEFT", 25, 0)
+    entry.securityBtn:SetSize(16, 16)
+    entry.securityBtn:Hide()
+    
+    entry.securityIcon = entry.securityBtn:CreateTexture(nil, "ARTWORK")
+    entry.securityIcon:SetAllPoints()
+    
+    entry.securityBtn:SetScript("OnClick", function(self)
+        local addonIndex = self.addonIndex
+        if not addonIndex or addonIndex > GetNumAddOns() then return end
+        
+        local addonName = GetAddOnInfo(addonIndex)
+        if not addonName then return end
+        
+        -- Toggle protection
+        if protectedAddons[addonName] then
+            protectedAddons[addonName] = nil
+            AddonManager:Print("|cff00ff00" .. addonName .. " is now unlocked and can be disabled.|r")
+        else
+            protectedAddons[addonName] = true
+            -- Ensure protected addon is enabled
+            EnableAddOn(addonName)
+            AddonManager:Print("|cffffaa00" .. addonName .. " is now protected and will always be loaded.|r")
+        end
+        
+        AddonManager:UpdateDisplay()
+    end)
+    
+    entry.securityBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        local addonIndex = self.addonIndex
+        if addonIndex and addonIndex <= GetNumAddOns() then
+            local addonName = GetAddOnInfo(addonIndex)
+            if protectedAddons[addonName] then
+                GameTooltip:SetText("|cffffaa00Protected Addon|r", 1, 1, 1)
+                GameTooltip:AddLine("This addon is protected and will always be loaded.", nil, nil, nil, true)
+                GameTooltip:AddLine("Click to unlock.", 0.5, 1, 0.5, true)
+            else
+                GameTooltip:SetText("|cff00ff00Normal Addon|r", 1, 1, 1)
+                GameTooltip:AddLine("This addon can be disabled.", nil, nil, nil, true)
+                GameTooltip:AddLine("Click to protect and keep always loaded.", 0.5, 1, 0.5, true)
+            end
+        end
+        GameTooltip:Show()
+    end)
+    
+    entry.securityBtn:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
     
     -- Load button (for LOD addons)
     entry.loadBtn = FrameFactory:CreateButton(entry, 60, 16, "Load")
@@ -896,7 +970,7 @@ function AddonManager:UpdateDisplay()
                 entry.checkbox:Hide()
                 entry.collapseBtn:Show()
                 entry.collapseBtn.category = item
-                entry.securityIcon:Hide()
+                entry.securityBtn:Hide()
                 entry.loadBtn:Hide()
                 entry.statusText:SetText("")
                 
@@ -916,6 +990,7 @@ function AddonManager:UpdateDisplay()
                 entry.addonIndex = item
                 entry.checkbox.addonIndex = item
                 entry.loadBtn.addonIndex = item
+                entry.securityBtn.addonIndex = item
                 
                 local index = item
                 local isBlizzard = false
@@ -940,7 +1015,7 @@ function AddonManager:UpdateDisplay()
                         end
                         
                         entry.loadBtn:Hide()
-                        entry.securityIcon:Hide()
+                        entry.securityBtn:Hide()
                     end
                 else
                     -- Regular addon
@@ -964,16 +1039,14 @@ function AddonManager:UpdateDisplay()
                             entry.loadBtn:Hide()
                         end
                         
-                        -- Security icon
-                        if security == "BANNED" or security == "INSECURE" then
+                        -- Protection icon (locked/unlocked)
+                        if protectedAddons[name] then
                             entry.securityIcon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\Locked")
-                            entry.securityIcon:SetVertexColor(ColorPalette:GetColor("text-primary"))
-                            entry.securityIcon:Show()
                         else
                             entry.securityIcon:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\Unlocked")
-                            entry.securityIcon:SetVertexColor(ColorPalette:GetColor("text-primary"))
-                            entry.securityIcon:Show()
                         end
+                        entry.securityIcon:SetVertexColor(ColorPalette:GetColor("text-primary"))
+                        entry.securityBtn:Show()
                     end
                 end
             end
@@ -997,6 +1070,7 @@ function AddonManager:OnInitialize()
             noRecurse = false,
             collapsedCategories = {},
             sets = {},
+            protectedAddons = {},
         }
     }
     
@@ -1007,6 +1081,7 @@ function AddonManager:OnInitialize()
     NoRecurse = self.db.profile.noRecurse or false
     collapsedAddons = self.db.profile.collapsedCategories or {}
     addonSets = self.db.profile.sets or {}
+    protectedAddons = self.db.profile.protectedAddons or {}
     
     -- Register slash command
     SLASH_ABSTRACTADDONMANAGER1 = "/auiaddon"
@@ -1029,6 +1104,7 @@ function AddonManager:OnDisable()
         self.db.profile.noRecurse = NoRecurse
         self.db.profile.collapsedCategories = collapsedAddons
         self.db.profile.sets = addonSets
+        self.db.profile.protectedAddons = protectedAddons
     end
 end
 
