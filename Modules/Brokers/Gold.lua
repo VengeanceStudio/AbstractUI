@@ -63,8 +63,8 @@ goldObj = LDB:NewDataObject("AbstractGold", {
                     local text = rightText:GetText()
                     -- Only apply to lines with money icons
                     if text and text:find("|T") then
-                        -- Use FiraMono-Medium from our custom fonts
-                        rightText:SetFont("Interface\\AddOns\\AbstractUI\\Media\\Fonts\\FiraMono-Medium.ttf", 12)
+                        -- Use RobotoMono-Medium from our custom fonts
+                        rightText:SetFont("Interface\\AddOns\\AbstractUI\\Media\\Fonts\\RobotoMono-Medium.ttf", 12)
                         rightText:SetJustifyH("RIGHT")
                         rightText:SetSpacing(0)
                     end
