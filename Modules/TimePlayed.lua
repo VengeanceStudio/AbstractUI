@@ -722,7 +722,7 @@ function AccountPlayed:CreatePopup()
     -- Visual indicator (only visible on hover)
     br.indicator = br:CreateTexture(nil, "OVERLAY")
     br.indicator:SetAllPoints()
-    br.indicator:SetColorTexture(ColorPalette:GetColor('panel-border'))
+    br.indicator:SetTexture("Interface\\AddOns\\AbstractUI\\Media\\resize")
     br.indicator:SetAlpha(0)
     
     br:SetScript("OnEnter", function(self)
@@ -1013,7 +1013,7 @@ function AccountPlayed:RegisterBroker()
     local broker = LDB:NewDataObject("AbstractTimePlayed", {
         type = "data source",
         text = "0h",
-        icon = "Interface\\Icons\\INV_Misc_PocketWatch_01",
+        icon = 237538,
         OnClick = function(_, button)
             if button == "LeftButton" then
                 AccountPlayed:ToggleWindow()
