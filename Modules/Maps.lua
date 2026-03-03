@@ -248,17 +248,21 @@ function Maps:SetupConfigButton()
         self.configButton:SetMovable(true)
     end
     
-    -- Position the button (this will be overridden if button bar is active and collects it)
+    -- Position around the minimap edge (standard minimap button style)
+    -- This positions it at the bottom-left area by default
     self.configButton:ClearAllPoints()
-    self.configButton:SetPoint("CENTER", Minimap, "BOTTOM", db.configButtonX, db.configButtonY)
+    local angle = math.rad(225) -- Bottom-left position (225 degrees)
+    local x = math.cos(angle) * 80 -- 80 = radius from minimap center
+    local y = math.sin(angle) * 80
+    self.configButton:SetPoint("CENTER", Minimap, "CENTER", x, y)
     self.configButton:Show()
     
-    print("|cff00ff00AbstractUI:|r Config button created/shown at", db.configButtonX, db.configButtonY)
+    print("|cff00ff00AbstractUI:|r Config button created/shown on minimap edge")
     
     -- If button bar is enabled, trigger a re-collection to include this button
     if db.buttonBarEnabled and self.buttonBar then
         print("|cff00ff00AbstractUI:|r Button bar is enabled, will collect config button")
-        C_Timer.After(0.1, function()
+        C_Timer.After(0.2, function()
             self:CollectMinimapButtons()
         end)
     end
