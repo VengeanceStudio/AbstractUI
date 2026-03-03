@@ -572,7 +572,7 @@ function AccountPlayed:CreatePopup()
     
     -- ScrollFrame container with AbstractUI styling
     local ScrollFrameLib = _G.AbstractUI_ScrollFrame
-    local scrollFrameWrapper = ScrollFrameLib.CreateScrollFrame(f)
+    local scrollFrameWrapper = ScrollFrameLib:Create(f)
     scrollFrameWrapper:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -50)
     scrollFrameWrapper:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 60)
     f.scrollFrame = scrollFrameWrapper.scrollArea
