@@ -26,6 +26,23 @@ local function FormatMoneyAligned(amount)
         goldStr, silver, copper)
 end
 
+-- Helper to apply monospaced font to money text
+local function ApplyMonospacedFont()
+    for i = 1, GameTooltip:NumLines() do
+        local rightText = _G["GameTooltipTextRight"..i]
+        if rightText then
+            local text = rightText:GetText()
+            -- Only apply to lines with money icons
+            if text and text:find("|T") then
+                -- Use FiraMono-Regular from our custom fonts
+                rightText:SetFont("Interface\\AddOns\\AbstractUI\\Media\\Fonts\\FiraMono-Regular.ttf", 12)
+                rightText:SetJustifyH("RIGHT")
+                rightText:SetSpacing(0)
+            end
+        end
+    end
+end
+
 -- Register the broker
 goldObj = LDB:NewDataObject("AbstractGold", { 
     type = "data source", text = "0g", icon = "Interface\\Icons\\INV_Misc_Coin_01",
@@ -54,25 +71,21 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         -- Apply tooltip styling first
         ApplyTooltipStyle(GameTooltip)
         
-        -- Delay font application to ensure it's not overridden
-        C_Timer.After(0, function()
-            -- Apply monospaced font to right-side text (money amounts) AFTER all styling
-            for i = startLine, GameTooltip:NumLines() do
-                local rightText = _G["GameTooltipTextRight"..i]
-                if rightText then
-                    local text = rightText:GetText()
-                    -- Only apply to lines with money icons
-                    if text and text:find("|T") then
-                        -- Use RobotoMono-Medium from our custom fonts
-                        rightText:SetFont("Interface\\AddOns\\AbstractUI\\Media\\Fonts\\RobotoMono-Medium.ttf", 12)
-                        rightText:SetJustifyH("RIGHT")
-                        rightText:SetSpacing(0)
-                    end
-                end
-            end
-        end)
-        
+        -- Show tooltip
         GameTooltip:Show()
+        
+        -- Apply monospaced font immediately and set up continuous reapplication
+        ApplyMonospacedFont()
+        
+        -- Set up OnUpdate to continuously reapply font in case it gets overridden
+        if not GameTooltip.goldFontUpdateHooked then
+            GameTooltip:HookScript("OnUpdate", function(self)
+                if self:IsShown() and self:GetOwner() and self:GetOwner() == goldObj.frame then
+                    ApplyMonospacedFont()
+                end
+            end)
+            GameTooltip.goldFontUpdateHooked = true
+        end
     end,
     OnLeave = function() 
         GameTooltip:Hide() 
