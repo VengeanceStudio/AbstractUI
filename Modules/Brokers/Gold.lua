@@ -4,7 +4,7 @@
 local LDB = LibStub("LibDataBroker-1.1")
 local goldObj
 
--- Format money as simplified gold value (with silver as decimal)
+-- Format money for display (gold, silver, copper)
 local function FormatMoneyTable(amount)
     if not amount then 
         amount = 0
@@ -13,15 +13,20 @@ local function FormatMoneyTable(amount)
     local silver = math.floor((amount % 10000) / 100)
     local copper = amount % 100
     
-    -- Format gold with commas
+    -- Format gold with commas, right-padded to consistent width
     local goldStr = tostring(gold)
     while true do
         goldStr, k = goldStr:gsub("^(%d+)(%d%d%d)", '%1,%2')
         if k == 0 then break end
     end
     
-    -- Show gold with silver as decimal: "123,456.78g"
-    return string.format("%s.%02d|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t", goldStr, silver)
+    -- Pad gold to 9 characters (handles up to 9,999,999)
+    goldStr = string.format("%9s", goldStr)
+    
+    -- Always show all three denominations with consistent formatting
+    -- This ensures alignment even with proportional fonts
+    return string.format("%s|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t %02d|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t", 
+        goldStr, silver, copper)
 end
 
 -- Register the broker
@@ -49,6 +54,20 @@ goldObj = LDB:NewDataObject("AbstractGold", {
         
         -- Apply tooltip styling
         ApplyTooltipStyle(GameTooltip)
+        
+        -- Override font with monospaced after styling is applied
+        C_Timer.After(0, function()
+            for i = 1, GameTooltip:NumLines() do
+                local rightText = _G["GameTooltipTextRight"..i]
+                if rightText then
+                    local text = rightText:GetText()
+                    if text and text:find("|T") then
+                        rightText:SetFont("Interface\\AddOns\\AbstractUI\\Media\\Fonts\\FiraMono-Regular.ttf", 12)
+                        rightText:SetJustifyH("RIGHT")
+                    end
+                end
+            end
+        end)
         
         GameTooltip:Show()
     end,
