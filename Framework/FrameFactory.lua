@@ -201,11 +201,78 @@ function FrameFactory:CreateScrollBar(parent, height)
     scrollbar:SetBackdropColor(ColorPalette:GetColor("scrollbar-track"))
     scrollbar:SetBackdropBorderColor(ColorPalette:GetColor("panel-border"))
     
+    -- Up button
+    local upButton = CreateFrame("Button", nil, scrollbar, "BackdropTemplate")
+    upButton:SetSize(14, 14)
+    upButton:SetPoint("TOP", scrollbar, "TOP", 0, -1)
+    upButton:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    upButton:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    upButton:SetBackdropBorderColor(ColorPalette:GetColor("panel-border"))
+    
+    -- Up button diamond arrow
+    local upArrow = upButton:CreateTexture(nil, "ARTWORK")
+    upArrow:SetSize(8, 8)
+    upArrow:SetPoint("CENTER")
+    upArrow:SetTexture("Interface\\Buttons\\WHITE8X8")
+    upArrow:SetVertexColor(ColorPalette:GetColor("text-primary"))
+    upArrow:SetRotation(math.rad(45))
+    
+    upButton:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    upButton:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    upButton:SetScript("OnClick", function()
+        local current = scrollbar:GetValue()
+        local min = scrollbar:GetMinMaxValues()
+        scrollbar:SetValue(math.max(min, current - 1))
+    end)
+    
+    -- Down button
+    local downButton = CreateFrame("Button", nil, scrollbar, "BackdropTemplate")
+    downButton:SetSize(14, 14)
+    downButton:SetPoint("BOTTOM", scrollbar, "BOTTOM", 0, 1)
+    downButton:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    downButton:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    downButton:SetBackdropBorderColor(ColorPalette:GetColor("panel-border"))
+    
+    -- Down button diamond arrow
+    local downArrow = downButton:CreateTexture(nil, "ARTWORK")
+    downArrow:SetSize(8, 8)
+    downArrow:SetPoint("CENTER")
+    downArrow:SetTexture("Interface\\Buttons\\WHITE8X8")
+    downArrow:SetVertexColor(ColorPalette:GetColor("text-primary"))
+    downArrow:SetRotation(math.rad(-135))
+    
+    downButton:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    downButton:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    downButton:SetScript("OnClick", function()
+        local current = scrollbar:GetValue()
+        local _, max = scrollbar:GetMinMaxValues()
+        scrollbar:SetValue(math.min(max, current + 1))
+    end)
+    
     -- Thumb
     scrollbar.thumb = scrollbar:CreateTexture(nil, "OVERLAY")
     scrollbar.thumb:SetSize(14, 32)
     scrollbar.thumb:SetColorTexture(ColorPalette:GetColor("scrollbar-thumb"))
     scrollbar:SetThumbTexture(scrollbar.thumb)
+    
+    scrollbar.upButton = upButton
+    scrollbar.downButton = downButton
     
     return scrollbar
 end
