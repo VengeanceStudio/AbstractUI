@@ -70,11 +70,6 @@ function AccountPlayed:OnDBReady()
         return
     end
     
-    if not AbstractUI.db.profile.modules.accountPlayed then 
-        self:Disable()
-        return 
-    end
-    
     self.db = AbstractUI.db:RegisterNamespace("AccountPlayed", defaults)
     
     -- Validate database
@@ -85,15 +80,15 @@ function AccountPlayed:OnDBReady()
     
     self:MigrateOldData()
     
-    -- Register events
+    -- Always register events for data collection (even if broker is disabled)
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("TIME_PLAYED_MSG")
     
-    -- Register broker
-    self:RegisterBroker()
-    
-    -- Register slash commands
-    self:RegisterCommands()
+    -- Only register broker and commands if module is enabled
+    if AbstractUI.db.profile.modules.accountPlayed then 
+        self:RegisterBroker()
+        self:RegisterCommands()
+    end
 end
 
 function AccountPlayed:MigrateOldData()
