@@ -1276,6 +1276,7 @@ function BrokerBar:GetPluginOptions()
         local isLoc = (name == "AbstractLocation")
         local isVol = (name == "AbstractVolume")
         local isGold = (name == "AbstractGold")
+        local isTimePlayed = (name == "AbstractTimePlayed")
 
         options.args[name:gsub("%s", "_")] = {
             name = (self.db.profile.brokers[name].bar ~= "None") and displayName or "|cff808080"..displayName.."|r", 
@@ -1464,6 +1465,82 @@ function BrokerBar:GetPluginOptions()
                     disabled = function() 
                         local char = self.db.profile.goldDeleteSelection
                         return not char or char == "" or not self.db.profile.goldData[char]
+                    end
+                } or nil,
+                -- Time Played character deletion
+                timePlayedDeleteHelp = isTimePlayed and {
+                    name = "Character Deletion",
+                    type = "description",
+                    order = 12.5,
+                    fontSize = "small",
+                    get = function() return "Use mouse wheel to scroll through character list in dropdown" end
+                } or nil,
+                timePlayedDeleteSelect = isTimePlayed and { 
+                    name = "Select Character to Delete", 
+                    type = "select",
+                    style = "dropdown",
+                    order = 13,
+                    width = "double",
+                    values = function() 
+                        -- Build sorted list by character name (before realm)
+                        local chars = {}
+                        for k in pairs(AccountPlayedDB or {}) do 
+                            local charName = k:match("^([^%-]+)") or k
+                            charName = charName:gsub("^%s*(.-)%s*$", "%1")
+                            table.insert(chars, {key = k, sortName = charName})
+                        end
+                        
+                        table.sort(chars, function(a, b)
+                            return a.sortName:lower() < b.sortName:lower()
+                        end)
+                        
+                        local t = {}
+                        for i, char in ipairs(chars) do
+                            t[char.key] = char.key
+                        end
+                        return t 
+                    end,
+                    sorting = function()
+                        local chars = {}
+                        for k in pairs(AccountPlayedDB or {}) do 
+                            local charName = k:match("^([^%-]+)") or k
+                            charName = charName:gsub("^%s*(.-)%s*$", "%1")
+                            table.insert(chars, {key = k, sortName = charName})
+                        end
+                        table.sort(chars, function(a, b)
+                            return a.sortName:lower() < b.sortName:lower()
+                        end)
+                        local sorted = {}
+                        for i, char in ipairs(chars) do
+                            table.insert(sorted, char.key)
+                        end
+                        return sorted
+                    end,
+                    get = function() return self.db.profile.timePlayedDeleteSelection or "" end,
+                    set = function(_, v) self.db.profile.timePlayedDeleteSelection = v end
+                } or nil,
+                timePlayedDeleteButton = isTimePlayed and {
+                    name = "Delete Character Data",
+                    type = "execute",
+                    order = 14,
+                    confirm = true,
+                    confirmText = function() 
+                        local char = self.db.profile.timePlayedDeleteSelection
+                        if not char or char == "" then
+                            return "No character selected"
+                        end
+                        return "Delete time played data for " .. char .. "?"
+                    end,
+                    func = function()
+                        local char = self.db.profile.timePlayedDeleteSelection
+                        if char and char ~= "" and AccountPlayedDB and AccountPlayedDB[char] then
+                            AccountPlayedDB[char] = nil
+                            self.db.profile.timePlayedDeleteSelection = ""
+                        end
+                    end,
+                    disabled = function() 
+                        local char = self.db.profile.timePlayedDeleteSelection
+                        return not char or char == "" or not AccountPlayedDB or not AccountPlayedDB[char]
                     end
                 } or nil
             }

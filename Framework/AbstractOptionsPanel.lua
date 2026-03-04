@@ -2290,8 +2290,8 @@ function AbstractOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
     button:SetScript("OnClick", function()
         if option.func then
             -- Check for confirmation dialog
-            local confirmText = EvaluateValue(option.confirm)
-            if confirmText then
+            if option.confirm then
+                local confirmText = EvaluateValue(option.confirmText) or "Are you sure?"
                 StaticPopupDialogs["AbstractUI_OPTIONS_CONFIRM"] = {
                     text = confirmText,
                     button1 = "Yes",
