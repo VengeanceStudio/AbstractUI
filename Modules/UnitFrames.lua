@@ -37,7 +37,7 @@ FILE ORGANIZATION:
      - PLAYER_TARGET_CHANGED, PLAYER_FOCUS_CHANGED: Target changes
      - INSTANCE_ENCOUNTER_ENGAGE_UNIT: Boss frame updates
      - UNIT_HEALTH, UNIT_POWER_UPDATE, UNIT_DISPLAYPOWER: Stat updates
-     - Smart regeneration ticker: 0.5s updates when health/power < 100%
+     - Smart regeneration ticker: 0.5s updates for 15s after health/power changes
      - UNIT_TARGET, UNIT_PET: Secondary unit updates
   
   7. Default Configuration (lines 1520-1780)
@@ -59,7 +59,7 @@ FILE ORGANIZATION:
 
 PERFORMANCE NOTES:
   - OnUpdate scripts removed (event-driven updates only)
-  - Smart regeneration ticker: 0.5s updates ONLY when health/power < 100% (auto-stops at 100%)
+  - Smart regeneration ticker: 0.5s updates for 15s after health/power events (avoids secret number taint)
   - SetBlizzardFramesHidden() called ONLY on zone changes (not per-frame-update)
   - Event handler deduplication prevents memory leaks
   
@@ -1616,6 +1616,7 @@ end
         if self.regenTicker then
             self.regenTicker:Cancel()
             self.regenTicker = nil
+            self.regenTickerStopTime = nil
         end
         
         local playerFrame = _G["AbstractUI_PlayerFrame"]
@@ -2949,44 +2950,39 @@ end
                     -- Do NOT call SetBlizzardFramesHidden - causes catastrophic state driver accumulation
                 end
 
-                -- Smart regeneration ticker - only runs when health/power not at 100%
+                -- Smart regeneration ticker - runs for 15 seconds after health/power changes
                 function UnitFrames:CheckRegenTicker()
-                    -- Use percentage check to avoid tainted secret number comparisons
-                    local hpPct = GetHealthPct("player", false) or 100
-                    local ppPct = GetPowerPct("player", nil, false) or 100
+                    -- Can't compare secret numbers, so use a simple timeout approach
+                    -- Start ticker that runs for 15 seconds after any health/power change
                     
-                    local needsUpdate = (hpPct < 99.5) or (ppPct < 99.5)
-                    
-                    if needsUpdate and not self.regenTicker then
-                        -- Start ticker - updates every 0.5 seconds while regenerating
+                    if self.regenTicker then
+                        -- Reset the stop time
+                        self.regenTickerStopTime = GetTime() + 15
+                    else
+                        -- Start new ticker
+                        self.regenTickerStopTime = GetTime() + 15
                         self.regenTicker = C_Timer.NewTicker(0.5, function()
                             if not self.db or not self.db.profile or not self.db.profile.showPlayer then 
                                 if self.regenTicker then
                                     self.regenTicker:Cancel()
                                     self.regenTicker = nil
+                                    self.regenTickerStopTime = nil
                                 end
                                 return 
                             end
                             
-                            -- Use percentage to avoid taint
-                            local currentHpPct = GetHealthPct("player", false) or 100
-                            local currentPpPct = GetPowerPct("player", nil, false) or 100
-                            
                             -- Update frame
                             self:UpdateUnitFrame("PlayerFrame", "player")
                             
-                            -- Stop ticker if we're at 100% (use 99.5 threshold for rounding)
-                            if currentHpPct >= 99.5 and currentPpPct >= 99.5 then
+                            -- Stop ticker after timeout (15 seconds of no health/power changes)
+                            if GetTime() >= (self.regenTickerStopTime or 0) then
                                 if self.regenTicker then
                                     self.regenTicker:Cancel()
                                     self.regenTicker = nil
+                                    self.regenTickerStopTime = nil
                                 end
                             end
                         end)
-                    elseif not needsUpdate and self.regenTicker then
-                        -- Stop ticker if we're at 100%
-                        self.regenTicker:Cancel()
-                        self.regenTicker = nil
                     end
                 end
 
