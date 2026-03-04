@@ -1791,6 +1791,24 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             scrollChild = scrollFrame:GetScrollChild()
             scrollChild:SetWidth(scrollFrame.scrollArea:GetWidth())
             scrollChild:SetHeight(numItems * itemHeight)
+            
+            -- Enable mousewheel on menu to capture scroll events
+            menu:EnableMouseWheel(true)
+            menu:SetScript("OnMouseWheel", function(self, delta)
+                -- Forward to scroll area and stop propagation
+                if scrollFrame and scrollFrame.scrollArea then
+                    local scrollArea = scrollFrame.scrollArea
+                    local maxScroll = math.max(0, scrollChild:GetHeight() - scrollArea:GetHeight())
+                    local newScroll = scrollArea:GetVerticalScroll() - (delta * 20)
+                    newScroll = math.max(0, math.min(maxScroll, newScroll))
+                    scrollArea:SetVerticalScroll(newScroll)
+                    scrollFrame:UpdateScroll()
+                end
+            end)
+        else
+            -- No scrolling needed, but still capture mousewheel to prevent parent scrolling
+            menu:EnableMouseWheel(true)
+            menu:SetScript("OnMouseWheel", function() end)  -- Consume event
         end
         
         -- Create menu items
