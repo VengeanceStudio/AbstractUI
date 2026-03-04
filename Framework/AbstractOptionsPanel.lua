@@ -1792,17 +1792,13 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             scrollChild:SetWidth(scrollFrame.scrollArea:GetWidth())
             scrollChild:SetHeight(numItems * itemHeight)
             
-            -- Enable mousewheel on menu to capture scroll events
+            -- Enable mousewheel on menu and scrollArea to prevent propagation to parent
             menu:EnableMouseWheel(true)
             menu:SetScript("OnMouseWheel", function(self, delta)
-                -- Forward to scroll area and stop propagation
-                if scrollFrame and scrollFrame.scrollArea then
-                    local scrollArea = scrollFrame.scrollArea
-                    local maxScroll = math.max(0, scrollChild:GetHeight() - scrollArea:GetHeight())
-                    local newScroll = scrollArea:GetVerticalScroll() - (delta * 20)
-                    newScroll = math.max(0, math.min(maxScroll, newScroll))
-                    scrollArea:SetVerticalScroll(newScroll)
-                    scrollFrame:UpdateScroll()
+                -- Forward to scrollArea's existing handler
+                local handler = scrollFrame.scrollArea:GetScript("OnMouseWheel")
+                if handler then
+                    handler(scrollFrame.scrollArea, delta)
                 end
             end)
         else
@@ -1819,7 +1815,7 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             local item = CreateFrame("Button", nil, parent, BackdropTemplateMixin and "BackdropTemplate")
             if scrollChild then
                 item:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -y)
-                item:SetSize(scrollFrame.scrollArea:GetWidth() - 20, itemHeight)  -- Room for scrollbar
+                item:SetSize(scrollFrame.scrollArea:GetWidth(), itemHeight)
             else
                 item:SetPoint("TOPLEFT", parent, "TOPLEFT", 2, y)
                 item:SetSize(196, itemHeight)
