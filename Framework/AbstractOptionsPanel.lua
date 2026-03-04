@@ -1748,6 +1748,17 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
         local values = EvaluateValue(option.values)
         if not values then return end
         
+        -- Get sorting function if provided
+        local sortedKeys = {}
+        if option.sorting and type(option.sorting) == "function" then
+            sortedKeys = option.sorting()
+        else
+            for key in pairs(values) do
+                table.insert(sortedKeys, key)
+            end
+            table.sort(sortedKeys)
+        end
+        
         -- Create menu
         local menu = CreateFrame("Frame", nil, self, "BackdropTemplate")
         menu:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -2)
@@ -1765,16 +1776,36 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
         
         -- Calculate menu size
         local itemHeight = 20
-        local numItems = 0
-        for _ in pairs(values) do numItems = numItems + 1 end
-        menu:SetSize(200, numItems * itemHeight + 4)
+        local numItems = #sortedKeys
+        local maxVisibleItems = 15  -- Maximum items before scrolling
+        local menuHeight = math.min(numItems, maxVisibleItems) * itemHeight + 4
+        menu:SetSize(220, menuHeight)  -- Made wider to accommodate scrollbar
+        
+        -- If more than maxVisibleItems, add scrolling
+        local scrollFrame, scrollChild
+        if numItems > maxVisibleItems then
+            -- Create scroll frame
+            scrollFrame = ScrollFrame:Create(menu)
+            scrollFrame:SetPoint("TOPLEFT", menu, "TOPLEFT", 2, -2)
+            scrollFrame:SetPoint("BOTTOMRIGHT", menu, "BOTTOMRIGHT", -2, 2)
+            scrollChild = scrollFrame:GetScrollChild()
+            scrollChild:SetWidth(scrollFrame.scrollArea:GetWidth())
+            scrollChild:SetHeight(numItems * itemHeight)
+        end
         
         -- Create menu items
-        local y = -2
-        for key, text in pairs(values) do
-            local item = CreateFrame("Button", nil, menu, BackdropTemplateMixin and "BackdropTemplate")
-            item:SetPoint("TOPLEFT", menu, "TOPLEFT", 2, y)
-            item:SetSize(196, itemHeight)
+        local parent = scrollChild or menu
+        local y = scrollChild and 0 or -2
+        for i, key in ipairs(sortedKeys) do
+            local text = values[key]
+            local item = CreateFrame("Button", nil, parent, BackdropTemplateMixin and "BackdropTemplate")
+            if scrollChild then
+                item:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -y)
+                item:SetSize(scrollFrame.scrollArea:GetWidth() - 20, itemHeight)  -- Room for scrollbar
+            else
+                item:SetPoint("TOPLEFT", parent, "TOPLEFT", 2, y)
+                item:SetSize(196, itemHeight)
+            end
             
             item.text = item:CreateFontString(nil, "OVERLAY")
             if FontKit then
@@ -1800,7 +1831,12 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
                 menu:Hide()
             end)
             
-            y = y - itemHeight
+            y = scrollChild and (y + itemHeight) or (y - itemHeight)
+        end
+        
+        -- Update scroll if needed
+        if scrollFrame then
+            scrollFrame:UpdateScroll()
         end
         
         -- Close menu when clicking outside

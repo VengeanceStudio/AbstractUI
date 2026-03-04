@@ -1387,6 +1387,13 @@ function BrokerBar:GetPluginOptions()
                     get = function() return self.db.profile.goldSortBy or "name" end,
                     set = function(_, v) self.db.profile.goldSortBy = v end
                 } or nil,
+                deleteCharHelp = isGold and {
+                    name = "Character Deletion",
+                    type = "description",
+                    order = 12.5,
+                    fontSize = "small",
+                    get = function() return "Use mouse wheel to scroll through character list in dropdown" end
+                } or nil,
                 deleteCharSelect = isGold and { 
                     name = "Select Character to Delete", 
                     type = "select",
@@ -1394,11 +1401,43 @@ function BrokerBar:GetPluginOptions()
                     order = 13,
                     width = "double",
                     values = function() 
-                        local t = {}
+                        -- Build sorted list by character name (before realm)
+                        local chars = {}
                         for k in pairs(self.db.profile.goldData) do 
-                            t[k] = k 
+                            local charName = k:match("^([^%-]+)") or k
+                            -- Trim whitespace
+                            charName = charName:gsub("^%s*(.-)%s*$", "%1")
+                            table.insert(chars, {key = k, sortName = charName})
+                        end
+                        
+                        -- Sort alphabetically by character name
+                        table.sort(chars, function(a, b)
+                            return a.sortName:lower() < b.sortName:lower()
+                        end)
+                        
+                        -- Build ordered table (AceGUI will preserve order)
+                        local t = {}
+                        for i, char in ipairs(chars) do
+                            t[char.key] = char.key
                         end
                         return t 
+                    end,
+                    sorting = function()
+                        -- Return sorted keys to maintain order
+                        local chars = {}
+                        for k in pairs(self.db.profile.goldData) do 
+                            local charName = k:match("^([^%-]+)") or k
+                            charName = charName:gsub("^%s*(.-)%s*$", "%1")
+                            table.insert(chars, {key = k, sortName = charName})
+                        end
+                        table.sort(chars, function(a, b)
+                            return a.sortName:lower() < b.sortName:lower()
+                        end)
+                        local sorted = {}
+                        for i, char in ipairs(chars) do
+                            table.insert(sorted, char.key)
+                        end
+                        return sorted
                     end,
                     get = function() return self.db.profile.goldDeleteSelection or "" end,
                     set = function(_, v) self.db.profile.goldDeleteSelection = v end
