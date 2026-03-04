@@ -1879,7 +1879,7 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
         
         -- Close menu when clicking outside
         menu:SetScript("OnHide", function() menu:SetParent(nil) end)
-        C_Timer.After(0.1, function()
+        C_Timer.After(0.5, function()
             menu:SetScript("OnUpdate", function(self)
                 if not MouseIsOver(self) and not MouseIsOver(dropdown) then
                     self:Hide()
