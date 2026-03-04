@@ -2951,17 +2951,16 @@ end
 
                 -- Smart regeneration ticker - only runs when health/power not at 100%
                 function UnitFrames:CheckRegenTicker()
-                    local hp = UnitHealth("player")
-                    local maxHp = UnitHealthMax("player")
-                    local pp = UnitPower("player")
-                    local maxPp = UnitPowerMax("player")
+                    -- Use percentage check to avoid tainted secret number comparisons
+                    local hpPct = GetHealthPct("player", false) or 100
+                    local ppPct = GetPowerPct("player", nil, false) or 100
                     
-                    local needsUpdate = (hp < maxHp) or (pp < maxPp)
+                    local needsUpdate = (hpPct < 99.5) or (ppPct < 99.5)
                     
                     if needsUpdate and not self.regenTicker then
                         -- Start ticker - updates every 0.5 seconds while regenerating
                         self.regenTicker = C_Timer.NewTicker(0.5, function()
-                            if not self.db.profile.showPlayer then 
+                            if not self.db or not self.db.profile or not self.db.profile.showPlayer then 
                                 if self.regenTicker then
                                     self.regenTicker:Cancel()
                                     self.regenTicker = nil
@@ -2969,16 +2968,15 @@ end
                                 return 
                             end
                             
-                            local currentHp = UnitHealth("player")
-                            local currentMaxHp = UnitHealthMax("player")
-                            local currentPp = UnitPower("player")
-                            local currentMaxPp = UnitPowerMax("player")
+                            -- Use percentage to avoid taint
+                            local currentHpPct = GetHealthPct("player", false) or 100
+                            local currentPpPct = GetPowerPct("player", nil, false) or 100
                             
                             -- Update frame
                             self:UpdateUnitFrame("PlayerFrame", "player")
                             
-                            -- Stop ticker if we're at 100%
-                            if currentHp >= currentMaxHp and currentPp >= currentMaxPp then
+                            -- Stop ticker if we're at 100% (use 99.5 threshold for rounding)
+                            if currentHpPct >= 99.5 and currentPpPct >= 99.5 then
                                 if self.regenTicker then
                                     self.regenTicker:Cancel()
                                     self.regenTicker = nil
