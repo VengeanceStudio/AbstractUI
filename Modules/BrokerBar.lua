@@ -1389,8 +1389,10 @@ function BrokerBar:GetPluginOptions()
                 } or nil,
                 deleteCharSelect = isGold and { 
                     name = "Select Character to Delete", 
-                    type = "select", 
-                    order = 13, 
+                    type = "select",
+                    style = "dropdown",
+                    order = 13,
+                    width = "double",
                     values = function() 
                         local t = {}
                         for k in pairs(self.db.profile.goldData) do 
@@ -1402,23 +1404,27 @@ function BrokerBar:GetPluginOptions()
                     set = function(_, v) self.db.profile.goldDeleteSelection = v end
                 } or nil,
                 deleteCharButton = isGold and {
-                    name = "Delete Selected Character",
+                    name = "Delete Character Data",
                     type = "execute",
                     order = 14,
                     confirm = true,
                     confirmText = function() 
                         local char = self.db.profile.goldDeleteSelection
-                        return char and "Delete gold data for " .. char .. "?" or "No character selected"
+                        if not char or char == "" then
+                            return "No character selected"
+                        end
+                        return "Delete gold data for " .. char .. "?"
                     end,
                     func = function()
                         local char = self.db.profile.goldDeleteSelection
-                        if char and self.db.profile.goldData[char] then
+                        if char and char ~= "" and self.db.profile.goldData[char] then
                             self.db.profile.goldData[char] = nil
-                            self.db.profile.goldDeleteSelection = nil
+                            self.db.profile.goldDeleteSelection = ""
                         end
                     end,
                     disabled = function() 
-                        return not self.db.profile.goldDeleteSelection or not self.db.profile.goldData[self.db.profile.goldDeleteSelection]
+                        local char = self.db.profile.goldDeleteSelection
+                        return not char or char == "" or not self.db.profile.goldData[char]
                     end
                 } or nil
             }
