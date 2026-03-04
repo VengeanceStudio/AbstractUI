@@ -2371,8 +2371,21 @@ function AbstractOptionsPanel:Toggle(addonRef)
 end
 
 function AbstractOptionsPanel:Refresh()
-    -- Re-render the currently selected node to update the display
-    if self.selectedNode then
+    -- Re-render the currently selected content to update the display
+    local panel = self.frame.contentPanel
+    
+    -- Check what type of content is currently displayed and refresh it
+    if self.selectedNestedNode then
+        -- Currently viewing a nested tree node (like Abstract Gold within Data Brokers)
+        self:RenderNestedTreeContent(self.selectedNestedNode)
+    elseif panel.activeNestedTab then
+        -- Currently viewing a nested tab
+        self:SelectNestedTab(panel.activeNestedTab)
+    elseif panel.activeTab then
+        -- Currently viewing a main tab
+        self:SelectTab(panel.activeTab)
+    elseif self.selectedNode then
+        -- Currently viewing a main tree node
         self:RenderContent(self.selectedNode)
     end
 end
