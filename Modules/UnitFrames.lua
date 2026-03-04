@@ -36,7 +36,8 @@ FILE ORGANIZATION:
      - PLAYER_REGEN_ENABLED: Combat exit cleanup
      - PLAYER_TARGET_CHANGED, PLAYER_FOCUS_CHANGED: Target changes
      - INSTANCE_ENCOUNTER_ENGAGE_UNIT: Boss frame updates
-     - UNIT_HEALTH, UNIT_HEALTH_FREQUENT, UNIT_POWER_UPDATE, UNIT_POWER_FREQUENT, UNIT_DISPLAYPOWER: Stat updates
+     - UNIT_HEALTH, UNIT_POWER_UPDATE, UNIT_DISPLAYPOWER: Stat updates
+     - Smart regeneration ticker: 0.5s updates when health/power < 100%
      - UNIT_TARGET, UNIT_PET: Secondary unit updates
   
   7. Default Configuration (lines 1520-1780)
@@ -58,6 +59,7 @@ FILE ORGANIZATION:
 
 PERFORMANCE NOTES:
   - OnUpdate scripts removed (event-driven updates only)
+  - Smart regeneration ticker: 0.5s updates ONLY when health/power < 100% (auto-stops at 100%)
   - SetBlizzardFramesHidden() called ONLY on zone changes (not per-frame-update)
   - Event handler deduplication prevents memory leaks
   
@@ -1567,6 +1569,9 @@ end
             self:UpdateUnitFrame("PlayerFrame", "player")
         end
         
+        -- Start regen ticker for out-of-combat regeneration
+        self:CheckRegenTicker()
+        
         local targetFrame = _G["AbstractUI_TargetFrame"]
         if targetFrame and self.db.profile.showTarget then
             UnregisterStateDriver(targetFrame, "visibility")
@@ -1606,6 +1611,12 @@ end
     function UnitFrames:PLAYER_REGEN_DISABLED()
         -- Update player frame to show combat icon when entering combat
         if not self.db or not self.db.profile then return end
+        
+        -- Stop regen ticker during combat (combat events are frequent enough)
+        if self.regenTicker then
+            self.regenTicker:Cancel()
+            self.regenTicker = nil
+        end
         
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
@@ -2880,7 +2891,11 @@ end
                 end
 
                 function UnitFrames:UNIT_HEALTH(event, unit)
-                    if unit == "player" and self.db.profile.showPlayer then self:UpdateUnitFrame("PlayerFrame", "player") end
+                    if unit == "player" and self.db.profile.showPlayer then 
+                        self:UpdateUnitFrame("PlayerFrame", "player")
+                        -- Start regen ticker if health not at 100%
+                        self:CheckRegenTicker()
+                    end
                     if unit == "target" and self.db.profile.showTarget then self:UpdateUnitFrame("TargetFrame", "target") end
                     if unit == "targettarget" and self.db.profile.showTargetTarget then self:UpdateUnitFrame("TargetTargetFrame", "targettarget") end
                     if unit == "pet" and self.db.profile.showPet then self:UpdateUnitFrame("PetFrame", "pet") end
@@ -2900,13 +2915,12 @@ end
                     self:UNIT_HEALTH(event, unit)
                 end
 
-                function UnitFrames:UNIT_HEALTH_FREQUENT(event, unit)
-                    -- Frequent health updates for smooth regeneration display
-                    self:UNIT_HEALTH(event, unit)
-                end
-
                 function UnitFrames:UNIT_POWER_UPDATE(event, unit)
-                    if unit == "player" and self.db.profile.showPlayer then self:UpdateUnitFrame("PlayerFrame", "player") end
+                    if unit == "player" and self.db.profile.showPlayer then 
+                        self:UpdateUnitFrame("PlayerFrame", "player")
+                        -- Start regen ticker if power not at 100%
+                        self:CheckRegenTicker()
+                    end
                     if unit == "target" and self.db.profile.showTarget then self:UpdateUnitFrame("TargetFrame", "target") end
                     if unit == "targettarget" and self.db.profile.showTargetTarget then self:UpdateUnitFrame("TargetTargetFrame", "targettarget") end
                     if unit == "focus" and self.db.profile.showFocus then self:UpdateUnitFrame("FocusFrame", "focus") end
@@ -2918,11 +2932,6 @@ end
                         end
                     end
                     -- Do NOT call SetBlizzardFramesHidden - causes catastrophic state driver accumulation
-                end
-
-                function UnitFrames:UNIT_POWER_FREQUENT(event, unit)
-                    -- Frequent power updates for smooth regeneration display
-                    self:UNIT_POWER_UPDATE(event, unit)
                 end
 
                 function UnitFrames:UNIT_DISPLAYPOWER(event, unit)
@@ -2938,6 +2947,49 @@ end
                         end
                     end
                     -- Do NOT call SetBlizzardFramesHidden - causes catastrophic state driver accumulation
+                end
+
+                -- Smart regeneration ticker - only runs when health/power not at 100%
+                function UnitFrames:CheckRegenTicker()
+                    local hp = UnitHealth("player")
+                    local maxHp = UnitHealthMax("player")
+                    local pp = UnitPower("player")
+                    local maxPp = UnitPowerMax("player")
+                    
+                    local needsUpdate = (hp < maxHp) or (pp < maxPp)
+                    
+                    if needsUpdate and not self.regenTicker then
+                        -- Start ticker - updates every 0.5 seconds while regenerating
+                        self.regenTicker = C_Timer.NewTicker(0.5, function()
+                            if not self.db.profile.showPlayer then 
+                                if self.regenTicker then
+                                    self.regenTicker:Cancel()
+                                    self.regenTicker = nil
+                                end
+                                return 
+                            end
+                            
+                            local currentHp = UnitHealth("player")
+                            local currentMaxHp = UnitHealthMax("player")
+                            local currentPp = UnitPower("player")
+                            local currentMaxPp = UnitPowerMax("player")
+                            
+                            -- Update frame
+                            self:UpdateUnitFrame("PlayerFrame", "player")
+                            
+                            -- Stop ticker if we're at 100%
+                            if currentHp >= currentMaxHp and currentPp >= currentMaxPp then
+                                if self.regenTicker then
+                                    self.regenTicker:Cancel()
+                                    self.regenTicker = nil
+                                end
+                            end
+                        end)
+                    elseif not needsUpdate and self.regenTicker then
+                        -- Stop ticker if we're at 100%
+                        self.regenTicker:Cancel()
+                        self.regenTicker = nil
+                    end
                 end
 
                 function UnitFrames:OnInitialize()
@@ -2956,10 +3008,8 @@ end
                     
                     -- CRITICAL: Unregister events first to prevent duplicate handlers on reload
                     self:UnregisterEvent("UNIT_HEALTH")
-                    self:UnregisterEvent("UNIT_HEALTH_FREQUENT")
                     self:UnregisterEvent("UNIT_MAXHEALTH")
                     self:UnregisterEvent("UNIT_POWER_UPDATE")
-                    self:UnregisterEvent("UNIT_POWER_FREQUENT")
                     self:UnregisterEvent("UNIT_DISPLAYPOWER")
                     self:UnregisterEvent("PLAYER_TARGET_CHANGED")
                     self:UnregisterEvent("PLAYER_FOCUS_CHANGED")
@@ -2972,10 +3022,8 @@ end
                     
                     -- Now register them cleanly
                     self:RegisterEvent("UNIT_HEALTH")
-                    self:RegisterEvent("UNIT_HEALTH_FREQUENT")
                     self:RegisterEvent("UNIT_MAXHEALTH")
                     self:RegisterEvent("UNIT_POWER_UPDATE")
-                    self:RegisterEvent("UNIT_POWER_FREQUENT")
                     self:RegisterEvent("UNIT_DISPLAYPOWER")
                     self:RegisterEvent("PLAYER_TARGET_CHANGED")
                     self:RegisterEvent("PLAYER_FOCUS_CHANGED")
