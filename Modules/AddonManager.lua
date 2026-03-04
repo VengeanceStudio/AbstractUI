@@ -1461,7 +1461,6 @@ function AddonManager:HookGameMenuButton()
             end)
             
             self.buttonHooked = true
-            AbstractUI:Print("Game Menu Addons button hooked: " .. (addonsButton:GetName() or "unnamed"))
         end
     end
     
@@ -1474,7 +1473,6 @@ function AddonManager:HookGameMenuButton()
         end)
         
         self.gameMenuHooked = true
-        AbstractUI:Print("Game Menu hook installed - will search for button when menu opens")
         
         -- Try immediately in case menu is already shown
         if GameMenuFrame:IsShown() then
@@ -1561,8 +1559,6 @@ function AddonManager:OnInitialize()
     SlashCmdList["ABSTRACTADDONMANAGER"] = function()
         AddonManager:Toggle()
     end
-    
-    AbstractUI:Print("Addon Manager module loaded. Use /auiaddon to open.")
 end
 
 function AddonManager:OnEnable()
