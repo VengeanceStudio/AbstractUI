@@ -2370,4 +2370,11 @@ function AbstractOptionsPanel:Toggle(addonRef)
     end
 end
 
+function AbstractOptionsPanel:Refresh()
+    -- Re-render the currently selected node to update the display
+    if self.selectedNode then
+        self:RenderContent(self.selectedNode)
+    end
+end
+
 return AbstractOptionsPanel

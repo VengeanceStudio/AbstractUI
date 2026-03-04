@@ -1460,6 +1460,10 @@ function BrokerBar:GetPluginOptions()
                         if char and char ~= "" and self.db.profile.goldData[char] then
                             self.db.profile.goldData[char] = nil
                             self.db.profile.goldDeleteSelection = ""
+                            -- Refresh the options panel to update the dropdown list
+                            if _G.AbstractUI_OptionsPanel then
+                                _G.AbstractUI_OptionsPanel:Refresh()
+                            end
                         end
                     end,
                     disabled = function() 
@@ -1536,6 +1540,10 @@ function BrokerBar:GetPluginOptions()
                         if char and char ~= "" and AccountPlayedDB and AccountPlayedDB[char] then
                             AccountPlayedDB[char] = nil
                             self.db.profile.timePlayedDeleteSelection = ""
+                            -- Refresh the options panel to update the dropdown list
+                            if _G.AbstractUI_OptionsPanel then
+                                _G.AbstractUI_OptionsPanel:Refresh()
+                            end
                         end
                     end,
                     disabled = function() 
