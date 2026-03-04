@@ -1759,10 +1759,25 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             table.sort(sortedKeys)
         end
         
-        -- Create menu
-        local menu = CreateFrame("Frame", nil, self, "BackdropTemplate")
-        menu:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -2)
+        -- Create menu - parent to UIParent so it's not clipped by parent frames
+        local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
         menu:SetFrameStrata("DIALOG")
+        menu:SetFrameLevel(100)  -- Ensure it's above other UI elements
+        
+        -- Position relative to dropdown button using screen coordinates
+        local scale = self:GetEffectiveScale()
+        local x, y = self:GetCenter()
+        local width = self:GetWidth()
+        local height = self:GetHeight()
+        
+        -- Convert to UIParent coordinates
+        local uiScale = UIParent:GetEffectiveScale()
+        x = x * scale / uiScale
+        y = y * scale / uiScale
+        
+        -- Position menu below the dropdown button
+        menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x - width/2, y - height/2 - 2)
+        
         menu:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -1774,11 +1789,12 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
         menu:SetBackdropColor(r, g, b, 1.0)  -- Always use alpha=1.0
         menu:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
         
-        -- Calculate menu size
+        -- Calculate menu size - always show full maxVisibleItems
         local itemHeight = 20
         local numItems = #sortedKeys
         local maxVisibleItems = 15  -- Maximum items before scrolling
-        local menuHeight = math.min(numItems, maxVisibleItems) * itemHeight + 4
+        local visibleItems = math.min(numItems, maxVisibleItems)
+        local menuHeight = visibleItems * itemHeight + 4
         menu:SetSize(220, menuHeight)  -- Made wider to accommodate scrollbar
         
         -- If more than maxVisibleItems, add scrolling
@@ -1792,20 +1808,28 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             scrollChild:SetWidth(scrollFrame.scrollArea:GetWidth())
             scrollChild:SetHeight(numItems * itemHeight)
             
-            -- Enable mousewheel on menu and scrollArea to prevent propagation to parent
-            menu:EnableMouseWheel(true)
-            menu:SetScript("OnMouseWheel", function(self, delta)
-                -- Forward to scrollArea's existing handler
+            -- Capture mousewheel on scrollArea to prevent parent scrolling
+            scrollFrame.scrollArea:SetScript("OnMouseWheel", function(self, delta)
+                local maxScroll = math.max(0, scrollChild:GetHeight() - self:GetHeight())
+                local newScroll = self:GetVerticalScroll() - (delta * 20)
+                newScroll = math.max(0, math.min(maxScroll, newScroll))
+                self:SetVerticalScroll(newScroll)
+                scrollFrame:UpdateScroll()
+            end)
+        end
+        
+        -- Capture mousewheel on menu frame to prevent it from reaching parent
+        menu:EnableMouseWheel(true)
+        menu:SetScript("OnMouseWheel", function(self, delta)
+            if scrollFrame then
+                -- Forward to scrollArea
                 local handler = scrollFrame.scrollArea:GetScript("OnMouseWheel")
                 if handler then
                     handler(scrollFrame.scrollArea, delta)
                 end
-            end)
-        else
-            -- No scrolling needed, but still capture mousewheel to prevent parent scrolling
-            menu:EnableMouseWheel(true)
-            menu:SetScript("OnMouseWheel", function() end)  -- Consume event
-        end
+            end
+            -- Event consumed either way - don't propagate to parent
+        end)
         
         -- Create menu items
         local parent = scrollChild or menu
