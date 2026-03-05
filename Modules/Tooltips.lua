@@ -520,12 +520,24 @@ function Tooltips:OnGameTooltipShow(tooltip)
     local questX = Tweaks.db.profile.questFrameX or 0
     
     -- If quest frame is using custom position and is on the right side of screen
-    -- (positive X offset), anchor tooltip to the left instead of right
+    -- (positive X offset), anchor tooltip to the LEFT side of screen to avoid covering it
     if useCustomPos and questX > 100 then
-        -- Clear existing anchors and reposition to the left
+        -- Clear existing anchors and reposition to left side of screen
         tooltip:ClearAllPoints()
         tooltip:SetOwner(owner, "ANCHOR_NONE")
-        tooltip:SetPoint("TOPRIGHT", owner, "TOPLEFT", -2, 0)
+        
+        -- Get the owner's position to anchor near it, but on the left side
+        local ownerX, ownerY = owner:GetCenter()
+        if ownerX and ownerY then
+            local screenWidth = GetScreenWidth()
+            local uiScale = UIParent:GetEffectiveScale()
+            
+            -- Position tooltip on left side of screen, aligned with owner's Y position
+            tooltip:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", screenWidth * 0.4, ownerY)
+        else
+            -- Fallback: just position on left side
+            tooltip:SetPoint("TOPRIGHT", owner, "TOPLEFT", -2, 0)
+        end
     end
 end
 
@@ -586,12 +598,21 @@ function Tooltips:PositionShoppingTooltips()
     if shoppingTooltip1 and shoppingTooltip1:IsShown() then
         shoppingTooltip1:ClearAllPoints()
         
+        -- Check if quest frame is on the right side of screen
+        local questOnRight = false
+        local Tweaks = AbstractUI:GetModule("Tweaks", true)
+        if Tweaks and Tweaks.db then
+            local useCustomPos = Tweaks.db.profile.questFrameCustomPosition
+            local questX = Tweaks.db.profile.questFrameX or 0
+            questOnRight = useCustomPos and questX > 100
+        end
+        
         -- Check if GameTooltip is on the right side of screen
         local gameTooltipCenter = GameTooltip:GetCenter()
         local screenWidth = GetScreenWidth()
         
-        if gameTooltipCenter and gameTooltipCenter > (screenWidth / 2) then
-            -- GameTooltip is on right, place shopping tooltip on left
+        if questOnRight or (gameTooltipCenter and gameTooltipCenter > (screenWidth / 2)) then
+            -- Quest frame or GameTooltip is on right, place shopping tooltip on left
             shoppingTooltip1:SetPoint("TOPRIGHT", GameTooltip, "TOPLEFT", -3, 0)
         else
             -- GameTooltip is on left, place shopping tooltip on right
