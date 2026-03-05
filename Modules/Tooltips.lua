@@ -199,14 +199,45 @@ function Tooltips:HookMicroMenuButtons()
         return
     end
     
-    -- Hook GameTooltip:SetOwner to intercept micro menu button tooltips
+    -- Hook GameTooltip:SetOwner to intercept micro menu button tooltips and quest tooltips
     if not self.microMenuHooked then
         hooksecurefunc(GameTooltip, "SetOwner", function(tooltip, owner, anchor)
             if not owner then return end
             
-            -- Check if owner is a micro button
             local ownerName = owner:GetName()
-            if ownerName and ownerName:find("MicroButton") then
+            
+            -- Check if owner is a quest frame element
+            local isQuestElement = false
+            if ownerName then
+                if ownerName:find("Quest") or ownerName:find("Gossip") then
+                    isQuestElement = true
+                else
+                    -- Check parent hierarchy
+                    local frame = owner:GetParent()
+                    while frame do
+                        local frameName = frame:GetName()
+                        if frameName and (frameName:find("Quest") or frameName:find("Gossip")) then
+                            isQuestElement = true
+                            break
+                        end
+                        frame = frame:GetParent()
+                    end
+                end
+            end
+            
+            -- Check if quest frame is on right side of screen
+            local questOnRight = false
+            if isQuestElement then
+                local Tweaks = AbstractUI:GetModule("Tweaks", true)
+                if Tweaks and Tweaks.db then
+                    local useCustomPos = Tweaks.db.profile.questFrameCustomPosition
+                    local questX = Tweaks.db.profile.questFrameX or 0
+                    questOnRight = useCustomPos and questX > 100
+                end
+            end
+            
+            -- Check if owner is a micro button or quest element that needs repositioning
+            if (ownerName and ownerName:find("MicroButton")) or (isQuestElement and questOnRight) then
                 -- Delay repositioning to let Blizzard finish setting up the tooltip
                 C_Timer.After(0, function()
                     if tooltip:IsShown() then
@@ -214,7 +245,52 @@ function Tooltips:HookMicroMenuButtons()
                         if Tooltips and Tooltips.db then
                             tooltip:ClearAllPoints()
                             
-                            if Tooltips.db.profile.cursorFollow then
+                            if isQuestElement and questOnRight then
+                                -- Quest frame is on right, position tooltips on left side
+                                local scale = Tooltips.db.profile.scale or 1.0
+                                tooltip:SetScale(scale)
+                                
+                                -- Initialize tracking table if needed
+                                if not Tooltips.activeQuestTooltips then
+                                    Tooltips.activeQuestTooltips = {}
+                                end
+                                
+                                -- Position based on how many quest tooltips are already showing
+                                local offset = 0
+                                for i, tt in ipairs(Tooltips.activeQuestTooltips) do
+                                    if tt:IsShown() and tt ~= tooltip then
+                                        offset = offset + tt:GetWidth() + 5
+                                    end
+                                end
+                                
+                                -- Add this tooltip to the active list if not already there
+                                local found = false
+                                for i, tt in ipairs(Tooltips.activeQuestTooltips) do
+                                    if tt == tooltip then
+                                        found = true
+                                        break
+                                    end
+                                end
+                                if not found then
+                                    table.insert(Tooltips.activeQuestTooltips, tooltip)
+                                end
+                                
+                                -- Position from left side with offset
+                                tooltip:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 100 + offset, -100)
+                                
+                                -- Clean up the list when tooltip hides
+                                if not tooltip.questHideHooked then
+                                    tooltip:HookScript("OnHide", function()
+                                        for i = #Tooltips.activeQuestTooltips, 1, -1 do
+                                            if Tooltips.activeQuestTooltips[i] == tooltip then
+                                                table.remove(Tooltips.activeQuestTooltips, i)
+                                                break
+                                            end
+                                        end
+                                    end)
+                                    tooltip.questHideHooked = true
+                                end
+                            elseif Tooltips.db.profile.cursorFollow then
                                 -- Use cursor follow positioning
                                 local scale = Tooltips.db.profile.scale or 1.0
                                 tooltip:SetScale(scale)
@@ -242,6 +318,101 @@ function Tooltips:HookMicroMenuButtons()
             end
         end)
         self.microMenuHooked = true
+        
+        -- Track quest tooltips for positioning
+        self.activeQuestTooltips = {}
+        
+        -- Also hook shopping tooltips and item ref tooltips for quest rewards
+        for _, tooltipFrame in ipairs({ShoppingTooltip1, ShoppingTooltip2, ItemRefTooltip}) do
+            if tooltipFrame then
+                hooksecurefunc(tooltipFrame, "SetOwner", function(tooltip, owner, anchor)
+                    if not owner then return end
+                    
+                    -- Check if owner is a quest frame element
+                    local isQuestElement = false
+                    local ownerName = owner:GetName()
+                    if ownerName then
+                        if ownerName:find("Quest") or ownerName:find("Gossip") then
+                            isQuestElement = true
+                        else
+                            -- Check parent hierarchy
+                            local frame = owner:GetParent()
+                            while frame do
+                                local frameName = frame:GetName()
+                                if frameName and (frameName:find("Quest") or frameName:find("Gossip")) then
+                                    isQuestElement = true
+                                    break
+                                end
+                                frame = frame:GetParent()
+                            end
+                        end
+                    end
+                    
+                    -- Check if quest frame is on right side
+                    if isQuestElement then
+                        local Tweaks = AbstractUI:GetModule("Tweaks", true)
+                        if Tweaks and Tweaks.db then
+                            local useCustomPos = Tweaks.db.profile.questFrameCustomPosition
+                            local questX = Tweaks.db.profile.questFrameX or 0
+                            if useCustomPos and questX > 100 then
+                                -- Quest on right, reposition to left
+                                C_Timer.After(0, function()
+                                    if tooltip:IsShown() then
+                                        local Tooltips = AbstractUI:GetModule("Tooltips", true)
+                                        if Tooltips and Tooltips.db then
+                                            tooltip:ClearAllPoints()
+                                            local scale = Tooltips.db.profile.scale or 1.0
+                                            tooltip:SetScale(scale)
+                                            
+                                            -- Initialize tracking if needed
+                                            if not Tooltips.activeQuestTooltips then
+                                                Tooltips.activeQuestTooltips = {}
+                                            end
+                                            
+                                            -- Position based on how many quest tooltips are already showing
+                                            local offset = 0
+                                            for i, tt in ipairs(Tooltips.activeQuestTooltips) do
+                                                if tt:IsShown() and tt ~= tooltip then
+                                                    offset = offset + tt:GetWidth() + 5
+                                                end
+                                            end
+                                            
+                                            -- Add this tooltip to the active list if not already there
+                                            local found = false
+                                            for i, tt in ipairs(Tooltips.activeQuestTooltips) do
+                                                if tt == tooltip then
+                                                    found = true
+                                                    break
+                                                end
+                                            end
+                                            if not found then
+                                                table.insert(Tooltips.activeQuestTooltips, tooltip)
+                                            end
+                                            
+                                            -- Position from left side with offset
+                                            tooltip:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 100 + offset, -100)
+                                            
+                                            -- Clean up the list when tooltip hides (only hook once)
+                                            if not tooltip.questHideHooked then
+                                                tooltip:HookScript("OnHide", function()
+                                                    for i = #Tooltips.activeQuestTooltips, 1, -1 do
+                                                        if Tooltips.activeQuestTooltips[i] == tooltip then
+                                                            table.remove(Tooltips.activeQuestTooltips, i)
+                                                            break
+                                                        end
+                                                    end
+                                                end)
+                                                tooltip.questHideHooked = true
+                                            end
+                                        end
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                end)
+            end
+        end
     end
 end
 
@@ -438,8 +609,28 @@ function Tooltips:OnTooltipShow(tooltip)
 end
 
 function Tooltips:GameTooltip_SetDefaultAnchor(tooltip, parent)
+    -- Check if parent is part of quest frame and quest frame is on right side
+    local questOnRight = false
+    if parent then
+        local frame = parent
+        while frame do
+            local frameName = frame:GetName()
+            if frameName and (frameName:find("Quest") or frameName:find("Gossip")) then
+                -- This is a quest tooltip, check if quest frame is on right
+                local Tweaks = AbstractUI:GetModule("Tweaks", true)
+                if Tweaks and Tweaks.db then
+                    local useCustomPos = Tweaks.db.profile.questFrameCustomPosition
+                    local questX = Tweaks.db.profile.questFrameX or 0
+                    questOnRight = useCustomPos and questX > 100
+                end
+                break
+            end
+            frame = frame:GetParent()
+        end
+    end
+    
     -- Handle cursor following
-    if self.db.profile.cursorFollow then
+    if self.db.profile.cursorFollow and not questOnRight then
         tooltip:SetOwner(parent, "ANCHOR_CURSOR")
         tooltip:ClearAllPoints()
         
@@ -461,6 +652,12 @@ function Tooltips:GameTooltip_SetDefaultAnchor(tooltip, parent)
         if tooltip.FadeOut then
             tooltip.FadeOut:SetStartDelay(self.db.profile.fadeDelay or 0.2)
         end
+    elseif questOnRight then
+        -- Quest frame is on right, force tooltip to left side of screen
+        local scale = self.db.profile.scale or 1.0
+        tooltip:SetScale(scale)
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint("TOPRIGHT", UIParent, "TOPLEFT", GetScreenWidth() * 0.45, -100)
     else
         -- Use custom anchor position when not following cursor
         local scale = self.db.profile.scale or 1.0
