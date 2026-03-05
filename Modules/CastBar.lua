@@ -227,13 +227,14 @@ function CastBar:SetupCastBar()
     if db.showSpellName then
         local spellName = statusBar:CreateFontString(nil, "OVERLAY")
         spellName:SetPoint("LEFT", statusBar, "LEFT", 4, 0)
-        spellName:SetPoint("RIGHT", statusBar, "CENTER", -4, 0)
+        spellName:SetWidth(db.width - 25)  -- Dynamic width based on bar width
         local font = LSM:Fetch("font", db.font)
         spellName:SetFont(font, db.fontSize, db.fontOutline)
         spellName:SetTextColor(1, 1, 1, 1)
         spellName:SetShadowOffset(1, -1)
         spellName:SetShadowColor(0, 0, 0, 1)
         spellName:SetJustifyH("LEFT")
+        spellName:SetWordWrap(false)  -- Prevent wrapping
         frame.spellName = spellName
     end
     
@@ -248,6 +249,7 @@ function CastBar:SetupCastBar()
         castTime:SetShadowOffset(1, -1)
         castTime:SetShadowColor(0, 0, 0, 1)
         castTime:SetJustifyH("RIGHT")
+        castTime:SetWordWrap(false)  -- Prevent wrapping
         frame.castTime = castTime
     end
     
@@ -587,7 +589,7 @@ function CastBar:GetOptions()
                 type = "range",
                 order = 11,
                 width = "half",
-                min = 100,
+                min = 200,
                 max = 500,
                 step = 1,
                 get = function() return self.db.profile.width end,
@@ -595,6 +597,10 @@ function CastBar:GetOptions()
                     self.db.profile.width = v
                     if self.castBar then
                         self.castBar:SetWidth(v)
+                        -- Update spell name text width to match new bar width
+                        if self.castBar.spellName then
+                            self.castBar.spellName:SetWidth(v - 25)
+                        end
                     end
                 end
             },
