@@ -989,7 +989,9 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                         player = "Player",
                         target = "Target",
                         targettarget = "Target of Target",
+                        pet = "Pet",
                         focus = "Focus",
+                        boss = "Boss",
                     }
                     -- Remove current frame from options
                     frames[frameKey] = nil
@@ -1000,7 +1002,10 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                     if not self.db or not self.db.profile or sourceKey == "" or sourceKey == frameKey then return end
                     
                     local source = self.db.profile[sourceKey]
-                    if not source then return end
+                    if not source then 
+                        AbstractUI:Print("Copy From: Source frame '" .. sourceKey .. "' not found in profile")
+                        return 
+                    end
                     
                     -- Deep copy function
                     local function deepCopy(orig)
@@ -1016,6 +1021,11 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                         return copy
                     end
                     
+                    -- Ensure target frame structure exists
+                    if not self.db.profile[frameKey] then
+                        self.db.profile[frameKey] = {}
+                    end
+                    
                     -- Copy all bar settings
                     if source.health then
                         self.db.profile[frameKey].health = deepCopy(source.health)
@@ -1027,6 +1037,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                         self.db.profile[frameKey].info = deepCopy(source.info)
                     end
                     
+                    AbstractUI:Print("Copied settings from " .. (sourceKey or "unknown") .. " to " .. (frameKey or "unknown"))
                     update()
                 end,
             },
