@@ -1,18 +1,6 @@
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
-local AccountPlayed = AbstractUI:NewModule("AccountPlayed", "AceEvent-3.0")
+local TimePlayed = AbstractUI:NewModule("TimePlayed", "AceEvent-3.0")
 local LDB = LibStub("LibDataBroker-1.1")
-
--- SavedVariables
-AccountPlayedDB = AccountPlayedDB or {}
-AccountPlayedPopupDB = AccountPlayedPopupDB or {
-    width = 520,
-    height = 300,
-    point = "CENTER",
-    x = 0,
-    y = 0,
-    useYears = false,
-    showCharacters = false,
-}
 
 -- Module state
 local lastPlayedRequest = 0
@@ -25,6 +13,16 @@ local charPanelClass = nil
 local defaults = {
     profile = {
         enabled = true,
+        timePlayedData = {},
+        popupSettings = {
+            width = 520,
+            height = 300,
+            point = "CENTER",
+            x = 0,
+            y = 0,
+            useYears = false,
+            showCharacters = false,
+        },
     }
 }
 
@@ -60,42 +58,32 @@ local L = {
 -- Initialization
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:OnInitialize()
+function TimePlayed:OnInitialize()
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
-function AccountPlayed:OnDBReady()
+function TimePlayed:OnDBReady()
     if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules then
         self:Disable()
         return
     end
     
-    self.db = AbstractUI.db:RegisterNamespace("AccountPlayed", defaults)
+    self.db = AbstractUI.db:RegisterNamespace("TimePlayed", defaults)
     
     -- Validate database
-    if type(AccountPlayedDB) ~= "table" then
+    if type(self.db.profile.timePlayedData) ~= "table" then
         print("|cffff0000" .. L.DB_CORRUPTED .. "|r")
-        AccountPlayedDB = {}
+        self.db.profile.timePlayedData = {}
     end
-    
-    self:MigrateOldData()
     
     -- Always register events for data collection (even if broker is disabled)
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("TIME_PLAYED_MSG")
     
     -- Only register broker and commands if module is enabled
-    if AbstractUI.db.profile.modules.accountPlayed then 
+    if AbstractUI.db.profile.modules.timePlayed then 
         self:RegisterBroker()
         self:RegisterCommands()
-    end
-end
-
-function AccountPlayed:MigrateOldData()
-    for charKey, data in pairs(AccountPlayedDB) do
-        if type(data) == "number" then
-            AccountPlayedDB[charKey] = { time = data, class = "UNKNOWN" }
-        end
     end
 end
 
@@ -103,19 +91,19 @@ end
 -- Events
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:PLAYER_LOGIN()
+function TimePlayed:PLAYER_LOGIN()
     self:SafeRequestTimePlayed()
 end
 
-function AccountPlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
+function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
     local realm, name = self:GetCharInfo()
     local charKey = self:GetCharKey(realm, name)
     local _, classFile = UnitClass("player")
     classFile = classFile or "UNKNOWN"
     
-    local existing = AccountPlayedDB[charKey]
+    local existing = self.db.profile.timePlayedData[charKey]
     if not existing or not existing.time or totalTimePlayed > existing.time then
-        AccountPlayedDB[charKey] = {
+        self.db.profile.timePlayedData[charKey] = {
             time = totalTimePlayed,
             class = classFile,
         }
@@ -126,24 +114,24 @@ end
 -- Helper Functions
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:GetCharInfo()
+function TimePlayed:GetCharInfo()
     local name = UnitName("player")
     local realm = GetNormalizedRealmName and GetNormalizedRealmName() or GetRealmName()
     return realm, name
 end
 
-function AccountPlayed:GetCharKey(realm, name)
+function TimePlayed:GetCharKey(realm, name)
     return realm .. "-" .. name
 end
 
-function AccountPlayed:GetLocalizedClass(classFile)
+function TimePlayed:GetLocalizedClass(classFile)
     if not classFile or classFile == "UNKNOWN" then 
         return L.UNKNOWN
     end
     return LOCALIZED_CLASS_NAMES_MALE[classFile] or classFile
 end
 
-function AccountPlayed:SafeRequestTimePlayed()
+function TimePlayed:SafeRequestTimePlayed()
     local now = GetTime()
     if now - lastPlayedRequest >= 10 then
         RequestTimePlayed()
@@ -157,7 +145,7 @@ end
 -- Time Formatting
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:FormatTimeSmart(seconds, useYears)
+function TimePlayed:FormatTimeSmart(seconds, useYears)
     seconds = tonumber(seconds) or 0
     local hours = seconds / 3600
     
@@ -170,7 +158,7 @@ function AccountPlayed:FormatTimeSmart(seconds, useYears)
     end
 end
 
-function AccountPlayed:FormatTimeDetailed(seconds, useYears)
+function TimePlayed:FormatTimeDetailed(seconds, useYears)
     seconds = tonumber(seconds) or 0
     local hours = seconds / 3600
     
@@ -186,7 +174,7 @@ function AccountPlayed:FormatTimeDetailed(seconds, useYears)
     end
 end
 
-function AccountPlayed:FormatTimeTotal(seconds, useYears)
+function TimePlayed:FormatTimeTotal(seconds, useYears)
     seconds = tonumber(seconds) or 0
     local hours = seconds / 3600
     
@@ -203,9 +191,9 @@ end
 -- Data Aggregation
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:GetAccountTotal()
+function TimePlayed:GetAccountTotal()
     local total = 0
-    for _, data in pairs(AccountPlayedDB) do
+    for _, data in pairs(self.db.profile.timePlayedData) do
         if type(data) == "table" and data.time then
             total = total + data.time
         end
@@ -213,9 +201,9 @@ function AccountPlayed:GetAccountTotal()
     return total
 end
 
-function AccountPlayed:GetClassTotals()
+function TimePlayed:GetClassTotals()
     local totals, accountTotal = {}, 0
-    for _, data in pairs(AccountPlayedDB) do
+    for _, data in pairs(self.db.profile.timePlayedData) do
         if type(data) == "table" and data.time and data.class then
             totals[data.class] = (totals[data.class] or 0) + data.time
             accountTotal = accountTotal + data.time
@@ -224,9 +212,9 @@ function AccountPlayed:GetClassTotals()
     return totals, accountTotal
 end
 
-function AccountPlayed:GetCharactersByClass(className)
+function TimePlayed:GetCharactersByClass(className)
     local chars = {}
-    for charKey, data in pairs(AccountPlayedDB) do
+    for charKey, data in pairs(self.db.profile.timePlayedData) do
         if type(data) == "table" and data.class == className and data.time then
             table.insert(chars, { key = charKey, time = data.time, class = data.class })
         end
@@ -239,16 +227,16 @@ end
 -- Character Delete Confirmation
 -- -----------------------------------------------------------------------------
 
-StaticPopupDialogs["ACCOUNTPLAYED_CONFIRM_DELETE"] = {
+StaticPopupDialogs["TimePlayed_CONFIRM_DELETE"] = {
     text = "",
     button1 = DELETE,
     button2 = CANCEL,
     OnAccept = function(self, data)
         if not data or not data.foundKey then return end
-        AccountPlayedDB[data.foundKey] = nil
+        self.db.profile.timePlayedData[data.foundKey] = nil
         print("|cff00ff00" .. string.format(L.CMD_DELETE_SUCCESS, data.foundKey) .. "|r")
         if popupFrame and popupFrame:IsShown() then
-            AccountPlayed:UpdatePopupDisplay()
+            TimePlayed:UpdatePopupDisplay()
         end
     end,
     timeout = 0,
@@ -257,16 +245,16 @@ StaticPopupDialogs["ACCOUNTPLAYED_CONFIRM_DELETE"] = {
     preferredIndex = 3,
 }
 
-function AccountPlayed:ConfirmDeleteKey(foundKey)
-    StaticPopupDialogs["ACCOUNTPLAYED_CONFIRM_DELETE"].text = string.format(L.CMD_DELETE_CONFIRM, foundKey)
-    StaticPopup_Show("ACCOUNTPLAYED_CONFIRM_DELETE", nil, nil, { foundKey = foundKey })
+function TimePlayed:ConfirmDeleteKey(foundKey)
+    StaticPopupDialogs["TimePlayed_CONFIRM_DELETE"].text = string.format(L.CMD_DELETE_CONFIRM, foundKey)
+    StaticPopup_Show("TimePlayed_CONFIRM_DELETE", nil, nil, { foundKey = foundKey })
 end
 
 -- -----------------------------------------------------------------------------
 -- Character Panel (flyout)
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:CreateCharPanel()
+function TimePlayed:CreateCharPanel()
     if charPanel then return charPanel end
     
     local ColorPalette = _G.AbstractUI_ColorPalette
@@ -277,7 +265,7 @@ function AccountPlayed:CreateCharPanel()
     local CPANEL_HEADER_H = 32
     local CPANEL_PAD = 8
     
-    local p = CreateFrame("Frame", "AccountPlayedCharPanel", UIParent, "BackdropTemplate")
+    local p = CreateFrame("Frame", "TimePlayedCharPanel", UIParent, "BackdropTemplate")
     p:SetWidth(CPANEL_W)
     p:SetHeight(CPANEL_HEADER_H + CPANEL_PAD)
     p:SetFrameStrata("DIALOG")
@@ -393,7 +381,7 @@ function AccountPlayed:CreateCharPanel()
         end)
         trashBtn:SetScript("OnClick", function()
             if row.charKey then
-                AccountPlayed:ConfirmDeleteKey(row.charKey)
+                TimePlayed:ConfirmDeleteKey(row.charKey)
             end
         end)
         
@@ -404,11 +392,11 @@ function AccountPlayed:CreateCharPanel()
     
     p:Hide()
     charPanel = p
-    table.insert(UISpecialFrames, "AccountPlayedCharPanel")
+    table.insert(UISpecialFrames, "TimePlayedCharPanel")
     return p
 end
 
-function AccountPlayed:ShowCharPanel(className, forceShow, anchorRow)
+function TimePlayed:ShowCharPanel(className, forceShow, anchorRow)
     local p = self:CreateCharPanel()
     
     if not forceShow and charPanelClass == className and p:IsShown() then
@@ -446,7 +434,7 @@ function AccountPlayed:ShowCharPanel(className, forceShow, anchorRow)
         local char = chars[i]
         if char then
             local name = char.key:match("%-(.+)$") or char.key
-            local timeStr = self:FormatTimeDetailed(char.time, AccountPlayedPopupDB.useYears)
+            local timeStr = self:FormatTimeDetailed(char.time, self.db.profile.popupSettings.useYears)
             row.nameText:SetText(name)
             row.nameText:SetTextColor(color.r, color.g, color.b)
             row.timeText:SetText(timeStr)
@@ -469,23 +457,23 @@ end
 -- Main Popup Window
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:CreatePopup()
+function TimePlayed:CreatePopup()
     if popupFrame then return popupFrame end
     
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
-    local START_W = AccountPlayedPopupDB.width or 540
-    local START_H = AccountPlayedPopupDB.height or 300
+    local START_W = self.db.profile.popupSettings.width or 540
+    local START_H = self.db.profile.popupSettings.height or 300
     local MIN_W, MIN_H = 420, 200
     local MAX_W, MAX_H = 720, 400
     
-    local f = CreateFrame("Frame", "AccountPlayedPopup", UIParent, "BackdropTemplate")
+    local f = CreateFrame("Frame", "TimePlayedPopup", UIParent, "BackdropTemplate")
     f:SetSize(START_W, START_H)
     
-    if AccountPlayedPopupDB.point then
-        f:SetPoint(AccountPlayedPopupDB.point, UIParent, AccountPlayedPopupDB.point, 
-                   AccountPlayedPopupDB.x or 0, AccountPlayedPopupDB.y or 0)
+    if self.db.profile.popupSettings.point then
+        f:SetPoint(self.db.profile.popupSettings.point, UIParent, self.db.profile.popupSettings.point, 
+                   self.db.profile.popupSettings.x or 0, self.db.profile.popupSettings.y or 0)
     else
         f:SetPoint("CENTER")
     end
@@ -523,9 +511,9 @@ function AccountPlayed:CreatePopup()
     f.dragArea:SetScript("OnDragStop", function(self)
         f:StopMovingOrSizing()
         local point, _, _, x, y = f:GetPoint()
-        AccountPlayedPopupDB.point = point
-        AccountPlayedPopupDB.x = x
-        AccountPlayedPopupDB.y = y
+        self.db.profile.popupSettings.point = point
+        self.db.profile.popupSettings.x = x
+        self.db.profile.popupSettings.y = y
     end)
     
     -- Close button (AbstractUI style)
@@ -558,7 +546,7 @@ function AccountPlayed:CreatePopup()
         f:Hide()
     end)
     
-    table.insert(UISpecialFrames, "AccountPlayedPopup")
+    table.insert(UISpecialFrames, "TimePlayedPopup")
     
     f:SetScript("OnHide", function()
         if charPanel then charPanel:Hide() end
@@ -632,17 +620,17 @@ function AccountPlayed:CreatePopup()
     end)
     
     checkBox:SetScript("OnClick", function(self)
-        AccountPlayedPopupDB.useYears = not AccountPlayedPopupDB.useYears
-        if AccountPlayedPopupDB.useYears then
+        self.db.profile.popupSettings.useYears = not self.db.profile.popupSettings.useYears
+        if self.db.profile.popupSettings.useYears then
             self.check:Show()
         else
             self.check:Hide()
         end
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        AccountPlayed:UpdatePopupDisplay()
+        TimePlayed:UpdatePopupDisplay()
     end)
     
-    if AccountPlayedPopupDB.useYears then
+    if self.db.profile.popupSettings.useYears then
         checkBox.check:Show()
     end
     
@@ -686,17 +674,17 @@ function AccountPlayed:CreatePopup()
     end)
     
     showCharsBox:SetScript("OnClick", function(self)
-        AccountPlayedPopupDB.showCharacters = not AccountPlayedPopupDB.showCharacters
-        if AccountPlayedPopupDB.showCharacters then
+        self.db.profile.popupSettings.showCharacters = not self.db.profile.popupSettings.showCharacters
+        if self.db.profile.popupSettings.showCharacters then
             self.check:Show()
         else
             self.check:Hide()
         end
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        AccountPlayed:UpdatePopupDisplay()
+        TimePlayed:UpdatePopupDisplay()
     end)
     
-    if AccountPlayedPopupDB.showCharacters then
+    if self.db.profile.popupSettings.showCharacters then
         showCharsBox.check:Show()
     end
     
@@ -745,8 +733,8 @@ function AccountPlayed:CreatePopup()
         if w > MAX_W then self:SetWidth(MAX_W) end
         if h > MAX_H then self:SetHeight(MAX_H) end
         
-        AccountPlayedPopupDB.width = self:GetWidth()
-        AccountPlayedPopupDB.height = self:GetHeight()
+        self.db.profile.popupSettings.width = self:GetWidth()
+        self.db.profile.popupSettings.height = self:GetHeight()
         
         local cw = self.scrollFrame:GetWidth()
         self.content:SetWidth(cw)
@@ -767,7 +755,7 @@ function AccountPlayed:CreatePopup()
     return f
 end
 
-function AccountPlayed:CreateRow(parent, width, height)
+function TimePlayed:CreateRow(parent, width, height)
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
@@ -808,7 +796,7 @@ function AccountPlayed:CreateRow(parent, width, height)
         if self.charKey then
             -- Character mode - show simple tooltip
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            local data = AccountPlayedDB[self.charKey]
+            local data = self.db.profile.timePlayedData[self.charKey]
             if data then
                 local realm = self.charKey:match("^([^%-]+)")
                 local name = self.charKey:match("%-(.+)$") or self.charKey
@@ -816,20 +804,20 @@ function AccountPlayed:CreateRow(parent, width, height)
                 GameTooltip:AddLine(name, color.r, color.g, color.b)
                 GameTooltip:AddLine(realm, 0.7, 0.7, 0.7)
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddDoubleLine("Time Played:", AccountPlayed:FormatTimeDetailed(data.time, AccountPlayedPopupDB.useYears), 1, 1, 1, 1, 1, 1)
+                GameTooltip:AddDoubleLine("Time Played:", TimePlayed:FormatTimeDetailed(data.time, self.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
             end
             GameTooltip:Show()
         elseif self.className then
             -- Class mode - show all characters in class
-            local chars = AccountPlayed:GetCharactersByClass(self.className)
+            local chars = TimePlayed:GetCharactersByClass(self.className)
             if #chars > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                local localizedName = AccountPlayed:GetLocalizedClass(self.className)
+                local localizedName = TimePlayed:GetLocalizedClass(self.className)
                 GameTooltip:AddLine(localizedName, 1, 1, 1)
                 GameTooltip:AddLine(" ")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
-                    local timeStr = AccountPlayed:FormatTimeDetailed(char.time, AccountPlayedPopupDB.useYears)
+                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, self.db.profile.popupSettings.useYears)
                     local color = RAID_CLASS_COLORS[char.class] or { r = 1, g = 1, b = 1 }
                     GameTooltip:AddDoubleLine(name, timeStr, color.r, color.g, color.b, 1, 1, 1)
                 end
@@ -857,16 +845,16 @@ function AccountPlayed:CreateRow(parent, width, height)
         if button == "RightButton" then
             GameTooltip:Hide()
             PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-            AccountPlayed:ShowCharPanel(self.className, false, self)
+            TimePlayed:ShowCharPanel(self.className, false, self)
         else
-            local chars = AccountPlayed:GetCharactersByClass(self.className)
+            local chars = TimePlayed:GetCharactersByClass(self.className)
             if #chars > 0 then
                 PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                local localizedName = AccountPlayed:GetLocalizedClass(self.className)
+                local localizedName = TimePlayed:GetLocalizedClass(self.className)
                 print("|cff00ff00" .. localizedName .. ":|r")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
-                    local timeStr = AccountPlayed:FormatTimeDetailed(char.time, AccountPlayedPopupDB.useYears)
+                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, self.db.profile.popupSettings.useYears)
                     local color = RAID_CLASS_COLORS[char.class] or { r = 1, g = 1, b = 1 }
                     print(string.format("  |cff%02x%02x%02x%s|r - %s",
                         color.r * 255, color.g * 255, color.b * 255, name, timeStr))
@@ -878,13 +866,13 @@ function AccountPlayed:CreateRow(parent, width, height)
     return row
 end
 
-function AccountPlayed:UpdatePopupDisplay()
+function TimePlayed:UpdatePopupDisplay()
     local f = self:CreatePopup()
     local accountTotal = self:GetAccountTotal()
     
     -- Update checkbox states
     if f.formatCheckbox and f.formatCheckbox.check then
-        if AccountPlayedPopupDB.useYears then
+        if self.db.profile.popupSettings.useYears then
             f.formatCheckbox.check:Show()
         else
             f.formatCheckbox.check:Hide()
@@ -892,7 +880,7 @@ function AccountPlayed:UpdatePopupDisplay()
     end
     
     if f.showCharsCheckbox and f.showCharsCheckbox.check then
-        if AccountPlayedPopupDB.showCharacters then
+        if self.db.profile.popupSettings.showCharacters then
             f.showCharsCheckbox.check:Show()
         else
             f.showCharsCheckbox.check:Hide()
@@ -904,16 +892,16 @@ function AccountPlayed:UpdatePopupDisplay()
         popupRows[1].bar:SetValue(0)
         popupRows[1].valueText:SetText("")
         popupRows[1]:Show()
-        f.totalRow:SetText(L.TOTAL .. self:FormatTimeTotal(0, AccountPlayedPopupDB.useYears))
+        f.totalRow:SetText(L.TOTAL .. self:FormatTimeTotal(0, self.db.profile.popupSettings.useYears))
         return
     end
     
     local sorted = {}
     local topTime = 0
     
-    if AccountPlayedPopupDB.showCharacters then
+    if self.db.profile.popupSettings.showCharacters then
         -- Show individual characters
-        for charKey, data in pairs(AccountPlayedDB) do
+        for charKey, data in pairs(self.db.profile.timePlayedData) do
             if type(data) == "table" and data.time and data.class then
                 table.insert(sorted, { 
                     key = charKey, 
@@ -942,7 +930,7 @@ function AccountPlayed:UpdatePopupDisplay()
             local barPercent = entry.time / topTime
             local color = RAID_CLASS_COLORS[entry.class] or { r = 1, g = 1, b = 1 }
             
-            if AccountPlayedPopupDB.showCharacters then
+            if self.db.profile.popupSettings.showCharacters then
                 -- Character mode
                 row.className = entry.class
                 row.charKey = entry.key
@@ -951,7 +939,7 @@ function AccountPlayed:UpdatePopupDisplay()
                 row.bar:SetValue(barPercent)
                 row.bar:SetStatusBarColor(color.r, color.g, color.b)
                 row.valueText:SetText(string.format("%5.1f%% - %s", percent * 100, 
-                    self:FormatTimeSmart(entry.time, AccountPlayedPopupDB.useYears)))
+                    self:FormatTimeSmart(entry.time, self.db.profile.popupSettings.useYears)))
                 row:Show()
             else
                 -- Class mode
@@ -962,7 +950,7 @@ function AccountPlayed:UpdatePopupDisplay()
                 row.bar:SetValue(barPercent)
                 row.bar:SetStatusBarColor(color.r, color.g, color.b)
                 row.valueText:SetText(string.format("%5.1f%% - %s", percent * 100, 
-                    self:FormatTimeSmart(entry.time, AccountPlayedPopupDB.useYears)))
+                    self:FormatTimeSmart(entry.time, self.db.profile.popupSettings.useYears)))
                 row:Show()
             end
         else
@@ -981,14 +969,14 @@ function AccountPlayed:UpdatePopupDisplay()
         end)
     end
     
-    f.totalRow:SetText(L.TOTAL .. self:FormatTimeTotal(accountTotal, AccountPlayedPopupDB.useYears))
+    f.totalRow:SetText(L.TOTAL .. self:FormatTimeTotal(accountTotal, self.db.profile.popupSettings.useYears))
     
     if charPanel and charPanel:IsShown() and charPanelClass then
         self:ShowCharPanel(charPanelClass, true)
     end
 end
 
-function AccountPlayed:ToggleWindow()
+function TimePlayed:ToggleWindow()
     local f = self:CreatePopup()
     if f:IsShown() then
         PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
@@ -1004,21 +992,21 @@ end
 -- LibDataBroker
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:RegisterBroker()
+function TimePlayed:RegisterBroker()
     local broker = LDB:NewDataObject("AbstractTimePlayed", {
         type = "data source",
         text = "0h",
         icon = 237538,
         OnClick = function(_, button)
             if button == "LeftButton" then
-                AccountPlayed:ToggleWindow()
+                TimePlayed:ToggleWindow()
             end
         end,
         OnTooltipShow = function(tooltip)
-            local total = AccountPlayed:GetAccountTotal()
+            local total = TimePlayed:GetAccountTotal()
             tooltip:AddLine("|cffffffffTime Played|r")
             tooltip:AddLine(" ")
-            tooltip:AddDoubleLine("Total Time:", AccountPlayed:FormatTimeTotal(total, AccountPlayedPopupDB.useYears), 1, 1, 1, 1, 1, 1)
+            tooltip:AddDoubleLine("Total Time:", TimePlayed:FormatTimeTotal(total, self.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
             tooltip:AddLine(" ")
             tooltip:AddLine("Click to toggle window", 0.5, 0.5, 0.5)
         end,
@@ -1026,42 +1014,42 @@ function AccountPlayed:RegisterBroker()
     
     -- Update text
     C_Timer.NewTicker(60, function()
-        local total = AccountPlayed:GetAccountTotal()
-        broker.text = AccountPlayed:FormatTimeSmart(total, AccountPlayedPopupDB.useYears)
+        local total = TimePlayed:GetAccountTotal()
+        broker.text = TimePlayed:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
     end)
     
     -- Initial update
     local total = self:GetAccountTotal()
-    broker.text = self:FormatTimeSmart(total, AccountPlayedPopupDB.useYears)
+    broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
 end
 
 -- -----------------------------------------------------------------------------
 -- Slash Commands
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:RegisterCommands()
-    SLASH_ACCOUNTPLAYED1 = "/aplayed"
-    SlashCmdList.ACCOUNTPLAYED = function(input)
-        AccountPlayed:ToggleWindow()
+function TimePlayed:RegisterCommands()
+    SLASH_TimePlayed1 = "/aplayed"
+    SlashCmdList.TimePlayed = function(input)
+        TimePlayed:ToggleWindow()
     end
     
-    SLASH_ACCOUNTPLAYEDDEBUG1 = "/apdebug"
-    SlashCmdList.ACCOUNTPLAYEDDEBUG = function()
+    SLASH_TimePlayedDEBUG1 = "/apdebug"
+    SlashCmdList.TimePlayedDEBUG = function()
         print("|cffff0000" .. L.DEBUG_HEADER .. "|r")
-        for charKey, data in pairs(AccountPlayedDB) do
+        for charKey, data in pairs(self.db.profile.timePlayedData) do
             local time, class
             if type(data) == "table" then
                 time, class = data.time or 0, data.class or "UNKNOWN"
             else
                 time, class = data, "UNKNOWN"
             end
-            local displayName = AccountPlayed:GetLocalizedClass(class)
-            print(string.format(" |cffffff00 - %s : %s (%s)|r", charKey, AccountPlayed:FormatTimeSmart(time, false), class))
+            local displayName = TimePlayed:GetLocalizedClass(class)
+            print(string.format(" |cffffff00 - %s : %s (%s)|r", charKey, TimePlayed:FormatTimeSmart(time, false), class))
         end
     end
     
-    SLASH_ACCOUNTPLAYEDDELETE1 = "/apdelete"
-    SlashCmdList.ACCOUNTPLAYEDDELETE = function(input)
+    SLASH_TimePlayedDELETE1 = "/apdelete"
+    SlashCmdList.TimePlayedDELETE = function(input)
         input = input and input:match("^%s*(.-)%s*$") or ""
         
         if input == "" then
@@ -1078,7 +1066,7 @@ function AccountPlayed:RegisterCommands()
         local targetKey = realmName .. "-" .. charName
         local foundKey = nil
         local lowerTarget = targetKey:lower()
-        for dbKey in pairs(AccountPlayedDB) do
+        for dbKey in pairs(self.db.profile.timePlayedData) do
             if dbKey:lower() == lowerTarget then
                 foundKey = dbKey
                 break
@@ -1090,7 +1078,7 @@ function AccountPlayed:RegisterCommands()
             return
         end
         
-        AccountPlayed:ConfirmDeleteKey(foundKey)
+        TimePlayed:ConfirmDeleteKey(foundKey)
     end
 end
 
@@ -1098,7 +1086,7 @@ end
 -- Options
 -- -----------------------------------------------------------------------------
 
-function AccountPlayed:GetOptions()
+function TimePlayed:GetOptions()
     return {
         type = "group",
         name = "Time Played",
@@ -1120,7 +1108,7 @@ function AccountPlayed:GetOptions()
                 name = "Show Window",
                 desc = "Open the Time Played window",
                 order = 3,
-                func = function() AccountPlayed:ToggleWindow() end,
+                func = function() TimePlayed:ToggleWindow() end,
             },
         }
     }

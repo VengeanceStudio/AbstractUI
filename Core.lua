@@ -49,7 +49,7 @@ local defaults = {
             tweaks = true,
             setup = true,
             addonmanager = true,
-            accountPlayed = true
+            timePlayed = true
         }
     }
 }
@@ -1944,10 +1944,10 @@ function AbstractUI:GetOptions()
                         desc = "In-game addon management with sorting and filtering options",
                         get = function() return self.db.profile.modules.addonmanager end,
                         set = function(_, v) self.db.profile.modules.addonmanager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    accountPlayed = { name = "Time Played", type = "toggle", order = 9.2, width = "full",
+                    timePlayed = { name = "Time Played", type = "toggle", order = 9.2, width = "full",
                         desc = "Track and display play time across all characters with class breakdowns",
-                        get = function() return self.db.profile.modules.accountPlayed end,
-                        set = function(_, v) self.db.profile.modules.accountPlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
+                        get = function() return self.db.profile.modules.timePlayed end,
+                        set = function(_, v) self.db.profile.modules.timePlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
             },  -- closes general group
             themes = {

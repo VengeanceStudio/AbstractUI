@@ -356,14 +356,36 @@ function Setup:CompleteSetup(frame)
     
     -- Import Edit Mode preset
     if editModePresets[res] and editModePresets[res] ~= "YOUR_" .. res:upper():gsub("P", "") .. "_EDIT_MODE_STRING_HERE" then
-        local success = pcall(function()
-            C_EditMode.SetLayouts(C_EditMode.ConvertStringToLayoutInfo(editModePresets[res]))
-        end)
-        if success then
-            print("AbstractUI: Edit Mode layout imported successfully")
-        else
-            print("AbstractUI: Failed to import Edit Mode layout")
+        -- Use C_AddOns API (modern) or fallback to legacy functions
+        local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
+        local LoadAddOn = (C_AddOns and C_AddOns.LoadAddOn) or LoadAddOn
+        
+        -- Ensure Blizzard_EditMode is loaded
+        if not IsAddOnLoaded("Blizzard_EditMode") then
+            LoadAddOn("Blizzard_EditMode")
         end
+        
+        -- Wait a moment for the addon to fully initialize
+        C_Timer.After(0.1, function()
+            local success, err = pcall(function()
+                if not C_EditMode then
+                    error("C_EditMode API not available")
+                end
+                
+                local layoutInfo = C_EditMode.ConvertStringToLayoutInfo(editModePresets[res])
+                if not layoutInfo then
+                    error("Failed to convert layout string")
+                end
+                
+                C_EditMode.SetLayouts(layoutInfo)
+            end)
+            
+            if success then
+                print("AbstractUI: Edit Mode layout imported successfully")
+            else
+                print("AbstractUI: Failed to import Edit Mode layout - " .. tostring(err))
+            end
+        end)
     else
         print("AbstractUI: No Edit Mode preset configured for " .. res)
     end

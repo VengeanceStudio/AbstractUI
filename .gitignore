@@ -1,0 +1,30 @@
+# WoW SavedVariables (contains personal character data)
+*.lua.bak
+AbstractUIDB.lua
+AbstractUI.lua
+AbstractUIPerChar.lua
+AccountPlayedDB.lua
+AccountPlayed.lua
+AccountPlayedPopupDB.lua
+
+# WTF folder (player settings)
+WTF/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+
+# Build outputs
+*.zip
+release/
+releases/
+dist/
