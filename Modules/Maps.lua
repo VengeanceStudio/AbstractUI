@@ -564,7 +564,20 @@ function Maps:PlaceButton(btn, point, x, y, isShown)
         btn:ClearAllPoints()
         btn:SetPoint(point, Minimap, point, x, y)
         btn:SetScale(0.8)
-        btn:SetShown(isShown)
+        
+        -- Special handling for indicator frames that show/hide based on game state
+        -- (mail, queue status, etc.) - don't force show, only hide if disabled
+        local isIndicatorFrame = (btn == MinimapCluster.IndicatorFrame.MailFrame or 
+                                   btn == QueueStatusMinimapButton)
+        
+        if isIndicatorFrame then
+            if not isShown then
+                btn:Hide()
+            end
+            -- If enabled, don't call SetShown - let Blizzard's systems control visibility
+        else
+            btn:SetShown(isShown)
+        end
     end
 end
 
