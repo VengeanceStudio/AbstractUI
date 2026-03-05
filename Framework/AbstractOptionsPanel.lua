@@ -2098,7 +2098,7 @@ function AbstractOptionsPanel:CreateInput(parent, option, xOffset, yOffset)
     if isMultiline then
         editBox:SetScript("OnKeyDown", function(self, key)
             if IsControlKeyDown() then
-                if key == "V" then
+                if key == "V" and C_Clipboard then
                     -- Ctrl+V paste functionality using C_Clipboard API
                     local pasteText = C_Clipboard.GetText()
                     if pasteText and pasteText ~= "" then

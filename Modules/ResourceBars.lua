@@ -340,10 +340,8 @@ function ResourceBars:UpdatePrimaryResourceBar()
     local current = UnitPower("player", powerType)
     local maximum = UnitPowerMax("player", powerType)
     
-    -- Safety check - if values aren't ready yet, skip update
-    if not current or not maximum then return end
-    
     -- Update bar (safe to use secrets with SetValue/SetMinMaxValues)
+    -- These functions can handle secret/tainted values
     statusBar:SetMinMaxValues(0, maximum)
     statusBar:SetValue(current)
     
@@ -627,9 +625,8 @@ function ResourceBars:CreateSecondarySegments()
     
     local frame = self.secondaryBar
     local db = self.db.profile.secondary
-    local maxPower = UnitPowerMax("player", frame.resourceType)
-    
-    if maxPower == 0 then maxPower = 6 end -- Default fallback
+    -- Use fallback only if UnitPowerMax returns nil (0 is valid for loop)
+    local maxPower = UnitPowerMax("player", frame.resourceType) or 6
     
     -- Clear existing segments
     if frame.segments then
@@ -682,14 +679,31 @@ function ResourceBars:UpdateSecondaryResourceBar()
     if not self.secondaryBar or not self.secondaryBar:IsShown() then return end
     
     local frame = self.secondaryBar
-    local current = UnitPower("player", frame.resourceType)
+    local currentPower = UnitPower("player", frame.resourceType)
     
+    -- Update each segment using statusbar widgets that can handle tainted values
     for i, segment in ipairs(frame.segments) do
-        if i <= current then
-            segment:SetBackdropColor(segment.activeColor[1], segment.activeColor[2], segment.activeColor[3], 1)
-        else
-            segment:SetBackdropColor(segment.inactiveColor[1], segment.inactiveColor[2], segment.inactiveColor[3], 0.5)
+        if not segment.valueTracker then
+            -- Create a statusbar to track if this segment should be active
+            -- StatusBar:SetValue can handle tainted values safely
+            segment.valueTracker = CreateFrame("StatusBar", nil, segment)
+            segment.valueTracker:SetMinMaxValues(i - 1, i)  -- Active when power >= i
+            segment.valueTracker:Hide()
+            
+            -- Hook the statusbar value change
+            segment.valueTracker:SetScript("OnValueChanged", function(self, value)
+                local min, max = self:GetMinMaxValues()
+                -- If value is at or above the threshold (max), segment is active
+                if value == max then
+                    segment:SetBackdropColor(segment.activeColor[1], segment.activeColor[2], segment.activeColor[3], 1)
+                else
+                    segment:SetBackdropColor(segment.inactiveColor[1], segment.inactiveColor[2], segment.inactiveColor[3], 0.5)
+                end
+            end)
         end
+        
+        -- Pass the tainted value directly to SetValue (it can handle it)
+        segment.valueTracker:SetValue(currentPower)
     end
 end
 
