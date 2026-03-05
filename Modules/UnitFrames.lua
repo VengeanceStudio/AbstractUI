@@ -1039,6 +1039,12 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                     
                     AbstractUI:Print("Copied settings from " .. (sourceKey or "unknown") .. " to " .. (frameKey or "unknown"))
                     update()
+                    
+                    -- Refresh the options panel to show the new values
+                    local OptionsPanel = _G.AbstractUI_OptionsPanel
+                    if OptionsPanel and OptionsPanel.selectedNode then
+                        OptionsPanel:RenderContent(OptionsPanel.selectedNode)
+                    end
                 end,
             },
             raidTargetIconSize = {
