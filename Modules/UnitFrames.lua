@@ -1156,67 +1156,69 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         },
     }
     
-    -- Add text format options for all bars
-    options.textFormat = {
-        type = "group",
+    -- Add text display options (flattened for visibility)
+    options.textHeader = {
+        type = "header",
         name = "Display Text",
-        order = 3.5,
-        inline = true,
-        args = {
-            tagHelp = {
-                type = "execute",
-                name = "Show Tag Help",
-                desc = "Opens a window showing all available tags and examples",
-                order = 0.5,
-                func = function()
-                    if UnitFrames and UnitFrames.ShowTagHelp then
-                        UnitFrames:ShowTagHelp()
-                    end
-                end,
-            },
-            description = {
-                type = "description",
-                name = barType == "health" and "Use tags like [curhp], [maxhp], [perhp], [name], [level]. Mix with plain text: 'HP: [curhp]/[maxhp]'" or
-                      barType == "power" and "Use tags like [curpp], [maxpp], [perpp]. Mix with plain text: 'Mana: [curpp]'" or
-                      "Use tags like [name], [level]. Mix with plain text: '[name] Lvl [level]'",
-                order = 1,
-            },
-            textLeft = {
-                type = "input",
-                name = "Left Text",
-                desc = "Text to display on the left side of the " .. barType .. " bar.",
-                order = 2,
-                width = "full",
-                get = function() 
-                    local db = getDB()
-                    local defaults = {health = "", power = "", info = "[name]"}
-                    return db[barType] and db[barType].textLeft or defaults[barType] or ""
-                end,
-                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textLeft = v; update() end,
-            },
-            textCenter = {
-                type = "input",
-                name = "Center Text",
-                desc = "Text to display in the center of the " .. barType .. " bar.",
-                order = 3,
-                width = "full",
-                get = function() 
-                    local db = getDB()
-                    local defaults = {health = "[curhp] / [maxhp] ([perhp]%)", power = "", info = "[level]"}
-                    return db[barType] and db[barType].textCenter or defaults[barType] or ""
-                end,
-                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textCenter = v; update() end,
-            },
-            textRight = {
-                type = "input",
-                name = "Right Text",
-                desc = "Text to display on the right side of the " .. barType .. " bar.",
-                order = 4,
-                width = "full",
-                get = function() local db = getDB(); return db[barType] and db[barType].textRight or "" end,
-                set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textRight = v; update() end,
-            },
-        },
+        order = 3.4,
+    }
+    
+    options.tagHelp = {
+        type = "execute",
+        name = "Show Tag Help",
+        desc = "Opens a window showing all available tags and examples",
+        order = 3.41,
+        func = function()
+            if UnitFrames and UnitFrames.ShowTagHelp then
+                UnitFrames:ShowTagHelp()
+            end
+        end,
+    }
+    
+    options.textDesc = {
+        type = "description",
+        name = barType == "health" and "Use tags like [curhp], [maxhp], [perhp], [name], [level]. Mix with plain text: 'HP: [curhp]/[maxhp]'" or
+              barType == "power" and "Use tags like [curpp], [maxpp], [perpp]. Mix with plain text: 'Mana: [curpp]'" or
+              "Use tags like [name], [level]. Mix with plain text: '[name] Lvl [level]'",
+        order = 3.42,
+    }
+    
+    options.textLeft = {
+        type = "input",
+        name = "Left Text",
+        desc = "Text to display on the left side of the " .. barType .. " bar.",
+        order = 3.43,
+        width = "full",
+        get = function() 
+            local db = getDB()
+            local defaults = {health = "", power = "", info = "[name]"}
+            return db[barType] and db[barType].textLeft or defaults[barType] or ""
+        end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textLeft = v; update() end,
+    }
+    
+    options.textCenter = {
+        type = "input",
+        name = "Center Text",
+        desc = "Text to display in the center of the " .. barType .. " bar.",
+        order = 3.44,
+        width = "full",
+        get = function() 
+            local db = getDB()
+            local defaults = {health = "[curhp] / [maxhp] ([perhp]%)", power = "", info = "[level]"}
+            return db[barType] and db[barType].textCenter or defaults[barType] or ""
+        end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textCenter = v; update() end,
+    }
+    
+    options.textRight = {
+        type = "input",
+        name = "Right Text",
+        desc = "Text to display on the right side of the " .. barType .. " bar.",
+        order = 3.45,
+        width = "full",
+        get = function() local db = getDB(); return db[barType] and db[barType].textRight or "" end,
+        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textRight = v; update() end,
     }
     
     -- Add attachTo for power and info bars
