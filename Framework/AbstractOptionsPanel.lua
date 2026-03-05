@@ -1811,7 +1811,7 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
             -- Capture mousewheel on scrollArea to prevent parent scrolling
             scrollFrame.scrollArea:SetScript("OnMouseWheel", function(self, delta)
                 local maxScroll = math.max(0, scrollChild:GetHeight() - self:GetHeight())
-                local newScroll = self:GetVerticalScroll() - (delta * 60)
+                local newScroll = self:GetVerticalScroll() - (delta * 100)
                 newScroll = math.max(0, math.min(maxScroll, newScroll))
                 self:SetVerticalScroll(newScroll)
                 scrollFrame:UpdateScroll()
