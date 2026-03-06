@@ -926,8 +926,8 @@ function Tweaks:SetupOneKeyFishing()
         self.fishingButton:Hide()
         
         -- Register events to manage bindings
-        self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
-        self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
+        self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+        self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
     end
     
     -- Enable soft targeting (interact with mouseover)
