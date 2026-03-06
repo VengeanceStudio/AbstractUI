@@ -1043,22 +1043,25 @@ function Tweaks:SetupDelvePinRecoloring()
     
     local module = self
     
-    -- Hook into POI pin creation
-    hooksecurefunc(WorldMapFrame, "AcquirePin", function(self, pinFramePool)
-        -- Don't recolor if feature is disabled
-        if not module.db or not module.db.profile.recolorDelvePins then return end
-        
-        C_Timer.After(0.01, function()
-            module:ColorDelvePins()
-        end)
-    end)
+    -- Hook each pin pool's Acquire function to color pins as they're created
+    if WorldMapFrame.pinPools then
+        for pinTemplate, pinPool in pairs(WorldMapFrame.pinPools) do
+            hooksecurefunc(pinPool, "Acquire", function(pool)
+                if not module.db or not module.db.profile.recolorDelvePins then return end
+                
+                C_Timer.After(0.01, function()
+                    module:ColorDelvePins()
+                end)
+            end)
+        end
+    end
     
-    -- Also hook RefreshAllData to catch map changes
+    -- Hook RefreshAllDataProviders to catch map changes
     if WorldMapFrame.RefreshAllDataProviders then
         hooksecurefunc(WorldMapFrame, "RefreshAllDataProviders", function()
             if not module.db or not module.db.profile.recolorDelvePins then return end
             
-            C_Timer.After(0.01, function()
+            C_Timer.After(0.05, function()
                 module:ColorDelvePins()
             end)
         end)
@@ -1078,56 +1081,111 @@ function Tweaks:ColorDelvePins()
     
     local color = self.db.profile.delvePinColor
     
-    -- Iterate through all map canvas data providers
-    for provider in WorldMapFrame:EnumerateAllPins() do
-        if provider then
-            local shouldColor = false
-            
-            -- Check texture atlas
-            if provider.texture then
-                local atlas = provider.texture:GetAtlas()
-                if atlas then
-                    local atlasLower = string.lower(atlas)
-                    if string.find(atlasLower, "delve") then
-                        shouldColor = true
+    -- Iterate through all pin pools and their active pins
+    if WorldMapFrame.pinPools then
+        for pinTemplate, pinPool in pairs(WorldMapFrame.pinPools) do
+            if pinPool.activeObjects then
+                for pin in pinPool:EnumerateActive() do
+                    if pin then
+                        local shouldColor = false
+                        
+                        -- Check texture atlas
+                        if pin.Texture then
+                            local atlas = pin.Texture:GetAtlas()
+                            if atlas then
+                                local atlasLower = string.lower(atlas)
+                                if string.find(atlasLower, "delve") then
+                                    shouldColor = true
+                                end
+                            end
+                        end
+                        
+                        -- Check pin template
+                        if pinTemplate then
+                            local templateLower = string.lower(pinTemplate)
+                            if string.find(templateLower, "delve") then
+                                shouldColor = true
+                            end
+                        end
+                        
+                        -- Check name if available
+                        if pin.name then
+                            local nameLower = string.lower(pin.name)
+                            if string.find(nameLower, "delve") then
+                                shouldColor = true
+                            end
+                        end
+                        
+                        -- Check tooltip text (OnMouseEnter info)
+                        if pin.description then
+                            local descLower = string.lower(pin.description)
+                            if string.find(descLower, "delve") then
+                                shouldColor = true
+                            end
+                        end
+                        
+                        -- Check POI info if available
+                        if pin.poiInfo then
+                            local name = pin.poiInfo.name or ""
+                            local nameLower = string.lower(name)
+                            if string.find(nameLower, "delve") then
+                                shouldColor = true
+                            end
+                        end
+                        
+                        -- Apply color if this is a delve pin
+                        if shouldColor then
+                            if pin.Texture then
+                                pin.Texture:SetVertexColor(color.r, color.g, color.b, 1)
+                            end
+                            
+                            -- Also color the background/highlight if present
+                            if pin.Background then
+                                pin.Background:SetVertexColor(color.r * 0.8, color.g * 0.8, color.b * 0.8, 0.8)
+                            end
+                            if pin.Highlight then
+                                pin.Highlight:SetVertexColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
+                            end
+                        end
                     end
                 end
             end
-            
-            -- Check pin template
-            if provider.pinTemplate then
-                local templateLower = string.lower(provider.pinTemplate)
-                if string.find(templateLower, "delve") then
-                    shouldColor = true
-                end
-            end
-            
-            -- Check name if available
-            if provider.name then
-                local nameLower = string.lower(provider.name)
-                if string.find(nameLower, "delve") then
-                    shouldColor = true
-                end
-            end
-            
-            -- Check tooltip text
-            if provider.description then
-                local descLower = string.lower(provider.description)
-                if string.find(descLower, "delve") then
-                    shouldColor = true
-                end
-            end
-            
-            -- Apply color if this is a delve pin
-            if shouldColor and provider.texture then
-                provider.texture:SetVertexColor(color.r, color.g, color.b, 1)
-                
-                -- Also color the background/highlight if present
-                if provider.Background then
-                    provider.Background:SetVertexColor(color.r * 0.8, color.g * 0.8, color.b * 0.8, 0.8)
-                end
-                if provider.Highlight then
-                    provider.Highlight:SetVertexColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
+        end
+    end
+    
+    -- Alternative: Check data providers directly
+    if WorldMapFrame.dataProviders then
+        for _, provider in ipairs(WorldMapFrame.dataProviders) do
+            if provider.GetMap and provider:GetMap() then
+                -- Some providers have a pins table
+                if provider.pins then
+                    for pin in pairs(provider.pins) do
+                        if pin then
+                            local shouldColor = false
+                            
+                            if pin.Texture then
+                                local atlas = pin.Texture:GetAtlas()
+                                if atlas then
+                                    local atlasLower = string.lower(atlas)
+                                    if string.find(atlasLower, "delve") then
+                                        shouldColor = true
+                                    end
+                                end
+                            end
+                            
+                            if pin.poiInfo then
+                                local name = pin.poiInfo.name or ""
+                                local nameLower = string.lower(name)
+                                if string.find(nameLower, "delve") then
+                                    shouldColor = true
+                                end
+                            end
+                            
+                            if shouldColor and pin.Texture then
+                                pin.Texture:SetVertexColor(color.r, color.g, color.b, 1)
+                            end
+                        end
+                    end
                 end
             end
         end
