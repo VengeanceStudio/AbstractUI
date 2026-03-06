@@ -249,7 +249,8 @@ function AddonManager:GetAddonStatus(addon)
         color, note = "ff8000", "Dependency Out of Date"
     elseif reason == "MISSING" then
         color, note = "ff0000", "Missing"
-    elseif reason == "NOT_DEMAND_LOADED" then
+    elseif isondemand and not loaded then
+        -- Load on demand addons (use isondemand flag, not reason string)
         color, note = "0070dd", "Load on Demand"
     elseif reason and not loaded then
         color, note = "ff8000", reason
