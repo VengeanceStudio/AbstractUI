@@ -2924,7 +2924,10 @@ end
                 -- inCombat parameter: true = in combat, false = not in combat, nil = use InCombatLockdown()
                 function UnitFrames:UpdatePlayerStatusIcons(inCombat)
                     local frame = _G["AbstractUI_PlayerFrame"]
-                    if not frame then return end
+                    if not frame then 
+                        print("AbstractUI: No player frame found")
+                        return 
+                    end
                     
                     -- Update AFK text
                     if frame.afkTextFrame then
@@ -2941,11 +2944,16 @@ end
                         if inCombat == nil then
                             inCombat = InCombatLockdown()
                         end
+                        print("AbstractUI: Updating combat icon, inCombat =", inCombat, "frame exists:", frame.combatIconFrame ~= nil)
                         if inCombat then
                             frame.combatIconFrame:Show()
+                            print("AbstractUI: Showing combat icon")
                         else
                             frame.combatIconFrame:Hide()
+                            print("AbstractUI: Hiding combat icon")
                         end
+                    else
+                        print("AbstractUI: Combat icon frame doesn't exist yet")
                     end
                     
                     -- Update Resting icon
