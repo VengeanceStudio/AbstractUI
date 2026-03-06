@@ -1075,14 +1075,6 @@ function Tweaks:SetupDelvePinRecoloring()
         end)
     end
     
-    -- Hook minimap when POI shows
-    hooksecurefunc("Minimap_SetPOIIconTexture", function()
-        if not module.db or not module.db.profile.recolorDelvePins then return end
-        C_Timer.After(0.02, function()
-            module:ColorMinimapDelvePins()
-        end)
-    end)
-    
     -- Periodic minimap refresh (minimap pins update frequently)
     C_Timer.NewTicker(2, function()
         if module.db and module.db.profile.recolorDelvePins then
