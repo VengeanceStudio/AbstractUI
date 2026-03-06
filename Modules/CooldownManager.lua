@@ -642,7 +642,9 @@ function CooldownManager:GetSpellKeybind(spellID)
     if C_ActionBar and C_ActionBar.FindSpellActionButtons then
         local slots = C_ActionBar.FindSpellActionButtons(spellID)
         
-        if slots and #slots > 0 then
+        -- Don't check #slots - during combat it's a secret table and we can't use # operator
+        -- Just iterate with ipairs which handles empty/secret tables gracefully
+        if slots then
             -- If spell is in multiple slots, try to find one with a keybind
             -- Prefer keybinds with modifiers (Ctrl, Shift, Alt) over plain keys
             local bestSlot = nil
