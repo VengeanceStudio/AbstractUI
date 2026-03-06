@@ -619,13 +619,15 @@ function CooldownManager:CleanKeybindText(text)
 end
 
 function CooldownManager:GetSpellKeybind(spellID)
-    if not spellID then return nil end
+    if not spellID or type(spellID) ~= "number" then return nil end
     
     -- First, try to get direct spell keybind (for spells bound directly, not via action bars)
     local spellName = C_Spell.GetSpellName(spellID)
-    if spellName and type(spellName) == "string" then
-        local key1, key2 = GetBindingKey("SPELL " .. spellName)
-        if key1 or key2 then
+    if spellName and type(spellName) == "string" and spellName ~= "" then
+        -- Ensure the command string is valid before calling GetBindingKey
+        local command = "SPELL " .. spellName
+        local success, key1, key2 = pcall(GetBindingKey, command)
+        if success and (key1 or key2) then
             local directBind = key1 or key2
             directBind = directBind:gsub("SHIFT%-", "S")
             directBind = directBind:gsub("CTRL%-", "C")
