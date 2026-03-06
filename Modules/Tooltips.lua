@@ -710,7 +710,8 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     end
     
     -- Player status (AFK/DND)
-    if self.db.profile.showStatus then
+    -- Skip during combat to avoid secret boolean taint
+    if self.db.profile.showStatus and not InCombatLockdown() then
         if UnitIsAFK(unit) then
             tooltip:AddLine("|cffFF0000<AFK>|r")
         elseif UnitIsDND(unit) then
@@ -730,11 +731,10 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     -- Target of target
     if self.db.profile.showTargetOf then
         local target = unit .. "target"
-        if UnitExists(target) then
-            local targetName = UnitName(target)
-            if targetName then
-                tooltip:AddLine("Target: " .. targetName, 0.7, 0.7, 1)
-            end
+        -- Use UnitName to check existence (doesn't return secret values)
+        local targetName = UnitName(target)
+        if targetName then
+            tooltip:AddLine("Target: " .. targetName, 0.7, 0.7, 1)
         end
     end
     
@@ -831,10 +831,16 @@ function Tooltips:PLAYER_TARGET_CHANGED()
     if not self.db.profile.showItemLevel then return end
     
     local unit = "target"
-    if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
-    
+    -- Use UnitGUID to check existence (doesn't return secret values)
     local guid = UnitGUID(unit)
     if not guid then return end
+    
+    -- Check if unit is a player (pcall to handle secret boolean during combat)
+    local isPlayer = false
+    pcall(function()
+        isPlayer = UnitIsPlayer(unit)
+    end)
+    if not isPlayer then return end
     
     -- Check if we already have cached data
     local cached = self:GetCachedItemLevel(guid)
