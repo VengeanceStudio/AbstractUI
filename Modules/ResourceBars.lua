@@ -356,7 +356,7 @@ function ResourceBars:UpdatePrimaryResourceBar()
         end
     end
     
-    -- Update text - pass secret values directly without converting
+    -- Update text - pass secret values using SetFormattedText to avoid concatenation
     if db.showText and statusBar.text then
         if db.showPercentage then
             -- Use UnitPowerPercent but format to remove decimals
@@ -372,8 +372,9 @@ function ResourceBars:UpdatePrimaryResourceBar()
                 statusBar.text:SetText("0%")
             end
         else
-            -- Show current / max values
-            statusBar.text:SetText(current .. " / " .. maximum)
+            -- Show current / max values - use SetFormattedText to handle secret numbers
+            -- SetFormattedText can accept secret numbers as parameters
+            pcall(statusBar.text.SetFormattedText, statusBar.text, "%s / %s", current, maximum)
         end
     end
 end
@@ -625,8 +626,13 @@ function ResourceBars:CreateSecondarySegments()
     
     local frame = self.secondaryBar
     local db = self.db.profile.secondary
-    -- Use fallback only if UnitPowerMax returns nil (0 is valid for loop)
-    local maxPower = UnitPowerMax("player", frame.resourceType) or 6
+    
+    -- Get max power safely to avoid secret number taint
+    local maxPower = 6 -- Default fallback
+    local success, value = pcall(UnitPowerMax, "player", frame.resourceType)
+    if success and value and value > 0 then
+        maxPower = value
+    end
     
     -- Clear existing segments
     if frame.segments then
@@ -679,6 +685,9 @@ function ResourceBars:UpdateSecondaryResourceBar()
     if not self.secondaryBar or not self.secondaryBar:IsShown() then return end
     
     local frame = self.secondaryBar
+    
+    -- Get current power safely - UnitPower returns secret number during combat
+    -- We can't compare or do arithmetic with it, only pass it to SetValue
     local currentPower = UnitPower("player", frame.resourceType)
     
     -- Update each segment using statusbar widgets that can handle tainted values
@@ -694,7 +703,7 @@ function ResourceBars:UpdateSecondaryResourceBar()
             segment.valueTracker:SetScript("OnValueChanged", function(self, value)
                 local min, max = self:GetMinMaxValues()
                 -- If value is at or above the threshold (max), segment is active
-                if value == max then
+                if value >= max then
                     segment:SetBackdropColor(segment.activeColor[1], segment.activeColor[2], segment.activeColor[3], 1)
                 else
                     segment:SetBackdropColor(segment.inactiveColor[1], segment.inactiveColor[2], segment.inactiveColor[3], 0.5)
@@ -702,8 +711,9 @@ function ResourceBars:UpdateSecondaryResourceBar()
             end)
         end
         
-        -- Pass the tainted value directly to SetValue (it can handle it)
-        segment.valueTracker:SetValue(currentPower)
+        -- Pass the potentially secret value directly to SetValue (it can handle it)
+        -- SetValue will trigger OnValueChanged with a non-secret value parameter
+        pcall(segment.valueTracker.SetValue, segment.valueTracker, currentPower)
     end
 end
 
