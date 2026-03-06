@@ -1589,12 +1589,19 @@ end
         
         print("AbstractUI: PLAYER_REGEN_ENABLED fired - leaving combat")
         
-        -- Update player frame and status icons (not in combat)
+        -- Update player frame and status icons
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(false) from REGEN_ENABLED")
-            self:UpdatePlayerStatusIcons(false)
+            -- Update combat icon immediately but skip other status icons (they might still be tainted)
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(false, skipNonCombat=true) from REGEN_ENABLED")
+            self:UpdatePlayerStatusIcons(false, "REGEN_ENABLED", true)
+            
+            -- Schedule delayed update for non-combat status icons after taint clears
+            C_Timer.After(2, function()
+                print("AbstractUI: Delayed status icon update after combat ended")
+                self:UpdatePlayerStatusIcons(false, "REGEN_ENABLED_DELAYED", false)
+            end)
         end
         
         -- Start regen ticker for out-of-combat regeneration
@@ -1683,8 +1690,15 @@ end
         print("AbstractUI: ENCOUNTER_END fired - boss encounter ended:", encounterName)
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(false) from ENCOUNTER_END")
-            self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END")
+            -- Update combat icon immediately but skip other status icons (they might still be tainted)
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(false, skipNonCombat=true) from ENCOUNTER_END")
+            self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END", true)
+            
+            -- Schedule delayed update for non-combat status icons after taint clears
+            C_Timer.After(2, function()
+                print("AbstractUI: Delayed status icon update after encounter ended")
+                self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END_DELAYED", false)
+            end)
         end
     end
 
@@ -2948,26 +2962,17 @@ end
                 -- Update player status icons (AFK, Combat, Resting, Dead)
                 -- Called only on specific events to avoid taint during combat updates
                 -- inCombat parameter: true = in combat, false = not in combat, nil = use InCombatLockdown()
-                function UnitFrames:UpdatePlayerStatusIcons(inCombat, caller)
+                -- skipNonCombat: if true, only update combat icon (use when leaving combat to avoid taint)
+                function UnitFrames:UpdatePlayerStatusIcons(inCombat, caller, skipNonCombat)
                     local frame = _G["AbstractUI_PlayerFrame"]
                     if not frame then 
                         print("AbstractUI: No player frame found")
                         return 
                     end
                     
-                    print("AbstractUI: UpdatePlayerStatusIcons called with inCombat =", tostring(inCombat), "caller =", caller or "unknown")
+                    print("AbstractUI: UpdatePlayerStatusIcons called with inCombat =", tostring(inCombat), "caller =", caller or "unknown", "skipNonCombat =", tostring(skipNonCombat))
                     
-                    -- Update AFK text
-                    if frame.afkTextFrame then
-                        local isAFK = UnitIsAFK("player")
-                        if isAFK then
-                            frame.afkTextFrame:Show()
-                        else
-                            frame.afkTextFrame:Hide()
-                        end
-                    end
-                    
-                    -- Update Combat icon (use event-based state to avoid secret values)
+                    -- Update Combat icon first (use event-based state to avoid secret values)
                     if frame.combatIconFrame then
                         if inCombat == nil then
                             inCombat = InCombatLockdown()
@@ -2982,6 +2987,22 @@ end
                         end
                     else
                         print("AbstractUI: Combat icon frame doesn't exist yet")
+                    end
+                    
+                    -- Skip other status updates if requested (when leaving combat to avoid taint)
+                    if skipNonCombat then
+                        print("AbstractUI: Skipping non-combat status icons due to skipNonCombat flag")
+                        return
+                    end
+                    
+                    -- Update AFK text
+                    if frame.afkTextFrame then
+                        local isAFK = UnitIsAFK("player")
+                        if isAFK then
+                            frame.afkTextFrame:Show()
+                        else
+                            frame.afkTextFrame:Hide()
+                        end
                     end
                     
                     -- Update Resting icon
