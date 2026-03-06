@@ -1576,16 +1576,22 @@ end
             SetBlizzardFramesHidden(self)
             self.blizzardFramesHidden = true
         end
+        
+        -- Initialize player status icons
+        if self.db.profile.showPlayer and _G["AbstractUI_PlayerFrame"] then
+            self:UpdatePlayerStatusIcons()
+        end
     end
 
     function UnitFrames:PLAYER_REGEN_ENABLED()
         -- Re-register state drivers when leaving combat to fix any visibility issues
         if not self.db or not self.db.profile then return end
         
-        -- Update player frame to hide combat icon
+        -- Update player frame and status icons
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
+            self:UpdatePlayerStatusIcons()
         end
         
         -- Start regen ticker for out-of-combat regeneration
@@ -1641,6 +1647,7 @@ end
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
+            self:UpdatePlayerStatusIcons()
         end
     end
 
@@ -2584,32 +2591,7 @@ end
                         end
                     end
 
-                    -- Update status icons (skip during combat to avoid taint issues)
-                    if unit == "player" and not InCombatLockdown() then
-                        -- Update AFK text
-                        if frame.afkTextFrame then
-                            local isAFK = UnitIsAFK("player")
-                            frame.afkTextFrame:SetShown(isAFK)
-                        end
-                        
-                        -- Update Combat icon
-                        if frame.combatIconFrame then
-                            local inCombat = UnitAffectingCombat("player")
-                            frame.combatIconFrame:SetShown(inCombat)
-                        end
-                        
-                        -- Update Resting icon
-                        if frame.restingIconFrame then
-                            local isResting = IsResting()
-                            frame.restingIconFrame:SetShown(isResting)
-                        end
-                        
-                        -- Update Dead indicator
-                        if frame.deadTextFrame then
-                            local isDead = UnitIsDead("player")
-                            frame.deadTextFrame:SetShown(isDead)
-                        end
-                    end
+                    -- Status icons are updated separately via UpdatePlayerStatusIcons() to avoid taint
                     
                     -- Update raid target icon (for all frames)
                     if frame.raidTargetIconFrame and frame.raidTargetIcon then
@@ -2937,6 +2919,53 @@ end
                     -- Do NOT call SetBlizzardFramesHidden - causes catastrophic state driver accumulation
                 end
 
+                -- Update player status icons (AFK, Combat, Resting, Dead)
+                -- Called only on specific events to avoid taint during combat updates
+                function UnitFrames:UpdatePlayerStatusIcons()
+                    local frame = _G["AbstractUI_PlayerFrame"]
+                    if not frame then return end
+                    
+                    -- Update AFK text
+                    if frame.afkTextFrame then
+                        local isAFK = UnitIsAFK("player")
+                        if isAFK then
+                            frame.afkTextFrame:Show()
+                        else
+                            frame.afkTextFrame:Hide()
+                        end
+                    end
+                    
+                    -- Update Combat icon
+                    if frame.combatIconFrame then
+                        local inCombat = UnitAffectingCombat("player")
+                        if inCombat then
+                            frame.combatIconFrame:Show()
+                        else
+                            frame.combatIconFrame:Hide()
+                        end
+                    end
+                    
+                    -- Update Resting icon
+                    if frame.restingIconFrame then
+                        local isResting = IsResting()
+                        if isResting then
+                            frame.restingIconFrame:Show()
+                        else
+                            frame.restingIconFrame:Hide()
+                        end
+                    end
+                    
+                    -- Update Dead indicator
+                    if frame.deadTextFrame then
+                        local isDead = UnitIsDead("player")
+                        if isDead then
+                            frame.deadTextFrame:Show()
+                        else
+                            frame.deadTextFrame:Hide()
+                        end
+                    end
+                end
+
                 -- Smart regeneration ticker - runs for 15 seconds after health/power changes
                 function UnitFrames:CheckRegenTicker()
                     -- Can't compare secret numbers, so use a simple timeout approach
@@ -3014,7 +3043,18 @@ end
                     self:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
                     self:RegisterEvent("PLAYER_FLAGS_CHANGED")
                     self:RegisterEvent("PLAYER_UPDATE_RESTING")
+                    self:RegisterEvent("UNIT_HEALTH")
                     self:PLAYER_ENTERING_WORLD()
+                end
+                
+                -- Handle AFK and other player flags
+                function UnitFrames:PLAYER_FLAGS_CHANGED()
+                    self:UpdatePlayerStatusIcons()
+                end
+                
+                -- Handle resting state changes
+                function UnitFrames:PLAYER_UPDATE_RESTING()
+                    self:UpdatePlayerStatusIcons()
                 end
 
                 function UnitFrames:GetTargetOptions()
