@@ -206,6 +206,15 @@ function AddonManager:SpecialCaseName(name)
     return name
 end
 
+function AddonManager:StripColorCodes(text)
+    if not text then return text end
+    -- Strip color codes like |cffRRGGBB and |cRRGGBBRR
+    text = text:gsub("|c%x%x%x%x%x%x%x%x", "")
+    -- Strip color reset |r
+    text = text:gsub("|r", "")
+    return text
+end
+
 function AddonManager:GetAddonStatus(addon)
     local addonnum = tonumber(addon)
     if addonnum and (addonnum == 0 or addonnum > GetNumAddOns()) then
@@ -222,27 +231,28 @@ function AddonManager:GetAddonStatus(addon)
     -- Red (ff0000): Incompatible/Out of date addons that won't load
     -- Orange (ff8000): Dependencies issues or other warnings
     -- Gray (9d9d9d): Disabled addons
-    -- Blue (0070dd): Load on demand addons
-    -- Green (1eff00): Loadable on demand addons
-    -- Purple (a335ee): Will be disabled on reload
+    -- Blue (0070dd): Load on demand addons (not loaded)
+    -- Purple (a335ee): Loaded but will be disabled on reload
     -- White (ffffff): Normal/loaded addons
+    -- Note: Yellow/gold colors in addon names come from the addon's own TOC file
     
-    if reason == "DISABLED" then
+    -- Check loaded status first
+    if loaded and enabled then
+        color, note = "ffffff", ""
+    elseif loaded and not enabled then
+        color, note = "a335ee", "Disabled on Reload"
+    elseif reason == "DISABLED" then
         color, note = "9d9d9d", "Disabled"
     elseif reason == "INTERFACE_VERSION" or reason == "INCOMPATIBLE" then
         color, note = "ff0000", "Out of Date - Will Not Load"
     elseif reason == "DEP_INTERFACE_VERSION" or reason == "DEP_INCOMPATIBLE" then
         color, note = "ff8000", "Dependency Out of Date"
+    elseif reason == "MISSING" then
+        color, note = "ff0000", "Missing"
     elseif reason == "NOT_DEMAND_LOADED" then
         color, note = "0070dd", "Load on Demand"
     elseif reason and not loaded then
         color, note = "ff8000", reason
-    elseif loadable and isondemand and not loaded and enabled then
-        color, note = "1eff00", "Loadable on Demand"
-    elseif loaded and not enabled then
-        color, note = "a335ee", "Disabled on Reload"
-    elseif reason == "MISSING" then
-        color, note = "ff0000", "Missing"
     else
         color, note = "ffffff", ""
     end
@@ -1361,6 +1371,8 @@ function AddonManager:UpdateDisplay()
                         local enabled = GetAddOnEnableState(UnitGUID("player"), blizzName) > 0
                         
                         entry.checkbox:SetChecked(enabled)
+                        
+                        -- Keep Blizzard addons in blue to distinguish them
                         entry.titleText:SetText("|cff7f7fff" .. blizzName)
                         
                         if loaded then
@@ -1384,7 +1396,9 @@ function AddonManager:UpdateDisplay()
                         entry.checkbox:SetChecked(enabled)
                         
                         local color, statusText = self:GetAddonStatus(index)
-                        entry.titleText:SetText("|cff" .. color .. (title or name))
+                        -- Strip any color codes from the addon title and apply our own
+                        local cleanTitle = self:StripColorCodes(title or name)
+                        entry.titleText:SetText("|cff" .. color .. cleanTitle)
                         entry.statusText:SetText("|cff" .. color .. statusText)
                         
                         -- Show load button for LOD addons
