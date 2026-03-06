@@ -1579,7 +1579,7 @@ end
         
         -- Initialize player status icons
         if self.db.profile.showPlayer and _G["AbstractUI_PlayerFrame"] then
-            self:UpdatePlayerStatusIcons()
+            self:UpdatePlayerStatusIcons(nil, "PLAYER_ENTERING_WORLD")
         end
     end
 
@@ -1587,10 +1587,13 @@ end
         -- Re-register state drivers when leaving combat to fix any visibility issues
         if not self.db or not self.db.profile then return end
         
+        print("AbstractUI: PLAYER_REGEN_ENABLED fired - leaving combat")
+        
         -- Update player frame and status icons (not in combat)
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(false) from REGEN_ENABLED")
             self:UpdatePlayerStatusIcons(false)
         end
         
@@ -1637,6 +1640,8 @@ end
         -- Update player frame to show combat icon when entering combat
         if not self.db or not self.db.profile then return end
         
+        print("AbstractUI: PLAYER_REGEN_DISABLED fired - entering combat")
+        
         -- Stop regen ticker during combat (combat events are frequent enough)
         if self.regenTicker then
             self.regenTicker:Cancel()
@@ -1647,6 +1652,7 @@ end
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(true) from REGEN_DISABLED")
             self:UpdatePlayerStatusIcons(true)
         end
     end
@@ -2922,12 +2928,14 @@ end
                 -- Update player status icons (AFK, Combat, Resting, Dead)
                 -- Called only on specific events to avoid taint during combat updates
                 -- inCombat parameter: true = in combat, false = not in combat, nil = use InCombatLockdown()
-                function UnitFrames:UpdatePlayerStatusIcons(inCombat)
+                function UnitFrames:UpdatePlayerStatusIcons(inCombat, caller)
                     local frame = _G["AbstractUI_PlayerFrame"]
                     if not frame then 
                         print("AbstractUI: No player frame found")
                         return 
                     end
+                    
+                    print("AbstractUI: UpdatePlayerStatusIcons called with inCombat =", tostring(inCombat), "caller =", caller or "unknown")
                     
                     -- Update AFK text
                     if frame.afkTextFrame then
@@ -2944,13 +2952,13 @@ end
                         if inCombat == nil then
                             inCombat = InCombatLockdown()
                         end
-                        print("AbstractUI: Updating combat icon, inCombat =", inCombat, "frame exists:", frame.combatIconFrame ~= nil)
+                        print("AbstractUI: Combat icon - final inCombat =", inCombat)
                         if inCombat then
                             frame.combatIconFrame:Show()
-                            print("AbstractUI: Showing combat icon")
+                            print("AbstractUI: Combat icon SHOWN")
                         else
                             frame.combatIconFrame:Hide()
-                            print("AbstractUI: Hiding combat icon")
+                            print("AbstractUI: Combat icon HIDDEN")
                         end
                     else
                         print("AbstractUI: Combat icon frame doesn't exist yet")
@@ -3060,12 +3068,12 @@ end
                 
                 -- Handle AFK and other player flags
                 function UnitFrames:PLAYER_FLAGS_CHANGED()
-                    self:UpdatePlayerStatusIcons()
+                    self:UpdatePlayerStatusIcons(nil, "PLAYER_FLAGS_CHANGED")
                 end
                 
                 -- Handle resting state changes
                 function UnitFrames:PLAYER_UPDATE_RESTING()
-                    self:UpdatePlayerStatusIcons()
+                    self:UpdatePlayerStatusIcons(nil, "PLAYER_UPDATE_RESTING")
                 end
 
                 function UnitFrames:GetTargetOptions()
