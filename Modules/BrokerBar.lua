@@ -644,11 +644,20 @@ end
 
 function BrokerBar:UpdateLocation()
     if not locObj then return end
+    local config = self:GetSafeConfig("AbstractLocation")
     local z = GetZoneText() or "Unknown"
-    -- Always update if lastState.zone is not set (initialization), or if zone changed
-    if not lastState.zone or z ~= lastState.zone then 
-        lastState.zone = z
-        locObj.text = z 
+    local sz = GetSubZoneText() or ""
+    
+    -- Build the text based on config
+    local text = z
+    if config.showSubZone and sz ~= "" and sz ~= z then
+        text = z .. ": " .. sz
+    end
+    
+    -- Always update if lastState.zone is not set (initialization), or if zone/subzone changed
+    if not lastState.zone or text ~= lastState.zone then 
+        lastState.zone = text
+        locObj.text = text 
     end
 end
 
@@ -706,6 +715,7 @@ function BrokerBar:GetSafeConfig(name)
         
         -- Special case: Location should show coordinates by default
         local defaultShowCoords = (name == "AbstractLocation")
+        local defaultShowSubZone = (name == "AbstractLocation") and false or nil
         
         -- Special case: Volume should default to 5% step size
         local defaultVolumeStep = (name == "AbstractVolume") and 0.05 or nil
@@ -718,6 +728,7 @@ function BrokerBar:GetSafeConfig(name)
             showText = true, 
             showLabel = false, 
             showCoords = defaultShowCoords,
+            showSubZone = defaultShowSubZone,
             volumeStep = defaultVolumeStep
         } 
     end
@@ -1094,6 +1105,7 @@ function BrokerBar:OnDBReady()
     self:RegisterEvent("BAG_UPDATE", "UpdateBagCount")
     self:RegisterEvent("ZONE_CHANGED", "UpdateLocation")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateLocation")
+    self:RegisterEvent("ZONE_CHANGED_INDOORS", "UpdateLocation")
     self:RegisterEvent("UPDATE_INVENTORY_DURABILITY", "UpdateDurability")
     self:RegisterEvent("BN_FRIEND_ACCOUNT_ONLINE", "UpdateFriendsCount")
     self:RegisterEvent("BN_FRIEND_ACCOUNT_OFFLINE", "UpdateFriendsCount")
@@ -1371,6 +1383,14 @@ function BrokerBar:GetPluginOptions()
                     values = { [0] = "None (60, 45)", [1] = "One (60.5, 45.3)", [2] = "Two (60.52, 45.37)" },
                     get = function() return self.db.profile.brokers[name].coordDecimals or 0 end, 
                     set = function(_, v) self.db.profile.brokers[name].coordDecimals = v; self:UpdateBarLayout(self.db.profile.brokers[name].bar) end 
+                } or nil,
+                showSubZone = isLoc and { 
+                    name = "Show SubZone", 
+                    desc = "Shows the local area or building name after the zone (e.g., 'Silvermoon City: Thalassian University')",
+                    type = "toggle", 
+                    order = 11.5, 
+                    get = function() return self.db.profile.brokers[name].showSubZone end, 
+                    set = function(_, v) self.db.profile.brokers[name].showSubZone = v; self:UpdateLocation(); self:UpdateBarLayout(self.db.profile.brokers[name].bar) end 
                 } or nil,
                 volumeStep = isVol and {
                     name = "Step Size",
