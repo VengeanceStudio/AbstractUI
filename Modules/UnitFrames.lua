@@ -1667,6 +1667,26 @@ end
             end
         end
     end
+    
+    function UnitFrames:ENCOUNTER_START(event, encounterID, encounterName, difficultyID, groupSize)
+        -- Boss encounter started - show combat icon as backup to PLAYER_REGEN_DISABLED
+        print("AbstractUI: ENCOUNTER_START fired - boss encounter started:", encounterName)
+        local playerFrame = _G["AbstractUI_PlayerFrame"]
+        if playerFrame then
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(true) from ENCOUNTER_START")
+            self:UpdatePlayerStatusIcons(true, "ENCOUNTER_START")
+        end
+    end
+    
+    function UnitFrames:ENCOUNTER_END(event, encounterID, encounterName, difficultyID, groupSize, success)
+        -- Boss encounter ended - hide combat icon as backup to PLAYER_REGEN_ENABLED
+        print("AbstractUI: ENCOUNTER_END fired - boss encounter ended:", encounterName)
+        local playerFrame = _G["AbstractUI_PlayerFrame"]
+        if playerFrame then
+            print("AbstractUI: Calling UpdatePlayerStatusIcons(false) from ENCOUNTER_END")
+            self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END")
+        end
+    end
 
     function UnitFrames:UNIT_TARGET(event, unit)
         if unit == "target" and self.db.profile.showTargetTarget then
@@ -3048,6 +3068,8 @@ end
                     self:UnregisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
                     self:UnregisterEvent("PLAYER_FLAGS_CHANGED")
                     self:UnregisterEvent("PLAYER_UPDATE_RESTING")
+                    self:UnregisterEvent("ENCOUNTER_START")
+                    self:UnregisterEvent("ENCOUNTER_END")
                     
                     -- Now register them cleanly
                     self:RegisterEvent("UNIT_HEALTH")
@@ -3062,7 +3084,8 @@ end
                     self:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
                     self:RegisterEvent("PLAYER_FLAGS_CHANGED")
                     self:RegisterEvent("PLAYER_UPDATE_RESTING")
-                    self:RegisterEvent("UNIT_HEALTH")
+                    self:RegisterEvent("ENCOUNTER_START")
+                    self:RegisterEvent("ENCOUNTER_END")
                     self:PLAYER_ENTERING_WORLD()
                 end
                 
