@@ -225,10 +225,14 @@ function Tweaks:PLAYER_ENTERING_WORLD()
     if self.tweaksInitialized then 
         -- But do refresh delve pins on zone change
         if self.db and self.db.profile.recolorDelvePins then
+            -- Multiple attempts to catch minimap pins as they load
+            C_Timer.After(0.5, function() self:ColorMinimapDelvePins() end)
             C_Timer.After(1, function()
                 self:ColorDelvePins()
                 self:ColorMinimapDelvePins()
             end)
+            C_Timer.After(2, function() self:ColorMinimapDelvePins() end)
+            C_Timer.After(3, function() self:ColorMinimapDelvePins() end)
         end
         return 
     end
@@ -1102,8 +1106,8 @@ function Tweaks:SetupDelvePinRecoloring()
     self:RegisterEvent("LORE_TEXT_UPDATED_CAMPAIGN")
     self:RegisterEvent("QUEST_LOG_UPDATE")
     
-    -- Periodic minimap refresh
-    C_Timer.NewTicker(2, function()
+    -- Periodic minimap refresh (check every 1 second)
+    C_Timer.NewTicker(1, function()
         if module.db and module.db.profile.recolorDelvePins then
             module:ColorMinimapDelvePins()
         end
@@ -1111,9 +1115,15 @@ function Tweaks:SetupDelvePinRecoloring()
     
     self.delvePinHooked = true
     
-    -- Apply initial coloring
+    -- Apply initial coloring with multiple attempts
+    C_Timer.After(0.5, function()
+        self:ColorMinimapDelvePins()
+    end)
     C_Timer.After(1, function()
         self:ColorDelvePins()
+        self:ColorMinimapDelvePins()
+    end)
+    C_Timer.After(2, function()
         self:ColorMinimapDelvePins()
     end)
 end
@@ -1191,42 +1201,69 @@ function Tweaks:ColorMinimapDelvePins()
     local poiInfos = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
     if not poiInfos then return end
     
-    -- Check each POI on the minimap
+    -- Build list of delve POI IDs
+    local delvePOIs = {}
     for _, poiID in ipairs(poiInfos) do
         local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
         if poiInfo then
             local atlasName = poiInfo.atlasName or ""
             local name = poiInfo.name or ""
             
-            -- Check if this is a delve
-            local isDelve = false
-            if string.find(string.lower(atlasName), "delve") then
-                isDelve = true
-            elseif string.find(string.lower(name), "delve") then
-                isDelve = true
+            if string.find(string.lower(atlasName), "delve") or string.find(string.lower(name), "delve") then
+                delvePOIs[poiID] = true
+            end
+        end
+    end
+    
+    -- Iterate through all minimap children
+    for i = 1, Minimap:GetNumChildren() do
+        local child = select(i, Minimap:GetChildren())
+        if child then
+            local shouldColor = false
+            
+            -- Method 1: Check areaPoiID
+            if child.areaPoiID and delvePOIs[child.areaPoiID] then
+                shouldColor = true
             end
             
-            -- If this is a delve, color its minimap icon
-            if isDelve then
-                -- Iterate through minimap children to find POI frames
-                for i = 1, Minimap:GetNumChildren() do
-                    local child = select(i, Minimap:GetChildren())
-                    if child and child.areaPoiID == poiID then
-                        -- Color all texture regions
-                        for j = 1, child:GetNumRegions() do
-                            local region = select(j, child:GetRegions())
-                            if region and region:GetObjectType() == "Texture" then
-                                region:SetVertexColor(r, g, b)
-                                region:SetDesaturated(false)
-                            end
-                        end
-                        
-                        -- Also try specific properties
-                        if child.Texture then
-                            child.Texture:SetVertexColor(r, g, b)
-                            child.Texture:SetDesaturated(false)
+            -- Method 2: Check texture atlas
+            if not shouldColor then
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region and region:GetObjectType() == "Texture" then
+                        local atlas = region:GetAtlas()
+                        if atlas and string.find(string.lower(atlas), "delve") then
+                            shouldColor = true
+                            break
                         end
                     end
+                end
+            end
+            
+            -- Method 3: Check for poiInfo property
+            if not shouldColor and child.poiInfo then
+                local atlasName = child.poiInfo.atlasName or ""
+                local name = child.poiInfo.name or ""
+                if string.find(string.lower(atlasName), "delve") or string.find(string.lower(name), "delve") then
+                    shouldColor = true
+                end
+            end
+            
+            -- Apply color if this is a delve pin
+            if shouldColor then
+                -- Color all texture regions
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region and region:GetObjectType() == "Texture" then
+                        region:SetVertexColor(r, g, b)
+                        region:SetDesaturated(false)
+                    end
+                end
+                
+                -- Also try specific Texture property
+                if child.Texture then
+                    child.Texture:SetVertexColor(r, g, b)
+                    child.Texture:SetDesaturated(false)
                 end
             end
         end
