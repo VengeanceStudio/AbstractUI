@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="ABSTRACTUI_FISHING" header="ABSTRACTUI" runOnUp="true">
+        CLICK AbstractUI_FishingButton:LeftButton
+    </Binding>
+</Bindings>

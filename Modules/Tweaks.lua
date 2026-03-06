@@ -27,6 +27,7 @@ local defaults = {
         questFrameCustomPosition = false,
         recolorDelvePins = true,
         delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
+        oneKeyFishing = false,
     }
 }
 
@@ -116,6 +117,11 @@ function Tweaks:OnDBReady()
         C_Timer.After(3, function() 
             self:SetupDelvePinRecoloring()
         end)
+    end
+    
+    -- Setup one-key fishing
+    if self.db.profile.oneKeyFishing then
+        self:SetupOneKeyFishing()
     end
     
     -- Use event-based approach instead of constant ticker
@@ -849,8 +855,67 @@ function Tweaks:GetOptions()
                     self:RefreshWorldMap()
                 end,
             },
+            oneKeyFishing = {
+                name = "One-Key Fishing",
+                desc = "Enables a single keybind for both casting and hooking fish using Soft Targeting accessibility. Bind in WoW Keybindings under 'AbstractUI' category.",
+                type = "toggle",
+                order = 19,
+                set = function(_, v)
+                    self.db.profile.oneKeyFishing = v
+                    if v then
+                        self:SetupOneKeyFishing()
+                    else
+                        self:DisableOneKeyFishing()
+                    end
+                end,
+            },
         }
     }
+end
+
+-- ============================================================================
+-- ONE-KEY FISHING FUNCTIONALITY
+-- ============================================================================
+
+function Tweaks:SetupOneKeyFishing()
+    -- Create the secure action button if it doesn't exist
+    if not self.fishingButton then
+        self.fishingButton = CreateFrame("Button", "AbstractUI_FishingButton", UIParent, "SecureActionButtonTemplate")
+        self.fishingButton:Hide()
+        
+        -- Register for clicks
+        self.fishingButton:RegisterForClicks("AnyUp")
+        
+        -- Set up attributes for the fishing button
+        -- This will cast fishing, then use interact on mouseover target (bobber)
+        self.fishingButton:SetAttribute("type1", "macro")
+        self.fishingButton:SetAttribute("macrotext1", "/cast Fishing\n/use [target=mouseover, exists] 0")
+    end
+    
+    -- Enable soft targeting (interact with mouseover)
+    SetCVar("SoftTargetInteract", "3") -- 3 = interact with all mouseover units
+    
+    print("AbstractUI: One-Key Fishing enabled. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing")
+    print("AbstractUI: Soft targeting enabled - hover over the fishing bobber and press your keybind to hook the fish")
+end
+
+function Tweaks:DisableOneKeyFishing()
+    if self.fishingButton then
+        -- Clear any keybindings
+        local key1, key2 = GetBindingKey("CLICK AbstractUI_FishingButton:LeftButton")
+        if key1 then
+            SetBinding(key1, nil)
+        end
+        if key2 then
+            SetBinding(key2, nil)
+        end
+        SaveBindings(GetCurrentBindingSet())
+        
+        self.fishingButton:Hide()
+        self.fishingButton:UnregisterAllEvents()
+    end
+    
+    print("AbstractUI: One-Key Fishing disabled")
 end
 
 -- ============================================================================
