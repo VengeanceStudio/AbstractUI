@@ -877,26 +877,66 @@ end
 -- ONE-KEY FISHING FUNCTIONALITY
 -- ============================================================================
 
+-- Global function called by the keybinding
+function AbstractUI_FishingRun()
+    local Tweaks = AbstractUI:GetModule("Tweaks", true)
+    if not Tweaks or not Tweaks.db or not Tweaks.db.profile.oneKeyFishing then return end
+    
+    -- Don't run in combat or while flying
+    if InCombatLockdown() or IsFlying() or IsMounted() then return end
+    
+    local button = Tweaks:GetFishingButton()
+    if not button then return end
+    
+    -- Check if we're currently fishing
+    local _, _, _, _, _, _, _, spellID = UnitChannelInfo("player")
+    local isFishing = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
+    
+    -- Get the current keybind
+    local key1, key2 = GetBindingKey("ABSTRACTUI_FISHING")
+    
+    if isFishing then
+        -- Fishing active - bind to interact with bobber
+        if key1 then
+            SetOverrideBinding(button, true, key1, "INTERACTTARGET")
+        end
+        if key2 then
+            SetOverrideBinding(button, true, key2, "INTERACTTARGET")
+        end
+    else
+        -- Not fishing - bind to cast fishing
+        local fishingSpell = C_Spell.GetSpellName(131474) or "Fishing"
+        if key1 then
+            SetOverrideBindingSpell(button, true, key1, fishingSpell)
+        end
+        if key2 then
+            SetOverrideBindingSpell(button, true, key2, fishingSpell)
+        end
+    end
+end
+
+function Tweaks:GetFishingButton()
+    return self.fishingButton
+end
+
 function Tweaks:SetupOneKeyFishing()
     -- Create the secure action button if it doesn't exist
     if not self.fishingButton then
         self.fishingButton = CreateFrame("Button", "AbstractUI_FishingButton", UIParent, "SecureActionButtonTemplate")
         self.fishingButton:Hide()
         
-        -- Register for clicks
-        self.fishingButton:RegisterForClicks("AnyUp", "AnyDown")
-        
-        -- Set up attributes for the fishing button
-        -- This will cast fishing, then use interact on mouseover target (bobber)
-        self.fishingButton:SetAttribute("type", "macro")
-        self.fishingButton:SetAttribute("macrotext", "/cast Fishing\n/use [target=mouseover, exists] 0")
+        -- Register events to manage bindings
+        self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
+        self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
     end
     
     -- Enable soft targeting (interact with mouseover)
-    SetCVar("SoftTargetInteract", "3") -- 3 = interact with all mouseover units
+    SetCVar("SoftTargetInteract", "3")
+    SetCVar("SoftTargetInteractArc", "2")
+    SetCVar("SoftTargetInteractRange", "60")
     
     print("AbstractUI: One-Key Fishing enabled. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing")
-    print("AbstractUI: Soft targeting enabled - hover over the fishing bobber and press your keybind to hook the fish")
+    print("AbstractUI: Hover over the fishing bobber and press your keybind to hook the fish")
 end
 
 function Tweaks:DisableOneKeyFishing()
@@ -911,11 +951,50 @@ function Tweaks:DisableOneKeyFishing()
         end
         SaveBindings(GetCurrentBindingSet())
         
+        -- Clear override bindings
+        ClearOverrideBindings(self.fishingButton)
+        
         self.fishingButton:Hide()
-        self.fishingButton:UnregisterAllEvents()
+        
+        -- Unregister events
+        self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+        self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
     end
     
     print("AbstractUI: One-Key Fishing disabled")
+end
+
+-- Event handlers for fishing state changes
+function Tweaks:UNIT_SPELLCAST_CHANNEL_START(event, unit, _, spellID)
+    if unit ~= "player" then return end
+    
+    -- Check if it's a fishing spell
+    local isFishingSpell = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
+    if not isFishingSpell or not self.fishingButton then return end
+    
+    -- Switch binding to interact when fishing starts
+    if InCombatLockdown() then return end
+    
+    local key1, key2 = GetBindingKey("ABSTRACTUI_FISHING")
+    if key1 then
+        SetOverrideBinding(self.fishingButton, true, key1, "INTERACTTARGET")
+    end
+    if key2 then
+        SetOverrideBinding(self.fishingButton, true, key2, "INTERACTTARGET")
+    end
+end
+
+function Tweaks:UNIT_SPELLCAST_CHANNEL_STOP(event, unit, _, spellID)
+    if unit ~= "player" then return end
+    
+    -- Check if it's a fishing spell
+    local isFishingSpell = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
+    if not isFishingSpell or not self.fishingButton then return end
+    
+    -- Clear bindings when fishing stops
+    if not InCombatLockdown() then
+        ClearOverrideBindings(self.fishingButton)
+    end
 end
 
 -- ============================================================================

@@ -1,3 +1,5 @@
 <Bindings>
-    <Binding name="ABSTRACTUI_FISHING" header="ABSTRACTUI">CLICK AbstractUI_FishingButton:LeftButton</Binding>
+	<Binding name="ABSTRACTUI_FISHING" header="ABSTRACTUI">
+		AbstractUI_FishingRun()
+	</Binding>
 </Bindings>
