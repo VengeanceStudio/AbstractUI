@@ -884,12 +884,12 @@ function Tweaks:SetupOneKeyFishing()
         self.fishingButton:Hide()
         
         -- Register for clicks
-        self.fishingButton:RegisterForClicks("AnyUp")
+        self.fishingButton:RegisterForClicks("AnyUp", "AnyDown")
         
         -- Set up attributes for the fishing button
         -- This will cast fishing, then use interact on mouseover target (bobber)
-        self.fishingButton:SetAttribute("type1", "macro")
-        self.fishingButton:SetAttribute("macrotext1", "/cast Fishing\n/use [target=mouseover, exists] 0")
+        self.fishingButton:SetAttribute("type", "macro")
+        self.fishingButton:SetAttribute("macrotext", "/cast Fishing\n/use [target=mouseover, exists] 0")
     end
     
     -- Enable soft targeting (interact with mouseover)
@@ -902,7 +902,7 @@ end
 function Tweaks:DisableOneKeyFishing()
     if self.fishingButton then
         -- Clear any keybindings
-        local key1, key2 = GetBindingKey("CLICK AbstractUI_FishingButton:LeftButton")
+        local key1, key2 = GetBindingKey("ABSTRACTUI_FISHING")
         if key1 then
             SetBinding(key1, nil)
         end
