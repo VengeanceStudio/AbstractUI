@@ -1270,12 +1270,8 @@ function Tweaks:SetupDelvePinRecoloring()
     self:RegisterEvent("LORE_TEXT_UPDATED_CAMPAIGN")
     self:RegisterEvent("QUEST_LOG_UPDATE")
     
-    -- Periodic minimap refresh (check every 1 second)
-    C_Timer.NewTicker(1, function()
-        if module.db and module.db.profile.recolorDelvePins then
-            module:ColorMinimapDelvePins()
-        end
-    end)
+    -- Remove the constant 1-second ticker that was causing FPS drops in cities
+    -- Only update minimap pins on demand via events and zone changes
     
     self.delvePinHooked = true
     
