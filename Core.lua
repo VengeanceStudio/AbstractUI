@@ -3,10 +3,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 AbstractUI.version = "1.0.0"
 
--- ============================================================================
--- KEYBINDING LOCALIZATION
--- ============================================================================
-BINDING_HEADER_ABSTRACTUI = "AbstractUI"
+-- Keybinding localization
 BINDING_NAME_ABSTRACTUI_FISHING = "One-Key Fishing"
 
 -- Define reload confirmation dialog

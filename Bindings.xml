@@ -1,5 +1,5 @@
 <Bindings>
-	<Binding name="ABSTRACTUI_FISHING" category="ABSTRACTUI">
+	<Binding name="ABSTRACTUI_FISHING" category="Abstract UI">
 		AbstractUI_FishingRun()
 	</Binding>
 </Bindings>
