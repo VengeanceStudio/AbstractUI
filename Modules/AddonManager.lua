@@ -218,11 +218,20 @@ function AddonManager:GetAddonStatus(addon)
     local enabled = GetAddOnEnableState(UnitGUID("player"), addon) > 0
     local color, note
     
+    -- Color legend:
+    -- Red (ff0000): Incompatible/Out of date addons that won't load
+    -- Orange (ff8000): Dependencies issues or other warnings
+    -- Gray (9d9d9d): Disabled addons
+    -- Blue (0070dd): Load on demand addons
+    -- Green (1eff00): Loadable on demand addons
+    -- Purple (a335ee): Will be disabled on reload
+    -- White (ffffff): Normal/loaded addons
+    
     if reason == "DISABLED" then
         color, note = "9d9d9d", "Disabled"
-    elseif reason == "INTERFACE_VERSION" then
+    elseif reason == "INTERFACE_VERSION" or reason == "INCOMPATIBLE" then
         color, note = "ff0000", "Out of Date - Will Not Load"
-    elseif reason == "DEP_INTERFACE_VERSION" then
+    elseif reason == "DEP_INTERFACE_VERSION" or reason == "DEP_INCOMPATIBLE" then
         color, note = "ff8000", "Dependency Out of Date"
     elseif reason == "NOT_DEMAND_LOADED" then
         color, note = "0070dd", "Load on Demand"
