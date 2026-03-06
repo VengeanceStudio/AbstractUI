@@ -888,30 +888,15 @@ function AbstractUI_FishingRun()
     local button = Tweaks:GetFishingButton()
     if not button then return end
     
-    -- Check if we're currently fishing
-    local _, _, _, _, _, _, _, spellID = UnitChannelInfo("player")
-    local isFishing = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
-    
-    -- Get the current keybind
+    -- Always set the fishing spell - event handlers will switch to INTERACTTARGET when fishing starts
     local key1, key2 = GetBindingKey("ABSTRACTUI_FISHING")
+    local fishingSpell = C_Spell.GetSpellName(131474) or "Fishing"
     
-    if isFishing then
-        -- Fishing active - bind to interact with bobber
-        if key1 then
-            SetOverrideBinding(button, true, key1, "INTERACTTARGET")
-        end
-        if key2 then
-            SetOverrideBinding(button, true, key2, "INTERACTTARGET")
-        end
-    else
-        -- Not fishing - bind to cast fishing
-        local fishingSpell = C_Spell.GetSpellName(131474) or "Fishing"
-        if key1 then
-            SetOverrideBindingSpell(button, true, key1, fishingSpell)
-        end
-        if key2 then
-            SetOverrideBindingSpell(button, true, key2, fishingSpell)
-        end
+    if key1 then
+        SetOverrideBindingSpell(button, true, key1, fishingSpell)
+    end
+    if key2 then
+        SetOverrideBindingSpell(button, true, key2, fishingSpell)
     end
 end
 
@@ -968,9 +953,29 @@ end
 function Tweaks:UNIT_SPELLCAST_CHANNEL_START(event, unit, _, spellID)
     if unit ~= "player" then return end
     
-    -- Check if it's a fishing spell
-    local isFishingSpell = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
-    if not isFishingSpell or not self.fishingButton then return end
+    -- Check if it's a fishing spell (all known fishing spell IDs)
+    local FishingIDs = {
+        [131474] = true,   -- Live/MoP
+        [131490] = true,   -- Cast ID on MoP+ when pole equipped
+        [131476] = true,   -- Cast ID on Live, and MoP without pole equipped
+        [7620] = true,
+        [7731] = true,
+        [7732] = true,
+        [18248] = true,
+        [33095] = true,
+        [51294] = true,
+        [88868] = true,
+        [110410] = true,   -- MoP fishing
+        [158743] = true,   -- WoD Fishing
+        [377895] = true,   -- Ice Fishing
+    }
+    
+    if not FishingIDs[spellID] or not self.fishingButton then return end
+    
+    -- Re-apply CVars to ensure soft targeting is active
+    SetCVar("SoftTargetInteract", "3")
+    SetCVar("SoftTargetInteractArc", "2")
+    SetCVar("SoftTargetInteractRange", "60")
     
     -- Switch binding to interact when fishing starts
     if InCombatLockdown() then return end
@@ -987,9 +992,24 @@ end
 function Tweaks:UNIT_SPELLCAST_CHANNEL_STOP(event, unit, _, spellID)
     if unit ~= "player" then return end
     
-    -- Check if it's a fishing spell
-    local isFishingSpell = (spellID == 131474 or spellID == 131476 or spellID == 131490 or spellID == 7620)
-    if not isFishingSpell or not self.fishingButton then return end
+    -- Check if it's a fishing spell (all known fishing spell IDs)
+    local FishingIDs = {
+        [131474] = true,
+        [131490] = true,
+        [131476] = true,
+        [7620] = true,
+        [7731] = true,
+        [7732] = true,
+        [18248] = true,
+        [33095] = true,
+        [51294] = true,
+        [88868] = true,
+        [110410] = true,
+        [158743] = true,
+        [377895] = true,
+    }
+    
+    if not FishingIDs[spellID] or not self.fishingButton then return end
     
     -- Clear bindings when fishing stops
     if not InCombatLockdown() then
