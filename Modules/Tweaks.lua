@@ -54,6 +54,25 @@ function Tweaks:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("Tweaks", defaults)
     
+    -- Ensure delve pin color is properly initialized
+    if not self.db.profile.delvePinColor or type(self.db.profile.delvePinColor) ~= "table" then
+        self.db.profile.delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 }
+    else
+        -- Ensure all color values are numbers
+        if type(self.db.profile.delvePinColor.r) ~= "number" then
+            self.db.profile.delvePinColor.r = 0.2
+        end
+        if type(self.db.profile.delvePinColor.g) ~= "number" then
+            self.db.profile.delvePinColor.g = 1.0
+        end
+        if type(self.db.profile.delvePinColor.b) ~= "number" then
+            self.db.profile.delvePinColor.b = 0.8
+        end
+        if type(self.db.profile.delvePinColor.a) ~= "number" then
+            self.db.profile.delvePinColor.a = 1.0
+        end
+    end
+    
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -800,12 +819,29 @@ function Tweaks:GetOptions()
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
                     local c = self.db.profile.delvePinColor
-                    return c.r, c.g, c.b
+                    if type(c) ~= "table" then
+                        return 0.2, 1.0, 0.8
+                    end
+                    local r = type(c.r) == "number" and c.r or 0.2
+                    local g = type(c.g) == "number" and c.g or 1.0
+                    local b = type(c.b) == "number" and c.b or 0.8
+                    return r, g, b
                 end,
                 set = function(_, r, g, b)
-                    self.db.profile.delvePinColor.r = r
-                    self.db.profile.delvePinColor.g = g
-                    self.db.profile.delvePinColor.b = b
+                    -- Ensure we have a valid color table
+                    if type(self.db.profile.delvePinColor) ~= "table" then
+                        self.db.profile.delvePinColor = {}
+                    end
+                    -- Only save if we got numbers
+                    if type(r) == "number" then
+                        self.db.profile.delvePinColor.r = r
+                    end
+                    if type(g) == "number" then
+                        self.db.profile.delvePinColor.g = g
+                    end
+                    if type(b) == "number" then
+                        self.db.profile.delvePinColor.b = b
+                    end
                     self:RefreshWorldMap()
                 end,
             },
@@ -1087,7 +1123,13 @@ function Tweaks:ColorDelvePins()
     if not WorldMapFrame:IsShown() then return end
     if not self.db or not self.db.profile.recolorDelvePins then return end
     
-    local color = self.db.profile.delvePinColor
+    local colorTable = self.db.profile.delvePinColor
+    local r, g, b = colorTable.r, colorTable.g, colorTable.b
+    
+    -- Validate color values are numbers
+    if type(r) ~= "number" then r = 0.2 end
+    if type(g) ~= "number" then g = 1.0 end
+    if type(b) ~= "number" then b = 0.8 end
     
     -- Get all children from the map scroll container
     local pins = {WorldMapFrame.ScrollContainer.Child:GetChildren()}
@@ -1107,7 +1149,7 @@ function Tweaks:ColorDelvePins()
             
             -- Apply color to delve pins
             if isDelve then
-                pin.Texture:SetVertexColor(color.r, color.g, color.b)
+                pin.Texture:SetVertexColor(r, g, b)
                 pin.Texture:SetDesaturated(false)
             end
         end
@@ -1134,7 +1176,13 @@ function Tweaks:ColorMinimapDelvePins()
     if not Minimap then return end
     if not self.db or not self.db.profile.recolorDelvePins then return end
     
-    local color = self.db.profile.delvePinColor
+    local colorTable = self.db.profile.delvePinColor
+    local r, g, b = colorTable.r, colorTable.g, colorTable.b
+    
+    -- Validate color values are numbers
+    if type(r) ~= "number" then r = 0.2 end
+    if type(g) ~= "number" then g = 1.0 end
+    if type(b) ~= "number" then b = 0.8 end
     
     -- Get current map for player
     local mapID = C_Map.GetBestMapForUnit("player")
@@ -1168,14 +1216,14 @@ function Tweaks:ColorMinimapDelvePins()
                         for j = 1, child:GetNumRegions() do
                             local region = select(j, child:GetRegions())
                             if region and region:GetObjectType() == "Texture" then
-                                region:SetVertexColor(color.r, color.g, color.b)
+                                region:SetVertexColor(r, g, b)
                                 region:SetDesaturated(false)
                             end
                         end
                         
                         -- Also try specific properties
                         if child.Texture then
-                            child.Texture:SetVertexColor(color.r, color.g, color.b)
+                            child.Texture:SetVertexColor(r, g, b)
                             child.Texture:SetDesaturated(false)
                         end
                     end
