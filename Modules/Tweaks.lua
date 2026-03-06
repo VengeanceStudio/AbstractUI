@@ -25,6 +25,8 @@ local defaults = {
         questFrameX = 0,
         questFrameY = 0,
         questFrameCustomPosition = false,
+        recolorDelvePins = true,
+        delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
     }
 }
 
@@ -87,6 +89,13 @@ function Tweaks:OnDBReady()
     if self.db.profile.importOverwriteEnabled then
         C_Timer.After(2, function() 
             self:SetupTalentImportHook()
+        end)
+    end
+    
+    -- Setup delve pin recoloring
+    if self.db.profile.recolorDelvePins then
+        C_Timer.After(3, function() 
+            self:SetupDelvePinRecoloring()
         end)
     end
     
@@ -760,6 +769,37 @@ function Tweaks:GetOptions()
                     self:ApplyQuestFrameScale()
                 end,
             },
+            recolorDelvePins = {
+                name = "Recolor Delve Pins",
+                desc = "Makes Delve entrance pins on the world map more visible with a custom color",
+                type = "toggle",
+                order = 17,
+                set = function(_, v)
+                    self.db.profile.recolorDelvePins = v
+                    if v then
+                        self:SetupDelvePinRecoloring()
+                    end
+                    self:RefreshWorldMap()
+                end,
+            },
+            delvePinColor = {
+                name = "Delve Pin Color",
+                desc = "Color to use for Delve entrance pins on the world map",
+                type = "color",
+                order = 18,
+                hasAlpha = false,
+                disabled = function() return not self.db.profile.recolorDelvePins end,
+                get = function()
+                    local c = self.db.profile.delvePinColor
+                    return c.r, c.g, c.b
+                end,
+                set = function(_, r, g, b)
+                    self.db.profile.delvePinColor.r = r
+                    self.db.profile.delvePinColor.g = g
+                    self.db.profile.delvePinColor.b = b
+                    self:RefreshWorldMap()
+                end,
+            },
         }
     }
 end
@@ -986,4 +1026,121 @@ function Tweaks:ConvertToImportLoadoutEntryInfo(treeID, loadoutContent)
     end
     
     return results
+end
+
+-- ============================================================================
+-- DELVE PIN RECOLORING
+-- ============================================================================
+
+function Tweaks:SetupDelvePinRecoloring()
+    if self.delvePinHooked then return end
+    
+    -- Wait for WorldMapFrame to be available
+    if not WorldMapFrame then
+        C_Timer.After(1, function() self:SetupDelvePinRecoloring() end)
+        return
+    end
+    
+    local module = self
+    
+    -- Hook into POI pin creation
+    hooksecurefunc(WorldMapFrame, "AcquirePin", function(self, pinFramePool)
+        -- Don't recolor if feature is disabled
+        if not module.db or not module.db.profile.recolorDelvePins then return end
+        
+        C_Timer.After(0.01, function()
+            module:ColorDelvePins()
+        end)
+    end)
+    
+    -- Also hook RefreshAllData to catch map changes
+    if WorldMapFrame.RefreshAllDataProviders then
+        hooksecurefunc(WorldMapFrame, "RefreshAllDataProviders", function()
+            if not module.db or not module.db.profile.recolorDelvePins then return end
+            
+            C_Timer.After(0.01, function()
+                module:ColorDelvePins()
+            end)
+        end)
+    end
+    
+    self.delvePinHooked = true
+    
+    -- Apply initial coloring
+    C_Timer.After(0.5, function()
+        self:ColorDelvePins()
+    end)
+end
+
+function Tweaks:ColorDelvePins()
+    if not WorldMapFrame then return end
+    if not self.db or not self.db.profile.recolorDelvePins then return end
+    
+    local color = self.db.profile.delvePinColor
+    
+    -- Iterate through all map canvas data providers
+    for provider in WorldMapFrame:EnumerateAllPins() do
+        if provider then
+            local shouldColor = false
+            
+            -- Check texture atlas
+            if provider.texture then
+                local atlas = provider.texture:GetAtlas()
+                if atlas then
+                    local atlasLower = string.lower(atlas)
+                    if string.find(atlasLower, "delve") then
+                        shouldColor = true
+                    end
+                end
+            end
+            
+            -- Check pin template
+            if provider.pinTemplate then
+                local templateLower = string.lower(provider.pinTemplate)
+                if string.find(templateLower, "delve") then
+                    shouldColor = true
+                end
+            end
+            
+            -- Check name if available
+            if provider.name then
+                local nameLower = string.lower(provider.name)
+                if string.find(nameLower, "delve") then
+                    shouldColor = true
+                end
+            end
+            
+            -- Check tooltip text
+            if provider.description then
+                local descLower = string.lower(provider.description)
+                if string.find(descLower, "delve") then
+                    shouldColor = true
+                end
+            end
+            
+            -- Apply color if this is a delve pin
+            if shouldColor and provider.texture then
+                provider.texture:SetVertexColor(color.r, color.g, color.b, 1)
+                
+                -- Also color the background/highlight if present
+                if provider.Background then
+                    provider.Background:SetVertexColor(color.r * 0.8, color.g * 0.8, color.b * 0.8, 0.8)
+                end
+                if provider.Highlight then
+                    provider.Highlight:SetVertexColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
+                end
+            end
+        end
+    end
+end
+
+function Tweaks:RefreshWorldMap()
+    if WorldMapFrame and WorldMapFrame:IsShown() then
+        C_Timer.After(0.1, function()
+            if WorldMapFrame.RefreshAllDataProviders then
+                WorldMapFrame:RefreshAllDataProviders()
+            end
+            self:ColorDelvePins()
+        end)
+    end
 end
