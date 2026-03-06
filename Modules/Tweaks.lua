@@ -28,6 +28,7 @@ local defaults = {
         recolorDelvePins = true,
         delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
         oneKeyFishing = false,
+        oneKeyFishingFirstTime = true,
     }
 }
 
@@ -857,7 +858,11 @@ function Tweaks:GetOptions()
             },
             oneKeyFishing = {
                 name = "One-Key Fishing",
-                desc = "Enables a single keybind for both casting and hooking fish using Soft Targeting accessibility. Bind in WoW Keybindings under 'AbstractUI' category.",
+                desc = "Enables a single keybind for both casting and hooking fish using Soft Targeting accessibility.\n\n" ..
+                       "Instructions:\n" ..
+                       "1. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing\n" ..
+                       "2. Press once to cast your fishing line\n" ..
+                       "3. Hover over the fishing bobber and press again to hook the fish",
                 type = "toggle",
                 order = 19,
                 set = function(_, v)
@@ -920,8 +925,12 @@ function Tweaks:SetupOneKeyFishing()
     SetCVar("SoftTargetInteractArc", "2")
     SetCVar("SoftTargetInteractRange", "60")
     
-    print("AbstractUI: One-Key Fishing enabled. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing")
-    print("AbstractUI: Hover over the fishing bobber and press your keybind to hook the fish")
+    -- Only show instructions on first enable
+    if self.db.profile.oneKeyFishingFirstTime then
+        print("AbstractUI: One-Key Fishing enabled. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing")
+        print("AbstractUI: Hover over the fishing bobber and press your keybind to hook the fish")
+        self.db.profile.oneKeyFishingFirstTime = false
+    end
 end
 
 function Tweaks:DisableOneKeyFishing()
@@ -945,8 +954,6 @@ function Tweaks:DisableOneKeyFishing()
         self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
         self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
     end
-    
-    print("AbstractUI: One-Key Fishing disabled")
 end
 
 -- Event handlers for fishing state changes
