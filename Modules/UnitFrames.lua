@@ -1587,11 +1587,11 @@ end
         -- Re-register state drivers when leaving combat to fix any visibility issues
         if not self.db or not self.db.profile then return end
         
-        -- Update player frame and status icons
+        -- Update player frame and status icons (not in combat)
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
-            self:UpdatePlayerStatusIcons()
+            self:UpdatePlayerStatusIcons(false)
         end
         
         -- Start regen ticker for out-of-combat regeneration
@@ -1647,7 +1647,7 @@ end
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
-            self:UpdatePlayerStatusIcons()
+            self:UpdatePlayerStatusIcons(true)
         end
     end
 
@@ -2921,7 +2921,8 @@ end
 
                 -- Update player status icons (AFK, Combat, Resting, Dead)
                 -- Called only on specific events to avoid taint during combat updates
-                function UnitFrames:UpdatePlayerStatusIcons()
+                -- inCombat parameter: true = in combat, false = not in combat, nil = use InCombatLockdown()
+                function UnitFrames:UpdatePlayerStatusIcons(inCombat)
                     local frame = _G["AbstractUI_PlayerFrame"]
                     if not frame then return end
                     
@@ -2935,9 +2936,11 @@ end
                         end
                     end
                     
-                    -- Update Combat icon
+                    -- Update Combat icon (use event-based state to avoid secret values)
                     if frame.combatIconFrame then
-                        local inCombat = UnitAffectingCombat("player")
+                        if inCombat == nil then
+                            inCombat = InCombatLockdown()
+                        end
                         if inCombat then
                             frame.combatIconFrame:Show()
                         else
