@@ -1587,19 +1587,15 @@ end
         -- Re-register state drivers when leaving combat to fix any visibility issues
         if not self.db or not self.db.profile then return end
         
-        print("AbstractUI: PLAYER_REGEN_ENABLED fired - leaving combat")
-        
         -- Update player frame and status icons
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
             -- Update combat icon immediately but skip other status icons (they might still be tainted)
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(false, skipNonCombat=true) from REGEN_ENABLED")
             self:UpdatePlayerStatusIcons(false, "REGEN_ENABLED", true)
             
             -- Schedule delayed update for non-combat status icons after taint clears
             C_Timer.After(2, function()
-                print("AbstractUI: Delayed status icon update after combat ended")
                 self:UpdatePlayerStatusIcons(false, "REGEN_ENABLED_DELAYED", false)
             end)
         end
@@ -1647,8 +1643,6 @@ end
         -- Update player frame to show combat icon when entering combat
         if not self.db or not self.db.profile then return end
         
-        print("AbstractUI: PLAYER_REGEN_DISABLED fired - entering combat")
-        
         -- Stop regen ticker during combat (combat events are frequent enough)
         if self.regenTicker then
             self.regenTicker:Cancel()
@@ -1659,7 +1653,6 @@ end
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             self:UpdateUnitFrame("PlayerFrame", "player")
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(true) from REGEN_DISABLED")
             self:UpdatePlayerStatusIcons(true)
         end
     end
@@ -1677,26 +1670,21 @@ end
     
     function UnitFrames:ENCOUNTER_START(event, encounterID, encounterName, difficultyID, groupSize)
         -- Boss encounter started - show combat icon as backup to PLAYER_REGEN_DISABLED
-        print("AbstractUI: ENCOUNTER_START fired - boss encounter started:", encounterName)
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(true) from ENCOUNTER_START")
             self:UpdatePlayerStatusIcons(true, "ENCOUNTER_START")
         end
     end
     
     function UnitFrames:ENCOUNTER_END(event, encounterID, encounterName, difficultyID, groupSize, success)
         -- Boss encounter ended - hide combat icon as backup to PLAYER_REGEN_ENABLED
-        print("AbstractUI: ENCOUNTER_END fired - boss encounter ended:", encounterName)
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
             -- Update combat icon immediately but skip other status icons (they might still be tainted)
-            print("AbstractUI: Calling UpdatePlayerStatusIcons(false, skipNonCombat=true) from ENCOUNTER_END")
             self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END", true)
             
             -- Schedule delayed update for non-combat status icons after taint clears
             C_Timer.After(2, function()
-                print("AbstractUI: Delayed status icon update after encounter ended")
                 self:UpdatePlayerStatusIcons(false, "ENCOUNTER_END_DELAYED", false)
             end)
         end
@@ -2965,33 +2953,22 @@ end
                 -- skipNonCombat: if true, only update combat icon (use when leaving combat to avoid taint)
                 function UnitFrames:UpdatePlayerStatusIcons(inCombat, caller, skipNonCombat)
                     local frame = _G["AbstractUI_PlayerFrame"]
-                    if not frame then 
-                        print("AbstractUI: No player frame found")
-                        return 
-                    end
-                    
-                    print("AbstractUI: UpdatePlayerStatusIcons called with inCombat =", tostring(inCombat), "caller =", caller or "unknown", "skipNonCombat =", tostring(skipNonCombat))
+                    if not frame then return end
                     
                     -- Update Combat icon first (use event-based state to avoid secret values)
                     if frame.combatIconFrame then
                         if inCombat == nil then
                             inCombat = InCombatLockdown()
                         end
-                        print("AbstractUI: Combat icon - final inCombat =", inCombat)
                         if inCombat then
                             frame.combatIconFrame:Show()
-                            print("AbstractUI: Combat icon SHOWN")
                         else
                             frame.combatIconFrame:Hide()
-                            print("AbstractUI: Combat icon HIDDEN")
                         end
-                    else
-                        print("AbstractUI: Combat icon frame doesn't exist yet")
                     end
                     
                     -- Skip other status updates if requested (when leaving combat to avoid taint)
                     if skipNonCombat then
-                        print("AbstractUI: Skipping non-combat status icons due to skipNonCombat flag")
                         return
                     end
                     
