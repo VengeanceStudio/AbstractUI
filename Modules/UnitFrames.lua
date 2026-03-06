@@ -2380,38 +2380,49 @@ end
                     if not frame then return end
                     
                     -- Don't update frames for units that don't exist (let state drivers handle visibility)
-                    if unit == "target" and not UnitExists("target") then
+                    -- Use SetShown(false) pattern to avoid secret boolean tests
+                    local targetExists = UnitExists("target")
+                    if unit == "target" and targetExists == false then
                         -- Let state driver handle frame visibility (don't call Hide() on secure frames)
                         return
                     end
                     
-                    if unit == "targettarget" and not UnitExists("targettarget") then
+                    local totExists = UnitExists("targettarget")
+                    if unit == "targettarget" and totExists == false then
                         -- Let state driver handle frame visibility (don't call Hide() on secure frames)
                         return
                     end
                     
-                    if unit == "pet" and not UnitExists("pet") then
+                    local petExists = UnitExists("pet")
+                    if unit == "pet" and petExists == false then
                         -- Let state driver handle frame visibility (don't call Hide() on secure frames)
                         return
                     end
                     
-                    if unit == "focus" and not UnitExists("focus") then
+                    local focusExists = UnitExists("focus")
+                    if unit == "focus" and focusExists == false then
                         -- Let state driver handle frame visibility (don't call Hide() on secure frames)
                         return
                     end
                     
-                    if unit and unit:match("^boss%d$") and not UnitExists(unit) then
-                        -- Let state driver handle frame visibility for boss frames
-                        return
+                    if unit and unit:match("^boss%d$") then
+                        local bossExists = UnitExists(unit)
+                        if bossExists == false then
+                            -- Let state driver handle frame visibility for boss frames
+                            return
+                        end
                     end
                     
                     -- For target/targettarget/pet/focus/boss, child bars visibility follows parent (state driver handles parent)
-                    if (unit == "target" or unit == "targettarget" or unit == "pet" or unit == "focus" or (unit and unit:match("^boss%d$"))) and UnitExists(unit) then
-                        -- State driver handles parent frame visibility - only manage child bars
-                        if frame:IsShown() then
-                            if frame.healthBar then frame.healthBar:Show() end
-                            if frame.powerBar then frame.powerBar:Show() end
-                            if frame.infoBar then frame.infoBar:Show() end
+                    if unit == "target" or unit == "targettarget" or unit == "pet" or unit == "focus" or (unit and unit:match("^boss%d$")) then
+                        local exists = UnitExists(unit)
+                        if exists == true then
+                            -- State driver handles parent frame visibility - only manage child bars
+                            if frame:IsShown() then
+                                if frame.healthBar then frame.healthBar:Show() end
+                                if frame.powerBar then frame.powerBar:Show() end
+                                if frame.infoBar then frame.infoBar:Show() end
+                            end
                         end
                     end
                     
@@ -2606,41 +2617,27 @@ end
                     -- Update status icons
                     -- Update AFK text (only for player)
                     if unit == "player" and frame.afkTextFrame then
-                        local success, isAFK = pcall(UnitIsAFK, "player")
-                        if success and isAFK then
-                            frame.afkTextFrame:Show()
-                        else
-                            frame.afkTextFrame:Hide()
-                        end
+                        local isAFK = UnitIsAFK("player")
+                        -- Use SetShown which can handle secret booleans directly
+                        frame.afkTextFrame:SetShown(isAFK)
                     end
                     
                     -- Update Combat icon (only for player)
                     if unit == "player" and frame.combatIconFrame then
-                        local success, inCombat = pcall(UnitAffectingCombat, "player")
-                        if success and inCombat then
-                            frame.combatIconFrame:Show()
-                        else
-                            frame.combatIconFrame:Hide()
-                        end
+                        local inCombat = UnitAffectingCombat("player")
+                        frame.combatIconFrame:SetShown(inCombat)
                     end
                     
                     -- Update Resting icon (only for player)
                     if unit == "player" and frame.restingIconFrame then
-                        local success, isResting = pcall(IsResting)
-                        if success and isResting then
-                            frame.restingIconFrame:Show()
-                        else
-                            frame.restingIconFrame:Hide()
-                        end
+                        local isResting = IsResting()
+                        frame.restingIconFrame:SetShown(isResting)
                     end
                     
                     -- Update Dead indicator (only for player)
                     if unit == "player" and frame.deadTextFrame then
-                        if UnitIsDead("player") then
-                            frame.deadTextFrame:Show()
-                        else
-                            frame.deadTextFrame:Hide()
-                        end
+                        local isDead = UnitIsDead("player")
+                        frame.deadTextFrame:SetShown(isDead)
                     end
                     
                     -- Update raid target icon (for all frames)
