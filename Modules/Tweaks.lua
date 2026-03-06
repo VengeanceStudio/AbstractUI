@@ -1052,30 +1052,21 @@ function Tweaks:SetupDelvePinRecoloring()
     
     local module = self
     
-    -- Hook pin creation for world map
-    if WorldMapFrame.pinPools then
-        for pinTemplate, pinPool in pairs(WorldMapFrame.pinPools) do
-            hooksecurefunc(pinPool, "Acquire", function(pool)
-                if not module.db or not module.db.profile.recolorDelvePins then return end
-                C_Timer.After(0.02, function()
-                    module:ColorDelvePins()
-                    module:ColorMinimapDelvePins()
-                end)
-            end)
-        end
-    end
-    
-    -- Hook map refresh
-    if WorldMapFrame.RefreshAllDataProviders then
-        hooksecurefunc(WorldMapFrame, "RefreshAllDataProviders", function()
-            if not module.db or not module.db.profile.recolorDelvePins then return end
-            C_Timer.After(0.05, function()
+    -- Hook WorldMapFrame OnMapChanged
+    hooksecurefunc(WorldMapFrame, "OnMapChanged", function()
+        if not module.db or not module.db.profile.recolorDelvePins then return end
+        if WorldMapFrame:IsShown() then
+            C_Timer.After(0.5, function()
                 module:ColorDelvePins()
             end)
-        end)
-    end
+        end
+    end)
     
-    -- Periodic minimap refresh (minimap pins update frequently)
+    -- Hook quest log updates which can affect map pins
+    self:RegisterEvent("LORE_TEXT_UPDATED_CAMPAIGN")
+    self:RegisterEvent("QUEST_LOG_UPDATE")
+    
+    -- Periodic minimap refresh
     C_Timer.NewTicker(2, function()
         if module.db and module.db.profile.recolorDelvePins then
             module:ColorMinimapDelvePins()
@@ -1093,98 +1084,49 @@ end
 
 function Tweaks:ColorDelvePins()
     if not WorldMapFrame then return end
+    if not WorldMapFrame:IsShown() then return end
     if not self.db or not self.db.profile.recolorDelvePins then return end
     
     local color = self.db.profile.delvePinColor
     
-    -- Get all POI data for current map
-    local mapID = WorldMapFrame:GetMapID()
-    if not mapID then return end
+    -- Get all children from the map scroll container
+    local pins = {WorldMapFrame.ScrollContainer.Child:GetChildren()}
     
-    local poiInfos = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
-    if not poiInfos then return end
-    
-    -- Build a lookup table of delve POI IDs
-    local delvePOIs = {}
-    for _, poiID in ipairs(poiInfos) do
-        local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-        if poiInfo and poiInfo.name then
-            local name = string.lower(poiInfo.name)
-            local desc = poiInfo.description and string.lower(poiInfo.description) or ""
+    for _, pin in pairs(pins) do
+        if pin.poiInfo and pin.poiInfo.areaPoiID and pin.Texture and pin:IsShown() then
+            local atlasName = pin.poiInfo.atlasName or ""
+            local poiName = pin.poiInfo.name or ""
             
-            -- Check if it's a delve by name or description
-            if string.find(name, "delve") or string.find(desc, "delve") then
-                delvePOIs[poiID] = true
+            -- Check if this is a delve by atlas name or POI name
+            local isDelve = false
+            if string.find(string.lower(atlasName), "delve") then
+                isDelve = true
+            elseif string.find(string.lower(poiName), "delve") then
+                isDelve = true
             end
             
-            -- Check widget text
-            if poiInfo.widgetSetID then
-                local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(poiInfo.widgetSetID)
-                if widgets then
-                    for _, widget in ipairs(widgets) do
-                        if widget.text then
-                            local widgetText = string.lower(widget.text)
-                            if string.find(widgetText, "delve") then
-                                delvePOIs[poiID] = true
-                                break
-                            end
-                        end
-                    end
-                end
+            -- Apply color to delve pins
+            if isDelve then
+                pin.Texture:SetVertexColor(color.r, color.g, color.b)
+                pin.Texture:SetDesaturated(false)
             end
         end
     end
-    
-    -- Color pins that match delve POIs
-    if WorldMapFrame.pinPools then
-        for pinTemplate, pinPool in pairs(WorldMapFrame.pinPools) do
-            for pin in pinPool:EnumerateActive() do
-                if pin and pin.areaPoiID and delvePOIs[pin.areaPoiID] then
-                    -- Color the main texture
-                    if pin.Texture then
-                        pin.Texture:SetVertexColor(color.r, color.g, color.b, 1)
-                        pin.Texture:SetDesaturated(false)
-                    end
-                    
-                    -- Color other texture elements
-                    if pin.Icon then
-                        pin.Icon:SetVertexColor(color.r, color.g, color.b, 1)
-                        pin.Icon:SetDesaturated(false)
-                    end
-                    
-                    if pin.Background then
-                        pin.Background:SetVertexColor(color.r * 0.7, color.g * 0.7, color.b * 0.7, 0.8)
-                    end
-                    
-                    if pin.Highlight then
-                        pin.Highlight:SetVertexColor(color.r * 1.2, color.g * 1.2, color.b * 1.2, 1)
-                    end
-                    
-                    -- Store that we colored this pin
-                    pin.abstractUIColorApplied = true
-                end
-            end
-        end
+end
+
+function Tweaks:LORE_TEXT_UPDATED_CAMPAIGN()
+    if self.db and self.db.profile.recolorDelvePins then
+        C_Timer.After(0.2, function()
+            self:ColorDelvePins()
+        end)
     end
-    
-    -- Alternative method: Check data providers
-    if WorldMapFrame.dataProviders then
-        for _, provider in ipairs(WorldMapFrame.dataProviders) do
-            if provider.pins then
-                for pin in pairs(provider.pins) do
-                    if pin and pin.areaPoiID and delvePOIs[pin.areaPoiID] then
-                        if pin.Texture then
-                            pin.Texture:SetVertexColor(color.r, color.g, color.b, 1)
-                            pin.Texture:SetDesaturated(false)
-                        end
-                        if pin.Icon then
-                            pin.Icon:SetVertexColor(color.r, color.g, color.b, 1)
-                            pin.Icon:SetDesaturated(false)
-                        end
-                    end
-                end
-            end
-        end
+end
+
+function Tweaks:QUEST_LOG_UPDATE()
+    if self.db and self.db.profile.recolorDelvePins then
+        C_Timer.After(0.2, function()
+            self:ColorDelvePins()
+        end)
     end
 end
 
@@ -1204,54 +1146,37 @@ function Tweaks:ColorMinimapDelvePins()
     -- Check each POI on the minimap
     for _, poiID in ipairs(poiInfos) do
         local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-        if poiInfo and poiInfo.name then
-            local name = string.lower(poiInfo.name)
-            local desc = poiInfo.description and string.lower(poiInfo.description) or ""
+        if poiInfo then
+            local atlasName = poiInfo.atlasName or ""
+            local name = poiInfo.name or ""
             
+            -- Check if this is a delve
             local isDelve = false
-            if string.find(name, "delve") or string.find(desc, "delve") then
+            if string.find(string.lower(atlasName), "delve") then
                 isDelve = true
-            end
-            
-            -- Check widget for delve text
-            if not isDelve and poiInfo.widgetSetID then
-                local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(poiInfo.widgetSetID)
-                if widgets then
-                    for _, widget in ipairs(widgets) do
-                        if widget.text and string.find(string.lower(widget.text), "delve") then
-                            isDelve = true
-                            break
-                        end
-                    end
-                end
+            elseif string.find(string.lower(name), "delve") then
+                isDelve = true
             end
             
             -- If this is a delve, color its minimap icon
             if isDelve then
                 -- Iterate through minimap children to find POI frames
-                local numChildren = Minimap:GetNumChildren()
-                for i = 1, numChildren do
+                for i = 1, Minimap:GetNumChildren() do
                     local child = select(i, Minimap:GetChildren())
                     if child and child.areaPoiID == poiID then
-                        -- Color the POI texture on minimap
-                        if child.Texture then
-                            child.Texture:SetVertexColor(color.r, color.g, color.b, 1)
-                            child.Texture:SetDesaturated(false)
-                        end
-                        
-                        -- Check for icon property
-                        if child.Icon then
-                            child.Icon:SetVertexColor(color.r, color.g, color.b, 1)
-                            child.Icon:SetDesaturated(false)
-                        end
-                        
-                        -- Check all regions for textures
+                        -- Color all texture regions
                         for j = 1, child:GetNumRegions() do
                             local region = select(j, child:GetRegions())
                             if region and region:GetObjectType() == "Texture" then
-                                region:SetVertexColor(color.r, color.g, color.b, 1)
+                                region:SetVertexColor(color.r, color.g, color.b)
                                 region:SetDesaturated(false)
                             end
+                        end
+                        
+                        -- Also try specific properties
+                        if child.Texture then
+                            child.Texture:SetVertexColor(color.r, color.g, color.b)
+                            child.Texture:SetDesaturated(false)
                         end
                     end
                 end
