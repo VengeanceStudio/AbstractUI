@@ -623,10 +623,10 @@ function CooldownManager:GetSpellKeybind(spellID)
     
     -- First, try to get direct spell keybind (for spells bound directly, not via action bars)
     local spellName = C_Spell.GetSpellName(spellID)
-    if spellName and type(spellName) == "string" and spellName ~= "" then
+    if spellName and type(spellName) == "string" then
         -- Ensure the command string is valid before calling GetBindingKey
-        local command = "SPELL " .. spellName
-        local success, key1, key2 = pcall(GetBindingKey, command)
+        -- Use pcall to protect against tainted/secret strings
+        local success, key1, key2 = pcall(GetBindingKey, "SPELL " .. spellName)
         if success and (key1 or key2) then
             local directBind = key1 or key2
             directBind = directBind:gsub("SHIFT%-", "S")
