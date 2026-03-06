@@ -220,6 +220,10 @@ function AddonManager:GetAddonStatus(addon)
     
     if reason == "DISABLED" then
         color, note = "9d9d9d", "Disabled"
+    elseif reason == "INTERFACE_VERSION" then
+        color, note = "ff0000", "Out of Date - Will Not Load"
+    elseif reason == "DEP_INTERFACE_VERSION" then
+        color, note = "ff8000", "Dependency Out of Date"
     elseif reason == "NOT_DEMAND_LOADED" then
         color, note = "0070dd", "Load on Demand"
     elseif reason and not loaded then
