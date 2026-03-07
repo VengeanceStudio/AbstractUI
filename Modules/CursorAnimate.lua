@@ -115,6 +115,41 @@ local TEXTURES = {
 
 function CursorTrail:OnInitialize()
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
+    
+    -- Register slash command for quick enable/disable
+    SLASH_CURSORANIMATE1 = "/cursoranimate"
+    SLASH_CURSORANIMATE2 = "/ca"
+    SlashCmdList["CURSORANIMATE"] = function(msg)
+        if msg == "on" or msg == "enable" then
+            if CursorTrail.db then
+                CursorTrail.db.profile.enabled = true
+                CursorTrail:Enable()
+                print("|cff00FF7FCursor Animate:|r Enabled!")
+            else
+                print("|cffFF6B6BCursor Animate:|r Database not ready yet.")
+            end
+        elseif msg == "off" or msg == "disable" then
+            if CursorTrail.db then
+                CursorTrail.db.profile.enabled = false
+                CursorTrail:Disable()
+                print("|cffFF6B6BCursor Animate:|r Disabled!")
+            else
+                print("|cffFF6B6BCursor Animate:|r Database not ready yet.")
+            end
+        elseif msg == "status" then
+            if CursorTrail.db then
+                print("|cff00FF7FCursor Animate:|r Enabled: " .. tostring(CursorTrail.db.profile.enabled))
+                print("|cff00FF7FCursor Animate:|r UpdateFrame: " .. tostring(updateFrame ~= nil and updateFrame:IsShown()))
+            else
+                print("|cffFF6B6BCursor Animate:|r Database not ready yet.")
+            end
+        else
+            print("|cff00FF7FCursor Animate Commands:|r")
+            print("  /ca on  - Enable animations")
+            print("  /ca off - Disable animations")
+            print("  /ca status - Show current status")
+        end
+    end
 end
 
 function CursorTrail:OnDBReady()
@@ -158,11 +193,14 @@ function CursorTrail:OnDBReady()
           " | Highlight: " .. (self.db.profile.highlightEnabled and "ON" or "OFF") ..
           " | Sparkles: " .. (self.db.profile.sparklesEnabled and "ON" or "OFF") ..
           " | Ring: " .. (self.db.profile.ringEnabled and "ON" or "OFF"))
+    print("|cff00FF7FCursor Animate:|r Master Enabled Flag: " .. tostring(self.db.profile.enabled))
+    print("|cff00FF7FCursor Animate:|r updateFrame exists: " .. tostring(updateFrame ~= nil))
     
     if self.db.profile.enabled then
+        print("|cff00FF7FCursor Animate:|r Calling Enable()...")
         self:Enable()
     else
-        print("|cffFF6B6BCursor Animate:|r Module is in settings but disabled. Enable in Cursor Animate settings.")
+        print("|cffFF6B6BCursor Animate:|r Master enabled flag is FALSE! Manually enable in settings or use: /run AbstractUI:GetModule('CursorAnimate').db.profile.enabled = true; AbstractUI:GetModule('CursorAnimate'):Enable()")
     end
 end
 
