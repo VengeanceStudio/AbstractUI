@@ -2174,6 +2174,8 @@ function AbstractUI:GetOptions()
             dbKey = "addonmanager"
         elseif name == "TimePlayed" then
             dbKey = "timePlayed"
+        elseif name == "CursorTrail" then
+            dbKey = "cursorTrail"
         else
             dbKey = string.lower(name)
         end
