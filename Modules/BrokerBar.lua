@@ -977,25 +977,44 @@ function BrokerBar:ApplyBarSettings(barID)
     local r, g, b, alpha
     if db.useThemeColor and ColorPalette then
         r, g, b, alpha = ColorPalette:GetColor("panel-bg")
-        -- Fallback if ColorPalette returns nil (shouldn't happen but safety check)
-        if not r then
-            r, g, b = db.color.r, db.color.g, db.color.b
-            alpha = db.alpha or 0.6
         -- Handle case where GetColor might return a table instead of multiple values
-        elseif type(r) == "table" then
+        if type(r) == "table" then
             g, b, alpha = r[2] or r.g or 1, r[3] or r.b or 1, r[4] or r.a or 0.6
             r = r[1] or r.r or 1
         end
     else
-        r, g, b = db.color.r, db.color.g, db.color.b
+        -- Get color from db or use defaults
+        if type(db.color) == "table" then
+            r, g, b = db.color.r or db.color[1], db.color.g or db.color[2], db.color.b or db.color[3]
+        else
+            r, g, b = nil, nil, nil
+        end
         alpha = db.alpha or 0.6
     end
+    
+    -- Final validation: ensure all values are valid numbers
+    if type(r) ~= "number" then r = 0.1 end
+    if type(g) ~= "number" then g = 0.1 end
+    if type(b) ~= "number" then b = 0.1 end
+    if type(alpha) ~= "number" then alpha = 0.6 end
+    
     f.bg:SetVertexColor(r, g, b, alpha)
     
     -- Use theme colors for backdrop if available
     if ColorPalette then
-        f:SetBackdropColor(ColorPalette:GetColor("bg-primary"))
-        f:SetBackdropBorderColor(ColorPalette:GetColor("panel-border"))
+        local bgr, bgg, bgb, bga = ColorPalette:GetColor("bg-primary")
+        if type(bgr) == "table" then
+            bgg, bgb, bga = bgr[2] or bgr.g or 0.05, bgr[3] or bgr.b or 0.05, bgr[4] or bgr.a or 0.95
+            bgr = bgr[1] or bgr.r or 0.05
+        end
+        f:SetBackdropColor(bgr, bgg, bgb, bga)
+        
+        local bordr, bordg, bordb, borda = ColorPalette:GetColor("panel-border")
+        if type(bordr) == "table" then
+            bordg, bordb, borda = bordr[2] or bordr.g or 0.2, bordr[3] or bordr.b or 0.4, bordr[4] or bordr.a or 0.8
+            bordr = bordr[1] or bordr.r or 0.2
+        end
+        f:SetBackdropBorderColor(bordr, bordg, bordb, borda)
     else
         f:SetBackdropColor(0, 0, 0, 0)
         f:SetBackdropBorderColor(1, 1, 1, skin.borderAlpha)
