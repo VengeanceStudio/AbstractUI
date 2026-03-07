@@ -671,9 +671,11 @@ end
 function CursorTrail:UpdateGCD()
     if not ringFrame or not ringFrame.cooldown then return end
     
-    local start, duration = GetSpellCooldown(61304) -- Global Cooldown spell ID
-    if start and duration and duration > 0 and duration <= 1.5 then
-        ringFrame.cooldown:SetCooldown(start, duration)
+    -- Use C_Spell.GetSpellCooldown for modern WoW API
+    local cooldownInfo = C_Spell.GetSpellCooldown(61304) -- Global Cooldown spell ID
+    if cooldownInfo and cooldownInfo.startTime and cooldownInfo.duration and 
+       cooldownInfo.duration > 0 and cooldownInfo.duration <= 1.5 then
+        ringFrame.cooldown:SetCooldown(cooldownInfo.startTime, cooldownInfo.duration)
         ringFrame.cooldown:Show()
     else
         ringFrame.cooldown:Hide()
