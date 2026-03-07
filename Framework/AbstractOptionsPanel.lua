@@ -988,8 +988,8 @@ function AbstractOptionsPanel:RenderNestedTreeContent(node)
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
-                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
+                    -- Wrap after max inline items based on widget type (3 for toggles and execute buttons, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle" or option.type == "execute") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
@@ -1116,8 +1116,8 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
-                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
+                    -- Wrap after max inline items based on widget type (3 for toggles and execute buttons, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle" or option.type == "execute") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
@@ -1280,8 +1280,8 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                     xOffset = xOffset + width + 20
                     inlineCount = inlineCount + 1
                     
-                    -- Wrap after max inline items based on widget type (3 for toggles, 4 for others)
-                    local maxInlinePerRow = (option.type == "toggle") and 3 or 4
+                    -- Wrap after max inline items based on widget type (3 for toggles and execute buttons, 4 for others)
+                    local maxInlinePerRow = (option.type == "toggle" or option.type == "execute") and 3 or 4
                     if inlineCount >= maxInlinePerRow or xOffset >= maxWidth then
                         yOffset = yOffset + rowHeight + 10
                         xOffset = 0
@@ -2259,15 +2259,39 @@ function AbstractOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
     local ColorPalette = _G.AbstractUI_ColorPalette
     local FontKit = _G.AbstractUI_FontKit
     
-    local frameWidth = (option.width == "full" or not option.width) and parent:GetWidth() or 220
+    -- Support different width values
+    local frameWidth
+    if option.width == "full" or not option.width then
+        frameWidth = parent:GetWidth()
+    elseif option.width == "double" then
+        frameWidth = 300
+    elseif option.width == "normal" then
+        frameWidth = 220
+    elseif option.width == "half" then
+        frameWidth = 160
+    else
+        frameWidth = 220  -- default
+    end
+    
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, -yOffset)
     frame:SetSize(frameWidth, 40)
     
-    -- Create button
+    -- Create button - make it fill the frame width minus padding
+    local buttonWidth = frameWidth - 10
     local button = CreateFrame("Button", nil, frame, "BackdropTemplate")
     button:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    button:SetSize(150, 28)
+    button:SetSize(buttonWidth, 28)
+    
+    -- Get custom color or default
+    local customR, customG, customB
+    if option.color then
+        if type(option.color) == "function" then
+            customR, customG, customB = option.color()
+        elseif type(option.color) == "table" then
+            customR, customG, customB = option.color.r or option.color[1], option.color.g or option.color[2], option.color.b or option.color[3]
+        end
+    end
     
     -- Style button
     button:SetBackdrop({
@@ -2276,7 +2300,13 @@ function AbstractOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
         tile = false, edgeSize = 1,
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
-    button:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    
+    -- Set button background color
+    if customR and customG and customB then
+        button:SetBackdropColor(customR, customG, customB, 0.6)
+    else
+        button:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+    end
     button:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
     
     -- Button text
@@ -2288,14 +2318,25 @@ function AbstractOptionsPanel:CreateExecute(parent, option, xOffset, yOffset)
     button.text:SetText(EvaluateValue(option.name) or "")
     button.text:SetTextColor(ColorPalette:GetColor('text-primary'))
     
+    -- Store colors for hover effect
+    button.customColor = customR and {r = customR, g = customG, b = customB}
+    
     -- Hover effect
     button:SetScript("OnEnter", function(self)
-        local r, g, b = ColorPalette:GetColor('button-bg')
-        self:SetBackdropColor(r * 1.3, g * 1.3, b * 1.3, 1)
+        if self.customColor then
+            self:SetBackdropColor(self.customColor.r * 1.3, self.customColor.g * 1.3, self.customColor.b * 1.3, 0.8)
+        else
+            local r, g, b = ColorPalette:GetColor('button-bg')
+            self:SetBackdropColor(r * 1.3, g * 1.3, b * 1.3, 1)
+        end
     end)
     
     button:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+        if self.customColor then
+            self:SetBackdropColor(self.customColor.r, self.customColor.g, self.customColor.b, 0.6)
+        else
+            self:SetBackdropColor(ColorPalette:GetColor('button-bg'))
+        end
     end)
     
     -- Click handler
