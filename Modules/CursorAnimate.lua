@@ -875,116 +875,126 @@ function CursorTrail:GetOptions()
                     end
                 end,
             },
-            colorThemeHeader = {
-                name = "Color Themes",
-                type = "header",
-                order = 2,
-            },
-            colorThemeDesc = {
-                name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
-                type = "description",
-                order = 3,
-            },
             colorThemes = {
-                name = "",
+                name = "Color Themes",
                 type = "group",
-                inline = true,
-                order = 4,
+                order = 2,
                 args = {
+                    themeDesc = {
+                        name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
+                        type = "description",
+                        order = 1,
+                    },
                     reset = {
                         name = "Reset",
                         type = "execute",
-                        order = 1,
+                        order = 2,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Default") end,
                     },
                     classColor = {
                         name = "Class Color",
                         type = "execute",
-                        order = 2,
+                        order = 3,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Class Color") end,
                     },
                     default = {
                         name = "Default",
                         type = "execute",
-                        order = 3,
+                        order = 4,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Default") end,
                     },
                     dark = {
                         name = "Dark",
                         type = "execute",
-                        order = 4,
+                        order = 5,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Dark") end,
                     },
                     light = {
                         name = "Light",
                         type = "execute",
-                        order = 5,
+                        order = 6,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Light") end,
                     },
                     neon = {
                         name = "Neon",
                         type = "execute",
-                        order = 6,
+                        order = 7,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Neon") end,
                     },
                     fire = {
                         name = "Fire",
                         type = "execute",
-                        order = 7,
+                        order = 8,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Fire") end,
                     },
                     frost = {
                         name = "Frost",
                         type = "execute",
-                        order = 8,
+                        order = 9,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Frost") end,
                     },
                     nature = {
                         name = "Nature",
                         type = "execute",
-                        order = 9,
+                        order = 10,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Nature") end,
                     },
                     shadow = {
                         name = "Shadow",
                         type = "execute",
-                        order = 10,
+                        order = 11,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Shadow") end,
                     },
                     golden = {
                         name = "Golden",
                         type = "execute",
-                        order = 11,
+                        order = 12,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Golden") end,
                     },
                     blood = {
                         name = "Blood",
                         type = "execute",
-                        order = 12,
+                        order = 13,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Blood") end,
                     },
                     arcane = {
                         name = "Arcane",
                         type = "execute",
-                        order = 13,
+                        order = 14,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Arcane") end,
                     },
                     minimal = {
                         name = "Minimal",
                         type = "execute",
-                        order = 14,
+                        order = 15,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Minimal") end,
                     },
                     comet = {
                         name = "Comet",
                         type = "execute",
-                        order = 15,
+                        order = 16,
+                        width = "normal",
                         func = function() self:ApplyColorTheme("Comet") end,
                     },
                     trailOnly = {
                         name = "Trail Only",
                         type = "execute",
-                        order = 16,
+                        order = 17,
+                        width = "normal",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = false
@@ -997,7 +1007,8 @@ function CursorTrail:GetOptions()
                     sparklesMode = {
                         name = "Sparkles",
                         type = "execute",
-                        order = 17,
+                        order = 18,
+                        width = "normal",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = true
@@ -1010,7 +1021,8 @@ function CursorTrail:GetOptions()
                     fullFX = {
                         name = "Full FX",
                         type = "execute",
-                        order = 18,
+                        order = 19,
+                        width = "normal",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = true
