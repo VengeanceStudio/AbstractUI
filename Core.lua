@@ -1991,7 +1991,11 @@ function AbstractUI:GetOptions()
                     timePlayed = { name = "Time Played", type = "toggle", order = 9.2, width = "full",
                         desc = "Track and display play time across all characters with class breakdowns",
                         get = function() return self.db.profile.modules.timePlayed end,
-                        set = function(_, v) self.db.profile.modules.timePlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
+                        set = function(_, v) self.db.profile.modules.timePlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    cursorTrail = { name = "Cursor Trail", type = "toggle", order = 9.3, width = "full",
+                        desc = "Enhanced cursor visibility with customizable trail effects and highlighting",
+                        get = function() return self.db.profile.modules.cursorTrail end,
+                        set = function(_, v) self.db.profile.modules.cursorTrail = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
             },  -- closes general group
             themes = {
