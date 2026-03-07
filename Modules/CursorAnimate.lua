@@ -875,16 +875,22 @@ function CursorTrail:GetOptions()
                     end
                 end,
             },
-            colorThemes = {
+            colorThemesHeader = {
                 name = "Color Themes",
-                type = "group",
+                type = "header",
                 order = 2,
+            },
+            colorThemeDesc = {
+                name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
+                type = "description",
+                order = 3,
+            },
+            colorThemes = {
+                name = "",
+                type = "group",
+                inline = true,
+                order = 4,
                 args = {
-                    themeDesc = {
-                        name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
-                        type = "description",
-                        order = 1,
-                    },
                     reset = {
                         name = "Reset",
                         type = "execute",
