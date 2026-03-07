@@ -42,12 +42,12 @@ local function CreateFriendsFrame()
         fs:SetText(text); fs:SetWidth(width); fs:SetJustifyH("LEFT"); fs:SetPoint("LEFT", xPos, 0)
         table.insert(headerRefs, fs) 
     end
-    -- Columns (Adjusted faction column width)
-    local colW = { btag=135, char=100, lvl=30, zone=120, realm=80, fac=50 }
-    local colX = { btag=5, char=145, lvl=250, zone=285, realm=410, fac=495 }
-    CreateHeader("BattleTag", colW.btag, colX.btag); CreateHeader("Character", colW.char, colX.char)
-    CreateHeader("Lvl", colW.lvl, colX.lvl); CreateHeader("Zone", colW.zone, colX.zone)
-    CreateHeader("Realm", colW.realm, colX.realm); CreateHeader("Faction", colW.fac, colX.fac)
+    -- Columns reordered: Character, Level, Zone, Realm, Faction, BattleTag
+    local colW = { char=100, lvl=30, zone=120, realm=80, fac=50, btag=135 }
+    local colX = { char=5, lvl=110, zone=145, realm=270, fac=355, btag=410 }
+    CreateHeader("Character", colW.char, colX.char); CreateHeader("Lvl", colW.lvl, colX.lvl)
+    CreateHeader("Zone", colW.zone, colX.zone); CreateHeader("Realm", colW.realm, colX.realm)
+    CreateHeader("Faction", colW.fac, colX.fac); CreateHeader("BattleTag", colW.btag, colX.btag)
 
     -- Add OnShow script to update fonts/colors dynamically
     friendsFrame:SetScript("OnShow", function()
