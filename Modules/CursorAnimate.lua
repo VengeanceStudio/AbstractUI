@@ -123,8 +123,13 @@ function CursorTrail:OnInitialize()
         if msg == "on" or msg == "enable" then
             if CursorTrail.db then
                 CursorTrail.db.profile.enabled = true
+                CursorTrail:Disable()
                 CursorTrail:Enable()
+                CursorTrail:UpdateVisibility()
                 print("|cff00FF7FCursor Animate:|r Enabled!")
+                if updateFrame then
+                    print("|cff00FF7FCursor Animate:|r UpdateFrame:IsShown() = " .. tostring(updateFrame:IsShown()))
+                end
             else
                 print("|cffFF6B6BCursor Animate:|r Database not ready yet.")
             end
@@ -221,8 +226,12 @@ function CursorTrail:OnDBReady()
     print("|cff00FF7FCursor Animate:|r updateFrame exists: " .. tostring(updateFrame ~= nil))
     
     if self.db.profile.enabled then
-        print("|cff00FF7FCursor Animate:|r Calling Enable()...")
+        print("|cff00FF7FCursor Animate:|r Calling Disable() first to reset state...")
+        self:Disable()
+        print("|cff00FF7FCursor Animate:|r Now calling Enable()...")
         self:Enable()
+        print("|cff00FF7FCursor Animate:|r Enable() completed, forcing UpdateVisibility()...")
+        self:UpdateVisibility()
     else
         print("|cffFF6B6BCursor Animate:|r Master enabled flag is FALSE! Manually enable in settings or use: /run AbstractUI:GetModule('CursorAnimate').db.profile.enabled = true; AbstractUI:GetModule('CursorAnimate'):Enable()")
     end
@@ -700,11 +709,27 @@ function CursorTrail:GetAlertColor()
 end
 
 function CursorTrail:UpdateVisibility()
-    if not self.db then return end
+    print("|cffFFFF00Cursor Animate:|r UpdateVisibility() called")
+    print("|cffFFFF00Cursor Animate:|r   self.db = " .. tostring(self.db ~= nil))
+    
+    if not self.db then 
+        print("|cffFFFF00Cursor Animate:|r   UpdateVisibility: DB not ready, exiting")
+        return 
+    end
+    
+    print("|cffFFFF00Cursor Animate:|r   self.db.profile.enabled = " .. tostring(self.db.profile.enabled))
+    print("|cffFFFF00Cursor Animate:|r   updateFrame = " .. tostring(updateFrame ~= nil))
     
     if self.db.profile.enabled then
-        if updateFrame then updateFrame:Show() end
+        print("|cffFFFF00Cursor Animate:|r   Enabled=true, should SHOW updateFrame")
+        if updateFrame then 
+            updateFrame:Show() 
+            print("|cff00FF7FCursor Animate:|r   updateFrame:Show() called! IsShown=" .. tostring(updateFrame:IsShown()))
+        else
+            print("|cffFF6B6BCursor Animate:|r   ERROR: updateFrame is nil!")
+        end
     else
+        print("|cffFFFF00Cursor Animate:|r   Enabled=false, hiding all frames")
         if updateFrame then updateFrame:Hide() end
         if highlightFrame then highlightFrame:Hide() end
         if ringFrame then ringFrame:Hide() end
