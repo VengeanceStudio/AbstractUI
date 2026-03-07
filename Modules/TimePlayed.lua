@@ -620,8 +620,8 @@ function TimePlayed:CreatePopup()
     end)
     
     checkBox:SetScript("OnClick", function(self)
-        self.db.profile.popupSettings.useYears = not self.db.profile.popupSettings.useYears
-        if self.db.profile.popupSettings.useYears then
+        TimePlayed.db.profile.popupSettings.useYears = not TimePlayed.db.profile.popupSettings.useYears
+        if TimePlayed.db.profile.popupSettings.useYears then
             self.check:Show()
         else
             self.check:Hide()
@@ -674,8 +674,8 @@ function TimePlayed:CreatePopup()
     end)
     
     showCharsBox:SetScript("OnClick", function(self)
-        self.db.profile.popupSettings.showCharacters = not self.db.profile.popupSettings.showCharacters
-        if self.db.profile.popupSettings.showCharacters then
+        TimePlayed.db.profile.popupSettings.showCharacters = not TimePlayed.db.profile.popupSettings.showCharacters
+        if TimePlayed.db.profile.popupSettings.showCharacters then
             self.check:Show()
         else
             self.check:Hide()
@@ -733,8 +733,8 @@ function TimePlayed:CreatePopup()
         if w > MAX_W then self:SetWidth(MAX_W) end
         if h > MAX_H then self:SetHeight(MAX_H) end
         
-        self.db.profile.popupSettings.width = self:GetWidth()
-        self.db.profile.popupSettings.height = self:GetHeight()
+        TimePlayed.db.profile.popupSettings.width = self:GetWidth()
+        TimePlayed.db.profile.popupSettings.height = self:GetHeight()
         
         local cw = self.scrollFrame:GetWidth()
         self.content:SetWidth(cw)
@@ -796,7 +796,7 @@ function TimePlayed:CreateRow(parent, width, height)
         if self.charKey then
             -- Character mode - show simple tooltip
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            local data = self.db.profile.timePlayedData[self.charKey]
+            local data = TimePlayed.db.profile.timePlayedData[self.charKey]
             if data then
                 local realm = self.charKey:match("^([^%-]+)")
                 local name = self.charKey:match("%-(.+)$") or self.charKey
@@ -804,7 +804,7 @@ function TimePlayed:CreateRow(parent, width, height)
                 GameTooltip:AddLine(name, color.r, color.g, color.b)
                 GameTooltip:AddLine(realm, 0.7, 0.7, 0.7)
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddDoubleLine("Time Played:", TimePlayed:FormatTimeDetailed(data.time, self.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
+                GameTooltip:AddDoubleLine("Time Played:", TimePlayed:FormatTimeDetailed(data.time, TimePlayed.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
             end
             GameTooltip:Show()
         elseif self.className then
@@ -817,7 +817,7 @@ function TimePlayed:CreateRow(parent, width, height)
                 GameTooltip:AddLine(" ")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
-                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, self.db.profile.popupSettings.useYears)
+                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, TimePlayed.db.profile.popupSettings.useYears)
                     local color = RAID_CLASS_COLORS[char.class] or { r = 1, g = 1, b = 1 }
                     GameTooltip:AddDoubleLine(name, timeStr, color.r, color.g, color.b, 1, 1, 1)
                 end
@@ -854,7 +854,7 @@ function TimePlayed:CreateRow(parent, width, height)
                 print("|cff00ff00" .. localizedName .. ":|r")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
-                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, self.db.profile.popupSettings.useYears)
+                    local timeStr = TimePlayed:FormatTimeDetailed(char.time, TimePlayed.db.profile.popupSettings.useYears)
                     local color = RAID_CLASS_COLORS[char.class] or { r = 1, g = 1, b = 1 }
                     print(string.format("  |cff%02x%02x%02x%s|r - %s",
                         color.r * 255, color.g * 255, color.b * 255, name, timeStr))
@@ -1006,7 +1006,7 @@ function TimePlayed:RegisterBroker()
             local total = TimePlayed:GetAccountTotal()
             tooltip:AddLine("|cffffffffTime Played|r")
             tooltip:AddLine(" ")
-            tooltip:AddDoubleLine("Total Time:", TimePlayed:FormatTimeTotal(total, self.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
+            tooltip:AddDoubleLine("Total Time:", TimePlayed:FormatTimeTotal(total, TimePlayed.db.profile.popupSettings.useYears), 1, 1, 1, 1, 1, 1)
             tooltip:AddLine(" ")
             tooltip:AddLine("Click to toggle window", 0.5, 0.5, 0.5)
         end,
@@ -1015,7 +1015,7 @@ function TimePlayed:RegisterBroker()
     -- Update text
     C_Timer.NewTicker(60, function()
         local total = TimePlayed:GetAccountTotal()
-        broker.text = TimePlayed:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
+        broker.text = TimePlayed:FormatTimeSmart(total, TimePlayed.db.profile.popupSettings.useYears)
     end)
     
     -- Initial update
