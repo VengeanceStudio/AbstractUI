@@ -1,5 +1,14 @@
 local m, V, A, T = {}, select(4, GetBuildInfo()), ...
-(A == "IconFileNames" and _G or T).ICON_FILE_NAMES = (function(s)
+
+-- Store in the LibAdvancedIconSelector namespace
+local _, LAIS_Namespace = ...
+if not LAIS_Namespace then
+	LAIS_Namespace = {}
+	select(2, ..., LAIS_Namespace)
+end
+
+-- Build the icon data table
+local iconData = (function(s)
 	local f = V > 11e4 and "89abcdef"
 	       or V >  3e4 and "4567cdef"
 	       or V >  2e4 and "2367abef"
@@ -32544,3 +32553,22 @@ f1120721 wow_token01
 f1121394 wow_token02
 f894556 xp_icon
 81001982 xpbonus_icon]]
+
+-- Store the icon data in the proper locations
+-- For LibAdvancedIconSelector: use the library's namespace directly
+-- The library loads as: local _, S = ...
+-- We need to set S.FileData = iconData
+local libName = "LibAdvancedIconSelector-1.0-LMIS"
+local libFrame = CreateFrame("Frame")
+libFrame:RegisterEvent("ADDON_LOADED")
+libFrame:SetScript("OnEvent", function(self, event, addonName)
+	if addonName == "AbstractUI" then
+		-- The library shares namespace via ... in the TOC load order
+		-- Since MacroIconData loads before the library, we'll use _G to bridge
+		_G["LAIS_FileData"] = iconData
+		self:UnregisterEvent("ADDON_LOADED")
+	end
+end)
+
+-- Also make available for MacroIconDataProvider wrapper
+_G.ICON_FILE_NAMES = iconData

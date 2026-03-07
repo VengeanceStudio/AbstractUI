@@ -4,12 +4,10 @@
 -- Provides icon file name data for the Macro Icon Selector module
 -- ============================================================================
 
-local _, ns = ...
-
 LargerMacroIconSelectionData = {}
 
 function LargerMacroIconSelectionData:GetFileData()
-    return ns.ICON_FILE_NAMES
+    return _G.ICON_FILE_NAMES or {}
 end
 
 -- Make it accessible globally

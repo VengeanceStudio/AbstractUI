@@ -930,10 +930,17 @@ function Helpers.InitialInit()
 		GetMacroIcons(MACRO_ICON_FILENAMES)
 		GetMacroItemIcons(ITEM_ICON_FILENAMES)
 		
-		for k in pairs(S.FileData) do
-			tinsert(FILEDATA_ICON_FILENAMES, k)
+		-- Get FileData from the global bridge if available
+		if _G["LAIS_FileData"] then
+			S.FileData = _G["LAIS_FileData"]
 		end
-		sort(FILEDATA_ICON_FILENAMES) -- sort by FileDataID
+		
+		if S.FileData then
+			for k in pairs(S.FileData) do
+				tinsert(FILEDATA_ICON_FILENAMES, k)
+			end
+			sort(FILEDATA_ICON_FILENAMES) -- sort by FileDataID
+		end
 	end
 end
 
