@@ -45,20 +45,20 @@ local defaults = {
         -- Trail settings
         trailEnabled = true,
         trailLength = 15,
-        trailSize = 32,
-        trailFadeSpeed = 0.15,
-        trailSpacing = 3,
-        trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 0.8 },
+        trailSize = 48, -- Increased from 32 for better visibility
+        trailFadeSpeed = 0.25, -- Increased from 0.15 to last longer
+        trailSpacing = 2, -- Reduced from 3 for more particles
+        trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 1.0 }, -- Increased alpha for visibility
         trailTexture = "Glow",
         trailBlendMode = "ADD",
         trailStyle = "classic", -- classic, rainbow, comet
         
         -- Highlight settings
         highlightEnabled = true,
-        highlightSize = 48,
+        highlightSize = 64, -- Increased from 48 for better visibility
         highlightAlpha = 0.5,
         highlightPulse = true,
-        highlightColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.5 },
+        highlightColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 }, -- Increased alpha
         highlightTexture = "Glow",
         highlightBlendMode = "ADD",
         
@@ -119,6 +119,7 @@ end
 
 function CursorTrail:OnDBReady()
     if not AbstractUI.db.profile.modules.cursorTrail then 
+        print("|cffFF6B6BCursor Animate:|r Module is disabled in settings. Enable it in General Settings > Modules.")
         self:Disable()
         return 
     end
@@ -152,17 +153,31 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
     
+    print("|cff00FF7FCursor Animate:|r Module loaded successfully!")
+    print("|cff00FF7FCursor Animate:|r Trail: " .. (self.db.profile.trailEnabled and "ON" or "OFF") .. 
+          " | Highlight: " .. (self.db.profile.highlightEnabled and "ON" or "OFF") ..
+          " | Sparkles: " .. (self.db.profile.sparklesEnabled and "ON" or "OFF") ..
+          " | Ring: " .. (self.db.profile.ringEnabled and "ON" or "OFF"))
+    
     if self.db.profile.enabled then
         self:Enable()
+    else
+        print("|cffFF6B6BCursor Animate:|r Module is in settings but disabled. Enable in Cursor Animate settings.")
     end
 end
 
 function CursorTrail:OnEnable()
     -- Don't do anything if DB isn't ready yet
-    if not self.db then return end
+    if not self.db then 
+        print("|cffFF6B6BCursor Animate:|r OnEnable called but DB not ready!")
+        return 
+    end
     
     if updateFrame then
         updateFrame:Show()
+        print("|cff00FF7FCursor Animate:|r Animation enabled!")
+    else
+        print("|cffFF6B6BCursor Animate:|r ERROR: updateFrame not created!")
     end
     self:UpdateVisibility()
 end
@@ -241,12 +256,17 @@ function CursorTrail:CreateHighlightFrame()
     
     local texture = highlightFrame:CreateTexture(nil, "ARTWORK")
     texture:SetAllPoints()
-    texture:SetTexture(TEXTURES["Glow"])
+    local texPath = TEXTURES["Glow"] or "Interface\\Cooldown\\star4"
+    texture:SetTexture(texPath)
     texture:SetBlendMode("ADD")
+    -- Set initial color to white for testing
+    texture:SetVertexColor(1, 1, 1, 0.8)
     
     highlightFrame.texture = texture
     highlightFrame.pulseDirection = 1
     highlightFrame.pulseAlpha = 0
+    
+    print("|cff00FF7FCursor Animate:|r Highlight frame created with texture: " .. texPath)
 end
 
 function CursorTrail:CreateSparkleFrames()
@@ -306,10 +326,17 @@ function CursorTrail:CreateUpdateFrame()
     local frameCount = 0
     local sparkleTimer = 0
     local lastX, lastY = 0, 0
+    local hasShownStartMessage = false
     
     updateFrame:SetScript("OnUpdate", function(self, elapsed)
         if not CursorTrail.db then return end
         if not CursorTrail.db.profile.enabled then return end
+        
+        -- One-time startup message
+        if not hasShownStartMessage then
+            print("|cff00FF7FCursor Animate:|r OnUpdate script is running!")
+            hasShownStartMessage = true
+        end
         
         local x, y = GetCursorPosition()
         local scale = UIParent:GetEffectiveScale()
