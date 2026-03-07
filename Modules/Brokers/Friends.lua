@@ -165,14 +165,17 @@ local function UpdateFriendList()
             AddText(data.bnet, colW.btag, colX.btag, {r=0.51,g=0.77,b=1})
 
             btn:SetScript("OnClick", function() 
-                local t = data.name
-                if data.realm then 
-                    t=t.."-"..data.realm:gsub("%s+","") 
-                end
                 if IsControlKeyDown() then 
-                    C_PartyInfo.InviteUnit(t) 
+                    -- For invites, use character-realm format (remove spaces and apostrophes)
+                    local t = data.name
+                    if data.realm then 
+                        t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                    end
+                    C_PartyInfo.InviteUnit(t)
                 else 
-                    ChatFrame_SendTell(t) 
+                    -- For whispers, use full BattleTag which works cross-realm
+                    ChatFrame_SendTell(data.bnet)
+                end 
                 end 
             end)
         end
