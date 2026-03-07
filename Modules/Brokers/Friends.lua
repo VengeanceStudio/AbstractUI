@@ -175,8 +175,7 @@ local function UpdateFriendList()
                 else 
                     -- For whispers, use full BattleTag which works cross-realm
                     ChatFrame_SendTell(data.bnet)
-                end 
-                end 
+                end
             end)
         end
         local hl = btn:CreateTexture(nil, "HIGHLIGHT"); hl:SetAllPoints(); hl:SetColorTexture(1,1,1,0.1)
