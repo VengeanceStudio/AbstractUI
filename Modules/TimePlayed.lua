@@ -511,9 +511,9 @@ function TimePlayed:CreatePopup()
     f.dragArea:SetScript("OnDragStop", function(self)
         f:StopMovingOrSizing()
         local point, _, _, x, y = f:GetPoint()
-        self.db.profile.popupSettings.point = point
-        self.db.profile.popupSettings.x = x
-        self.db.profile.popupSettings.y = y
+        TimePlayed.db.profile.popupSettings.point = point
+        TimePlayed.db.profile.popupSettings.x = x
+        TimePlayed.db.profile.popupSettings.y = y
     end)
     
     -- Close button (AbstractUI style)
