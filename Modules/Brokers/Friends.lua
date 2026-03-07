@@ -150,12 +150,12 @@ local function UpdateFriendList()
             AddText(data.level, colW.lvl, colX.lvl, {r=1,g=1,b=1}); AddText(data.zone, colW.zone, colX.zone, {r=1,g=0.82,b=0})
             AddText(data.realm, colW.realm, colX.realm, {r=1,g=1,b=1})
             
-            -- Fixed faction icon logic with proper texture markup
+            -- Fixed faction icon logic with atlas textures
             local facIcon = ""
             if data.faction == "Horde" then
-                facIcon = "|TInterface\\Icons\\INV_BannerPVP_01:16:16:0:0|t"
+                facIcon = "|A:horde:16:16|a"
             elseif data.faction == "Alliance" then
-                facIcon = "|TInterface\\Icons\\INV_BannerPVP_02:16:16:0:0|t"
+                facIcon = "|A:alliance:16:16|a"
             end
             AddText(facIcon, colW.fac, colX.fac)
 
