@@ -1992,8 +1992,8 @@ function AbstractUI:GetOptions()
                         desc = "Track and display play time across all characters with class breakdowns",
                         get = function() return self.db.profile.modules.timePlayed end,
                         set = function(_, v) self.db.profile.modules.timePlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    cursorTrail = { name = "Cursor Trail", type = "toggle", order = 9.3, width = "full",
-                        desc = "Enhanced cursor visibility with customizable trail effects and highlighting",
+                    cursorTrail = { name = "Cursor Animate", type = "toggle", order = 9.3, width = "full",
+                        desc = "Enhanced cursor visibility with customizable animation effects and highlighting",
                         get = function() return self.db.profile.modules.cursorTrail end,
                         set = function(_, v) self.db.profile.modules.cursorTrail = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
@@ -2201,7 +2201,7 @@ function AbstractUI:GetOptions()
             elseif name == "AddonManager" then
                 displayName = "Addon Manager"
             elseif name == "CursorTrail" then
-                displayName = "Cursor Trail"
+                displayName = "Cursor Animate"
             elseif name == "TimePlayed" then
                 displayName = "Time Played"
             end

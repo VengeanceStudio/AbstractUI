@@ -1,7 +1,7 @@
 -- ============================================================================
--- Cursor Trail Module
+-- Cursor Animate Module
 -- ============================================================================
--- Enhanced cursor visibility with customizable trail effects and highlighting.
+-- Enhanced cursor visibility with customizable animation effects and highlighting.
 -- 
 -- Features:
 -- - Smooth particle trail following cursor movement
@@ -334,12 +334,12 @@ end
 -- Options table
 function CursorTrail:GetOptions()
     return {
-        name = "Cursor Trail",
+        name = "Cursor Animate",
         type = "group",
         args = {
             enabled = {
-                name = "Enable Cursor Trail",
-                desc = "Enable or disable the cursor trail effect",
+                name = "Enable Cursor Animate",
+                desc = "Enable or disable the cursor animation effect",
                 type = "toggle",
                 order = 1,
                 get = function() return self.db.profile.enabled end,

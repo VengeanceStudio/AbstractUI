@@ -3066,6 +3066,8 @@ end
                     self:UnregisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
                     self:UnregisterEvent("PLAYER_FLAGS_CHANGED")
                     self:UnregisterEvent("PLAYER_UPDATE_RESTING")
+                    self:UnregisterEvent("PLAYER_STARTED_MOVING")
+                    self:UnregisterEvent("PLAYER_STOPPED_MOVING")
                     self:UnregisterEvent("ENCOUNTER_START")
                     self:UnregisterEvent("ENCOUNTER_END")
                     
@@ -3082,6 +3084,8 @@ end
                     self:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
                     self:RegisterEvent("PLAYER_FLAGS_CHANGED")
                     self:RegisterEvent("PLAYER_UPDATE_RESTING")
+                    self:RegisterEvent("PLAYER_STARTED_MOVING")
+                    self:RegisterEvent("PLAYER_STOPPED_MOVING")
                     self:RegisterEvent("ENCOUNTER_START")
                     self:RegisterEvent("ENCOUNTER_END")
                     self:PLAYER_ENTERING_WORLD()
@@ -3095,6 +3099,17 @@ end
                 -- Handle resting state changes
                 function UnitFrames:PLAYER_UPDATE_RESTING()
                     self:UpdatePlayerStatusIcons(nil, "PLAYER_UPDATE_RESTING")
+                end
+                
+                -- Handle player movement (clears AFK status immediately)
+                function UnitFrames:PLAYER_STARTED_MOVING()
+                    -- Movement should clear AFK status, update immediately
+                    self:UpdatePlayerStatusIcons(nil, "PLAYER_STARTED_MOVING")
+                end
+                
+                function UnitFrames:PLAYER_STOPPED_MOVING()
+                    -- Check status when player stops (in case AFK gets set)
+                    self:UpdatePlayerStatusIcons(nil, "PLAYER_STOPPED_MOVING")
                 end
 
                 function UnitFrames:GetTargetOptions()

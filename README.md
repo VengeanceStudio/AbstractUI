@@ -93,11 +93,11 @@ Enhanced minimap with modern aesthetics and improved functionality.
 
 ---
 
-### ✨ Cursor Trail Module
-Enhanced cursor visibility with customizable trail effects and highlighting.
+### ✨ Cursor Animate Module
+Enhanced cursor visibility with customizable animation effects and highlighting.
 
 **Features:**
-* **Cursor Trail:** Smooth particle trail following mouse movement
+* **Cursor Animation:** Smooth particle trail following mouse movement
 * **Cursor Highlight:** Glowing effect around cursor with optional pulse animation
 * **Customizable Appearance:**
   - Adjustable size, color (RGB + alpha), and blend modes
