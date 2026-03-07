@@ -637,6 +637,10 @@ function AddonManager:ShowSetsMenu(button)
             insets = { left = 1, right = 1, top = 1, bottom = 1 }
         })
         local r, g, b = ColorPalette:GetColor("panel-bg")
+        if type(r) == "table" then
+            g, b = r[2] or r.g or 0.05, r[3] or r.b or 0.1
+            r = r[1] or r.r or 0.05
+        end
         menu:SetBackdropColor(r, g, b, 1.0)
         menu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
         menu:EnableMouse(true)
@@ -788,6 +792,10 @@ function AddonManager:ShowSetSubmenu(button, setID)
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
     local r, g, b = ColorPalette:GetColor("panel-bg")
+    if type(r) == "table" then
+        g, b = r[2] or r.g or 0.05, r[3] or r.b or 0.1
+        r = r[1] or r.r or 0.05
+    end
     submenu:SetBackdropColor(r, g, b, 1.0)
     submenu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     submenu:EnableMouse(true)
@@ -941,6 +949,10 @@ function AddonManager:CreateUI()
     -- Hover effects
     closeBtn:SetScript("OnEnter", function(self)
         local r, g, b = ColorPalette:GetColor('accent-primary')
+        if type(r) == "table" then
+            g, b = r[2] or r.g or 0.0, r[3] or r.b or 0.8
+            r = r[1] or r.r or 0.0
+        end
         self:SetBackdropColor(r, g, b, 0.15)
         self.text:SetTextColor(1, 1, 1, 1)
     end)
@@ -1002,6 +1014,10 @@ function AddonManager:CreateUI()
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
     local r, g, b = ColorPalette:GetColor("bg-primary")
+    if type(r) == "table" then
+        g, b = r[2] or r.g or 0.05, r[3] or r.b or 0.05
+        r = r[1] or r.r or 0.05
+    end
     scrollFrame:SetBackdropColor(r * 0.7, g * 0.7, b * 0.7, 0.9)
     scrollFrame:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     

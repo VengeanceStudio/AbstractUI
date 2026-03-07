@@ -408,6 +408,10 @@ function AbstractUI:ApplyThemedBackdrop(frame)
     local ColorPalette = _G.AbstractUI_ColorPalette
     if ColorPalette then
         local r, g, b, a = ColorPalette:GetColor('panel-bg')
+        if type(r) == "table" then
+            g, b, a = r[2] or r.g or 0.05, r[3] or r.b or 0.1, r[4] or r.a or 0.95
+            r = r[1] or r.r or 0.05
+        end
         frame.muiBackdrop:SetBackdropColor(r, g, b, a)
         frame.muiBackdrop:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
     else
@@ -616,6 +620,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('panel-bg')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.05, r[3] or r.b or 0.1, r[4] or r.a or 0.95
+                    r = r[1] or r.r or 0.05
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -631,6 +639,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('panel-border')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.2, r[3] or r.b or 0.4, r[4] or r.a or 0.8
+                    r = r[1] or r.r or 0.2
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -646,6 +658,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('accent-primary')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.8, r[3] or r.b or 1.0, r[4] or r.a or 1.0
+                    r = r[1] or r.r or 0.0
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -661,6 +677,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('button-bg')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.1, r[3] or r.b or 0.15, r[4] or r.a or 0.9
+                    r = r[1] or r.r or 0.1
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -676,6 +696,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('button-hover')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.3, r[3] or r.b or 0.4, r[4] or r.a or 0.95
+                    r = r[1] or r.r or 0.15
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -691,6 +715,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('text-primary')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 1.0, r[3] or r.b or 1.0, r[4] or r.a or 1.0
+                    r = r[1] or r.r or 1.0
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -706,6 +734,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('text-secondary')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.7, r[3] or r.b or 0.8, r[4] or r.a or 1.0
+                    r = r[1] or r.r or 0.7
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -721,6 +753,10 @@ function AbstractUI:GetThemeOptions()
             hasAlpha = true,
             get = function()
                 local r, g, b, a = ColorPalette:GetColor('tab-active')
+                if type(r) == "table" then
+                    g, b, a = r[2] or r.g or 0.3, r[3] or r.b or 0.4, r[4] or r.a or 0.95
+                    r = r[1] or r.r or 0.15
+                end
                 return {r, g, b, a}
             end,
             set = function(_, value)
@@ -810,6 +846,10 @@ function AbstractUI:OpenColorPickerForThemeColor(colorKey, colorName)
     end
     
     local r, g, b, a = ColorPalette:GetColor(colorKey)
+    if type(r) == "table" then
+        g, b, a = r[2] or r.g or 1, r[3] or r.b or 1, r[4] or r.a or 1
+        r = r[1] or r.r or 1
+    end
     ColorPickerFrame:SetupColorPickerAndShow({
         r = r, g = g, b = b,
         opacity = a,

@@ -203,6 +203,10 @@ function AbstractOptionsPanel:CreateFrame(addonRef)
     -- Hover effects
     frame.closeButton:SetScript("OnEnter", function(self)
         local r, g, b = ColorPalette:GetColor('accent-primary')
+        if type(r) == "table" then
+            g, b = r[2] or r.g or 0.8, r[3] or r.b or 1.0
+            r = r[1] or r.r or 0.0
+        end
         self:SetBackdropColor(r, g, b, 0.15)
         self.text:SetTextColor(1, 1, 1, 1)
     end)
@@ -310,6 +314,10 @@ function AbstractOptionsPanel:BuildTree(tree)
                 tile = false
             })
             local r, g, b = ColorPalette:GetColor('accent-primary')
+            if type(r) == "table" then
+                g, b = r[2] or r.g or 0.8, r[3] or r.b or 1.0
+                r = r[1] or r.r or 0.0
+            end
             self:SetBackdropColor(r, g, b, 0.15)
         end)
         
@@ -1786,6 +1794,10 @@ function AbstractOptionsPanel:CreateSelect(parent, option, xOffset, yOffset)
         })
         -- Force solid background for dropdown menu readability
         local r, g, b, a = ColorPalette:GetColor('panel-bg')
+        if type(r) == "table" then
+            g, b, a = r[2] or r.g or 0.05, r[3] or r.b or 0.1, r[4] or r.a or 0.95
+            r = r[1] or r.r or 0.05
+        end
         menu:SetBackdropColor(r, g, b, 1.0)  -- Always use alpha=1.0
         menu:SetBackdropBorderColor(ColorPalette:GetColor('accent-primary'))
         

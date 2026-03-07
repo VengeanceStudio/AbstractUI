@@ -981,6 +981,10 @@ function BrokerBar:ApplyBarSettings(barID)
         if not r then
             r, g, b = db.color.r, db.color.g, db.color.b
             alpha = db.alpha or 0.6
+        -- Handle case where GetColor might return a table instead of multiple values
+        elseif type(r) == "table" then
+            g, b, alpha = r[2] or r.g or 1, r[3] or r.b or 1, r[4] or r.a or 0.6
+            r = r[1] or r.r or 1
         end
     else
         r, g, b = db.color.r, db.color.g, db.color.b
@@ -1692,6 +1696,11 @@ function BrokerBar:GetOptions()
                 set = function(_, v) 
                     if v ~= "" and not self.db.profile.bars[v] then 
                         local r, g, b, a = ColorPalette:GetColor('panel-bg')
+                        -- Handle case where GetColor might return a table
+                        if type(r) == "table" then
+                            g, b, a = r[2] or r.g or 0.1, r[3] or r.b or 0.1, r[4] or r.a or 0.6
+                            r = r[1] or r.r or 0.1
+                        end
                         self.db.profile.bars[v] = { 
                             enabled = true, 
                             fullWidth = false, 

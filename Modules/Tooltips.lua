@@ -333,7 +333,15 @@ function Tooltips:StyleTooltip(tooltip, itemQuality, classColor)
     if not tooltip or not self.ColorPalette then return end
     
     local br, bg, bb, ba = self.ColorPalette:GetColor("panel-border")
+    if type(br) == "table" then
+        bg, bb, ba = br[2] or br.g or 1, br[3] or br.b or 1, br[4] or br.a or 1
+        br = br[1] or br.r or 1
+    end
     local bgr, bgg, bgb, bga = self.ColorPalette:GetColor("tooltip-bg")
+    if type(bgr) == "table" then
+        bgg, bgb, bga = bgr[2] or bgr.g or 0.05, bgr[3] or bgr.b or 0.05, bgr[4] or bgr.a or 0.95
+        bgr = bgr[1] or bgr.r or 0.05
+    end
     
     -- Override border color with class color if provided and enabled
     if classColor and self.db.profile.classColoredBorders then

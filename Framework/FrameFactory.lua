@@ -402,6 +402,10 @@ function FrameFactory:CreateDropdown(parent, width, height)
         insets = { left = 1, right = 1, top = 1, bottom = 1 }
     })
     local r, g, b = ColorPalette:GetColor("panel-bg")
+    if type(r) == "table" then
+        g, b = r[2] or r.g or 0.05, r[3] or r.b or 0.1
+        r = r[1] or r.r or 0.05
+    end
     dropdown.menu:SetBackdropColor(r, g, b, 1.0)
     dropdown.menu:SetBackdropBorderColor(ColorPalette:GetColor("primary"))
     
