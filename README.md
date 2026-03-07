@@ -98,16 +98,30 @@ Enhanced cursor visibility with customizable animation effects and highlighting.
 
 **Features:**
 * **Cursor Animation:** Smooth particle trail following mouse movement
+  - Multiple trail styles: Classic, Rainbow (cycling colors), Comet (bright head)
+  - Adjustable trail length, size, fade speed, and particle spacing
+  - 10+ texture options (Glow, Star, Circle, Spark, Diamond, Triangle, Moon, Orb, etc.)
 * **Cursor Highlight:** Glowing effect around cursor with optional pulse animation
+* **Sparkles Effect:** Idle particle effects that appear when cursor stops moving
+  - Configurable idle delay, spawn rate, lifetime, and drift velocity
+  - Separate color and texture settings
+* **Ring Effect:** Circular ring around cursor with optional features:
+  - GCD (Global Cooldown) tracking with cooldown overlay
+  - Pulse animation synchronized with combat
+  - Multiple ring textures (Circle, Square, Diamond, Star)
+* **Health & Combat Alerts:**
+  - Low health warning (cursor turns red below threshold)
+  - Aggro/threat warning (cursor turns orange when you have threat)
+  - Visual feedback for combat awareness
 * **Customizable Appearance:**
-  - Adjustable size, color (RGB + alpha), and blend modes
-  - Multiple texture styles (Glow, Star, Circle, Spark)
-  - Trail length and fade speed controls
-  - Particle spacing and density options
+  - Individual settings for trail, highlight, sparkles, and ring
+  - Adjustable size, color (RGB + alpha), and blend modes for each effect
+  - Multiple texture styles and animation options
 * **Combat Awareness:**
   - Option to hide effects during combat
   - Combat-only highlight mode for better target visibility
-* **Performance Optimized:** Efficient particle system with minimal overhead
+  - Independent control per effect type
+* **Performance Optimized:** Efficient particle system with object pooling and minimal overhead
 * Independent control of trail and highlight effects
 
 Perfect for improving cursor visibility in raids, finding your cursor quickly, or adding visual flair to your UI.

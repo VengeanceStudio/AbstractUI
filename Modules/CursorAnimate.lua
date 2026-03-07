@@ -1,0 +1,1171 @@
+-- ============================================================================
+-- Cursor Animate Module
+-- ============================================================================
+-- Enhanced cursor visibility with customizable animation effects and highlighting.
+-- Incorporates features from CursorFX addon.
+-- 
+-- Features:
+-- - Smooth particle trail with multiple styles (classic, rainbow, comet)
+-- - Glowing highlight effect with optional pulse animation
+-- - Sparkles effect when cursor is idle
+-- - Ring effect with GCD tracking
+-- - Health and combat alerts (low health warning, aggro detection)
+-- - Customizable colors, sizes, textures, and blend modes
+-- - Combat awareness (hide/show based on combat state)
+-- - Performance optimized particle system with object pooling
+-- ============================================================================
+
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+local CursorTrail = AbstractUI:NewModule("CursorAnimate", "AceEvent-3.0")
+local ColorPalette = _G.AbstractUI_ColorPalette
+
+-- Frame pools
+local trailFrames = {}
+local sparkleFrames = {}
+local maxTrailFrames = 30
+local maxSparkleFrames = 20
+local currentTrailIndex = 1
+local sparkleFreeList = {}
+local updateFrame
+local highlightFrame
+local ringFrame
+
+-- State tracking
+local lastCursorX, lastCursorY = 0, 0
+local idleTime = 0
+local rainbowPhase = 0
+local pulseTime = 0
+local isInCombat = false
+local hasLowHealth = false
+
+local defaults = {
+    profile = {
+        enabled = true,
+        
+        -- Trail settings
+        trailEnabled = true,
+        trailLength = 15,
+        trailSize = 32,
+        trailFadeSpeed = 0.15,
+        trailSpacing = 3,
+        trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 0.8 },
+        trailTexture = "Glow",
+        trailBlendMode = "ADD",
+        trailStyle = "classic", -- classic, rainbow, comet
+        
+        -- Highlight settings
+        highlightEnabled = true,
+        highlightSize = 48,
+        highlightAlpha = 0.5,
+        highlightPulse = true,
+        highlightColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.5 },
+        highlightTexture = "Glow",
+        highlightBlendMode = "ADD",
+        
+        -- Sparkles settings
+        sparklesEnabled = false,
+        sparklesIdleDelay = 1.0, -- Seconds before sparkles appear
+        sparklesSize = 12,
+        sparklesSpawnRate = 0.1, -- Seconds between spawns
+        sparklesLifetime = 0.8,
+        sparklesColor = { r = 0.3, g = 0.9, b = 1.0, a = 0.7 },
+        sparklesTexture = "Star",
+        
+        -- Ring settings
+        ringEnabled = false,
+        ringSize = 64,
+        ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        ringTexture = "Circle",
+        ringPulse = true,
+        ringShowGCD = true,
+        
+        -- Combat/Health alerts
+        alertsEnabled = false,
+        lowHealthWarning = true,
+        lowHealthThreshold = 30,
+        aggroWarning = true,
+        
+        -- Combat settings
+        hideInCombat = false,
+        combatOnlyHighlight = false,
+    }
+}
+
+-- Expanded texture library from CursorFX
+local TEXTURES = {
+    -- Basic shapes
+    ["Glow"] = "Interface\\Cooldown\\star4",
+    ["GlowSoft"] = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\glow_soft_256",
+    ["Star"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_1",
+    ["Circle"] = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512",
+    ["CircleThick"] = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_thick_512",
+    ["Spark"] = "Interface\\CastingBar\\UI-CastingBar-Spark",
+    ["Square"] = "Interface\\Buttons\\UI-Quickslot2",
+    
+    -- Raid markers
+    ["Diamond"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_3",
+    ["Triangle"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_4",
+    ["Moon"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_5",
+    ["Cross"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_7",
+    ["Skull"] = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_8",
+    
+    -- Additional effects
+    ["Orb"] = "Interface\\Cooldown\\ping4",
+}
+
+function CursorTrail:OnInitialize()
+    self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
+end
+
+function CursorTrail:OnDBReady()
+    if not AbstractUI.db.profile.modules.cursorTrail then 
+        self:Disable()
+        return 
+    end
+    
+    self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
+    
+    -- Ensure colors are valid
+    if not self:ValidateColor(self.db.profile.trailColor) then
+        self.db.profile.trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 0.8 }
+    end
+    
+    if not self:ValidateColor(self.db.profile.highlightColor) then
+        self.db.profile.highlightColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.5 }
+    end
+    
+    if not self:ValidateColor(self.db.profile.sparklesColor) then
+        self.db.profile.sparklesColor = { r = 0.3, g = 0.9, b = 1.0, a = 0.7 }
+    end
+    
+    if not self:ValidateColor(self.db.profile.ringColor) then
+        self.db.profile.ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 }
+    end
+    
+    self:CreateTrailFrames()
+    self:CreateHighlightFrame()
+    self:CreateSparkleFrames()
+    self:CreateRingFrame()
+    self:CreateUpdateFrame()
+    
+    self:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
+    self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
+    self:RegisterEvent("UNIT_HEALTH") -- Health changes
+    
+    if self.db.profile.enabled then
+        self:Enable()
+    end
+end
+
+function CursorTrail:OnEnable()
+    -- Don't do anything if DB isn't ready yet
+    if not self.db then return end
+    
+    if updateFrame then
+        updateFrame:Show()
+    end
+    self:UpdateVisibility()
+end
+
+function CursorTrail:OnDisable()
+    if updateFrame then
+        updateFrame:Hide()
+    end
+    if highlightFrame then
+        highlightFrame:Hide()
+    end
+    if ringFrame then
+        ringFrame:Hide()
+    end
+    for _, frame in ipairs(trailFrames) do
+        frame:Hide()
+    end
+    for _, frame in ipairs(sparkleFrames) do
+        frame:Hide()
+    end
+end
+
+function CursorTrail:ValidateColor(color)
+    if type(color) ~= "table" then return false end
+    if type(color.r) ~= "number" or type(color.g) ~= "number" or 
+       type(color.b) ~= "number" or type(color.a) ~= "number" then
+        return false
+    end
+    return true
+end
+
+-- HSV to RGB conversion for rainbow trail effect
+function CursorTrail:HSVtoRGB(h, s, v)
+    local i = math.floor(h * 6)
+    local f = h * 6 - i
+    local p = v * (1 - s)
+    local q = v * (1 - f * s)
+    local t = v * (1 - (1 - f) * s)
+    i = i % 6
+    if i == 0 then return v, t, p end
+    if i == 1 then return q, v, p end
+    if i == 2 then return p, v, t end
+    if i == 3 then return p, q, v end
+    if i == 4 then return t, p, v end
+    return v, p, q
+end
+
+function CursorTrail:CreateTrailFrames()
+    for i = 1, maxTrailFrames do
+        local frame = CreateFrame("Frame", "AbstractUI_CursorTrail" .. i, UIParent)
+        frame:SetSize(32, 32)
+        frame:SetFrameStrata("TOOLTIP")
+        frame:SetFrameLevel(1000)
+        frame:Hide()
+        
+        local texture = frame:CreateTexture(nil, "ARTWORK")
+        texture:SetAllPoints()
+        texture:SetTexture(TEXTURES["Glow"])
+        texture:SetBlendMode("ADD")
+        
+        frame.texture = texture
+        frame.age = 0
+        frame.maxAge = 1
+        frame.index = i -- For rainbow effect
+        
+        trailFrames[i] = frame
+    end
+end
+
+function CursorTrail:CreateHighlightFrame()
+    highlightFrame = CreateFrame("Frame", "AbstractUI_CursorHighlight", UIParent)
+    highlightFrame:SetSize(48, 48)
+    highlightFrame:SetFrameStrata("TOOLTIP")
+    highlightFrame:SetFrameLevel(999)
+    highlightFrame:Hide()
+    
+    local texture = highlightFrame:CreateTexture(nil, "ARTWORK")
+    texture:SetAllPoints()
+    texture:SetTexture(TEXTURES["Glow"])
+    texture:SetBlendMode("ADD")
+    
+    highlightFrame.texture = texture
+    highlightFrame.pulseDirection = 1
+    highlightFrame.pulseAlpha = 0
+end
+
+function CursorTrail:CreateSparkleFrames()
+    for i = 1, maxSparkleFrames do
+        local frame = CreateFrame("Frame", "AbstractUI_Sparkle" .. i, UIParent)
+        frame:SetSize(12, 12)
+        frame:SetFrameStrata("TOOLTIP")
+        frame:SetFrameLevel(998)
+        frame:Hide()
+        
+        local texture = frame:CreateTexture(nil, "ARTWORK")
+        texture:SetAllPoints()
+        texture:SetTexture(TEXTURES["Star"])
+        texture:SetBlendMode("ADD")
+        
+        frame.texture = texture
+        frame.age = 0
+        frame.maxAge = 1
+        frame.velocityX = 0
+        frame.velocityY = 0
+        
+        sparkleFrames[i] = frame
+        sparkleFreeList[i] = i -- All sparkles start in free list
+    end
+end
+
+function CursorTrail:CreateRingFrame()
+    ringFrame = CreateFrame("Frame", "AbstractUI_CursorRing", UIParent)
+    ringFrame:SetSize(64, 64)
+    ringFrame:SetFrameStrata("TOOLTIP")
+    ringFrame:SetFrameLevel(997)
+    ringFrame:Hide()
+    
+    -- Main ring texture
+    local texture = ringFrame:CreateTexture(nil, "BACKGROUND")
+    texture:SetAllPoints()
+    texture:SetTexture(TEXTURES["Circle"])
+    texture:SetBlendMode("ADD")
+    
+    ringFrame.texture = texture
+    
+    -- GCD cooldown overlay
+    local cooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
+    cooldown:SetAllPoints()
+    cooldown:SetHideCountdownNumbers(true)
+    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
+    if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
+    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(true) end
+    
+    ringFrame.cooldown = cooldown
+end
+
+function CursorTrail:CreateUpdateFrame()
+    updateFrame = CreateFrame("Frame", "AbstractUI_CursorUpdate", UIParent)
+    updateFrame:Hide()
+    
+    local frameCount = 0
+    local sparkleTimer = 0
+    local lastX, lastY = 0, 0
+    
+    updateFrame:SetScript("OnUpdate", function(self, elapsed)
+        if not CursorTrail.db then return end
+        if not CursorTrail.db.profile.enabled then return end
+        
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        x = x / scale
+        y = y / scale
+        
+        -- Check if cursor moved
+        local cursorMoved = (math.abs(x - lastX) > 2 or math.abs(y - lastY) > 2)
+        if cursorMoved then
+            idleTime = 0
+            lastX, lastY = x, y
+        else
+            idleTime = idleTime + elapsed
+        end
+        
+        -- Update combat/health alerts
+        if CursorTrail.db.profile.alertsEnabled then
+            CursorTrail:UpdateAlerts()
+        end
+        
+        -- Determine active color (alert color overrides normal color)
+        local alertR, alertG, alertB = CursorTrail:GetAlertColor()
+        
+        -- Update highlight
+        if CursorTrail.db.profile.highlightEnabled and highlightFrame then
+            local shouldShowHighlight = true
+            
+            if CursorTrail.db.profile.hideInCombat and isInCombat then
+                shouldShowHighlight = false
+            elseif CursorTrail.db.profile.combatOnlyHighlight and not isInCombat then
+                shouldShowHighlight = false
+            end
+            
+            if shouldShowHighlight then
+                highlightFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                
+                -- Use alert color if available
+                local color = CursorTrail.db.profile.highlightColor
+                local r, g, b, a = alertR or color.r, alertG or color.g, alertB or color.b, color.a
+                
+                -- Pulse effect
+                if CursorTrail.db.profile.highlightPulse then
+                    pulseTime = pulseTime + elapsed * 2
+                    local pulseAlpha = (math.sin(pulseTime) + 1) / 2
+                    a = a * (0.5 + pulseAlpha * 0.5)
+                end
+                
+                highlightFrame.texture:SetVertexColor(r, g, b, a)
+                highlightFrame:Show()
+            else
+                highlightFrame:Hide()
+            end
+        else
+            highlightFrame:Hide()
+        end
+        
+        -- Update ring
+        if CursorTrail.db.profile.ringEnabled and ringFrame then
+            local shouldShowRing = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            
+            if shouldShowRing then
+                ringFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                
+                local color = CursorTrail.db.profile.ringColor
+                local r, g, b, a = alertR or color.r, alertG or color.g, alertB or color.b, color.a
+                
+                -- Pulse effect
+                if CursorTrail.db.profile.ringPulse then
+                    local pulse = (math.sin(GetTime() * 3) + 1) / 2
+                    local size = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
+                    ringFrame:SetSize(size, size)
+                end
+                
+                ringFrame.texture:SetVertexColor(r, g, b, a)
+                ringFrame:Show()
+                
+                -- Update GCD cooldown
+                if CursorTrail.db.profile.ringShowGCD then
+                    CursorTrail:UpdateGCD()
+                end
+            else
+                ringFrame:Hide()
+            end
+        else
+            if ringFrame then ringFrame:Hide() end
+        end
+        
+        -- Update trail
+        if CursorTrail.db.profile.trailEnabled then
+            local shouldShowTrail = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            
+            if shouldShowTrail and cursorMoved then
+                frameCount = frameCount + 1
+                
+                if frameCount >= CursorTrail.db.profile.trailSpacing then
+                    frameCount = 0
+                    CursorTrail:AddTrailParticle(x, y, alertR, alertG, alertB)
+                end
+            end
+            
+            -- Update existing trail particles
+            for _, frame in ipairs(trailFrames) do
+                if frame:IsShown() then
+                    frame.age = frame.age + elapsed
+                    
+                    if frame.age >= frame.maxAge then
+                        frame:Hide()
+                    else
+                        local progress = frame.age / frame.maxAge
+                        local alpha = (1 - progress)
+                        
+                        -- Apply style-specific coloring
+                        local r, g, b
+                        if CursorTrail.db.profile.trailStyle == "rainbow" then
+                            rainbowPhase = rainbowPhase + elapsed * 0.5
+                            local hue = (rainbowPhase + frame.index * 0.05) % 1
+                            r, g, b = CursorTrail:HSVtoRGB(hue, 1, 1)
+                        elseif CursorTrail.db.profile.trailStyle == "comet" then
+                            local color = CursorTrail.db.profile.trailColor
+                            r, g, b = color.r * (1 + progress), color.g * (1 + progress), color.b
+                        else -- classic
+                            local color = CursorTrail.db.profile.trailColor
+                            r, g, b = alertR or color.r, alertG or color.g, alertB or color.b
+                        end
+                        
+                        frame.texture:SetVertexColor(r, g, b, alpha * CursorTrail.db.profile.trailColor.a)
+                    end
+                end
+            end
+        else
+            for _, frame in ipairs(trailFrames) do
+                frame:Hide()
+            end
+        end
+        
+        -- Update sparkles (idle effect)
+        if CursorTrail.db.profile.sparklesEnabled then
+            local shouldShowSparkles = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            
+            if shouldShowSparkles and idleTime >= CursorTrail.db.profile.sparklesIdleDelay then
+                sparkleTimer = sparkleTimer + elapsed
+                
+                if sparkleTimer >= CursorTrail.db.profile.sparklesSpawnRate then
+                    sparkleTimer = 0
+                    CursorTrail:SpawnSparkle(x, y)
+                end
+            end
+            
+            -- Update existing sparkles
+            for i, frame in ipairs(sparkleFrames) do
+                if frame:IsShown() then
+                    frame.age = frame.age + elapsed
+                    
+                    if frame.age >= frame.maxAge then
+                        frame:Hide()
+                        table.insert(sparkleFreeList, i)
+                    else
+                        local progress = frame.age / frame.maxAge
+                        local alpha = (1 - progress)
+                        
+                        -- Move sparkle
+                        local currentX = select(4, frame:GetPoint())
+                        local currentY = select(5, frame:GetPoint())
+                        frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", 
+                            currentX + frame.velocityX * elapsed, 
+                            currentY + frame.velocityY * elapsed)
+                        
+                        local color = CursorTrail.db.profile.sparklesColor
+                        frame.texture:SetVertexColor(color.r, color.g, color.b, alpha * color.a)
+                    end
+                end
+            end
+        else
+            for _, frame in ipairs(sparkleFrames) do
+                frame:Hide()
+            end
+        end
+    end)
+end
+
+function CursorTrail:AddTrailParticle(x, y, alertR, alertG, alertB)
+    if not self.db then return end
+    
+    -- Get next trail frame
+    currentTrailIndex = currentTrailIndex + 1
+    if currentTrailIndex > self.db.profile.trailLength then
+        currentTrailIndex = 1
+    end
+    
+    local frame = trailFrames[currentTrailIndex]
+    if frame then
+        frame:ClearAllPoints()
+        frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+        frame:SetSize(self.db.profile.trailSize, self.db.profile.trailSize)
+        frame.age = 0
+        frame.maxAge = self.db.profile.trailFadeSpeed
+        
+        -- Set initial color (will be updated by style in OnUpdate)
+        local color = self.db.profile.trailColor
+        local r, g, b = alertR or color.r, alertG or color.g, alertB or color.b
+        frame.texture:SetVertexColor(r, g, b, color.a)
+        frame:Show()
+    end
+end
+
+function CursorTrail:SpawnSparkle(cursorX, cursorY)
+    if #sparkleFreeList == 0 then return end
+    if not self.db then return end
+    
+    local idx = table.remove(sparkleFreeList)
+    local frame = sparkleFrames[idx]
+    if not frame then return end
+    
+    -- Random offset from cursor
+    local angle = math.random() * 2 * math.pi
+    local distance = math.random() * 25 + 10
+    local offsetX = math.cos(angle) * distance
+    local offsetY = math.sin(angle) * distance
+    
+    -- Random velocity for drift
+    frame.velocityX = (math.random() - 0.5) * 30
+    frame.velocityY = (math.random() - 0.5) * 30 + 15 -- Slight upward bias
+    
+    frame:ClearAllPoints()
+    frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX + offsetX, cursorY + offsetY)
+    frame:SetSize(self.db.profile.sparklesSize, self.db.profile.sparklesSize)
+    frame.age = 0
+    frame.maxAge = self.db.profile.sparklesLifetime
+    
+    local color = self.db.profile.sparklesColor
+    frame.texture:SetVertexColor(color.r, color.g, color.b, color.a)
+    frame:Show()
+end
+
+function CursorTrail:UpdateGCD()
+    if not ringFrame or not ringFrame.cooldown then return end
+    
+    local start, duration = GetSpellCooldown(61304) -- Global Cooldown spell ID
+    if start and duration and duration > 0 and duration <= 1.5 then
+        ringFrame.cooldown:SetCooldown(start, duration)
+        ringFrame.cooldown:Show()
+    else
+        ringFrame.cooldown:Hide()
+    end
+end
+
+function CursorTrail:UpdateAlerts()
+    if not self.db then return end
+    
+    -- Check low health
+    if self.db.profile.lowHealthWarning then
+        local healthPercent = (UnitHealth("player") / UnitHealthMax("player")) * 100
+        hasLowHealth = healthPercent <= self.db.profile.lowHealthThreshold
+    else
+        hasLowHealth = false
+    end
+end
+
+function CursorTrail:GetAlertColor()
+    if not self.db or not self.db.profile.alertsEnabled then return nil end
+    
+    -- Priority: Low health > Aggro
+    if hasLowHealth and self.db.profile.lowHealthWarning then
+        return 1, 0, 0 -- Red
+    elseif self.db.profile.aggroWarning then
+        local status = UnitThreatSituation("player")
+        if status and status >= 2 then
+            return 1, 0.5, 0 -- Orange for aggro
+        end
+    end
+    
+    return nil
+end
+
+function CursorTrail:UpdateVisibility()
+    if not self.db then return end
+    
+    if self.db.profile.enabled then
+        if updateFrame then updateFrame:Show() end
+    else
+        if updateFrame then updateFrame:Hide() end
+        if highlightFrame then highlightFrame:Hide() end
+        if ringFrame then ringFrame:Hide() end
+        for _, frame in ipairs(trailFrames) do frame:Hide() end
+        for _, frame in ipairs(sparkleFrames) do frame:Hide() end
+    end
+end
+
+function CursorTrail:PLAYER_REGEN_DISABLED()
+    if not self.db then return end
+    isInCombat = true
+    self:UpdateVisibility()
+end
+
+function CursorTrail:PLAYER_REGEN_ENABLED()
+    if not self.db then return end
+    isInCombat = false
+    self:UpdateVisibility()
+end
+
+function CursorTrail:UNIT_HEALTH(event, unit)
+    if unit == "player" and self.db and self.db.profile.alertsEnabled then
+        self:UpdateAlerts()
+    end
+end
+
+function CursorTrail:UpdateTrailTexture()
+    if not self.db then return end
+    
+    local texture = TEXTURES[self.db.profile.trailTexture] or TEXTURES["Glow"]
+    for _, frame in ipairs(trailFrames) do
+        frame.texture:SetTexture(texture)
+        frame.texture:SetBlendMode(self.db.profile.trailBlendMode)
+    end
+end
+
+function CursorTrail:UpdateHighlightTexture()
+    if not self.db then return end
+    
+    if highlightFrame then
+        local texture = TEXTURES[self.db.profile.highlightTexture] or TEXTURES["Glow"]
+        highlightFrame.texture:SetTexture(texture)
+        highlightFrame.texture:SetBlendMode(self.db.profile.highlightBlendMode)
+        highlightFrame:SetSize(self.db.profile.highlightSize, self.db.profile.highlightSize)
+    end
+end
+
+function CursorTrail:UpdateSparklesTexture()
+    if not self.db then return end
+    
+    local texture = TEXTURES[self.db.profile.sparklesTexture] or TEXTURES["Star"]
+    for _, frame in ipairs(sparkleFrames) do
+        frame.texture:SetTexture(texture)
+    end
+end
+
+function CursorTrail:UpdateRingTexture()
+    if not self.db then return end
+    
+    if ringFrame then
+        local texture = TEXTURES[self.db.profile.ringTexture] or TEXTURES["Circle"]
+        ringFrame.texture:SetTexture(texture)
+        ringFrame:SetSize(self.db.profile.ringSize, self.db.profile.ringSize)
+    end
+end
+
+function CursorTrail:UpdateSettings()
+    if not self.db then return end
+    
+    self:UpdateTrailTexture()
+    self:UpdateHighlightTexture()
+    self:UpdateSparklesTexture()
+    self:UpdateRingTexture()
+    self:UpdateVisibility()
+end
+
+-- Options table
+function CursorTrail:GetOptions()
+    return {
+        name = "Cursor Animate",
+        type = "group",
+        args = {
+            enabled = {
+                name = "Enable Cursor Animate",
+                desc = "Enable or disable the cursor animation effect",
+                type = "toggle",
+                order = 1,
+                get = function() return self.db.profile.enabled end,
+                set = function(_, value)
+                    self.db.profile.enabled = value
+                    if value then
+                        self:Enable()
+                    else
+                        self:Disable()
+                    end
+                end,
+            },
+            header1 = {
+                name = "Trail Settings",
+                type = "header",
+                order = 10,
+            },
+            trailEnabled = {
+                name = "Enable Trail",
+                desc = "Show a trail following the cursor",
+                type = "toggle",
+                order = 11,
+                get = function() return self.db.profile.trailEnabled end,
+                set = function(_, value)
+                    self.db.profile.trailEnabled = value
+                end,
+            },
+            trailLength = {
+                name = "Trail Length",
+                desc = "Number of trail particles",
+                type = "range",
+                order = 12,
+                min = 5,
+                max = 30,
+                step = 1,
+                get = function() return self.db.profile.trailLength end,
+                set = function(_, value)
+                    self.db.profile.trailLength = value
+                end,
+            },
+            trailSize = {
+                name = "Trail Size",
+                desc = "Size of each trail particle",
+                type = "range",
+                order = 13,
+                min = 16,
+                max = 64,
+                step = 1,
+                get = function() return self.db.profile.trailSize end,
+                set = function(_, value)
+                    self.db.profile.trailSize = value
+                end,
+            },
+            trailFadeSpeed = {
+                name = "Fade Speed",
+                desc = "How quickly trail particles fade (seconds)",
+                type = "range",
+                order = 14,
+                min = 0.05,
+                max = 0.5,
+                step = 0.01,
+                get = function() return self.db.profile.trailFadeSpeed end,
+                set = function(_, value)
+                    self.db.profile.trailFadeSpeed = value
+                end,
+            },
+            trailSpacing = {
+                name = "Trail Spacing",
+                desc = "Frames between trail updates (lower = smoother but more particles)",
+                type = "range",
+                order = 15,
+                min = 1,
+                max = 10,
+                step = 1,
+                get = function() return self.db.profile.trailSpacing end,
+                set = function(_, value)
+                    self.db.profile.trailSpacing = value
+                end,
+            },
+            trailColor = {
+                name = "Trail Color",
+                desc = "Color of the trail effect",
+                type = "color",
+                order = 16,
+                hasAlpha = true,
+                get = function()
+                    local c = self.db.profile.trailColor
+                    return c.r, c.g, c.b, c.a
+                end,
+                set = function(_, r, g, b, a)
+                    self.db.profile.trailColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
+            trailTexture = {
+                name = "Trail Texture",
+                desc = "Visual style of the trail",
+                type = "select",
+                order = 17,
+                values = {
+                    ["Glow"] = "Glow",
+                    ["GlowSoft"] = "Glow Soft",
+                    ["Star"] = "Star",
+                    ["Circle"] = "Circle",
+                    ["CircleThick"] = "Circle Thick",
+                    ["Spark"] = "Spark",
+                    ["Square"] = "Square",
+                    ["Diamond"] = "Diamond",
+                    ["Triangle"] = "Triangle",
+                    ["Moon"] = "Moon",
+                    ["Orb"] = "Orb",
+                },
+                get = function() return self.db.profile.trailTexture end,
+                set = function(_, value)
+                    self.db.profile.trailTexture = value
+                    self:UpdateTrailTexture()
+                end,
+            },
+            trailBlendMode = {
+                name = "Trail Blend Mode",
+                desc = "How the trail blends with the background",
+                type = "select",
+                order = 18,
+                values = {
+                    ["ADD"] = "Additive (Bright)",
+                    ["BLEND"] = "Normal (Blend)",
+                    ["ALPHAKEY"] = "Alpha Key",
+                },
+                get = function() return self.db.profile.trailBlendMode end,
+                set = function(_, value)
+                    self.db.profile.trailBlendMode = value
+                    self:UpdateTrailTexture()
+                end,
+            },
+            trailStyle = {
+                name = "Trail Style",
+                desc = "Visual style/animation of the trail",
+                type = "select",
+                order = 19,
+                values = {
+                    ["classic"] = "Classic (Solid Color)",
+                    ["rainbow"] = "Rainbow (Cycling Colors)",
+                    ["comet"] = "Comet (Bright Head)",
+                },
+                get = function() return self.db.profile.trailStyle end,
+                set = function(_, value)
+                    self.db.profile.trailStyle = value
+                end,
+            },
+            header2 = {
+                name = "Highlight Settings",
+                type = "header",
+                order = 20,
+            },
+            highlightEnabled = {
+                name = "Enable Highlight",
+                desc = "Show a glow/highlight around the cursor",
+                type = "toggle",
+                order = 21,
+                get = function() return self.db.profile.highlightEnabled end,
+                set = function(_, value)
+                    self.db.profile.highlightEnabled = value
+                end,
+            },
+            highlightSize = {
+                name = "Highlight Size",
+                desc = "Size of the cursor highlight",
+                type = "range",
+                order = 22,
+                min = 24,
+                max = 96,
+                step = 1,
+                get = function() return self.db.profile.highlightSize end,
+                set = function(_, value)
+                    self.db.profile.highlightSize = value
+                    self:UpdateHighlightTexture()
+                end,
+            },
+            highlightPulse = {
+                name = "Pulse Effect",
+                desc = "Make the highlight pulse",
+                type = "toggle",
+                order = 23,
+                get = function() return self.db.profile.highlightPulse end,
+                set = function(_, value)
+                    self.db.profile.highlightPulse = value
+                end,
+            },
+            highlightColor = {
+                name = "Highlight Color",
+                desc = "Color of the highlight effect",
+                type = "color",
+                order = 24,
+                hasAlpha = true,
+                get = function()
+                    local c = self.db.profile.highlightColor
+                    return c.r, c.g, c.b, c.a
+                end,
+                set = function(_, r, g, b, a)
+                    self.db.profile.highlightColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
+            highlightTexture = {
+                name = "Highlight Texture",
+                desc = "Visual style of the highlight",
+                type = "select",
+                order = 25,
+                values = {
+                    ["Glow"] = "Glow",
+                    ["GlowSoft"] = "Glow Soft",
+                    ["Star"] = "Star",
+                    ["Circle"] = "Circle",
+                    ["CircleThick"] = "Circle Thick",
+                    ["Orb"] = "Orb",
+                    ["Moon"] = "Moon",
+                },
+                get = function() return self.db.profile.highlightTexture end,
+                set = function(_, value)
+                    self.db.profile.highlightTexture = value
+                    self:UpdateHighlightTexture()
+                end,
+            },
+            highlightBlendMode = {
+                name = "Highlight Blend Mode",
+                desc = "How the highlight blends with the background",
+                type = "select",
+                order = 26,
+                values = {
+                    ["ADD"] = "Additive (Bright)",
+                    ["BLEND"] = "Normal (Blend)",
+                    ["ALPHAKEY"] = "Alpha Key",
+                },
+                get = function() return self.db.profile.highlightBlendMode end,
+                set = function(_, value)
+                    self.db.profile.highlightBlendMode = value
+                    self:UpdateHighlightTexture()
+                end,
+            },
+            header3 = {
+                name = "Sparkles Settings",
+                type = "header",
+                order = 30,
+            },
+            sparklesEnabled = {
+                name = "Enable Sparkles",
+                desc = "Show sparkle effects when cursor is idle",
+                type = "toggle",
+                order = 31,
+                get = function() return self.db.profile.sparklesEnabled end,
+                set = function(_, value)
+                    self.db.profile.sparklesEnabled = value
+                end,
+            },
+            sparklesIdleDelay = {
+                name = "Idle Delay",
+                desc = "Seconds before sparkles appear when cursor stops moving",
+                type = "range",
+                order = 32,
+                min = 0.5,
+                max = 3.0,
+                step = 0.1,
+                get = function() return self.db.profile.sparklesIdleDelay end,
+                set = function(_, value)
+                    self.db.profile.sparklesIdleDelay = value
+                end,
+            },
+            sparklesSpawnRate = {
+                name = "Spawn Rate",
+                desc = "Seconds between sparkle spawns",
+                type = "range",
+                order = 33,
+                min = 0.05,
+                max = 0.5,
+                step = 0.05,
+                get = function() return self.db.profile.sparklesSpawnRate end,
+                set = function(_, value)
+                    self.db.profile.sparklesSpawnRate = value
+                end,
+            },
+            sparklesSize = {
+                name = "Sparkle Size",
+                desc = "Size of sparkle particles",
+                type = "range",
+                order = 34,
+                min = 8,
+                max = 24,
+                step = 1,
+                get = function() return self.db.profile.sparklesSize end,
+                set = function(_, value)
+                    self.db.profile.sparklesSize = value
+                end,
+            },
+            sparklesLifetime = {
+                name = "Lifetime",
+                desc = "How long sparkles last (seconds)",
+                type = "range",
+                order = 35,
+                min = 0.3,
+                max = 2.0,
+                step = 0.1,
+                get = function() return self.db.profile.sparklesLifetime end,
+                set = function(_, value)
+                    self.db.profile.sparklesLifetime = value
+                end,
+            },
+            sparklesColor = {
+                name = "Sparkle Color",
+                desc = "Color of sparkle particles",
+                type = "color",
+                order = 36,
+                hasAlpha = true,
+                get = function()
+                    local c = self.db.profile.sparklesColor
+                    return c.r, c.g, c.b, c.a
+                end,
+                set = function(_, r, g, b, a)
+                    self.db.profile.sparklesColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
+            sparklesTexture = {
+                name = "Sparkle Texture",
+                desc = "Visual style of sparkles",
+                type = "select",
+                order = 37,
+                values = {
+                    ["Glow"] = "Glow",
+                    ["GlowSoft"] = "Glow Soft",
+                    ["Star"] = "Star",
+                    ["Diamond"] = "Diamond",
+                    ["Orb"] = "Orb",
+                },
+                get = function() return self.db.profile.sparklesTexture end,
+                set = function(_, value)
+                    self.db.profile.sparklesTexture = value
+                    self:UpdateSparklesTexture()
+                end,
+            },
+             header4 = {
+                name = "Ring Settings",
+                type = "header",
+                order = 40,
+            },
+            ringEnabled = {
+                name = "Enable Ring",
+                desc = "Show a ring around the cursor",
+                type = "toggle",
+                order = 41,
+                get = function() return self.db.profile.ringEnabled end,
+                set = function(_, value)
+                    self.db.profile.ringEnabled = value
+                end,
+            },
+            ringSize = {
+                name = "Ring Size",
+                desc = "Size of the cursor ring",
+                type = "range",
+                order = 42,
+                min = 32,
+                max = 128,
+                step = 1,
+                get = function() return self.db.profile.ringSize end,
+                set = function(_, value)
+                    self.db.profile.ringSize = value
+                    self:UpdateRingTexture()
+                end,
+            },
+            ringPulse = {
+                name = "Pulse Effect",
+                desc = "Make the ring pulse",
+                type = "toggle",
+                order = 43,
+                get = function() return self.db.profile.ringPulse end,
+                set = function(_, value)
+                    self.db.profile.ringPulse = value
+                end,
+            },
+            ringShowGCD = {
+                name = "Show GCD",
+                desc = "Display global cooldown on the ring",
+                type = "toggle",
+                order = 44,
+                get = function() return self.db.profile.ringShowGCD end,
+                set = function(_, value)
+                    self.db.profile.ringShowGCD = value
+                end,
+            },
+            ringColor = {
+                name = "Ring Color",
+                desc = "Color of the ring effect",
+                type = "color",
+                order = 45,
+                hasAlpha = true,
+                get = function()
+                    local c = self.db.profile.ringColor
+                    return c.r, c.g, c.b, c.a
+                end,
+                set = function(_, r, g, b, a)
+                    self.db.profile.ringColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
+            ringTexture = {
+                name = "Ring Texture",
+                desc = "Visual style of the ring",
+                type = "select",
+                order = 46,
+                values = {
+                    ["Circle"] = "Circle",
+                    ["CircleThick"] = "Circle Thick",
+                    ["Square"] = "Square",
+                    ["Diamond"] = "Diamond",
+                    ["Star"] = "Star",
+                },
+                get = function() return self.db.profile.ringTexture end,
+                set = function (_, value)
+                    self.db.profile.ringTexture = value
+                    self:UpdateRingTexture()
+                end,
+            },
+            header5 = {
+                name = "Health & Combat Alerts",
+                type = "header",
+                order = 50,
+            },
+            alertsEnabled = {
+                name = "Enable Alerts",
+                desc = "Change cursor color based on health and combat status",
+                type = "toggle",
+                order = 51,
+                get = function() return self.db.profile.alertsEnabled end,
+                set = function(_, value)
+                    self.db.profile.alertsEnabled = value
+                end,
+            },
+            lowHealthWarning = {
+                name = "Low Health Warning",
+                desc = "Turn cursor red when health is low",
+                type = "toggle",
+                order = 52,
+                get = function() return self.db.profile.lowHealthWarning end,
+                set = function(_, value)
+                    self.db.profile.lowHealthWarning = value
+                end,
+            },
+            lowHealthThreshold = {
+                name = "Health Threshold",
+                desc = "Health percentage to trigger warning",
+                type = "range",
+                order = 53,
+                min = 10,
+                max = 50,
+                step = 5,
+                get = function() return self.db.profile.lowHealthThreshold end,
+                set = function(_, value)
+                    self.db.profile.lowHealthThreshold = value
+                end,
+            },
+            aggroWarning = {
+                name = "Aggro Warning",
+                desc = "Turn cursor orange when you have threat/aggro",
+                type = "toggle",
+                order = 54,
+                get = function() return self.db.profile.aggroWarning end,
+                set = function(_, value)
+                    self.db.profile.aggroWarning = value
+                end,
+            },
+            header6 = {
+                name = "Combat Settings",
+                type = "header",
+                order = 60,
+            },
+            hideInCombat = {
+                name = "Hide in Combat",
+                desc = "Hide cursor effects during combat",
+                type = "toggle",
+                order = 61,
+                get = function() return self.db.profile.hideInCombat end,
+                set = function(_, value)
+                    self.db.profile.hideInCombat = value
+                    self:UpdateVisibility()
+                end,
+            },
+            combatOnlyHighlight = {
+                name = "Combat Only Highlight",
+                desc = "Only show highlight during combat (ignores 'Hide in Combat')",
+                type = "toggle",
+                order = 62,
+                get = function() return self.db.profile.combatOnlyHighlight end,
+                set = function(_, value)
+                    self.db.profile.combatOnlyHighlight = value
+                end,
+            },
+        }
+    }
+end

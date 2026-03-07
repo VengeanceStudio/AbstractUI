@@ -2178,7 +2178,7 @@ function AbstractUI:GetOptions()
             dbKey = "addonmanager"
         elseif name == "TimePlayed" then
             dbKey = "timePlayed"
-        elseif name == "CursorTrail" then
+        elseif name == "CursorAnimate" then
             dbKey = "cursorTrail"
         else
             dbKey = string.lower(name)
@@ -2200,7 +2200,7 @@ function AbstractUI:GetOptions()
                 displayName = "Resource Bars"
             elseif name == "AddonManager" then
                 displayName = "Addon Manager"
-            elseif name == "CursorTrail" then
+            elseif name == "CursorAnimate" then
                 displayName = "Cursor Animate"
             elseif name == "TimePlayed" then
                 displayName = "Time Played"
@@ -2232,7 +2232,7 @@ function AbstractUI:GetOptions()
                 moduleOrder = 12
             elseif name == "Tweaks" then
                 moduleOrder = 13
-            elseif name == "CursorTrail" then
+            elseif name == "CursorAnimate" then
                 moduleOrder = 13.5
             elseif name == "TimePlayed" then
                 moduleOrder = 13.6
