@@ -2967,12 +2967,13 @@ end
                         end
                     end
                     
-                    -- Skip other status updates if requested (when leaving combat to avoid taint)
-                    if skipNonCombat then
+                    -- Skip other status updates if in combat or specifically requested (to avoid taint)
+                    -- AFK/Resting APIs return protected values during combat
+                    if skipNonCombat or inCombat then
                         return
                     end
                     
-                    -- Update AFK text
+                    -- Update AFK text - only called out of combat
                     if frame.afkTextFrame then
                         local isAFK = UnitIsAFK("player")
                         if isAFK then
@@ -2982,7 +2983,7 @@ end
                         end
                     end
                     
-                    -- Update Resting icon
+                    -- Update Resting icon - only called out of combat
                     if frame.restingIconFrame then
                         local isResting = IsResting()
                         if isResting then
