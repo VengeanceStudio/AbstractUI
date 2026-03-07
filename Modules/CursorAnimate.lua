@@ -939,7 +939,7 @@ function CursorTrail:ApplyColorTheme(themeName)
     end
     
     -- Refresh display
-    self:UpdateTextures()
+    self:UpdateSettings()
     print("|cff00FF7FCursor Animate:|r Applied '" .. themeName .. "' theme")
 end
 
