@@ -51,7 +51,7 @@ local defaults = {
             castBar = true,
             tweaks = true,
             cursorTrail = true,
-            setup = true,
+            setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true
         }
@@ -1942,57 +1942,61 @@ function AbstractUI:GetOptions()
                     },
                     modulesHeader = { type = "header", order = 2.0, name = "Modules"},
                     modulesDesc = { type = "description", order = 2.01, name = "Toggle modules. Requires Reload." },
-                    bar = { name = "Data Brokers", type = "toggle", order = 2.1, width = "full",
+                    skins = { name = "Skins", type = "toggle", order = 2.05, width = "normal",
+                        desc = "Reskin Blizzard UI elements with custom themes",
+                        get = function() return self.db.profile.modules.skins end,
+                        set = function(_, v) self.db.profile.modules.skins = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    bar = { name = "Data Brokers", type = "toggle", order = 2.1, width = "normal",
                         get = function() return self.db.profile.modules.bar end,
                         set = function(_, v) self.db.profile.modules.bar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    UIButtons = { name = "UI Buttons", type = "toggle", order = 2.2, width = "full",
+                    UIButtons = { name = "UI Buttons", type = "toggle", order = 2.2, width = "normal",
                         get = function() return self.db.profile.modules.UIButtons end,
                         set = function(_, v) self.db.profile.modules.UIButtons = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    tooltips = { name = "Tooltips", type = "toggle", order = 2.25, width = "full",
+                    tooltips = { name = "Tooltips", type = "toggle", order = 2.25, width = "normal",
                         get = function() return self.db.profile.modules.tooltips end,
                         set = function(_, v) self.db.profile.modules.tooltips = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    mailbox = { name = "Mailbox", type = "toggle", order = 2.27, width = "full",
+                    mailbox = { name = "Mailbox", type = "toggle", order = 2.27, width = "normal",
                         get = function() return self.db.profile.modules.mailbox end,
                         set = function(_, v) self.db.profile.modules.mailbox = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    chatcopy = { name = "Chat Copy", type = "toggle", order = 2.3, width = "full",
+                    chatcopy = { name = "Chat Copy", type = "toggle", order = 2.3, width = "normal",
                         get = function() return self.db.profile.modules.chatcopy ~= false end,
                         set = function(_, v) self.db.profile.modules.chatcopy = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    maps = { name = "Maps", type = "toggle", order = 2.4, width = "full",
+                    maps = { name = "Maps", type = "toggle", order = 2.4, width = "normal",
                         get = function() return self.db.profile.modules.maps end,
                         set = function(_, v) self.db.profile.modules.maps = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    actionbars = { name = "Action Bars", type = "toggle", order = 2.5, width = "full",
+                    actionbars = { name = "Action Bars", type = "toggle", order = 2.5, width = "normal",
                         get = function() return self.db.profile.modules.actionbars end,
                         set = function(_, v) self.db.profile.modules.actionbars = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    unitframes = { name = "Unit Frames", type = "toggle", order = 2.6, width = "full",
+                    unitframes = { name = "Unit Frames", type = "toggle", order = 2.6, width = "normal",
                         get = function() return self.db.profile.modules.unitframes end,
                         set = function(_, v) self.db.profile.modules.unitframes = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    cooldowns = { name = "Cooldown Manager", type = "toggle", order = 2.7, width = "full",
+                    cooldowns = { name = "Cooldown Manager", type = "toggle", order = 2.7, width = "normal",
                         desc = "Skins and enhances Blizzard's cooldown display manager.",
                         get = function() return self.db.profile.modules.cooldowns end,
                         set = function(_, v) 
                             self.db.profile.modules.cooldowns = v
                             StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                         end },
-                    resourceBars = { name = "Resource Bars", type = "toggle", order = 2.71, width = "full",
+                    resourceBars = { name = "Resource Bars", type = "toggle", order = 2.71, width = "normal",
                         desc = "Display primary and secondary resource bars (mana, energy, combo points, etc.)",
                         get = function() return self.db.profile.modules.resourceBars end,
                         set = function(_, v) self.db.profile.modules.resourceBars = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    castBar = { name = "Cast Bar", type = "toggle", order = 2.72, width = "full",
+                    castBar = { name = "Cast Bar", type = "toggle", order = 2.72, width = "normal",
                         desc = "Display a custom player cast bar",
                         get = function() return self.db.profile.modules.castBar end,
                         set = function(_, v) self.db.profile.modules.castBar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "full",
+                    tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "normal",
                         get = function() return self.db.profile.modules.tweaks end,
                         set = function(_, v) self.db.profile.modules.tweaks = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    addonmanager = { name = "Addon Manager", type = "toggle", order = 9.1, width = "full",
+                    addonmanager = { name = "Addon Manager", type = "toggle", order = 9.1, width = "normal",
                         desc = "In-game addon management with sorting and filtering options",
                         get = function() return self.db.profile.modules.addonmanager end,
                         set = function(_, v) self.db.profile.modules.addonmanager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    timePlayed = { name = "Time Played", type = "toggle", order = 9.2, width = "full",
+                    timePlayed = { name = "Time Played", type = "toggle", order = 9.2, width = "normal",
                         desc = "Track and display play time across all characters with class breakdowns",
                         get = function() return self.db.profile.modules.timePlayed end,
                         set = function(_, v) self.db.profile.modules.timePlayed = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    cursorTrail = { name = "Cursor Animate", type = "toggle", order = 9.3, width = "full",
+                    cursorTrail = { name = "Cursor Animate", type = "toggle", order = 9.3, width = "normal",
                         desc = "Enhanced cursor visibility with customizable animation effects and highlighting",
                         get = function() return self.db.profile.modules.cursorTrail end,
                         set = function(_, v) self.db.profile.modules.cursorTrail = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
@@ -2180,11 +2184,16 @@ function AbstractUI:GetOptions()
             dbKey = "timePlayed"
         elseif name == "CursorAnimate" then
             dbKey = "cursorTrail"
+        elseif name == "Skin" then
+            dbKey = "skins"
         else
             dbKey = string.lower(name)
         end
         
-        if module.GetOptions and self.db.profile.modules[dbKey] then
+        -- Setup module is always enabled (General, Export, Import are always in core options)
+        local isAlwaysOn = (name == "Setup")
+        
+        if module.GetOptions and (isAlwaysOn or self.db.profile.modules[dbKey]) then
             local displayName = name
             if name == "UIButtons" then 
                 displayName = "UI Buttons"

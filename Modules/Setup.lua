@@ -29,11 +29,7 @@ function Setup:OnInitialize()
 end
 
 function Setup:OnDBReady()
-    if not AbstractUI.db.profile.modules.setup then 
-        self:Disable()
-        return 
-    end
-    
+    -- Setup module is always enabled - it manages its own display based on hasCompletedSetup flag
     self.db = AbstractUI.db:RegisterNamespace("Setup", defaults)
     
     -- Get framework systems

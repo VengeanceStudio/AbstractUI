@@ -61,6 +61,11 @@ function Skin:OnInitialize()
 end
 
 function Skin:OnDBReady()
+    if not AbstractUI.db.profile.modules.skins then 
+        self:Disable()
+        return 
+    end
+    
     self.db = AbstractUI.db:RegisterNamespace("Skin", {
         profile = {
             globalSkin = "Abstract",

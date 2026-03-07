@@ -852,6 +852,10 @@ function CursorTrail:ApplyColorTheme(themeName)
     -- Refresh display
     self:UpdateTextures()
     print("|cff00FF7FCursor Animate:|r Applied '" .. themeName .. "' theme")
+end
+
+-- Options table
+function CursorTrail:GetOptions()
     return {
         name = "Cursor Animate",
         type = "group",
