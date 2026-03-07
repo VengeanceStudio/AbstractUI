@@ -105,7 +105,8 @@ local function UpdateFriendList()
         child:Hide() 
     end
     
-    local wowFriends, bnetFriends = {}, {}
+    -- Only collect WoW friends (in-game only)
+    local wowFriends = {}
     local numBNet = BNGetNumFriends() or 0
     for i = 1, numBNet do
         local info = C_BattleNet.GetFriendAccountInfo(i)
@@ -121,15 +122,14 @@ local function UpdateFriendList()
                     end
                 end
                 table.insert(wowFriends, {name=g.characterName, bnet=info.battleTag, level=g.characterLevel, zone=g.areaName, realm=g.realmName, faction=g.factionName, class=classToken or g.className})
-            else
-                table.insert(bnetFriends, {bnet=info.battleTag, game=g.richPresence or g.clientProgram, status=(g.isWowMobile and "Mobile" or "Online")})
             end
         end
     end
 
     local yOffset, db, fontPath = 0, BrokerBar.db.profile, LSM:Fetch("font", BrokerBar.db.profile.font)
-    local colW = { btag=135, char=100, lvl=30, zone=120, realm=80, fac=50 }
-    local colX = { btag=5, char=145, lvl=250, zone=285, realm=410, fac=495 }
+    -- Reordered columns: Character, Level, Zone, Realm, Faction, BattleTag
+    local colW = { char=100, lvl=30, zone=120, realm=80, fac=50, btag=135 }
+    local colX = { char=5, lvl=110, zone=145, realm=270, fac=355, btag=410 }
 
     local function CreateRow(data, isWoW)
         local btn = CreateFrame("Button", nil, scrollChild); btn:SetSize(560, 20); btn:SetPoint("TOPLEFT", 0, yOffset)
@@ -146,8 +146,10 @@ local function UpdateFriendList()
             local cToken = classTokenLookup[data.class] or data.class
             -- Use RAID_CLASS_COLORS instead of C_ClassColor
             local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[cToken] or {r=1,g=1,b=1}
-            AddText(data.bnet, colW.btag, colX.btag, {r=0.51,g=0.77,b=1}); AddText(data.name, colW.char, colX.char, color)
-            AddText(data.level, colW.lvl, colX.lvl, {r=1,g=1,b=1}); AddText(data.zone, colW.zone, colX.zone, {r=1,g=0.82,b=0})
+            -- Reordered: Character, Level, Zone, Realm, Faction, BattleTag
+            AddText(data.name, colW.char, colX.char, color)
+            AddText(data.level, colW.lvl, colX.lvl, {r=1,g=1,b=1})
+            AddText(data.zone, colW.zone, colX.zone, {r=1,g=0.82,b=0})
             AddText(data.realm, colW.realm, colX.realm, {r=1,g=1,b=1})
             
             -- Display faction as colored text
@@ -158,6 +160,9 @@ local function UpdateFriendList()
                 facIcon = "|cff0080ffAlliance|r"
             end
             AddText(facIcon, colW.fac, colX.fac)
+            
+            -- BattleTag moved to last column
+            AddText(data.bnet, colW.btag, colX.btag, {r=0.51,g=0.77,b=1})
 
             btn:SetScript("OnClick", function() 
                 local t = data.name
@@ -170,32 +175,18 @@ local function UpdateFriendList()
                     ChatFrame_SendTell(t) 
                 end 
             end)
-        else
-            AddText(data.bnet, colW.btag, colX.btag, {r=0.51,g=0.77,b=1}); AddText(data.game, colW.char, colX.char, {r=0.6,g=0.6,b=0.6})
-            AddText(data.status, colW.zone, colX.zone, (data.status=="Mobile" and {r=0.5,g=0.5,b=0.5} or {r=0,g=1,b=0}))
-            btn:SetScript("OnClick", function() 
-                ChatFrame_SendTell(data.bnet) 
-            end)
         end
         local hl = btn:CreateTexture(nil, "HIGHLIGHT"); hl:SetAllPoints(); hl:SetColorTexture(1,1,1,0.1)
         yOffset = yOffset - 20
     end
 
+    -- Only display WoW friends
     for _, f in ipairs(wowFriends) do 
         CreateRow(f, true) 
     end
-    if #wowFriends > 0 and #bnetFriends > 0 then
-        listSeparator:ClearAllPoints()
-        listSeparator:SetPoint("TOPLEFT", 5, yOffset-2)
-        listSeparator:SetPoint("TOPRIGHT", -5, yOffset-2)
-        listSeparator:Show()
-        yOffset = yOffset - 5
-    else 
-        listSeparator:Hide() 
-    end
-    for _, f in ipairs(bnetFriends) do 
-        CreateRow(f, false) 
-    end
+    
+    -- Hide separator since we're not showing non-WoW friends
+    listSeparator:Hide()
     
     -- Adjust scroll child height to fit content
     local contentHeight = math.abs(yOffset) + 10
