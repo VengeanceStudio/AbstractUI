@@ -1,6 +1,6 @@
 ## Interface: 120001
 ## Title: Abstract UI
-## Version: 12.0.1.55
+## Version: 12.0.1.57
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
@@ -27,6 +27,8 @@ libs\AceHook-3.0\AceHook-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceSerializer-3.0\AceSerializer-3.0.lua
 libs\LibCompress\lib.xml
+libs\LibAdvancedIconSelector-1.0-LMIS\enUS.lua
+libs\LibAdvancedIconSelector-1.0-LMIS\LibAdvancedIconSelector-1.0-LMIS.lua
 
 # ------------------------------------------------------------------------------
 # CORE ENGINE
@@ -97,6 +99,9 @@ Modules\Frames\TargetTarget.lua
 Modules\Frames\Pet.lua
 Modules\Frames\Focus.lua
 Modules\Frames\Boss.lua
+Modules\MacroIconData.lua
+Modules\MacroIconDataProvider.lua
+Modules\MacroIconSelector.lua
 Modules\Setup.lua
 Modules\CooldownManager.lua
 Modules\ResourceBars.lua

@@ -51,6 +51,7 @@ local defaults = {
             castBar = true,
             tweaks = true,
             cursorTrail = true,
+            macroIconSelector = true,
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true
@@ -1999,7 +2000,11 @@ function AbstractUI:GetOptions()
                     cursorTrail = { name = "Cursor Animate", type = "toggle", order = 9.3, width = "normal",
                         desc = "Enhanced cursor visibility with customizable animation effects and highlighting",
                         get = function() return self.db.profile.modules.cursorTrail end,
-                        set = function(_, v) self.db.profile.modules.cursorTrail = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
+                        set = function(_, v) self.db.profile.modules.cursorTrail = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    macroIconSelector = { name = "Macro Icon Selector", type = "toggle", order = 9.4, width = "normal",
+                        desc = "Enhanced macro icon selection with search and filtering capabilities",
+                        get = function() return self.db.profile.modules.macroIconSelector end,
+                        set = function(_, v) self.db.profile.modules.macroIconSelector = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
             },  -- closes general group
             themes = {
