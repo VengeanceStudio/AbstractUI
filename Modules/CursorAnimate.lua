@@ -885,171 +885,163 @@ function CursorTrail:GetOptions()
                 type = "description",
                 order = 3,
             },
-            colorThemes = {
-                name = "",
-                type = "group",
-                inline = true,
+            themeReset = {
+                name = "Reset",
+                type = "execute",
                 order = 4,
-                args = {
-                    reset = {
-                        name = "Reset",
-                        type = "execute",
-                        order = 2,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Default") end,
-                    },
-                    classColor = {
-                        name = "Class Color",
-                        type = "execute",
-                        order = 3,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Class Color") end,
-                    },
-                    default = {
-                        name = "Default",
-                        type = "execute",
-                        order = 4,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Default") end,
-                    },
-                    dark = {
-                        name = "Dark",
-                        type = "execute",
-                        order = 5,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Dark") end,
-                    },
-                    light = {
-                        name = "Light",
-                        type = "execute",
-                        order = 6,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Light") end,
-                    },
-                    neon = {
-                        name = "Neon",
-                        type = "execute",
-                        order = 7,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Neon") end,
-                    },
-                    fire = {
-                        name = "Fire",
-                        type = "execute",
-                        order = 8,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Fire") end,
-                    },
-                    frost = {
-                        name = "Frost",
-                        type = "execute",
-                        order = 9,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Frost") end,
-                    },
-                    nature = {
-                        name = "Nature",
-                        type = "execute",
-                        order = 10,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Nature") end,
-                    },
-                    shadow = {
-                        name = "Shadow",
-                        type = "execute",
-                        order = 11,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Shadow") end,
-                    },
-                    golden = {
-                        name = "Golden",
-                        type = "execute",
-                        order = 12,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Golden") end,
-                    },
-                    blood = {
-                        name = "Blood",
-                        type = "execute",
-                        order = 13,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Blood") end,
-                    },
-                    arcane = {
-                        name = "Arcane",
-                        type = "execute",
-                        order = 14,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Arcane") end,
-                    },
-                    minimal = {
-                        name = "Minimal",
-                        type = "execute",
-                        order = 15,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Minimal") end,
-                    },
-                    comet = {
-                        name = "Comet",
-                        type = "execute",
-                        order = 16,
-                        width = "normal",
-                        func = function() self:ApplyColorTheme("Comet") end,
-                    },
-                    trailOnly = {
-                        name = "Trail Only",
-                        type = "execute",
-                        order = 17,
-                        width = "normal",
-                        func = function()
-                            self.db.profile.trailEnabled = true
-                            self.db.profile.highlightEnabled = false
-                            self.db.profile.ringEnabled = false
-                            self.db.profile.sparklesEnabled = false
-                            self:UpdateVisibility()
-                            print("|cff00FF7FCursor Animate:|r Enabled Trail Only mode")
-                        end,
-                    },
-                    sparklesMode = {
-                        name = "Sparkles",
-                        type = "execute",
-                        order = 18,
-                        width = "normal",
-                        func = function()
-                            self.db.profile.trailEnabled = true
-                            self.db.profile.highlightEnabled = true
-                            self.db.profile.ringEnabled = false
-                            self.db.profile.sparklesEnabled = true
-                            self:UpdateVisibility()
-                            print("|cff00FF7FCursor Animate:|r Enabled Sparkles mode")
-                        end,
-                    },
-                    fullFX = {
-                        name = "Full FX",
-                        type = "execute",
-                        order = 19,
-                        width = "normal",
-                        func = function()
-                            self.db.profile.trailEnabled = true
-                            self.db.profile.highlightEnabled = true
-                            self.db.profile.ringEnabled = true
-                            self.db.profile.sparklesEnabled = true
-                            self:UpdateVisibility()
-                            print("|cff00FF7FCursor Animate:|r Enabled Full FX mode")
-                        end,
-                    },
-                },
+                width = "normal",
+                func = function() self:ApplyColorTheme("Default") end,
+            },
+            themeClassColor = {
+                name = "Class Color",
+                type = "execute",
+                order = 5,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Class Color") end,
+            },
+            themeDefault = {
+                name = "Default",
+                type = "execute",
+                order = 6,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Default") end,
+            },
+            themeDark = {
+                name = "Dark",
+                type = "execute",
+                order = 7,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Dark") end,
+            },
+            themeLight = {
+                name = "Light",
+                type = "execute",
+                order = 8,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Light") end,
+            },
+            themeNeon = {
+                name = "Neon",
+                type = "execute",
+                order = 9,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Neon") end,
+            },
+            themeFire = {
+                name = "Fire",
+                type = "execute",
+                order = 10,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Fire") end,
+            },
+            themeFrost = {
+                name = "Frost",
+                type = "execute",
+                order = 11,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Frost") end,
+            },
+            themeNature = {
+                name = "Nature",
+                type = "execute",
+                order = 12,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Nature") end,
+            },
+            themeShadow = {
+                name = "Shadow",
+                type = "execute",
+                order = 13,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Shadow") end,
+            },
+            themeGolden = {
+                name = "Golden",
+                type = "execute",
+                order = 14,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Golden") end,
+            },
+            themeBlood = {
+                name = "Blood",
+                type = "execute",
+                order = 15,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Blood") end,
+            },
+            themeArcane = {
+                name = "Arcane",
+                type = "execute",
+                order = 16,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Arcane") end,
+            },
+            themeMinimal = {
+                name = "Minimal",
+                type = "execute",
+                order = 17,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Minimal") end,
+            },
+            themeComet = {
+                name = "Comet",
+                type = "execute",
+                order = 18,
+                width = "normal",
+                func = function() self:ApplyColorTheme("Comet") end,
+            },
+            themeTrailOnly = {
+                name = "Trail Only",
+                type = "execute",
+                order = 19,
+                width = "normal",
+                func = function()
+                    self.db.profile.trailEnabled = true
+                    self.db.profile.highlightEnabled = false
+                    self.db.profile.ringEnabled = false
+                    self.db.profile.sparklesEnabled = false
+                    self:UpdateVisibility()
+                    print("|cff00FF7FCursor Animate:|r Enabled Trail Only mode")
+                end,
+            },
+            themeSparkles = {
+                name = "Sparkles",
+                type = "execute",
+                order = 20,
+                width = "normal",
+                func = function()
+                    self.db.profile.trailEnabled = true
+                    self.db.profile.highlightEnabled = true
+                    self.db.profile.ringEnabled = false
+                    self.db.profile.sparklesEnabled = true
+                    self:UpdateVisibility()
+                    print("|cff00FF7FCursor Animate:|r Enabled Sparkles mode")
+                end,
+            },
+            themeFullFX = {
+                name = "Full FX",
+                type = "execute",
+                order = 21,
+                width = "normal",
+                func = function()
+                    self.db.profile.trailEnabled = true
+                    self.db.profile.highlightEnabled = true
+                    self.db.profile.ringEnabled = true
+                    self.db.profile.sparklesEnabled = true
+                    self:UpdateVisibility()
+                    print("|cff00FF7FCursor Animate:|r Enabled Full FX mode")
+                end,
             },
             header1 = {
                 name = "Trail Settings",
                 type = "header",
-                order = 10,
+                order = 30,
             },
             trailEnabled = {
                 name = "Enable Trail",
                 desc = "Show a trail following the cursor",
                 type = "toggle",
-                order = 11,
+                order = 31,
                 get = function() return self.db.profile.trailEnabled end,
                 set = function(_, value)
                     self.db.profile.trailEnabled = value
@@ -1059,7 +1051,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Length",
                 desc = "Number of trail particles",
                 type = "range",
-                order = 12,
+                order = 32,
                 min = 5,
                 max = 30,
                 step = 1,
@@ -1072,7 +1064,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Size",
                 desc = "Size of each trail particle",
                 type = "range",
-                order = 13,
+                order = 33,
                 min = 16,
                 max = 64,
                 step = 1,
@@ -1085,7 +1077,7 @@ function CursorTrail:GetOptions()
                 name = "Fade Speed",
                 desc = "How quickly trail particles fade (seconds)",
                 type = "range",
-                order = 14,
+                order = 34,
                 min = 0.05,
                 max = 0.5,
                 step = 0.01,
@@ -1098,7 +1090,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Spacing",
                 desc = "Frames between trail updates (lower = smoother but more particles)",
                 type = "range",
-                order = 15,
+                order = 35,
                 min = 1,
                 max = 10,
                 step = 1,
@@ -1111,7 +1103,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Color",
                 desc = "Color of the trail effect",
                 type = "color",
-                order = 16,
+                order = 36,
                 hasAlpha = true,
                 get = function()
                     local c = self.db.profile.trailColor
@@ -1125,7 +1117,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Texture",
                 desc = "Visual style of the trail",
                 type = "select",
-                order = 17,
+                order = 37,
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1149,7 +1141,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Blend Mode",
                 desc = "How the trail blends with the background",
                 type = "select",
-                order = 18,
+                order = 38,
                 values = {
                     ["ADD"] = "Additive (Bright)",
                     ["BLEND"] = "Normal (Blend)",
@@ -1165,7 +1157,7 @@ function CursorTrail:GetOptions()
                 name = "Trail Style",
                 desc = "Visual style/animation of the trail",
                 type = "select",
-                order = 19,
+                order = 39,
                 values = {
                     ["classic"] = "Classic (Solid Color)",
                     ["rainbow"] = "Rainbow (Cycling Colors)",
@@ -1179,13 +1171,13 @@ function CursorTrail:GetOptions()
             header2 = {
                 name = "Highlight Settings",
                 type = "header",
-                order = 20,
+                order = 40,
             },
             highlightEnabled = {
                 name = "Enable Highlight",
                 desc = "Show a glow/highlight around the cursor",
                 type = "toggle",
-                order = 21,
+                order = 41,
                 get = function() return self.db.profile.highlightEnabled end,
                 set = function(_, value)
                     self.db.profile.highlightEnabled = value
@@ -1195,7 +1187,7 @@ function CursorTrail:GetOptions()
                 name = "Highlight Size",
                 desc = "Size of the cursor highlight",
                 type = "range",
-                order = 22,
+                order = 42,
                 min = 24,
                 max = 96,
                 step = 1,
@@ -1209,7 +1201,7 @@ function CursorTrail:GetOptions()
                 name = "Pulse Effect",
                 desc = "Make the highlight pulse",
                 type = "toggle",
-                order = 23,
+                order = 43,
                 get = function() return self.db.profile.highlightPulse end,
                 set = function(_, value)
                     self.db.profile.highlightPulse = value
@@ -1219,7 +1211,7 @@ function CursorTrail:GetOptions()
                 name = "Highlight Color",
                 desc = "Color of the highlight effect",
                 type = "color",
-                order = 24,
+                order = 44,
                 hasAlpha = true,
                 get = function()
                     local c = self.db.profile.highlightColor
@@ -1233,7 +1225,7 @@ function CursorTrail:GetOptions()
                 name = "Highlight Texture",
                 desc = "Visual style of the highlight",
                 type = "select",
-                order = 25,
+                order = 45,
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1253,7 +1245,7 @@ function CursorTrail:GetOptions()
                 name = "Highlight Blend Mode",
                 desc = "How the highlight blends with the background",
                 type = "select",
-                order = 26,
+                order = 46,
                 values = {
                     ["ADD"] = "Additive (Bright)",
                     ["BLEND"] = "Normal (Blend)",
@@ -1268,13 +1260,13 @@ function CursorTrail:GetOptions()
             header3 = {
                 name = "Sparkles Settings",
                 type = "header",
-                order = 30,
+                order = 50,
             },
             sparklesEnabled = {
                 name = "Enable Sparkles",
                 desc = "Show sparkle effects when cursor is idle",
                 type = "toggle",
-                order = 31,
+                order = 51,
                 get = function() return self.db.profile.sparklesEnabled end,
                 set = function(_, value)
                     self.db.profile.sparklesEnabled = value
@@ -1284,7 +1276,7 @@ function CursorTrail:GetOptions()
                 name = "Idle Delay",
                 desc = "Seconds before sparkles appear when cursor stops moving",
                 type = "range",
-                order = 32,
+                order = 52,
                 min = 0.5,
                 max = 3.0,
                 step = 0.1,
@@ -1297,7 +1289,7 @@ function CursorTrail:GetOptions()
                 name = "Spawn Rate",
                 desc = "Seconds between sparkle spawns",
                 type = "range",
-                order = 33,
+                order = 53,
                 min = 0.05,
                 max = 0.5,
                 step = 0.05,
@@ -1310,7 +1302,7 @@ function CursorTrail:GetOptions()
                 name = "Sparkle Size",
                 desc = "Size of sparkle particles",
                 type = "range",
-                order = 34,
+                order = 54,
                 min = 8,
                 max = 24,
                 step = 1,
@@ -1323,7 +1315,7 @@ function CursorTrail:GetOptions()
                 name = "Lifetime",
                 desc = "How long sparkles last (seconds)",
                 type = "range",
-                order = 35,
+                order = 55,
                 min = 0.3,
                 max = 2.0,
                 step = 0.1,
@@ -1336,7 +1328,7 @@ function CursorTrail:GetOptions()
                 name = "Sparkle Color",
                 desc = "Color of sparkle particles",
                 type = "color",
-                order = 36,
+                order = 56,
                 hasAlpha = true,
                 get = function()
                     local c = self.db.profile.sparklesColor
@@ -1350,7 +1342,7 @@ function CursorTrail:GetOptions()
                 name = "Sparkle Texture",
                 desc = "Visual style of sparkles",
                 type = "select",
-                order = 37,
+                order = 57,
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1367,13 +1359,13 @@ function CursorTrail:GetOptions()
              header4 = {
                 name = "Ring Settings",
                 type = "header",
-                order = 40,
+                order = 60,
             },
             ringEnabled = {
                 name = "Enable Ring",
                 desc = "Show a ring around the cursor",
                 type = "toggle",
-                order = 41,
+                order = 61,
                 get = function() return self.db.profile.ringEnabled end,
                 set = function(_, value)
                     self.db.profile.ringEnabled = value
@@ -1383,7 +1375,7 @@ function CursorTrail:GetOptions()
                 name = "Ring Size",
                 desc = "Size of the cursor ring",
                 type = "range",
-                order = 42,
+                order = 62,
                 min = 32,
                 max = 128,
                 step = 1,
@@ -1397,7 +1389,7 @@ function CursorTrail:GetOptions()
                 name = "Pulse Effect",
                 desc = "Make the ring pulse",
                 type = "toggle",
-                order = 43,
+                order = 63,
                 get = function() return self.db.profile.ringPulse end,
                 set = function(_, value)
                     self.db.profile.ringPulse = value
@@ -1407,7 +1399,7 @@ function CursorTrail:GetOptions()
                 name = "Show GCD",
                 desc = "Display global cooldown on the ring",
                 type = "toggle",
-                order = 44,
+                order = 64,
                 get = function() return self.db.profile.ringShowGCD end,
                 set = function(_, value)
                     self.db.profile.ringShowGCD = value
@@ -1417,7 +1409,7 @@ function CursorTrail:GetOptions()
                 name = "Ring Color",
                 desc = "Color of the ring effect",
                 type = "color",
-                order = 45,
+                order = 65,
                 hasAlpha = true,
                 get = function()
                     local c = self.db.profile.ringColor
@@ -1431,7 +1423,7 @@ function CursorTrail:GetOptions()
                 name = "Ring Texture",
                 desc = "Visual style of the ring",
                 type = "select",
-                order = 46,
+                order = 66,
                 values = {
                     ["Circle"] = "Circle",
                     ["CircleThick"] = "Circle Thick",
@@ -1448,13 +1440,13 @@ function CursorTrail:GetOptions()
             header5 = {
                 name = "Health & Combat Alerts",
                 type = "header",
-                order = 50,
+                order = 70,
             },
             alertsEnabled = {
                 name = "Enable Alerts",
                 desc = "Change cursor color based on health and combat status",
                 type = "toggle",
-                order = 51,
+                order = 71,
                 get = function() return self.db.profile.alertsEnabled end,
                 set = function(_, value)
                     self.db.profile.alertsEnabled = value
@@ -1464,7 +1456,7 @@ function CursorTrail:GetOptions()
                 name = "Low Health Warning",
                 desc = "Turn cursor red when health is low",
                 type = "toggle",
-                order = 52,
+                order = 72,
                 get = function() return self.db.profile.lowHealthWarning end,
                 set = function(_, value)
                     self.db.profile.lowHealthWarning = value
@@ -1474,7 +1466,7 @@ function CursorTrail:GetOptions()
                 name = "Health Threshold",
                 desc = "Health percentage to trigger warning",
                 type = "range",
-                order = 53,
+                order = 73,
                 min = 10,
                 max = 50,
                 step = 5,
@@ -1487,7 +1479,7 @@ function CursorTrail:GetOptions()
                 name = "Aggro Warning",
                 desc = "Turn cursor orange when you have threat/aggro",
                 type = "toggle",
-                order = 54,
+                order = 74,
                 get = function() return self.db.profile.aggroWarning end,
                 set = function(_, value)
                     self.db.profile.aggroWarning = value
@@ -1496,13 +1488,13 @@ function CursorTrail:GetOptions()
             header6 = {
                 name = "Combat Settings",
                 type = "header",
-                order = 60,
+                order = 80,
             },
             hideInCombat = {
                 name = "Hide in Combat",
                 desc = "Hide cursor effects during combat",
                 type = "toggle",
-                order = 61,
+                order = 81,
                 get = function() return self.db.profile.hideInCombat end,
                 set = function(_, value)
                     self.db.profile.hideInCombat = value
@@ -1513,7 +1505,7 @@ function CursorTrail:GetOptions()
                 name = "Combat Only Highlight",
                 desc = "Only show highlight during combat (ignores 'Hide in Combat')",
                 type = "toggle",
-                order = 62,
+                order = 82,
                 get = function() return self.db.profile.combatOnlyHighlight end,
                 set = function(_, value)
                     self.db.profile.combatOnlyHighlight = value
