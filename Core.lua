@@ -50,6 +50,7 @@ local defaults = {
             resourceBars = true,
             castBar = true,
             tweaks = true,
+            cursorTrail = true,
             setup = true,
             addonmanager = true,
             timePlayed = true
@@ -2191,6 +2192,8 @@ function AbstractUI:GetOptions()
                 displayName = "Resource Bars"
             elseif name == "AddonManager" then
                 displayName = "Addon Manager"
+            elseif name == "CursorTrail" then
+                displayName = "Cursor Trail"
             end
             
             -- Set module order based on name
@@ -2219,6 +2222,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 12
             elseif name == "Tweaks" then
                 moduleOrder = 13
+            elseif name == "CursorTrail" then
+                moduleOrder = 13.5
             elseif name == "AddonManager" then
                 moduleOrder = 14
             elseif name == "Setup" then

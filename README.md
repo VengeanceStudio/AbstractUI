@@ -93,6 +93,27 @@ Enhanced minimap with modern aesthetics and improved functionality.
 
 ---
 
+### ✨ Cursor Trail Module
+Enhanced cursor visibility with customizable trail effects and highlighting.
+
+**Features:**
+* **Cursor Trail:** Smooth particle trail following mouse movement
+* **Cursor Highlight:** Glowing effect around cursor with optional pulse animation
+* **Customizable Appearance:**
+  - Adjustable size, color (RGB + alpha), and blend modes
+  - Multiple texture styles (Glow, Star, Circle, Spark)
+  - Trail length and fade speed controls
+  - Particle spacing and density options
+* **Combat Awareness:**
+  - Option to hide effects during combat
+  - Combat-only highlight mode for better target visibility
+* **Performance Optimized:** Efficient particle system with minimal overhead
+* Independent control of trail and highlight effects
+
+Perfect for improving cursor visibility in raids, finding your cursor quickly, or adding visual flair to your UI.
+
+---
+
 ### ❤️ Unit Frames Module
 Advanced, fully customizable unit frames for all unit types with a powerful tag-based text system.
 
