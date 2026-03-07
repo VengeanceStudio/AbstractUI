@@ -859,184 +859,33 @@ function CursorTrail:GetOptions()
     return {
         name = "Cursor Animate",
         type = "group",
+        childGroups = "tab",
         args = {
-            enabled = {
-                name = "Enable Cursor Animate",
-                desc = "Enable or disable the cursor animation effect",
-                type = "toggle",
+            settings = {
+                name = "Settings",
+                type = "group",
                 order = 1,
-                get = function() return self.db.profile.enabled end,
-                set = function(_, value)
-                    self.db.profile.enabled = value
-                    if value then
-                        self:Enable()
-                    else
-                        self:Disable()
-                    end
-                end,
-            },
-            colorThemesHeader = {
-                name = "Color Themes",
-                type = "header",
-                order = 2,
-            },
-            colorThemeDesc = {
-                name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
-                type = "description",
-                order = 3,
-            },
-            themeReset = {
-                name = "Reset",
-                type = "execute",
-                order = 4,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Default") end,
-            },
-            themeClassColor = {
-                name = "Class Color",
-                type = "execute",
-                order = 5,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Class Color") end,
-            },
-            themeDefault = {
-                name = "Default",
-                type = "execute",
-                order = 6,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Default") end,
-            },
-            themeDark = {
-                name = "Dark",
-                type = "execute",
-                order = 7,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Dark") end,
-            },
-            themeLight = {
-                name = "Light",
-                type = "execute",
-                order = 8,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Light") end,
-            },
-            themeNeon = {
-                name = "Neon",
-                type = "execute",
-                order = 9,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Neon") end,
-            },
-            themeFire = {
-                name = "Fire",
-                type = "execute",
-                order = 10,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Fire") end,
-            },
-            themeFrost = {
-                name = "Frost",
-                type = "execute",
-                order = 11,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Frost") end,
-            },
-            themeNature = {
-                name = "Nature",
-                type = "execute",
-                order = 12,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Nature") end,
-            },
-            themeShadow = {
-                name = "Shadow",
-                type = "execute",
-                order = 13,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Shadow") end,
-            },
-            themeGolden = {
-                name = "Golden",
-                type = "execute",
-                order = 14,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Golden") end,
-            },
-            themeBlood = {
-                name = "Blood",
-                type = "execute",
-                order = 15,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Blood") end,
-            },
-            themeArcane = {
-                name = "Arcane",
-                type = "execute",
-                order = 16,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Arcane") end,
-            },
-            themeMinimal = {
-                name = "Minimal",
-                type = "execute",
-                order = 17,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Minimal") end,
-            },
-            themeComet = {
-                name = "Comet",
-                type = "execute",
-                order = 18,
-                width = "normal",
-                func = function() self:ApplyColorTheme("Comet") end,
-            },
-            themeTrailOnly = {
-                name = "Trail Only",
-                type = "execute",
-                order = 19,
-                width = "normal",
-                func = function()
-                    self.db.profile.trailEnabled = true
-                    self.db.profile.highlightEnabled = false
-                    self.db.profile.ringEnabled = false
-                    self.db.profile.sparklesEnabled = false
-                    self:UpdateVisibility()
-                    print("|cff00FF7FCursor Animate:|r Enabled Trail Only mode")
-                end,
-            },
-            themeSparkles = {
-                name = "Sparkles",
-                type = "execute",
-                order = 20,
-                width = "normal",
-                func = function()
-                    self.db.profile.trailEnabled = true
-                    self.db.profile.highlightEnabled = true
-                    self.db.profile.ringEnabled = false
-                    self.db.profile.sparklesEnabled = true
-                    self:UpdateVisibility()
-                    print("|cff00FF7FCursor Animate:|r Enabled Sparkles mode")
-                end,
-            },
-            themeFullFX = {
-                name = "Full FX",
-                type = "execute",
-                order = 21,
-                width = "normal",
-                func = function()
-                    self.db.profile.trailEnabled = true
-                    self.db.profile.highlightEnabled = true
-                    self.db.profile.ringEnabled = true
-                    self.db.profile.sparklesEnabled = true
-                    self:UpdateVisibility()
-                    print("|cff00FF7FCursor Animate:|r Enabled Full FX mode")
-                end,
-            },
-            header1 = {
-                name = "Trail Settings",
-                type = "header",
-                order = 30,
-            },
+                args = {
+                    enabled = {
+                        name = "Enable Cursor Animate",
+                        desc = "Enable or disable the cursor animation effect",
+                        type = "toggle",
+                        order = 1,
+                        get = function() return self.db.profile.enabled end,
+                        set = function(_, value)
+                            self.db.profile.enabled = value
+                            if value then
+                                self:Enable()
+                            else
+                                self:Disable()
+                            end
+                        end,
+                    },
+                    header1 = {
+                        name = "Trail Settings",
+                        type = "header",
+                        order = 30,
+                    },
             trailEnabled = {
                 name = "Enable Trail",
                 desc = "Show a trail following the cursor",
@@ -1511,6 +1360,167 @@ function CursorTrail:GetOptions()
                     self.db.profile.combatOnlyHighlight = value
                 end,
             },
-        }
-    }
+                }  -- Close settings args
+            },  -- Close settings group
+            themes = {
+                name = "Themes",
+                type = "group",
+                order = 2,
+                args = {
+                    themeDesc = {
+                        name = "Click a theme to apply its colors to Ring, Trail, Sparkles, and Highlight.",
+                        type = "description",
+                        order = 1,
+                    },
+                    themeReset = {
+                        name = "Reset",
+                        type = "execute",
+                        order = 2,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Default") end,
+                    },
+                    themeClassColor = {
+                        name = "Class Color",
+                        type = "execute",
+                        order = 3,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Class Color") end,
+                    },
+                    themeDefault = {
+                        name = "Default",
+                        type = "execute",
+                        order = 4,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Default") end,
+                    },
+                    themeDark = {
+                        name = "Dark",
+                        type = "execute",
+                        order = 5,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Dark") end,
+                    },
+                    themeLight = {
+                        name = "Light",
+                        type = "execute",
+                        order = 6,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Light") end,
+                    },
+                    themeNeon = {
+                        name = "Neon",
+                        type = "execute",
+                        order = 7,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Neon") end,
+                    },
+                    themeFire = {
+                        name = "Fire",
+                        type = "execute",
+                        order = 8,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Fire") end,
+                    },
+                    themeFrost = {
+                        name = "Frost",
+                        type = "execute",
+                        order = 9,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Frost") end,
+                    },
+                    themeNature = {
+                        name = "Nature",
+                        type = "execute",
+                        order = 10,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Nature") end,
+                    },
+                    themeShadow = {
+                        name = "Shadow",
+                        type = "execute",
+                        order = 11,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Shadow") end,
+                    },
+                    themeGolden = {
+                        name = "Golden",
+                        type = "execute",
+                        order = 12,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Golden") end,
+                    },
+                    themeBlood = {
+                        name = "Blood",
+                        type = "execute",
+                        order = 13,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Blood") end,
+                    },
+                    themeArcane = {
+                        name = "Arcane",
+                        type = "execute",
+                        order = 14,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Arcane") end,
+                    },
+                    themeMinimal = {
+                        name = "Minimal",
+                        type = "execute",
+                        order = 15,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Minimal") end,
+                    },
+                    themeComet = {
+                        name = "Comet",
+                        type = "execute",
+                        order = 16,
+                        width = "normal",
+                        func = function() self:ApplyColorTheme("Comet") end,
+                    },
+                    themeTrailOnly = {
+                        name = "Trail Only",
+                        type = "execute",
+                        order = 17,
+                        width = "normal",
+                        func = function()
+                            self.db.profile.trailEnabled = true
+                            self.db.profile.highlightEnabled = false
+                            self.db.profile.ringEnabled = false
+                            self.db.profile.sparklesEnabled = false
+                            self:UpdateVisibility()
+                            print("|cff00FF7FCursor Animate:|r Enabled Trail Only mode")
+                        end,
+                    },
+                    themeSparkles = {
+                        name = "Sparkles",
+                        type = "execute",
+                        order = 18,
+                        width = "normal",
+                        func = function()
+                            self.db.profile.trailEnabled = true
+                            self.db.profile.highlightEnabled = true
+                            self.db.profile.ringEnabled = false
+                            self.db.profile.sparklesEnabled = true
+                            self:UpdateVisibility()
+                            print("|cff00FF7FCursor Animate:|r Enabled Sparkles mode")
+                        end,
+                    },
+                    themeFullFX = {
+                        name = "Full FX",
+                        type = "execute",
+                        order = 19,
+                        width = "normal",
+                        func = function()
+                            self.db.profile.trailEnabled = true
+                            self.db.profile.highlightEnabled = true
+                            self.db.profile.ringEnabled = true
+                            self.db.profile.sparklesEnabled = true
+                            self:UpdateVisibility()
+                            print("|cff00FF7FCursor Animate:|r Enabled Full FX mode")
+                        end,
+                    },
+                }  -- Close themes args
+            },  -- Close themes group
+        }  -- Close main args
+    }  -- Close return table
 end
