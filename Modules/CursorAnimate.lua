@@ -113,6 +113,95 @@ local TEXTURES = {
     ["Orb"] = "Interface\\Cooldown\\ping4",
 }
 
+-- Color theme definitions
+local COLOR_THEMES = {
+    ["Default"] = {
+        trail = { r = 0.0, g = 0.8, b = 1.0, a = 1.0 },
+        ring = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        sparkles = { r = 0.3, g = 0.9, b = 1.0, a = 0.7 },
+        highlight = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
+    },
+    ["Dark"] = {
+        trail = { r = 0.15, g = 0.15, b = 0.15, a = 1.0 },
+        ring = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+        sparkles = { r = 0.3, g = 0.3, b = 0.3, a = 0.7 },
+        highlight = { r = 0.25, g = 0.25, b = 0.25, a = 0.7 },
+    },
+    ["Light"] = {
+        trail = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+        ring = { r = 0.95, g = 0.95, b = 0.95, a = 0.8 },
+        sparkles = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
+        highlight = { r = 0.9, g = 0.9, b = 0.9, a = 0.7 },
+    },
+    ["Neon"] = {
+        trail = { r = 0.0, g = 1.0, b = 0.5, a = 1.0 },
+        ring = { r = 0.0, g = 1.0, b = 0.5, a = 0.8 },
+        sparkles = { r = 0.0, g = 1.0, b = 0.8, a = 0.7 },
+        highlight = { r = 0.0, g = 1.0, b = 0.6, a = 0.7 },
+    },
+    ["Fire"] = {
+        trail = { r = 1.0, g = 0.5, b = 0.0, a = 1.0 },
+        ring = { r = 1.0, g = 0.3, b = 0.0, a = 0.8 },
+        sparkles = { r = 1.0, g = 0.6, b = 0.2, a = 0.7 },
+        highlight = { r = 1.0, g = 0.4, b = 0.0, a = 0.7 },
+    },
+    ["Frost"] = {
+        trail = { r = 0.3, g = 0.7, b = 1.0, a = 1.0 },
+        ring = { r = 0.4, g = 0.8, b = 1.0, a = 0.8 },
+        sparkles = { r = 0.5, g = 0.85, b = 1.0, a = 0.7 },
+        highlight = { r = 0.4, g = 0.75, b = 1.0, a = 0.7 },
+    },
+    ["Nature"] = {
+        trail = { r = 0.2, g = 0.9, b = 0.2, a = 1.0 },
+        ring = { r = 0.3, g = 1.0, b = 0.3, a = 0.8 },
+        sparkles = { r = 0.4, g = 1.0, b = 0.4, a = 0.7 },
+        highlight = { r = 0.25, g = 0.95, b = 0.25, a = 0.7 },
+    },
+    ["Shadow"] = {
+        trail = { r = 0.4, g = 0.2, b = 0.6, a = 1.0 },
+        ring = { r = 0.5, g = 0.3, b = 0.7, a = 0.8 },
+        sparkles = { r = 0.6, g = 0.4, b = 0.8, a = 0.7 },
+        highlight = { r = 0.45, g = 0.25, b = 0.65, a = 0.7 },
+    },
+    ["Golden"] = {
+        trail = { r = 1.0, g = 0.8, b = 0.0, a = 1.0 },
+        ring = { r = 1.0, g = 0.75, b = 0.0, a = 0.8 },
+        sparkles = { r = 1.0, g = 0.85, b = 0.3, a = 0.7 },
+        highlight = { r = 1.0, g = 0.8, b = 0.1, a = 0.7 },
+    },
+    ["Blood"] = {
+        trail = { r = 0.8, g = 0.0, b = 0.0, a = 1.0 },
+        ring = { r = 0.9, g = 0.1, b = 0.1, a = 0.8 },
+        sparkles = { r = 1.0, g = 0.2, b = 0.2, a = 0.7 },
+        highlight = { r = 0.85, g = 0.0, b = 0.0, a = 0.7 },
+    },
+    ["Arcane"] = {
+        trail = { r = 0.6, g = 0.4, b = 1.0, a = 1.0 },
+        ring = { r = 0.7, g = 0.5, b = 1.0, a = 0.8 },
+        sparkles = { r = 0.8, g = 0.6, b = 1.0, a = 0.7 },
+        highlight = { r = 0.65, g = 0.45, b = 1.0, a = 0.7 },
+    },
+    ["Minimal"] = {
+        trail = { r = 0.6, g = 0.6, b = 0.6, a = 0.5 },
+        ring = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 },
+        sparkles = { r = 0.8, g = 0.8, b = 0.8, a = 0.4 },
+        highlight = { r = 0.65, g = 0.65, b = 0.65, a = 0.5 },
+    },
+    ["Comet"] = {
+        trail = { r = 0.0, g = 0.6, b = 1.0, a = 1.0 },
+        ring = { r = 0.1, g = 0.7, b = 1.0, a = 0.8 },
+        sparkles = { r = 0.2, g = 0.8, b = 1.0, a = 0.7 },
+        highlight = { r = 0.0, g = 0.65, b = 1.0, a = 0.7 },
+    },
+    ["Class Color"] = {
+        -- Special case: dynamically set in ApplyColorTheme
+        trail = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+        ring = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        sparkles = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
+        highlight = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
+    },
+}
+
 function CursorTrail:OnInitialize()
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
     
@@ -1376,112 +1465,134 @@ function CursorTrail:GetOptions()
                         name = "Reset",
                         type = "execute",
                         order = 2,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Default"].trail.r, COLOR_THEMES["Default"].trail.g, COLOR_THEMES["Default"].trail.b end,
                         func = function() self:ApplyColorTheme("Default") end,
                     },
                     themeClassColor = {
                         name = "Class Color",
                         type = "execute",
                         order = 3,
-                        width = "normal",
+                        width = "double",
+                        color = function()
+                            local _, class = UnitClass("player")
+                            local classColor = RAID_CLASS_COLORS[class]
+                            if classColor then
+                                return classColor.r, classColor.g, classColor.b
+                            end
+                            return 1, 1, 1
+                        end,
                         func = function() self:ApplyColorTheme("Class Color") end,
                     },
                     themeDefault = {
                         name = "Default",
                         type = "execute",
                         order = 4,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Default"].trail.r, COLOR_THEMES["Default"].trail.g, COLOR_THEMES["Default"].trail.b end,
                         func = function() self:ApplyColorTheme("Default") end,
                     },
                     themeDark = {
                         name = "Dark",
                         type = "execute",
                         order = 5,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Dark"].trail.r, COLOR_THEMES["Dark"].trail.g, COLOR_THEMES["Dark"].trail.b end,
                         func = function() self:ApplyColorTheme("Dark") end,
                     },
                     themeLight = {
                         name = "Light",
                         type = "execute",
                         order = 6,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Light"].trail.r, COLOR_THEMES["Light"].trail.g, COLOR_THEMES["Light"].trail.b end,
                         func = function() self:ApplyColorTheme("Light") end,
                     },
                     themeNeon = {
                         name = "Neon",
                         type = "execute",
                         order = 7,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Neon"].trail.r, COLOR_THEMES["Neon"].trail.g, COLOR_THEMES["Neon"].trail.b end,
                         func = function() self:ApplyColorTheme("Neon") end,
                     },
                     themeFire = {
                         name = "Fire",
                         type = "execute",
                         order = 8,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Fire"].trail.r, COLOR_THEMES["Fire"].trail.g, COLOR_THEMES["Fire"].trail.b end,
                         func = function() self:ApplyColorTheme("Fire") end,
                     },
                     themeFrost = {
                         name = "Frost",
                         type = "execute",
                         order = 9,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Frost"].trail.r, COLOR_THEMES["Frost"].trail.g, COLOR_THEMES["Frost"].trail.b end,
                         func = function() self:ApplyColorTheme("Frost") end,
                     },
                     themeNature = {
                         name = "Nature",
                         type = "execute",
                         order = 10,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Nature"].trail.r, COLOR_THEMES["Nature"].trail.g, COLOR_THEMES["Nature"].trail.b end,
                         func = function() self:ApplyColorTheme("Nature") end,
                     },
                     themeShadow = {
                         name = "Shadow",
                         type = "execute",
                         order = 11,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Shadow"].trail.r, COLOR_THEMES["Shadow"].trail.g, COLOR_THEMES["Shadow"].trail.b end,
                         func = function() self:ApplyColorTheme("Shadow") end,
                     },
                     themeGolden = {
                         name = "Golden",
                         type = "execute",
                         order = 12,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Golden"].trail.r, COLOR_THEMES["Golden"].trail.g, COLOR_THEMES["Golden"].trail.b end,
                         func = function() self:ApplyColorTheme("Golden") end,
                     },
                     themeBlood = {
                         name = "Blood",
                         type = "execute",
                         order = 13,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Blood"].trail.r, COLOR_THEMES["Blood"].trail.g, COLOR_THEMES["Blood"].trail.b end,
                         func = function() self:ApplyColorTheme("Blood") end,
                     },
                     themeArcane = {
                         name = "Arcane",
                         type = "execute",
                         order = 14,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Arcane"].trail.r, COLOR_THEMES["Arcane"].trail.g, COLOR_THEMES["Arcane"].trail.b end,
                         func = function() self:ApplyColorTheme("Arcane") end,
                     },
                     themeMinimal = {
                         name = "Minimal",
                         type = "execute",
                         order = 15,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Minimal"].trail.r, COLOR_THEMES["Minimal"].trail.g, COLOR_THEMES["Minimal"].trail.b end,
                         func = function() self:ApplyColorTheme("Minimal") end,
                     },
                     themeComet = {
                         name = "Comet",
                         type = "execute",
                         order = 16,
-                        width = "normal",
+                        width = "double",
+                        color = function() return COLOR_THEMES["Comet"].trail.r, COLOR_THEMES["Comet"].trail.g, COLOR_THEMES["Comet"].trail.b end,
                         func = function() self:ApplyColorTheme("Comet") end,
                     },
                     themeTrailOnly = {
                         name = "Trail Only",
                         type = "execute",
                         order = 17,
-                        width = "normal",
+                        width = "double",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = false
@@ -1495,7 +1606,7 @@ function CursorTrail:GetOptions()
                         name = "Sparkles",
                         type = "execute",
                         order = 18,
-                        width = "normal",
+                        width = "double",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = true
@@ -1509,7 +1620,7 @@ function CursorTrail:GetOptions()
                         name = "Full FX",
                         type = "execute",
                         order = 19,
-                        width = "normal",
+                        width = "double",
                         func = function()
                             self.db.profile.trailEnabled = true
                             self.db.profile.highlightEnabled = true
