@@ -139,15 +139,39 @@ function CursorTrail:OnInitialize()
         elseif msg == "status" then
             if CursorTrail.db then
                 print("|cff00FF7FCursor Animate:|r Enabled: " .. tostring(CursorTrail.db.profile.enabled))
-                print("|cff00FF7FCursor Animate:|r UpdateFrame: " .. tostring(updateFrame ~= nil and updateFrame:IsShown()))
+                print("|cff00FF7FCursor Animate:|r UpdateFrame exists: " .. tostring(updateFrame ~= nil))
+                if updateFrame then
+                    print("|cff00FF7FCursor Animate:|r UpdateFrame:IsShown(): " .. tostring(updateFrame:IsShown()))
+                    print("|cff00FF7FCursor Animate:|r UpdateFrame has OnUpdate: " .. tostring(updateFrame:GetScript("OnUpdate") ~= nil))
+                end
+                print("|cff00FF7FCursor Animate:|r HighlightFrame exists: " .. tostring(highlightFrame ~= nil))
+                if highlightFrame then
+                    print("|cff00FF7FCursor Animate:|r HighlightFrame:IsShown(): " .. tostring(highlightFrame:IsShown()))
+                end
             else
                 print("|cffFF6B6BCursor Animate:|r Database not ready yet.")
             end
+        elseif msg == "test" then
+            -- Force show highlight for testing
+            if highlightFrame then
+                local x, y = GetCursorPosition()
+                local scale = UIParent:GetEffectiveScale()
+                x = x / scale
+                y = y / scale
+                highlightFrame:ClearAllPoints()
+                highlightFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                highlightFrame.texture:SetVertexColor(1, 0, 0, 1) -- Red, full alpha
+                highlightFrame:Show()
+                print("|cff00FF7FCursor Animate:|r Red highlight forced at cursor position!")
+            else
+                print("|cffFF6B6BCursor Animate: |rHighlight frame doesn't exist!")
+            end
         else
             print("|cff00FF7FCursor Animate Commands:|r")
-            print("  /ca on  - Enable animations")
-            print("  /ca off - Disable animations")
+            print("  /ca on     - Enable animations")
+            print("  /ca off    - Disable animations")
             print("  /ca status - Show current status")
+            print("  /ca test   - Force show red highlight at cursor")
         end
     end
 end
@@ -205,19 +229,30 @@ function CursorTrail:OnDBReady()
 end
 
 function CursorTrail:OnEnable()
+    print("|cffFFFF00Cursor Animate:|r OnEnable() called")
+    print("|cffFFFF00Cursor Animate:|r self.db = " .. tostring(self.db ~= nil))
+    print("|cffFFFF00Cursor Animate:|r updateFrame = " .. tostring(updateFrame ~= nil))
+    
     -- Don't do anything if DB isn't ready yet
     if not self.db then 
         print("|cffFF6B6BCursor Animate:|r OnEnable called but DB not ready!")
         return 
     end
     
+    print("|cffFFFF00Cursor Animate:|r Past DB check")
+    
     if updateFrame then
+        print("|cffFFFF00Cursor Animate:|r About to call updateFrame:Show()")
         updateFrame:Show()
+        print("|cffFFFF00Cursor Animate:|r updateFrame:IsShown() = " .. tostring(updateFrame:IsShown()))
         print("|cff00FF7FCursor Animate:|r Animation enabled!")
     else
         print("|cffFF6B6BCursor Animate:|r ERROR: updateFrame not created!")
     end
+    
+    print("|cffFFFF00Cursor Animate:|r About to call UpdateVisibility()")
     self:UpdateVisibility()
+    print("|cffFFFF00Cursor Animate:|r UpdateVisibility() completed")
 end
 
 function CursorTrail:OnDisable()
@@ -283,6 +318,8 @@ function CursorTrail:CreateTrailFrames()
         
         trailFrames[i] = frame
     end
+    
+    print("|cffFFFF00Cursor Animate:|r Created " .. maxTrailFrames .. " trail frames")
 end
 
 function CursorTrail:CreateHighlightFrame()
@@ -329,6 +366,8 @@ function CursorTrail:CreateSparkleFrames()
         sparkleFrames[i] = frame
         sparkleFreeList[i] = i -- All sparkles start in free list
     end
+    
+    print("|cffFFFF00Cursor Animate:|r Created " .. maxSparkleFrames .. " sparkle frames")
 end
 
 function CursorTrail:CreateRingFrame()
@@ -355,6 +394,8 @@ function CursorTrail:CreateRingFrame()
     if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(true) end
     
     ringFrame.cooldown = cooldown
+    
+    print("|cffFFFF00Cursor Animate:|r Ring frame created")
 end
 
 function CursorTrail:CreateUpdateFrame()
@@ -366,14 +407,21 @@ function CursorTrail:CreateUpdateFrame()
     local lastX, lastY = 0, 0
     local hasShownStartMessage = false
     
+    print("|cffFFFF00Cursor Animate:|r Setting up OnUpdate script...")
+    
     updateFrame:SetScript("OnUpdate", function(self, elapsed)
-        if not CursorTrail.db then return end
-        if not CursorTrail.db.profile.enabled then return end
-        
-        -- One-time startup message
+        -- One-time startup message (first thing, no conditions)
         if not hasShownStartMessage then
-            print("|cff00FF7FCursor Animate:|r OnUpdate script is running!")
+            print("|cff00FF7FCursor Animate:|r ========== OnUpdate script IS RUNNING! ==========")
             hasShownStartMessage = true
+        end
+        
+        if not CursorTrail.db then 
+            print("|cffFF6B6BCursor Animate:|r OnUpdate: DB is nil!")
+            return 
+        end
+        if not CursorTrail.db.profile.enabled then 
+            return 
         end
         
         local x, y = GetCursorPosition()
@@ -553,6 +601,8 @@ function CursorTrail:CreateUpdateFrame()
             end
         end
     end)
+    
+    print("|cffFFFF00Cursor Animate:|r OnUpdate script setup complete!")
 end
 
 function CursorTrail:AddTrailParticle(x, y, alertR, alertG, alertB)
