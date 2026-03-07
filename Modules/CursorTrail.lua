@@ -93,6 +93,9 @@ function CursorTrail:OnDBReady()
 end
 
 function CursorTrail:OnEnable()
+    -- Don't do anything if DB isn't ready yet
+    if not self.db then return end
+    
     if updateFrame then
         updateFrame:Show()
     end
@@ -166,6 +169,7 @@ function CursorTrail:CreateUpdateFrame()
     local pulseTime = 0
     
     updateFrame:SetScript("OnUpdate", function(self, elapsed)
+        if not CursorTrail.db then return end
         if not CursorTrail.db.profile.enabled then return end
         
         local inCombat = InCombatLockdown()
@@ -247,6 +251,8 @@ function CursorTrail:CreateUpdateFrame()
 end
 
 function CursorTrail:AddTrailParticle()
+    if not self.db then return end
+    
     local x, y = GetCursorPosition()
     local scale = UIParent:GetEffectiveScale()
     x = x / scale
@@ -273,6 +279,8 @@ function CursorTrail:AddTrailParticle()
 end
 
 function CursorTrail:UpdateVisibility()
+    if not self.db then return end
+    
     local inCombat = InCombatLockdown()
     
     if self.db.profile.hideInCombat and inCombat then
@@ -285,14 +293,18 @@ function CursorTrail:UpdateVisibility()
 end
 
 function CursorTrail:PLAYER_REGEN_DISABLED()
+    if not self.db then return end
     self:UpdateVisibility()
 end
 
 function CursorTrail:PLAYER_REGEN_ENABLED()
+    if not self.db then return end
     self:UpdateVisibility()
 end
 
 function CursorTrail:UpdateTrailTexture()
+    if not self.db then return end
+    
     local texture = TEXTURES[self.db.profile.trailTexture] or TEXTURES["Glow"]
     for _, frame in ipairs(trailFrames) do
         frame.texture:SetTexture(texture)
@@ -301,6 +313,8 @@ function CursorTrail:UpdateTrailTexture()
 end
 
 function CursorTrail:UpdateHighlightTexture()
+    if not self.db then return end
+    
     if highlightFrame then
         local texture = TEXTURES[self.db.profile.highlightTexture] or TEXTURES["Glow"]
         highlightFrame.texture:SetTexture(texture)
@@ -310,6 +324,8 @@ function CursorTrail:UpdateHighlightTexture()
 end
 
 function CursorTrail:UpdateSettings()
+    if not self.db then return end
+    
     self:UpdateTrailTexture()
     self:UpdateHighlightTexture()
     self:UpdateVisibility()

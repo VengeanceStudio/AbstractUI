@@ -1103,12 +1103,62 @@ function TimePlayed:GetOptions()
                 order = 2,
                 fontSize = "medium",
             },
+            brokerInfo = {
+                type = "description",
+                name = "\n|cffffaa00Broker Display:|r\nTo add the Time Played broker to your bar, go to |cff00ff00Data Brokers > Brokers|r and enable it in the desired bar section (Left, Center, or Right).",
+                order = 3,
+                fontSize = "medium",
+            },
             showWindow = {
                 type = "execute",
                 name = "Show Window",
                 desc = "Open the Time Played window",
-                order = 3,
+                order = 4,
                 func = function() TimePlayed:ToggleWindow() end,
+            },
+            spacer1 = {
+                type = "description",
+                name = " ",
+                order = 9,
+            },
+            defaultsHeader = {
+                type = "header",
+                name = "Default Window Settings",
+                order = 10,
+            },
+            defaultsDesc = {
+                type = "description",
+                name = "These settings control the default display mode when the Time Played window is opened.",
+                order = 11,
+                fontSize = "medium",
+            },
+            useYears = {
+                type = "toggle",
+                name = "Use Days/Years",
+                desc = "Display time in days and years format instead of hours and minutes.\n\n|cff00ff00Checked:|r Shows '365d 12h 30m'\n|cffff9900Unchecked:|r Shows '8760h 30m'",
+                order = 12,
+                width = "full",
+                get = function() return self.db.profile.popupSettings.useYears end,
+                set = function(_, value)
+                    self.db.profile.popupSettings.useYears = value
+                    if popupFrame and popupFrame:IsShown() then
+                        self:UpdatePopupDisplay()
+                    end
+                end,
+            },
+            showCharacters = {
+                type = "toggle",
+                name = "Show Characters",
+                desc = "Display individual characters instead of class totals by default.\n\n|cff00ff00Checked:|r Lists all characters individually\n|cffff9900Unchecked:|r Groups time by class",
+                order = 13,
+                width = "full",
+                get = function() return self.db.profile.popupSettings.showCharacters end,
+                set = function(_, value)
+                    self.db.profile.popupSettings.showCharacters = value
+                    if popupFrame and popupFrame:IsShown() then
+                        self:UpdatePopupDisplay()
+                    end
+                end,
             },
         }
     }

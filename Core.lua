@@ -2172,6 +2172,8 @@ function AbstractUI:GetOptions()
             dbKey = "castBar"
         elseif name == "AddonManager" then
             dbKey = "addonmanager"
+        elseif name == "TimePlayed" then
+            dbKey = "timePlayed"
         else
             dbKey = string.lower(name)
         end
@@ -2194,6 +2196,8 @@ function AbstractUI:GetOptions()
                 displayName = "Addon Manager"
             elseif name == "CursorTrail" then
                 displayName = "Cursor Trail"
+            elseif name == "TimePlayed" then
+                displayName = "Time Played"
             end
             
             -- Set module order based on name
@@ -2224,6 +2228,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 13
             elseif name == "CursorTrail" then
                 moduleOrder = 13.5
+            elseif name == "TimePlayed" then
+                moduleOrder = 13.6
             elseif name == "AddonManager" then
                 moduleOrder = 14
             elseif name == "Setup" then
