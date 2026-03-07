@@ -48,17 +48,17 @@ local defaults = {
         trailSize = 48, -- Increased from 32 for better visibility
         trailFadeSpeed = 0.25, -- Increased from 0.15 to last longer
         trailSpacing = 2, -- Reduced from 3 for more particles
-        trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 1.0 }, -- Increased alpha for visibility
+        trailColor = { r = 0.6, g = 0.6, b = 0.6, a = 0.5 }, -- Minimal theme
         trailTexture = "Glow",
         trailBlendMode = "ADD",
         trailStyle = "classic", -- classic, rainbow, comet
         
         -- Highlight settings
-        highlightEnabled = true,
+        highlightEnabled = false,
         highlightSize = 64, -- Increased from 48 for better visibility
         highlightAlpha = 0.5,
         highlightPulse = true,
-        highlightColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 }, -- Increased alpha
+        highlightColor = { r = 0.65, g = 0.65, b = 0.65, a = 0.5 }, -- Minimal theme
         highlightTexture = "Glow",
         highlightBlendMode = "ADD",
         
@@ -68,13 +68,13 @@ local defaults = {
         sparklesSize = 12,
         sparklesSpawnRate = 0.1, -- Seconds between spawns
         sparklesLifetime = 0.8,
-        sparklesColor = { r = 0.3, g = 0.9, b = 1.0, a = 0.7 },
+        sparklesColor = { r = 0.8, g = 0.8, b = 0.8, a = 0.4 }, -- Minimal theme
         sparklesTexture = "Star",
         
         -- Ring settings
         ringEnabled = false,
         ringSize = 64,
-        ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        ringColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }, -- Minimal theme
         ringTexture = "Circle",
         ringPulse = true,
         ringShowGCD = true,
