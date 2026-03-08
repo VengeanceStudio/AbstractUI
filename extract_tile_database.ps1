@@ -17,10 +17,11 @@ Write-Host ""
 # Find WoW directory if not provided
 if (-not $WoWPath) {
     $wowPaths = @(
-        "$env:ProgramFiles\World of Warcraft",
-        "${env:ProgramFiles(x86)}\World of Warcraft",
-        "C:\World of Warcraft",
-        "D:\World of Warcraft"
+        "${env:ProgramFiles(x86)}\World of Warcraft\_retail_",
+        "$env:ProgramFiles\World of Warcraft\_retail_",
+        "C:\Program Files (x86)\World of Warcraft\_retail_",
+        "C:\World of Warcraft\_retail_",
+        "D:\World of Warcraft\_retail_"
     )
     
     foreach ($path in $wowPaths) {
@@ -31,8 +32,8 @@ if (-not $WoWPath) {
     }
     
     if (-not $WoWPath) {
-        Write-Host "Could not find WoW installation. Please specify:" -ForegroundColor Yellow
-        $WoWPath = Read-Host "WoW Path"
+        Write-Host "Could not find WoW Retail installation. Please specify:" -ForegroundColor Yellow
+        $WoWPath = Read-Host "WoW Retail Path"
     }
 }
 
