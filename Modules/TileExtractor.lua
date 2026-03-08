@@ -229,6 +229,70 @@ function TileExtractor:ExportToFile()
     return fullText
 end
 
+function TileExtractor:ExportMergedToFile()
+    if not AbstractUITileData or not next(AbstractUITileData) then
+        self:Print("No merged data found. Run /extracttiles then /savetiles first.")
+        return
+    end
+    
+    self:Print("=================================================================")
+    self:Print("Creating formatted file in SavedVariables...")
+    self:Print("=================================================================")
+    
+    -- Build the complete file content as a string
+    local output = {}
+    table.insert(output, "-- ============================================================================")
+    table.insert(output, "-- AbstractUI Tile Database")
+    table.insert(output, string.format("-- Generated: %s", date("%Y-%m-%d %H:%M:%S")))
+    table.insert(output, "-- ============================================================================")
+    table.insert(output, "")
+    table.insert(output, "local addonName, AbstractUI = ...")
+    table.insert(output, "")
+    table.insert(output, "AbstractUI.TileDatabase = {")
+    
+    -- Sort map IDs
+    local sortedMapIDs = {}
+    for mapID in pairs(AbstractUITileData) do
+        table.insert(sortedMapIDs, mapID)
+    end
+    table.sort(sortedMapIDs)
+    
+    local totalTiles = 0
+    for _, mapID in ipairs(sortedMapIDs) do
+        local data = AbstractUITileData[mapID]
+        table.insert(output, string.format("    [%d] = { -- %s", mapID, data.mapName))
+        
+        for _, tile in ipairs(data.tiles) do
+            local key = string.format("%d:%d:%d:%d", tile.width, tile.height, tile.offsetX, tile.offsetY)
+            local fileIDs = table.concat(tile.fileDataIDs, ",")
+            table.insert(output, string.format('        ["%s"] = "%s",', key, fileIDs))
+            totalTiles = totalTiles + 1
+        end
+        
+        table.insert(output, "    },")
+    end
+    
+    table.insert(output, "}")
+    
+    -- Store as a SavedVariable in its own file
+    AbstractUITileExport = table.concat(output, "\n")
+    
+    self:Print("=================================================================")
+    self:Print("EXPORT COMPLETE!")
+    self:Print("=================================================================")
+    self:Print(string.format("Total: %d maps, %d tiles", #sortedMapIDs, totalTiles))
+    self:Print(string.format("Size: ~%.2f KB", #AbstractUITileExport / 1024))
+    self:Print("")
+    self:Print("Next steps:")
+    self:Print("1. /logout (saves data to disk)")
+    self:Print("2. Navigate to: WTF\\Account\\YOUR_ACCOUNT\\SavedVariables\\")
+    self:Print("3. Open: AbstractUITileExport.lua (separate file)")
+    self:Print("4. Copy the entire string value")
+    self:Print("5. Paste into: Modules\\TileDatabase.lua")
+    self:Print("6. Delete AbstractUITileExport.lua (no longer needed)")
+    self:Print("=================================================================")
+end
+
 function TileExtractor:GetExtractedData()
     return extractedData
 end
@@ -523,6 +587,7 @@ function TileExtractor:OnInitialize()
     self:RegisterChatCommand("savetiles", "SaveToVariable")
     self:RegisterChatCommand("exporttilesfile", "ExportToFile")
     self:RegisterChatCommand("exportmerged", "ExportMerged")
+    self:RegisterChatCommand("exportfile", "ExportMergedToFile")
     self:RegisterChatCommand("exportchunked", "StartChunkedExport")
     self:RegisterChatCommand("nextchunk", "ExportNextChunk")
     self:RegisterChatCommand("clearmerged", "ClearMerged")
@@ -532,15 +597,15 @@ function TileExtractor:OnInitialize()
     self:Print("  /extracttiles - Begin extraction process")
     self:Print("  /savetiles - Save/merge to global variable")
     self:Print("  /mergedstats - Show merged database statistics")
-    self:Print("  /exportchunked - Export in small chunks (RECOMMENDED)")
-    self:Print("  /nextchunk - Continue to next chunk")
+    self:Print("  /exportfile - Write to SavedVariables file (RECOMMENDED)")
     self:Print("  /clearmerged - Clear merged data")
     self:Print("")
     self:Print("Multi-Character Workflow:")
     self:Print("  1. Character 1: /extracttiles then /savetiles")
     self:Print("  2. Character 2: /extracttiles then /savetiles (merges)")
     self:Print("  3. Character 3: /extracttiles then /savetiles (merges)")
-    self:Print("  4. Any character: /exportchunked (copy in pieces)")
+    self:Print("  4. Any character: /exportfile then /logout")
+    self:Print("  5. Copy from SavedVariables\\AbstractUI.lua file")
 end
 
 return TileExtractor

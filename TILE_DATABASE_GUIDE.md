@@ -39,18 +39,30 @@ Login with Character 3
 
 **Problem:** The full export is too large for WoW's chat window to display.
 
-**Solution:** Use chunked export!
+**Solution:** Export to its own SavedVariables file!
 
 ```
-/exportchunked   → Exports chunk 1 (header + first 20 maps)
-                 → Copy from chat
-                 → Type /nextchunk
-                 → Copy chunk 2
-                 → Repeat until complete
+/exportfile      → Formats the complete database
+                 → Stores in AbstractUITileExport variable
+                 → Creates separate SavedVariables file
+                 → Shows instructions
+                 
+/logout          → Saves to disk
+
+Then on your PC:
+1. Navigate to: WTF\Account\YOUR_ACCOUNT\SavedVariables\
+2. Open: AbstractUITileExport.lua (separate file, not AbstractUI.lua)
+3. Copy the entire string contents (it's formatted Lua code)
+4. Paste into: Modules\TileDatabase.lua
+5. Save and commit to repository
+6. Optional: Delete AbstractUITileExport.lua and AbstractUITileExport.toc (cleanup)
 ```
 
-Each chunk contains ~20 maps worth of data (small enough to copy).
-Paste all chunks together in `Modules/TileDatabase.lua` to rebuild the complete file.
+**Benefits of separate file:**
+- ✅ Keeps AbstractUI.lua clean and small
+- ✅ Easy to find - dedicated file just for export
+- ✅ Safe - won't interfere with your main SavedVariables
+- ✅ Can delete after copying
 
 ### Step 5: Ship It!
 ```
@@ -74,8 +86,7 @@ Users download your addon → TileDatabase.lua included → Fog removal works im
 | `/extracttiles` | Start extraction (2-5 minutes per character) |
 | `/savetiles` | Save/merge current extraction to persistent database |
 | `/mergedstats` | Show statistics of merged database |
-| `/exportchunked` | Export in small chunks - RECOMMENDED! |
-| `/nextchunk` | Continue to next chunk during export |
+| `/exportfile` | Write formatted database to SavedVariables - RECOMMENDED! |
 | `/clearmerged` | Clear merged database and start over |
 
 ### For Everyone
@@ -113,40 +124,38 @@ Users download your addon → TileDatabase.lua included → Fog removal works im
    - If data exists, creates textures for all tiles (explored + unexplored)
    - If no data, falls back to showing only explored tiles
 
-### Chunked Export Process
+### File Export Process
 
-Since the complete database is too large for WoW's chat window, use chunked export:
+The complete database is written to its own SavedVariables file as properly formatted Lua code:
 
+**In-game:**
 ```
-/exportchunked
-=== CHUNK 1 of 25 ===
-[Header and first 20 maps displayed]
-
-→ Select all text, Ctrl+C
-→ Type: /nextchunk
-
-=== CHUNK 2 of 25 ===
-[Next 20 maps displayed]
-
-→ Select all text, Ctrl+C
-→ Type: /nextchunk
-
-[Repeat until...]
-
-=== CHUNK 25 of 25 ===
-[Final maps + closing brace]
-=== EXPORT COMPLETE ===
+/exportfile
+→ Creates AbstractUITileExport variable
+→ Contains complete formatted Lua code
+→ Saved to separate file on logout
 ```
 
-**To combine chunks:**
-1. Open `Modules/TileDatabase.lua` in text editor
-2. Delete everything (start fresh)
-3. Paste chunk 1 (contains header + opening)
-4. Paste chunk 2 (maps only)
-5. Paste chunk 3 (maps only)
-6. Continue pasting all chunks in order
-7. Last chunk contains the closing brace
-8. Save file
+**After logout:**
+```
+WTF/Account/YOUR_ACCOUNT/SavedVariables/AbstractUITileExport.lua
+
+This is a separate file from AbstractUI.lua!
+
+Contents:
+AbstractUITileExport = "-- ============================================================================\
+-- AbstractUI Tile Database\
+..."
+
+The entire string is your TileDatabase.lua file!
+```
+
+**Why a separate file?**
+- **Cleaner** - Doesn't clutter your main AbstractUI.lua SavedVariables
+- **Easier** - Dedicated file, no searching through other settings
+- **Safer** - Can't accidentally mess up your addon settings
+- **Smaller** - AbstractUI.lua stays manageable size
+- **Temporary** - Delete AbstractUITileExport.lua after copying (it's just for export)
 
 ### Database Format
 
@@ -225,14 +234,16 @@ Users can check coverage: `/tweaks status`
 ## Next Steps
 
 1. ✅ Install AbstractUI (has TileExtractor built-in)
-2. 🎮 Login with Character 1, run `/extracttiles`, then `/savetiles`
-3. 🎮 Login with Character 2, run `/extracttiles`, then `/savetiles`
+2. 🎮 Login with Character 1, run `/extracttiles`, then `/savetiles`, logout
+3. 🎮 Login with Character 2, run `/extracttiles`, then `/savetiles`, logout
 4. 🎮 Login with Character 3, run `/extracttiles`, then `/savetiles`
-5. 📋 Run `/exportchunked` and `/nextchunk` repeatedly
-6. 📝 Copy each chunk one at a time
-7. 📄 Paste all chunks into `Modules/TileDatabase.lua` (in order!)
-8. 💾 Save file and commit to repository
-9. 🚀 Users download AbstractUI with full fog removal built-in!
+5. 📤 Run `/exportfile` then `/logout` to save to disk
+6. 📂 Open `WTF\Account\YOUR_ACCOUNT\SavedVariables\AbstractUITileExport.lua`
+7. 📋 Copy the entire string value (complete file is formatted Lua code)
+8. 📝 Paste into `Modules/TileDatabase.lua` 
+9. 🗑️ Optional: Delete `AbstractUITileExport.lua` (temporary export file)
+10. 💾 Save and commit to repository
+11. 🚀 Users download AbstractUI with full fog removal built-in!
 
 ## Questions?
 
@@ -246,7 +257,7 @@ No, extraction processes in small batches with delays between them.
 You'll have partial coverage - better than nothing! Users can still contribute.
 
 **Can users extract and send you data?**  
-Yes! They can run the same commands and send you their `/exportmerged` output.
+Yes! They can run `/extracttiles`, `/savetiles`, `/exportfile`, then send you the AbstractUITileExport.lua file from their SavedVariables folder.
 
 **What happens on WoW patches?**  
 File IDs may change. Re-run extraction and update TileDatabase.lua.
