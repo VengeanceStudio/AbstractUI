@@ -226,6 +226,8 @@ function CursorTrail:OnInitialize()
         elseif msg == "status" then
             if CursorTrail.db then
                 print("|cff00FF7FCursor Animate:|r Enabled: " .. tostring(CursorTrail.db.profile.enabled))
+                print("|cff00FF7FCursor Animate:|r Trail Frames: " .. #trailFrames .. "/" .. maxTrailFrames)
+                print("|cff00FF7FCursor Animate:|r Sparkle Frames: " .. #sparkleFrames .. "/" .. maxSparkleFrames)
                 print("|cff00FF7FCursor Animate:|r UpdateFrame exists: " .. tostring(updateFrame ~= nil))
                 if updateFrame then
                     print("|cff00FF7FCursor Animate:|r UpdateFrame:IsShown(): " .. tostring(updateFrame:IsShown()))
@@ -235,6 +237,7 @@ function CursorTrail:OnInitialize()
                 if highlightFrame then
                     print("|cff00FF7FCursor Animate:|r HighlightFrame:IsShown(): " .. tostring(highlightFrame:IsShown()))
                 end
+                print("|cff00FF7FCursor Animate:|r RingFrame exists: " .. tostring(ringFrame ~= nil))
             end
         elseif msg == "test" then
             -- Force show highlight for testing
@@ -357,6 +360,11 @@ function CursorTrail:HSVtoRGB(h, s, v)
 end
 
 function CursorTrail:CreateTrailFrames()
+    -- Only create frames if they don't already exist (prevent duplication on reload/zone change)
+    if #trailFrames > 0 then
+        return
+    end
+    
     for i = 1, maxTrailFrames do
         local frame = CreateFrame("Frame", "AbstractUI_CursorTrail" .. i, UIParent)
         frame:SetSize(32, 32)
@@ -379,6 +387,11 @@ function CursorTrail:CreateTrailFrames()
 end
 
 function CursorTrail:CreateHighlightFrame()
+    -- Only create frame if it doesn't already exist (prevent duplication on reload/zone change)
+    if highlightFrame then
+        return
+    end
+    
     highlightFrame = CreateFrame("Frame", "AbstractUI_CursorHighlight", UIParent)
     highlightFrame:SetSize(48, 48)
     highlightFrame:SetFrameStrata("TOOLTIP")
@@ -399,6 +412,11 @@ function CursorTrail:CreateHighlightFrame()
 end
 
 function CursorTrail:CreateSparkleFrames()
+    -- Only create frames if they don't already exist (prevent duplication on reload/zone change)
+    if #sparkleFrames > 0 then
+        return
+    end
+    
     for i = 1, maxSparkleFrames do
         local frame = CreateFrame("Frame", "AbstractUI_Sparkle" .. i, UIParent)
         frame:SetSize(12, 12)
@@ -423,6 +441,11 @@ function CursorTrail:CreateSparkleFrames()
 end
 
 function CursorTrail:CreateRingFrame()
+    -- Only create frame if it doesn't already exist (prevent duplication on reload/zone change)
+    if ringFrame then
+        return
+    end
+    
     ringFrame = CreateFrame("Frame", "AbstractUI_CursorRing", UIParent)
     ringFrame:SetSize(64, 64)
     ringFrame:SetFrameStrata("TOOLTIP")
@@ -457,6 +480,11 @@ function CursorTrail:CreateRingFrame()
 end
 
 function CursorTrail:CreateUpdateFrame()
+    -- Only create frame if it doesn't already exist (prevent duplication on reload/zone change)
+    if updateFrame then
+        return
+    end
+    
     updateFrame = CreateFrame("Frame", "AbstractUI_CursorUpdate", UIParent)
     updateFrame:Hide()
     
