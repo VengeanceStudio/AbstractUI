@@ -43,7 +43,26 @@ function Tweaks:OnInitialize()
         hideOnEscape = 1,
     }
     
-
+    -- Register diagnostic slash command
+    SLASH_ABSTRACTTWEAKS1 = "/tweaks"
+    SlashCmdList["ABSTRACTTWEAKS"] = function(msg)
+        if msg == "status" then
+            print("|cff00FF7FAbstractUI Tweaks Status:|r")
+            if Tweaks.db then
+                print("  Reveal Map: " .. tostring(Tweaks.db.profile.revealMap))
+                print("  Recolor Delve Pins: " .. tostring(Tweaks.db.profile.recolorDelvePins))
+                print("  Last Revealed Map ID: " .. tostring(Tweaks.lastRevealedMapID or "none"))
+                local currentMap = C_Map.GetBestMapForUnit("player")
+                print("  Current Map ID: " .. tostring(currentMap or "unknown"))
+                print("  Tweaks Initialized: " .. tostring(Tweaks.tweaksInitialized))
+            else
+                print("  Database not ready")
+            end
+        else
+            print("|cff00FF7FAbstractUI Tweaks Commands:|r")
+            print("  /tweaks status - Show current status")
+        end
+    end
     
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
@@ -230,25 +249,39 @@ end
 function Tweaks:PLAYER_ENTERING_WORLD()
     -- Only run tweaks setup once, not on every zone change
     if self.tweaksInitialized then 
-        -- But do refresh delve pins on zone change
+        -- Refresh delve pins on zone change (reduced from 5 calls to 2)
         if self.db and self.db.profile.recolorDelvePins then
-            -- Multiple attempts to catch minimap pins as they load
-            C_Timer.After(0.5, function() self:ColorMinimapDelvePins() end)
             C_Timer.After(1, function()
-                self:ColorDelvePins()
-                self:ColorMinimapDelvePins()
+                if self.db and self.db.profile.recolorDelvePins then
+                    self:ColorDelvePins()
+                    self:ColorMinimapDelvePins()
+                end
             end)
-            C_Timer.After(2, function() self:ColorMinimapDelvePins() end)
-            C_Timer.After(3, function() self:ColorMinimapDelvePins() end)
+            C_Timer.After(3, function()
+                if self.db and self.db.profile.recolorDelvePins then
+                    self:ColorMinimapDelvePins()
+                end
+            end)
+        end
+        
+        -- Reveal map on zone change if enabled (but only once per zone)
+        if self.db and self.db.profile.revealMap then
+            local currentMapID = C_Map.GetBestMapForUnit("player")
+            if currentMapID and currentMapID ~= self.lastRevealedMapID then
+                self.lastRevealedMapID = currentMapID
+                C_Timer.After(2, function()
+                    if self.db and self.db.profile.revealMap then
+                        self:RevealMap()
+                    end
+                end)
+            end
         end
         return 
     end
     self.tweaksInitialized = true
     
-    -- Apply tweaks with delays
-    C_Timer.After(0.1, function() self:ApplyTweaks() end)
+    -- Apply tweaks with delays (reduced from 5 calls to 3)
     C_Timer.After(0.5, function() self:ApplyTweaks() end)
-    C_Timer.After(1, function() self:ApplyTweaks() end)
     C_Timer.After(2, function() self:ApplyTweaks() end)
     C_Timer.After(5, function() self:ApplyTweaks() end)
     
@@ -259,13 +292,17 @@ function Tweaks:PLAYER_ENTERING_WORLD()
         C_Timer.After(3, function() self:HideBagBar() end)
     end
     
-    -- Reveal map if enabled
+    -- Reveal map if enabled (initial load only)
     if self.db.profile.revealMap then
-        C_Timer.After(3, function()
-            if self.db.profile.revealMap then
-                self:RevealMap()
-            end
-        end)
+        local currentMapID = C_Map.GetBestMapForUnit("player")
+        if currentMapID then
+            self.lastRevealedMapID = currentMapID
+            C_Timer.After(3, function()
+                if self.db and self.db.profile.revealMap then
+                    self:RevealMap()
+                end
+            end)
+        end
     end
     
     -- Setup talent import overwrite hook when dialog is shown
@@ -292,13 +329,16 @@ function Tweaks:RevealMap()
     local mapInfo = C_Map.GetMapInfo(mapID)
     if not mapInfo then return end
     
-    -- Reveal all areas on the current map
-    for x = 0, 100 do
-        for y = 0, 100 do
-            local normalizedX = x / 100
-            local normalizedY = y / 100
-            -- Request map preload which can help reveal unexplored areas
-            C_Map.RequestPreloadMap(mapID)
+    -- Request map preload once (was calling 10,201 times causing massive memory leak!)
+    C_Map.RequestPreloadMap(mapID)
+    
+    -- Reveal explored areas
+    local numFloors = C_Map.GetMapGroupMembersInfo(mapID)
+    if numFloors then
+        for _, floorInfo in ipairs(numFloors) do
+            if floorInfo.mapID then
+                C_Map.RequestPreloadMap(floorInfo.mapID)
+            end
         end
     end
 end
@@ -525,9 +565,8 @@ function Tweaks:ApplyTweaks()
         SetCVar("autoLootDefault", "1")
     end
     
-    if self.db.profile.revealMap then
-        self:RevealMap()
-    end
+    -- RevealMap is now called separately from PLAYER_ENTERING_WORLD with proper guards
+    -- to prevent excessive map texture loading
     
     if self.db.profile.hideBagBar then
         self:HideBagBar()
