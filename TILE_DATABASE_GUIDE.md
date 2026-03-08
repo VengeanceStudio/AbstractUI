@@ -36,14 +36,21 @@ Login with Character 3
 ```
 
 ### Step 4: Export and Bundle
+
+**Problem:** The full export is too large for WoW's chat window to display.
+
+**Solution:** Use chunked export!
+
 ```
-/exportmerged    → Generates complete Lua code
-                 → Copy EVERYTHING from chat
-                 → Open Modules/TileDatabase.lua
-                 → Replace entire file contents
-                 → Save file
-                 → Commit to repository
+/exportchunked   → Exports chunk 1 (header + first 20 maps)
+                 → Copy from chat
+                 → Type /nextchunk
+                 → Copy chunk 2
+                 → Repeat until complete
 ```
+
+Each chunk contains ~20 maps worth of data (small enough to copy).
+Paste all chunks together in `Modules/TileDatabase.lua` to rebuild the complete file.
 
 ### Step 5: Ship It!
 ```
@@ -67,7 +74,8 @@ Users download your addon → TileDatabase.lua included → Fog removal works im
 | `/extracttiles` | Start extraction (2-5 minutes per character) |
 | `/savetiles` | Save/merge current extraction to persistent database |
 | `/mergedstats` | Show statistics of merged database |
-| `/exportmerged` | Export final database to paste into TileDatabase.lua |
+| `/exportchunked` | Export in small chunks - RECOMMENDED! |
+| `/nextchunk` | Continue to next chunk during export |
 | `/clearmerged` | Clear merged database and start over |
 
 ### For Everyone
@@ -104,6 +112,41 @@ Users download your addon → TileDatabase.lua included → Fog removal works im
    - Tweaks module checks `AbstractUI.TileDatabase[mapID]`
    - If data exists, creates textures for all tiles (explored + unexplored)
    - If no data, falls back to showing only explored tiles
+
+### Chunked Export Process
+
+Since the complete database is too large for WoW's chat window, use chunked export:
+
+```
+/exportchunked
+=== CHUNK 1 of 25 ===
+[Header and first 20 maps displayed]
+
+→ Select all text, Ctrl+C
+→ Type: /nextchunk
+
+=== CHUNK 2 of 25 ===
+[Next 20 maps displayed]
+
+→ Select all text, Ctrl+C
+→ Type: /nextchunk
+
+[Repeat until...]
+
+=== CHUNK 25 of 25 ===
+[Final maps + closing brace]
+=== EXPORT COMPLETE ===
+```
+
+**To combine chunks:**
+1. Open `Modules/TileDatabase.lua` in text editor
+2. Delete everything (start fresh)
+3. Paste chunk 1 (contains header + opening)
+4. Paste chunk 2 (maps only)
+5. Paste chunk 3 (maps only)
+6. Continue pasting all chunks in order
+7. Last chunk contains the closing brace
+8. Save file
 
 ### Database Format
 
@@ -185,10 +228,11 @@ Users can check coverage: `/tweaks status`
 2. 🎮 Login with Character 1, run `/extracttiles`, then `/savetiles`
 3. 🎮 Login with Character 2, run `/extracttiles`, then `/savetiles`
 4. 🎮 Login with Character 3, run `/extracttiles`, then `/savetiles`
-5. 📋 Run `/exportmerged` and copy everything from chat
-6. 📝 Open `Modules/TileDatabase.lua` and paste (replace all contents)
-7. 💾 Save file and commit to repository
-8. 🚀 Users download AbstractUI with full fog removal built-in!
+5. 📋 Run `/exportchunked` and `/nextchunk` repeatedly
+6. 📝 Copy each chunk one at a time
+7. 📄 Paste all chunks into `Modules/TileDatabase.lua` (in order!)
+8. 💾 Save file and commit to repository
+9. 🚀 Users download AbstractUI with full fog removal built-in!
 
 ## Questions?
 

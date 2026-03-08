@@ -308,23 +308,7 @@ function TileExtractor:ExportMerged()
         return
     end
     
-    self:Print("Exporting merged tile database...")
-    self:Print("=================================================================")
-    self:Print("COPY EVERYTHING BELOW AND REPLACE TileDatabase.lua CONTENTS:")
-    self:Print("=================================================================")
-    
-    -- Export in the exact format needed for TileDatabase.lua
-    print("-- ============================================================================")
-    print("-- AbstractUI Tile Database")
-    print(string.format("-- Generated: %s", date("%Y-%m-%d %H:%M:%S")))
-    print("-- Combined from multiple character extractions")
-    print("-- ============================================================================")
-    print("")
-    print("local addonName, AbstractUI = ...")
-    print("")
-    print("AbstractUI.TileDatabase = {")
-    
-    -- Sort map IDs for consistent output
+    -- Sort map IDs
     local sortedMapIDs = {}
     for mapID in pairs(AbstractUITileData) do
         table.insert(sortedMapIDs, mapID)
@@ -334,12 +318,142 @@ function TileExtractor:ExportMerged()
     local totalTiles = 0
     for _, mapID in ipairs(sortedMapIDs) do
         local data = AbstractUITileData[mapID]
-        local tileCount = #data.tiles
-        totalTiles = totalTiles + tileCount
+        totalTiles = totalTiles + #data.tiles
+    end
+    
+    self:Print("=================================================================")
+    self:Print("Tile Database Ready for Export!")
+    self:Print("=================================================================")
+    self:Print(string.format("Total: %d maps, %d tiles", #sortedMapIDs, totalTiles))
+    self:Print("")
+    self:Print("The data is saved in your SavedVariables file.")
+    self:Print("Follow these steps:")
+    self:Print("")
+    self:Print("1. /logout (saves AbstractUITileData to disk)")
+    self:Print("2. Navigate to: WTF\\Account\\YOUR_ACCOUNT\\SavedVariables\\")
+    self:Print("3. Open: AbstractUI.lua in a text editor")
+    self:Print("4. Look for: AbstractUITileData = { ... }")
+    self:Print("5. Run /exportfile to generate the conversion command")
+    self:Print("")
+    self:Print("Or use /exportchunks to export in smaller pieces")
+    self:Print("=================================================================")
+end
+
+function TileExtractor:ExportInChunks()
+    if not AbstractUITileData or not next(AbstractUITileData) then
+        self:Print("No merged data found. Run /extracttiles then /savetiles first.")
+        return
+    end
+    
+    -- Sort map IDs
+    local sortedMapIDs = {}
+    for mapID in pairs(AbstractUITileData) do
+        table.insert(sortedMapIDs, mapID)
+    end
+    table.sort(sortedMapIDs)
+    
+    local chunkSize = 20 -- Export 20 maps at a time
+    local totalChunks = math.ceil(#sortedMapIDs / chunkSize)
+    
+    self:Print("=================================================================")
+    self:Print(string.format("Exporting in %d chunks (%d maps per chunk)", totalChunks, chunkSize))
+    self:Print("=================================================================")
+    
+    for chunk = 1, totalChunks do
+        local startIdx = (chunk - 1) * chunkSize + 1
+        local endIdx = math.min(chunk * chunkSize, #sortedMapIDs)
         
-        print(string.format("    [%d] = { -- %s (%d tiles)", mapID, data.mapName, tileCount))
+        self:Print("")
+        self:Print(string.format("=== CHUNK %d of %d (Maps %d-%d) ===", chunk, totalChunks, startIdx, endIdx))
         
-        -- Convert tiles array to key-value format
+        for i = startIdx, endIdx do
+            local mapID = sortedMapIDs[i]
+            local data = AbstractUITileData[mapID]
+            
+            print(string.format("    [%d] = { -- %s", mapID, data.mapName))
+            
+            for _, tile in ipairs(data.tiles) do
+                local key = string.format("%d:%d:%d:%d", tile.width, tile.height, tile.offsetX, tile.offsetY)
+                local fileIDs = table.concat(tile.fileDataIDs, ",")
+                print(string.format('        ["%s"] = "%s",', key, fileIDs))
+            end
+            
+            print("    },")
+        end
+        
+        if chunk < totalChunks then
+            self:Print(string.format("--- Copy chunk %d, then type: /nextchunk ---", chunk))
+            return -- Stop here, let user copy this chunk
+        end
+    end
+    
+    self:Print("")
+    self:Print("=== EXPORT COMPLETE ===")
+    self:Print("All chunks exported. Combine them in TileDatabase.lua")
+end
+
+-- Store chunk state
+TileExtractor.currentChunk = 1
+TileExtractor.totalChunksCount = 0
+TileExtractor.sortedMapIDs = nil
+
+function TileExtractor:StartChunkedExport()
+    if not AbstractUITileData or not next(AbstractUITileData) then
+        self:Print("No merged data found. Run /extracttiles then /savetiles first.")
+        return
+    end
+    
+    -- Sort map IDs
+    self.sortedMapIDs = {}
+    for mapID in pairs(AbstractUITileData) do
+        table.insert(self.sortedMapIDs, mapID)
+    end
+    table.sort(self.sortedMapIDs)
+    
+    local chunkSize = 20
+    self.totalChunksCount = math.ceil(#self.sortedMapIDs / chunkSize)
+    self.currentChunk = 1
+    
+    self:Print("=================================================================")
+    self:Print(string.format("Starting chunked export: %d chunks (%d maps total)", 
+        self.totalChunksCount, #self.sortedMapIDs))
+    self:Print("=================================================================")
+    self:Print("Copy each chunk and combine them in TileDatabase.lua")
+    self:Print("Type /nextchunk after copying each piece")
+    self:Print("")
+    
+    self:ExportNextChunk()
+end
+
+function TileExtractor:ExportNextChunk()
+    if not self.sortedMapIDs or self.currentChunk > self.totalChunksCount then
+        self:Print("No chunked export in progress. Use /exportchunked to start.")
+        return
+    end
+    
+    local chunkSize = 20
+    local startIdx = (self.currentChunk - 1) * chunkSize + 1
+    local endIdx = math.min(self.currentChunk * chunkSize, #self.sortedMapIDs)
+    
+    self:Print(string.format("=== CHUNK %d of %d ===", self.currentChunk, self.totalChunksCount))
+    
+    if self.currentChunk == 1 then
+        print("-- ============================================================================")
+        print("-- AbstractUI Tile Database")
+        print(string.format("-- Generated: %s", date("%Y-%m-%d %H:%M:%S")))
+        print("-- ============================================================================")
+        print("")
+        print("local addonName, AbstractUI = ...")
+        print("")
+        print("AbstractUI.TileDatabase = {")
+    end
+    
+    for i = startIdx, endIdx do
+        local mapID = self.sortedMapIDs[i]
+        local data = AbstractUITileData[mapID]
+        
+        print(string.format("    [%d] = { -- %s", mapID, data.mapName))
+        
         for _, tile in ipairs(data.tiles) do
             local key = string.format("%d:%d:%d:%d", tile.width, tile.height, tile.offsetX, tile.offsetY)
             local fileIDs = table.concat(tile.fileDataIDs, ",")
@@ -349,16 +463,19 @@ function TileExtractor:ExportMerged()
         print("    },")
     end
     
-    print("}")
-    print("")
-    print("-- Database Statistics:")
-    print(string.format("-- Total Maps: %d", #sortedMapIDs))
-    print(string.format("-- Total Tiles: %d", totalTiles))
-    
-    self:Print("=================================================================")
-    self:Print(string.format("Database Complete: %d maps, %d tiles", #sortedMapIDs, totalTiles))
-    self:Print("Copy from chat window and paste into Modules/TileDatabase.lua")
-    self:Print("=================================================================")
+    if self.currentChunk >= self.totalChunksCount then
+        print("}")
+        self:Print("")
+        self:Print("=== EXPORT COMPLETE ===")
+        self:Print("All data exported! Copy everything and paste into TileDatabase.lua")
+        self.currentChunk = 1
+        self.sortedMapIDs = nil
+    else
+        self:Print("")
+        self:Print(string.format("Copied? Type /nextchunk for chunk %d of %d", 
+            self.currentChunk + 1, self.totalChunksCount))
+        self.currentChunk = self.currentChunk + 1
+    end
 end
 
 function TileExtractor:ClearMerged()
@@ -406,21 +523,24 @@ function TileExtractor:OnInitialize()
     self:RegisterChatCommand("savetiles", "SaveToVariable")
     self:RegisterChatCommand("exporttilesfile", "ExportToFile")
     self:RegisterChatCommand("exportmerged", "ExportMerged")
+    self:RegisterChatCommand("exportchunked", "StartChunkedExport")
+    self:RegisterChatCommand("nextchunk", "ExportNextChunk")
     self:RegisterChatCommand("clearmerged", "ClearMerged")
     self:RegisterChatCommand("mergedstats", "ShowMergedStats")
     
     self:Print("Tile Extractor loaded. Commands available:")
     self:Print("  /extracttiles - Begin extraction process")
     self:Print("  /savetiles - Save/merge to global variable")
-    self:Print("  /exportmerged - Export merged database")
     self:Print("  /mergedstats - Show merged database statistics")
+    self:Print("  /exportchunked - Export in small chunks (RECOMMENDED)")
+    self:Print("  /nextchunk - Continue to next chunk")
     self:Print("  /clearmerged - Clear merged data")
     self:Print("")
     self:Print("Multi-Character Workflow:")
     self:Print("  1. Character 1: /extracttiles then /savetiles")
     self:Print("  2. Character 2: /extracttiles then /savetiles (merges)")
     self:Print("  3. Character 3: /extracttiles then /savetiles (merges)")
-    self:Print("  4. Any character: /exportmerged (get final database)")
+    self:Print("  4. Any character: /exportchunked (copy in pieces)")
 end
 
 return TileExtractor
