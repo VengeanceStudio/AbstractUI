@@ -4,7 +4,7 @@
 -- This module extracts map tile data from WoW's exploration system
 -- Run /extracttiles to begin extraction process
 
-local addonName, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local TileExtractor = AbstractUI:NewModule("TileExtractor", "AceConsole-3.0")
 
 local extractedData = {}
