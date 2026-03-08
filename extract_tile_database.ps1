@@ -93,25 +93,17 @@ if ($content -notmatch 'AbstractUITileExport\s*=\s*\{') {
 Write-Host "Found AbstractUITileExport table!" -ForegroundColor Green
 Write-Host ""
 
-# Extract the table (this is a simplified regex)
+# Extract the table
 if ($content -match 'AbstractUITileExport\s*=\s*\{([\s\S]*?)\n\}') {
     $tableContent = $Matches[1]
     
-    # Extract all the quoted strings
-    $lines = [regex]::Matches($tableContent, '\["([^"\\]*(\\.[^"\\]*)*)"\]') | ForEach-Object {
+    # Extract all quoted strings (handles escaped quotes inside strings)
+    # Pattern: "..." where content can contain \" and other escape sequences
+    $lines = [regex]::Matches($tableContent, '"((?:[^"\\]|\\.)*)"') | ForEach-Object {
         $line = $_.Groups[1].Value
-        # Unescape the content
-        $line = $line -replace '\\n', "`n"
-        $line = $line -replace '\\t', "`t"
-        $line = $line -replace '\\"', '"'
-        $line = $line -replace '\\\\', '\'
+        # Unescape Lua escape sequences
+        $line = $line -replace '\\(.)', '$1'  # Convert \x to x for all escape sequences
         $line
-    }
-    
-    if ($lines.Count -eq 0) {
-        # Try simpler pattern
-        $stringMatches = [regex]::Matches($tableContent, '"([^"]*)"')
-        $lines = $stringMatches | ForEach-Object { $_.Groups[1].Value }
     }
     
     if ($lines.Count -gt 0) {
