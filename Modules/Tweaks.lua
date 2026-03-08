@@ -106,6 +106,11 @@ function Tweaks:OnDBReady()
         self:RegisterEvent("ACHIEVEMENT_EARNED")
     end
     
+    -- Hook WorldMapFrame to refresh when opened
+    if self.db.profile.revealMap then
+        self:HookWorldMapFrame()
+    end
+    
     -- Immediate bag bar hiding setup
     if self.db.profile.hideBagBar then
         self:HideBagBar()
@@ -329,18 +334,141 @@ function Tweaks:RevealMap()
     local mapInfo = C_Map.GetMapInfo(mapID)
     if not mapInfo then return end
     
-    -- Request map preload once (was calling 10,201 times causing massive memory leak!)
-    C_Map.RequestPreloadMap(mapID)
-    
-    -- Reveal explored areas
-    local numFloors = C_Map.GetMapGroupMembersInfo(mapID)
-    if numFloors then
-        for _, floorInfo in ipairs(numFloors) do
-            if floorInfo.mapID then
-                C_Map.RequestPreloadMap(floorInfo.mapID)
+    -- Access the WorldMapFrame's overlay system to hide fog of war
+    if WorldMapFrame and WorldMapFrame.ScrollContainer then
+        local overlayFrames = {WorldMapFrame.ScrollContainer:GetChildren()}
+        
+        for _, frame in ipairs(overlayFrames) do
+            -- Look for overlay frames that contain fog textures
+            if frame.overlayTexturePool then
+                -- Hide all fog of war overlay textures
+                for texture in frame.overlayTexturePool:EnumerateActive() do
+                    if texture then
+                        texture:SetAlpha(0) -- Make fog invisible
+                    end
+                end
+            end
+            
+            -- Also check for direct fog textures
+            if frame.Texture and frame:GetObjectType() == "Texture" then
+                -- Check if this is a fog texture by checking its draw layer
+                local layer = frame:GetDrawLayer()
+                if layer == "OVERLAY" then
+                    frame:SetAlpha(0)
+                end
+            end
+        end
+        
+        -- Access the Map Canvas fog textures directly
+        if WorldMapFrame.ScrollContainer.Child then
+            local regions = {WorldMapFrame.ScrollContainer.Child:GetRegions()}
+            for _, region in ipairs(regions) do
+                if region:GetObjectType() == "Texture" then
+                    local texture = region:GetTexture()
+                    -- Fog textures typically have "Fog" in their texture path
+                    if texture and type(texture) == "string" and texture:find("Fog") then
+                        region:SetAlpha(0)
+                    end
+                end
             end
         end
     end
+    
+    -- For older overlay texture system
+    if C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures then
+        local textures = C_MapExplorationInfo.GetExploredMapTextures(mapID)
+        if textures then
+            -- Mark all textures as revealed
+            for i = 1, #textures do
+                local textureInfo = textures[i]
+                if textureInfo then
+                    textureInfo.fileDataIDs = textureInfo.fileDataIDs or {}
+                    textureInfo.isShown = true
+                end
+            end
+        end
+    end
+    
+    -- Reveal child/floor maps if this map has multiple floors
+    local numFloors = C_Map.GetMapGroupMembersInfo(mapID)
+    if numFloors then
+        for _, floorInfo in ipairs(numFloors) do
+            if floorInfo.mapID and floorInfo.mapID ~= mapID then
+                -- Recursively reveal sub-maps
+                C_Timer.After(0.1, function()
+                    local savedMapID = C_Map.GetBestMapForUnit("player")
+                    C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(floorInfo.mapID, 0.5, 0.5))
+                    C_Map.ClearUserWaypoint()
+                    if savedMapID then
+                        C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(savedMapID, 0.5, 0.5))
+                        C_Map.ClearUserWaypoint()
+                    end
+                end)
+            end
+        end
+    end
+    
+    -- Refresh the map display
+    if WorldMapFrame and WorldMapFrame:IsShown() then
+        if WorldMapFrame.RefreshAllDataProviders then
+            WorldMapFrame:RefreshAllDataProviders()
+        end
+    end
+end
+
+-- ============================================================================
+-- WORLDMAP HOOKS
+-- ============================================================================
+
+function Tweaks:HookWorldMapFrame()
+    if self.worldMapHooked then return end
+    if not WorldMapFrame then return end
+    
+    local module = self
+    
+    -- Hook WorldMapFrame to reveal fog when shown
+    WorldMapFrame:HookScript("OnShow", function()
+        if module.db and module.db.profile.revealMap then
+            C_Timer.After(0.1, function()
+                module:RevealMap()
+            end)
+        end
+    end)
+    
+    -- Hook the map canvas updates to continuously reveal fog
+    if WorldMapFrame.ScrollContainer then
+        hooksecurefunc(WorldMapFrame.ScrollContainer, "SetMapID", function()
+            if module.db and module.db.profile.revealMap then
+                C_Timer.After(0.1, function()
+                    module:RevealMap()
+                end)
+            end
+        end)
+    end
+    
+    -- Hook overlay frame creation to hide fog textures as they're added
+    if WorldMapFrame.overlayFrames then
+        for _, overlayFrame in ipairs(WorldMapFrame.overlayFrames) do
+            if overlayFrame.SetAlpha then
+                hooksecurefunc(overlayFrame, "Show", function()
+                    if module.db and module.db.profile.revealMap then
+                        -- Check if this is a fog overlay
+                        if overlayFrame.texture or overlayFrame.Texture then
+                            local texture = overlayFrame.texture or overlayFrame.Texture
+                            if texture then
+                                local texturePath = texture:GetTexture()
+                                if texturePath and type(texturePath) == "string" and texturePath:find("Fog") then
+                                    overlayFrame:SetAlpha(0)
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end
+    
+    self.worldMapHooked = true
 end
 
 -- ============================================================================
@@ -733,10 +861,22 @@ function Tweaks:GetOptions()
                 order = 6,
             },
             revealMap = {
-                name = "Reveal Entire Map",
-                desc = "Automatically reveals unexplored areas on the world map (Note: May not work on all map types due to Blizzard restrictions)",
+                name = "Reveal Entire Map (Remove Fog of War)",
+                desc = "Attempts to hide the fog of war overlay on the world map, revealing unexplored areas. Note: Blizzard has restrictions on this feature - it may not work on all maps or may require opening the map to take effect.",
                 type = "toggle",
                 order = 7,
+                set = function(_, v)
+                    self.db.profile.revealMap = v
+                    if v then
+                        self:HookWorldMapFrame()
+                        -- Immediately reveal if map is open
+                        if WorldMapFrame and WorldMapFrame:IsShown() then
+                            C_Timer.After(0.1, function()
+                                self:RevealMap()
+                            end)
+                        end
+                    end
+                end,
             },
             autoDelete = {
                 name = "Auto-Fill Delete Confirmation",
