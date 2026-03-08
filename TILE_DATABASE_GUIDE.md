@@ -51,13 +51,21 @@ Login with Character 3
 Then on your PC:
 1. Navigate to: WTF\Account\YOUR_ACCOUNT\SavedVariables\
 2. Open: AbstractUI.lua in text editor
-3. Find: AbstractUITileExport = "..."
-4. Copy the entire string value (it's formatted Lua code)
-5. Paste into: Modules\TileDatabase.lua
-6. Save and commit to repository
+3. Find: AbstractUITileExport = {
+4. Copy the entire table (all the lines, from { to })
+5. Each line is properly formatted Lua code
+6. Paste into: Modules\TileDatabase.lua
+7. Save and commit to repository
+
+**OR use the helper script:**
+```powershell
+.\extract_tile_database.ps1
+```
+This script automatically reads AbstractUI.lua, extracts the table,
+and writes it to Modules\TileDatabase.lua for you!
 ```
 
-**Note:** AbstractUITileExport is a separate variable at the top level of AbstractUI.lua, so it won't interfere with your settings. Search for "AbstractUITileExport" to find it quickly.
+**Note:** AbstractUITileExport is now stored as a **table of strings** (one per line), not a giant escaped string. This makes it much cleaner and easier to read in the SavedVariables file!
 
 ### Step 5: Ship It!
 ```
@@ -135,20 +143,26 @@ The complete database is written to its own SavedVariables file as properly form
 ```
 WTF/Account/YOUR_ACCOUNT/SavedVariables/AbstractUI.lua
 
-Look for the AbstractUITileExport variable (separate from your settings):
+Look for the AbstractUITileExport table:
 
-AbstractUITileExport = "-- ============================================================================\
--- AbstractUI Tile Database\
-..."
+AbstractUITileExport = {
+    [1] = "-- ============================================================================",
+    [2] = "-- AbstractUI Tile Database",
+    [3] = "-- Generated: 2026-03-08 12:34:56",
+    ...
+    [1234] = "}",
+}
 
-The entire string value is your TileDatabase.lua file!
+Each line is stored as a separate string in the table!
+Just copy all the strings and reconstruct the file.
 ```
 
-**Easy to find:**
-- Open AbstractUI.lua in any text editor
-- Search for: `AbstractUITileExport`
-- It's a top-level variable, separate from AbstractUIDB
-- Copy the entire string (including all the escaped characters)
+**Much cleaner format:**
+- Stored as a table (array) of strings
+- Each line is properly formatted
+- No escaped newlines (`\n`)
+- Easy to read and copy from SavedVariables
+- Select from the first `"--` to the last `"}"`
 
 ### Database Format
 
@@ -231,10 +245,11 @@ Users can check coverage: `/tweaks status`
 3. 🎮 Login with Character 2, run `/extracttiles`, then `/savetiles`, logout
 4. 🎮 Login with Character 3, run `/extracttiles`, then `/savetiles`
 5. 📤 Run `/exportfile` then `/logout` to save to disk
-6. 📂 Open `WTF\Account\YOUR_ACCOUNT\SavedVariables\AbstractUI.lua`
-7. 🔍 Search for: `AbstractUITileExport` (it's a separate variable)
-8. 📋 Copy the entire string value (complete formatted Lua code)
-9. 📝 Paste into `Modules/TileDatabase.lua` 
+6. 🤖 Run `.\extract_tile_database.ps1` (auto-converts)
+   - OR manually copy from `SavedVariables\AbstractUI.lua`
+7. 📝 Verify `Modules\TileDatabase.lua` is populated
+8. 💾 Save and commit to repository
+9. 🚀 Users download AbstractUI with full fog removal built-in! 
 10. 💾 Save and commit to repository
 11. 🚀 Users download AbstractUI with full fog removal built-in!
 

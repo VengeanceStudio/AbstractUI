@@ -239,7 +239,7 @@ function TileExtractor:ExportMergedToFile()
     self:Print("Creating formatted file in SavedVariables...")
     self:Print("=================================================================")
     
-    -- Build the complete file content as a string
+    -- Build the complete file content as a table of lines
     local output = {}
     table.insert(output, "-- ============================================================================")
     table.insert(output, "-- AbstractUI Tile Database")
@@ -274,22 +274,30 @@ function TileExtractor:ExportMergedToFile()
     
     table.insert(output, "}")
     
-    -- Store as a SavedVariable in its own file
-    AbstractUITileExport = table.concat(output, "\n")
+    -- Store as a table (array of lines) instead of one giant string
+    AbstractUITileExport = output
+    
+    local estimatedSize = 0
+    for _, line in ipairs(output) do
+        estimatedSize = estimatedSize + #line + 1 -- +1 for newline
+    end
     
     self:Print("=================================================================")
     self:Print("EXPORT COMPLETE!")
     self:Print("=================================================================")
     self:Print(string.format("Total: %d maps, %d tiles", #sortedMapIDs, totalTiles))
-    self:Print(string.format("Size: ~%.2f KB", #AbstractUITileExport / 1024))
+    self:Print(string.format("Lines: %d", #output))
+    self:Print(string.format("Size: ~%.2f KB", estimatedSize / 1024))
     self:Print("")
     self:Print("Next steps:")
     self:Print("1. /logout (saves data to disk)")
     self:Print("2. Navigate to: WTF\\Account\\YOUR_ACCOUNT\\SavedVariables\\")
     self:Print("3. Open: AbstractUI.lua in a text editor")
-    self:Print("4. Find the variable: AbstractUITileExport = \"...\"")
-    self:Print("5. Copy the entire string value (it's formatted Lua code)")
-    self:Print("6. Paste into: Modules\\TileDatabase.lua")
+    self:Print("4. Find: AbstractUITileExport = { (it's a table)")
+    self:Print("5. Copy the entire table (all lines)")
+    self:Print("6. Replace in Modules\\TileDatabase.lua")
+    self:Print("")
+    self:Print("TIP: The export is now a table of lines, much cleaner!")
     self:Print("=================================================================")
 end
 
