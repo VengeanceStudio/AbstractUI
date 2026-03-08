@@ -85,6 +85,9 @@ end
 function CooldownManager:OnEnable()
     if not self.db.profile.enabled then return end
     
+    -- Initialize keybind cache (used to show keybinds during combat)
+    self.keybindCache = self.keybindCache or {}
+    
     -- Enable Blizzard's cooldown manager
     C_CVar.SetCVar("cooldownViewerEnabled", "1")
     
@@ -101,6 +104,9 @@ function CooldownManager:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateCooldownManager")
     self:RegisterEvent("PLAYER_TALENT_UPDATE", "UpdateCooldownManager")
     self:RegisterEvent("SPELLS_CHANGED", "UpdateCooldownManager")
+    self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEnterCombat")
+    self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnLeaveCombat")
+    self:RegisterEvent("UPDATE_BINDINGS", "RebuildKeybindCache")
 end
 
 function CooldownManager:ExtractSpellFromMacro(macroID)
@@ -134,6 +140,46 @@ function CooldownManager:ExtractSpellFromMacro(macroID)
     end
     
     return nil
+end
+
+function CooldownManager:OnEnterCombat()
+    -- Combat started, cache is now frozen until combat ends
+end
+
+function CooldownManager:OnLeaveCombat()
+    -- Rebuild keybind cache when leaving combat
+    C_Timer.After(0.5, function()
+        self:RebuildKeybindCache()
+    end)
+end
+
+function CooldownManager:RebuildKeybindCache()
+    if InCombatLockdown() then return end
+    
+    -- Clear the cache
+    wipe(self.keybindCache)
+    
+    -- Get all spells from the spellbook and cache their keybinds
+    -- This ensures we have keybinds available during combat
+    local numSpellTabs = C_SpellBook.GetNumSpellBookSkillLines()
+    for tabIndex = 1, numSpellTabs do
+        local skillLineInfo = C_SpellBook.GetSpellBookSkillLineInfo(tabIndex)
+        if skillLineInfo then
+            for i = 1, skillLineInfo.numSpellBookItems do
+                local spellBookItemInfo = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Player)
+                if spellBookItemInfo and spellBookItemInfo.itemType == Enum.SpellBookItemType.Spell then
+                    local spellID = spellBookItemInfo.actionID
+                    if spellID then
+                        -- Cache the keybind for this spell (will call GetSpellKeybind with combat check disabled)
+                        local keybind = self:GetSpellKeybindUncached(spellID)
+                        if keybind then
+                            self.keybindCache[spellID] = keybind
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 function CooldownManager:HookSpellActivationOverlays()
@@ -621,6 +667,22 @@ end
 function CooldownManager:GetSpellKeybind(spellID)
     if not spellID or type(spellID) ~= "number" then return nil end
     
+    -- During combat, use cached keybind
+    if InCombatLockdown() and self.keybindCache and self.keybindCache[spellID] then
+        return self.keybindCache[spellID]
+    end
+    
+    -- Out of combat, get keybind and cache it
+    local keybind = self:GetSpellKeybindUncached(spellID)
+    if keybind and self.keybindCache then
+        self.keybindCache[spellID] = keybind
+    end
+    return keybind
+end
+
+function CooldownManager:GetSpellKeybindUncached(spellID)
+    if not spellID or type(spellID) ~= "number" then return nil end
+    
     -- First, try to get direct spell keybind (for spells bound directly, not via action bars)
     local spellName = C_Spell.GetSpellName(spellID)
     if spellName and type(spellName) == "string" then
@@ -639,12 +701,17 @@ function CooldownManager:GetSpellKeybind(spellID)
     
     -- Use WoW's C_ActionBar API to find all action slots containing this spell
     -- This works with macros AND is addon-agnostic (works with any action bar addon)
-    if C_ActionBar and C_ActionBar.FindSpellActionButtons then
-        local slots = C_ActionBar.FindSpellActionButtons(spellID)
-        
-        -- Don't check #slots - during combat it's a secret table and we can't use # operator
-        -- Just iterate with ipairs which handles empty/secret tables gracefully
-        if slots then
+    -- Skip during combat since the returned table is protected and can't be iterated
+    -- Wrap entire call in pcall since FindSpellActionButtons can return secret tables in protected contexts
+    if not InCombatLockdown() and C_ActionBar and C_ActionBar.FindSpellActionButtons then
+        local success, result = pcall(function()
+            local slots = C_ActionBar.FindSpellActionButtons(spellID)
+            
+            -- Verify we got a valid table (not secret/protected)
+            if not slots or type(slots) ~= "table" then
+                return nil
+            end
+            
             -- If spell is in multiple slots, try to find one with a keybind
             -- Prefer keybinds with modifiers (Ctrl, Shift, Alt) over plain keys
             local bestSlot = nil
@@ -677,6 +744,10 @@ function CooldownManager:GetSpellKeybind(spellID)
             elseif bestSlot then
                 return self:GetActionSlotBinding(bestSlot)
             end
+        end)
+        
+        if success and result then
+            return result
         end
     end
     

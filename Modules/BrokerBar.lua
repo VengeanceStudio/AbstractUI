@@ -533,19 +533,8 @@ function BrokerBar:UpdateAllModules()
     end
 
     -- Note: Bags count moved to UpdateBagCount() called by BAG_UPDATE event
-
-    -- GOLD & TOKEN
-    local money = GetMoney()
-    if money ~= lastState.gold then 
-        lastState.gold = money
-        goldObj.text = FormatMoney(money) 
-    end
-    
-    local price = C_WowTokenPublic.GetCurrentMarketPrice()
-    if price and price ~= lastState.token then 
-        lastState.token = price
-        tokenObj.text = FormatTokenPrice(price) 
-    end
+    -- Note: Gold display moved to UpdateGoldDisplay() called by PLAYER_MONEY event
+    -- Note: Token price moved to UpdateTokenDisplay() called by TOKEN_MARKET_PRICE_UPDATED event
 
     -- Note: Counts (Guild, Friends, Durability) moved to event-driven update functions
     -- Note: Location moved to UpdateLocation() called by ZONE_CHANGED event
@@ -984,8 +973,10 @@ function BrokerBar:ApplyBarSettings(barID)
         end
     else
         -- Get color from db or use defaults
-        if type(db.color) == "table" then
-            r, g, b = db.color.r or db.color[1], db.color.g or db.color[2], db.color.b or db.color[3]
+        if type(db.color) == "table" and (db.color.r or db.color[1]) then
+            r = tonumber(db.color.r or db.color[1])
+            g = tonumber(db.color.g or db.color[2])
+            b = tonumber(db.color.b or db.color[3])
         else
             r, g, b = nil, nil, nil
         end
@@ -993,10 +984,10 @@ function BrokerBar:ApplyBarSettings(barID)
     end
     
     -- Final validation: ensure all values are valid numbers
-    if type(r) ~= "number" then r = 0.1 end
-    if type(g) ~= "number" then g = 0.1 end
-    if type(b) ~= "number" then b = 0.1 end
-    if type(alpha) ~= "number" then alpha = 0.6 end
+    r = tonumber(r) or 0.1
+    g = tonumber(g) or 0.1
+    b = tonumber(b) or 0.1
+    alpha = tonumber(alpha) or 0.6
     
     f.bg:SetVertexColor(r, g, b, alpha)
     
@@ -1122,7 +1113,7 @@ function BrokerBar:OnDBReady()
     
     -- REMOVED: self:RegisterEvent("PLAYER_LOGIN") - Not needed, no handler exists
     self:RegisterEvent("PLAYER_MONEY", "UpdateGoldData")
-    self:RegisterEvent("TOKEN_MARKET_PRICE_UPDATED", "UpdateTokenHistory")
+    self:RegisterEvent("TOKEN_MARKET_PRICE_UPDATED", "UpdateTokenDisplay")
     self:RegisterEvent("GUILD_ROSTER_UPDATE", "UpdateGuildCount")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("BAG_UPDATE", "UpdateBagCount")
@@ -1165,15 +1156,39 @@ function BrokerBar:PLAYER_ENTERING_WORLD()
     -- Initialize other event-driven values with delay to ensure brokers are ready
     C_Timer.After(0.1, function()
         self:UpdateBagCount()
+        self:UpdateGoldDisplay()
+        self:UpdateTokenDisplay()
         self:UpdateGuildCount()
         self:UpdateFriendsCount()
         self:UpdateDurability()
     end)
 end
 
+function BrokerBar:UpdateGoldDisplay()
+    if not goldObj then return end
+    local money = GetMoney()
+    if money ~= lastState.gold then 
+        lastState.gold = money
+        goldObj.text = FormatMoney(money) 
+    end
+end
+
+function BrokerBar:UpdateTokenDisplay()
+    if not tokenObj then return end
+    local price = C_WowTokenPublic.GetCurrentMarketPrice()
+    if price and price ~= lastState.token then 
+        lastState.token = price
+        tokenObj.text = FormatTokenPrice(price) 
+    end
+    -- Also update token history when price changes
+    self:UpdateTokenHistory()
+end
+
 function BrokerBar:UpdateGoldData()
     local key = UnitName("player") .. " - " .. GetRealmName()
     self.db.profile.goldData[key] = { amount = GetMoney(), class = select(2, UnitClass("player")) }
+    -- Also update the display when money changes
+    self:UpdateGoldDisplay()
 end
 
 function BrokerBar:UpdateTokenHistory()

@@ -718,11 +718,14 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     end
     
     -- Player status (AFK/DND)
-    -- Skip during combat to avoid secret boolean taint
+    -- Use pcall to protect against secret boolean taint in secure contexts
     if self.db.profile.showStatus and not InCombatLockdown() then
-        if UnitIsAFK(unit) then
+        local afkSuccess, isAFK = pcall(UnitIsAFK, unit)
+        local dndSuccess, isDND = pcall(UnitIsDND, unit)
+        
+        if afkSuccess and isAFK then
             tooltip:AddLine("|cffFF0000<AFK>|r")
-        elseif UnitIsDND(unit) then
+        elseif dndSuccess and isDND then
             tooltip:AddLine("|cffFF0000<DND>|r")
         end
     end
