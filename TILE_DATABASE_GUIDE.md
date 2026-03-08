@@ -39,30 +39,25 @@ Login with Character 3
 
 **Problem:** The full export is too large for WoW's chat window to display.
 
-**Solution:** Export to its own SavedVariables file!
+**Solution:** Export to SavedVariables!
 
 ```
 /exportfile      → Formats the complete database
                  → Stores in AbstractUITileExport variable
-                 → Creates separate SavedVariables file
                  → Shows instructions
                  
 /logout          → Saves to disk
 
 Then on your PC:
 1. Navigate to: WTF\Account\YOUR_ACCOUNT\SavedVariables\
-2. Open: AbstractUITileExport.lua (separate file, not AbstractUI.lua)
-3. Copy the entire string contents (it's formatted Lua code)
-4. Paste into: Modules\TileDatabase.lua
-5. Save and commit to repository
-6. Optional: Delete AbstractUITileExport.lua and AbstractUITileExport.toc (cleanup)
+2. Open: AbstractUI.lua in text editor
+3. Find: AbstractUITileExport = "..."
+4. Copy the entire string value (it's formatted Lua code)
+5. Paste into: Modules\TileDatabase.lua
+6. Save and commit to repository
 ```
 
-**Benefits of separate file:**
-- ✅ Keeps AbstractUI.lua clean and small
-- ✅ Easy to find - dedicated file just for export
-- ✅ Safe - won't interfere with your main SavedVariables
-- ✅ Can delete after copying
+**Note:** AbstractUITileExport is a separate variable at the top level of AbstractUI.lua, so it won't interfere with your settings. Search for "AbstractUITileExport" to find it quickly.
 
 ### Step 5: Ship It!
 ```
@@ -133,29 +128,27 @@ The complete database is written to its own SavedVariables file as properly form
 /exportfile
 → Creates AbstractUITileExport variable
 → Contains complete formatted Lua code
-→ Saved to separate file on logout
+→ Saved on logout
 ```
 
 **After logout:**
 ```
-WTF/Account/YOUR_ACCOUNT/SavedVariables/AbstractUITileExport.lua
+WTF/Account/YOUR_ACCOUNT/SavedVariables/AbstractUI.lua
 
-This is a separate file from AbstractUI.lua!
+Look for the AbstractUITileExport variable (separate from your settings):
 
-Contents:
 AbstractUITileExport = "-- ============================================================================\
 -- AbstractUI Tile Database\
 ..."
 
-The entire string is your TileDatabase.lua file!
+The entire string value is your TileDatabase.lua file!
 ```
 
-**Why a separate file?**
-- **Cleaner** - Doesn't clutter your main AbstractUI.lua SavedVariables
-- **Easier** - Dedicated file, no searching through other settings
-- **Safer** - Can't accidentally mess up your addon settings
-- **Smaller** - AbstractUI.lua stays manageable size
-- **Temporary** - Delete AbstractUITileExport.lua after copying (it's just for export)
+**Easy to find:**
+- Open AbstractUI.lua in any text editor
+- Search for: `AbstractUITileExport`
+- It's a top-level variable, separate from AbstractUIDB
+- Copy the entire string (including all the escaped characters)
 
 ### Database Format
 
@@ -238,10 +231,10 @@ Users can check coverage: `/tweaks status`
 3. 🎮 Login with Character 2, run `/extracttiles`, then `/savetiles`, logout
 4. 🎮 Login with Character 3, run `/extracttiles`, then `/savetiles`
 5. 📤 Run `/exportfile` then `/logout` to save to disk
-6. 📂 Open `WTF\Account\YOUR_ACCOUNT\SavedVariables\AbstractUITileExport.lua`
-7. 📋 Copy the entire string value (complete file is formatted Lua code)
-8. 📝 Paste into `Modules/TileDatabase.lua` 
-9. 🗑️ Optional: Delete `AbstractUITileExport.lua` (temporary export file)
+6. 📂 Open `WTF\Account\YOUR_ACCOUNT\SavedVariables\AbstractUI.lua`
+7. 🔍 Search for: `AbstractUITileExport` (it's a separate variable)
+8. 📋 Copy the entire string value (complete formatted Lua code)
+9. 📝 Paste into `Modules/TileDatabase.lua` 
 10. 💾 Save and commit to repository
 11. 🚀 Users download AbstractUI with full fog removal built-in!
 
@@ -257,7 +250,7 @@ No, extraction processes in small batches with delays between them.
 You'll have partial coverage - better than nothing! Users can still contribute.
 
 **Can users extract and send you data?**  
-Yes! They can run `/extracttiles`, `/savetiles`, `/exportfile`, then send you the AbstractUITileExport.lua file from their SavedVariables folder.
+Yes! They can run `/extracttiles`, `/savetiles`, `/exportfile`, then send you their AbstractUI.lua SavedVariables file (or just the AbstractUITileExport string from it).
 
 **What happens on WoW patches?**  
 File IDs may change. Re-run extraction and update TileDatabase.lua.
