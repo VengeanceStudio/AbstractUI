@@ -217,11 +217,13 @@ local COLOR_THEMES = {
 }
 
 function CursorTrail:OnInitialize()
+    print("|cff00FF7F[CursorAnimate]|r OnInitialize called")
     -- Register namespace so self.db is available
     self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
     
     -- Listen for DB ready signal to check if module should create frames
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
+    print("|cff00FF7F[CursorAnimate]|r Waiting for AbstractUI_DB_READY message")
     
     -- Register slash command for quick enable/disable
     SLASH_CURSORANIMATE1 = "/cursoranimate"
@@ -338,12 +340,15 @@ function CursorTrail:OnInitialize()
 end
 
 function CursorTrail:OnDBReady()
+    print("|cff00FF7F[CursorAnimate]|r OnDBReady called")
     -- NOW check if module is enabled in general settings
     if not AbstractUI.db.profile.modules.cursorTrail then
         -- Module is disabled - don't create any frames
+        print("|cff00FF7F[CursorAnimate]|r Module disabled in AbstractUI settings, not registering events")
         self:Disable()
         return
     end
+    print("|cff00FF7F[CursorAnimate]|r Module enabled, continuing setup")
     
     -- Ensure colors are valid
     if not self:ValidateColor(self.db.profile.trailColor) then
@@ -377,15 +382,16 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
     
-    -- Register cast events for castbar ring (must use RegisterUnitEvent for UNIT_* events)
-    self:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_STOP", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "player")
+    -- Register cast events for castbar ring
+    self:RegisterEvent("UNIT_SPELLCAST_START")
+    self:RegisterEvent("UNIT_SPELLCAST_STOP")
+    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    self:RegisterEvent("UNIT_SPELLCAST_FAILED")
+    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
+    print("|cff00FF7F[CursorAnimate]|r Cast events registered")
     
     if self.db.profile.enabled then
         self:Disable()
