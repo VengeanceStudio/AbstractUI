@@ -1117,7 +1117,7 @@ function CursorTrail:HandleSpellcastStart(unit)
         
         -- Set cooldown to show progress on the outer cast ring
         if ringFrame and ringFrame.castCooldown then
-            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
+            ringFrame.castCooldown:SetCooldown(GetTime(), castDuration)
             ringFrame.castCooldown:Show()
         end
         
@@ -1139,7 +1139,7 @@ function CursorTrail:HandleChannelStart(unit)
         
         -- Set cooldown to show channel progress on the outer cast ring
         if ringFrame and ringFrame.castCooldown then
-            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
+            ringFrame.castCooldown:SetCooldown(GetTime(), castDuration)
             ringFrame.castCooldown:Show()
         end
         
