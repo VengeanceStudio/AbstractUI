@@ -203,6 +203,10 @@ local COLOR_THEMES = {
 }
 
 function CursorTrail:OnInitialize()
+    -- Register namespace so self.db is available
+    self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
+    
+    -- Listen for DB ready signal to check if module should create frames
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
     
     -- Register slash command for quick enable/disable
@@ -262,16 +266,10 @@ function CursorTrail:OnInitialize()
 end
 
 function CursorTrail:OnDBReady()
-    if not AbstractUI.db.profile.modules.cursorTrail then 
+    -- NOW check if module is enabled in general settings
+    if not AbstractUI.db.profile.modules.cursorTrail then
+        -- Module is disabled - don't create any frames
         self:Disable()
-        return 
-    end
-    
-    self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
-    
-    -- Check if the module is enabled in AbstractUI general settings BEFORE creating frames
-    if AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
-        -- Module is disabled in general settings, don't create frames or enable
         return
     end
     
@@ -292,6 +290,7 @@ function CursorTrail:OnDBReady()
         self.db.profile.ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 }
     end
     
+    -- Create frames only if module is enabled
     self:CreateTrailFrames()
     self:CreateHighlightFrame()
     self:CreateSparkleFrames()
