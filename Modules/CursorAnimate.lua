@@ -88,7 +88,7 @@ local defaults = {
         
         -- Castbar Ring settings
         castbarRingEnabled = true,
-        castbarRingSize = 110, -- Significantly larger than regular ring (64) so it's visible
+        castbarRingSize = 76, -- Regular ring (64) + 4px gap + ~8px thickness to match
         castbarRingColor = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 },
         castbarRingTexture = "CircleThick", -- Use thick ring to be more visible
         castbarRingThickness = 8, -- Thickness of the progress indicator
@@ -286,7 +286,10 @@ function CursorTrail:OnInitialize()
                 
                 local size = CursorTrail.db.profile.castbarRingSize
                 local color = CursorTrail.db.profile.castbarRingColor
-                local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
+                local r = color and color.r or 0.2
+                local g = color and color.g or 0.8
+                local b = color and color.b or 1.0
+                local a = color and color.a or 0.8
                 
                 -- Start a fake 3 second cast using cooldown swipe
                 if ringFrame.castCooldown then
@@ -352,7 +355,9 @@ function CursorTrail:OnDBReady()
         self.db.profile.ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 }
     end
     
-    if not self:ValidateColor(self.db.profile.castbarRingColor) then
+    -- Don't validate castbarRingColor - color picker always saves it correctly
+    -- If it's missing entirely, set default
+    if not self.db.profile.castbarRingColor then
         self.db.profile.castbarRingColor = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 }
     end
     
@@ -617,7 +622,7 @@ function CursorTrail:CreateRingFrame()
     -- Outer cast ring texture (larger, only visible during casts)
     local outerCastRing = ringFrame:CreateTexture(nil, "ARTWORK")
     outerCastRing:SetPoint("CENTER")
-    outerCastRing:SetSize(110, 110)  -- Larger than main ring
+    outerCastRing:SetSize(76, 76)  -- Regular ring (64) + 2px gap + matching thickness
     outerCastRing:SetTexture(TEXTURES["CircleThick"])
     outerCastRing:SetBlendMode("ADD")
     outerCastRing:SetVertexColor(0.2, 0.8, 1.0, 0)  -- Start fully transparent
@@ -645,7 +650,7 @@ function CursorTrail:CreateRingFrame()
     -- Cast progress cooldown (for the outer ring during casts)
     local castCooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
     castCooldown:SetPoint("CENTER")
-    castCooldown:SetSize(110, 110)  -- Same size as outer ring
+    castCooldown:SetSize(76, 76)  -- Same size as outer ring
     castCooldown:SetHideCountdownNumbers(true)
     if castCooldown.SetDrawEdge then castCooldown:SetDrawEdge(false) end
     if castCooldown.SetDrawBling then castCooldown:SetDrawBling(false) end
@@ -805,9 +810,11 @@ function CursorTrail:CreateUpdateFrame()
                 -- Update cast cooldown
                 if showCastRing and ringFrame.castCooldown then
                     -- The cooldown swipe (with SetReverse=true) will be the cast ring animation
-                    -- No need for outer ring texture since the swipe does all the work
                     local color = CursorTrail.db.profile.castbarRingColor
-                    local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
+                    if not color or type(color) ~= "table" then
+                        color = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 }
+                    end
+                    local r, g, b, a = color.r or 0.2, color.g or 0.8, color.b or 1.0, color.a or 0.8
                     
                     -- Set size to match the configured cast ring size
                     local size = CursorTrail.db.profile.castbarRingSize
