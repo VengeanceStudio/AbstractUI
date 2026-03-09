@@ -269,6 +269,12 @@ function CursorTrail:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
     
+    -- Check if the module is enabled in AbstractUI general settings BEFORE creating frames
+    if AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
+        -- Module is disabled in general settings, don't create frames or enable
+        return
+    end
+    
     -- Ensure colors are valid
     if not self:ValidateColor(self.db.profile.trailColor) then
         self.db.profile.trailColor = { r = 0.0, g = 0.8, b = 1.0, a = 0.8 }
@@ -295,12 +301,6 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
-    
-    -- Check if the module is enabled in AbstractUI general settings before initializing
-    if AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
-        -- Module is disabled in general settings, don't enable
-        return
-    end
     
     if self.db.profile.enabled then
         self:Disable()
@@ -549,6 +549,16 @@ function CursorTrail:CreateUpdateFrame()
     
     -- Store the update function so we can re-enable it later
     updateFrame.updateScript = function(self, elapsed)
+        -- Check general module toggle FIRST - if disabled in general settings, hide everything and exit
+        local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+        if AbstractUI and AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
+            if highlightFrame then highlightFrame:Hide() end
+            if ringFrame then ringFrame:Hide() end
+            for _, frame in ipairs(trailFrames) do frame:Hide() end
+            for _, frame in ipairs(sparkleFrames) do frame:Hide() end
+            return
+        end
+        
         if not CursorTrail.db then 
             return 
         end
@@ -850,6 +860,18 @@ function CursorTrail:GetAlertColor()
 end
 
 function CursorTrail:UpdateVisibility()
+    -- Check general module toggle FIRST
+    local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+    if AbstractUI and AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
+        -- Module is disabled in general settings - hide everything
+        if updateFrame then updateFrame:Hide() end
+        if highlightFrame then highlightFrame:Hide() end
+        if ringFrame then ringFrame:Hide() end
+        for _, frame in ipairs(trailFrames) do frame:Hide() end
+        for _, frame in ipairs(sparkleFrames) do frame:Hide() end
+        return
+    end
+    
     if not self.db then 
         return 
     end
