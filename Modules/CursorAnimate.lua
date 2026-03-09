@@ -89,9 +89,9 @@ local defaults = {
         
         -- Castbar Ring settings
         castbarRingEnabled = true,
-        castbarRingSize = 80, -- Slightly larger than regular ring
+        castbarRingSize = 110, -- Significantly larger than regular ring (64) so it's visible
         castbarRingColor = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 },
-        castbarRingTexture = "Circle",
+        castbarRingTexture = "CircleThick", -- Use thick ring to be more visible
         castbarRingThickness = 8, -- Thickness of the progress indicator
         
         -- Combat/Health alerts
@@ -284,22 +284,31 @@ function CursorTrail:OnInitialize()
                 y = y / scale
                 castbarRingFrame:ClearAllPoints()
                 castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
-                castbarRingFrame:SetSize(CursorTrail.db.profile.castbarRingSize, CursorTrail.db.profile.castbarRingSize)
+                
+                local size = CursorTrail.db.profile.castbarRingSize
+                castbarRingFrame:SetSize(size, size)
+                
+                -- Make cooldown slightly smaller so outer ring shows
+                if castbarRingFrame.cooldown then
+                    local cooldownSize = size * 0.82
+                    castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
+                end
                 
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
-                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a * 0.8)
+                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a)
                 
                 -- Start a fake 3 second cast
                 if castbarRingFrame.cooldown then
                     castbarRingFrame.cooldown:SetCooldown(GetTime(), 3)
                     if castbarRingFrame.cooldown.SetSwipeColor then
-                        castbarRingFrame.cooldown:SetSwipeColor(r, g, b, a)
+                        castbarRingFrame.cooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
                     end
                 end
                 
                 castbarRingFrame:Show()
                 print("|cff00FF7FCursor Animate:|r Castbar ring forced visible at cursor for 3 seconds")
+                print("|cff00FF7FCursor Animate:|r Outer ring size: " .. size .. "px, cooldown size: " .. (size * 0.82) .. "px")
             else
                 print("|cff00FF7FCursor Animate:|r ERROR: Castbar ring frame doesn't exist!")
             end
@@ -607,23 +616,25 @@ function CursorTrail:CreateCastbarRingFrame()
     end
     
     castbarRingFrame = CreateFrame("Frame", "AbstractUI_CursorCastbarRing", UIParent)
-    castbarRingFrame:SetSize(80, 80) -- Will be overridden by settings
+    castbarRingFrame:SetSize(110, 110) -- Larger than regular ring
     castbarRingFrame:SetFrameStrata("TOOLTIP")
-    castbarRingFrame:SetFrameLevel(996) -- Just below the regular ring
+    castbarRingFrame:SetFrameLevel(998) -- Above the regular ring (997)
     castbarRingFrame:Hide()
     
-    -- Outer ring texture (visible background) - make this brighter and on OVERLAY so it's visible
-    local outerRing = castbarRingFrame:CreateTexture(nil, "OVERLAY")
+    -- Outer ring texture (visible background) - use ARTWORK layer and make it larger
+    local outerRing = castbarRingFrame:CreateTexture(nil, "ARTWORK")
     outerRing:SetAllPoints()
-    outerRing:SetTexture(TEXTURES["Circle"])
+    outerRing:SetTexture(TEXTURES["CircleThick"])  -- Use thick ring texture
     outerRing:SetBlendMode("ADD")
-    outerRing:SetVertexColor(0.2, 0.8, 1.0, 0.5)  -- Default color, brighter
+    outerRing:SetVertexColor(0.2, 0.8, 1.0, 0.7)  -- Bright cyan, visible
     
     castbarRingFrame.outerRing = outerRing
     
     -- Progress cooldown (shows cast/channel progress as a circular sweep)
+    -- Make it slightly smaller than the frame so the outer ring shows around it
     local cooldown = CreateFrame("Cooldown", nil, castbarRingFrame, "CooldownFrameTemplate")
-    cooldown:SetAllPoints()
+    cooldown:SetPoint("CENTER")
+    cooldown:SetSize(90, 90)  -- Smaller than the frame (110) so outer ring shows
     cooldown:SetHideCountdownNumbers(true)
     if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
     if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
@@ -637,9 +648,9 @@ function CursorTrail:CreateCastbarRingFrame()
     -- Start from top (12 o'clock) and go clockwise
     cooldown:SetReverse(false)
     
-    -- Set swipe color to be visible
+    -- Set swipe color to be visible and distinct
     if cooldown.SetSwipeColor then
-        cooldown:SetSwipeColor(0.2, 0.8, 1.0, 0.8)
+        cooldown:SetSwipeColor(0.1, 0.6, 0.9, 0.6)  -- Slightly darker than outer ring
     end
     
     castbarRingFrame.cooldown = cooldown
@@ -784,16 +795,22 @@ function CursorTrail:CreateUpdateFrame()
                 local size = CursorTrail.db.profile.castbarRingSize
                 castbarRingFrame:SetSize(size, size)
                 
+                -- Make cooldown slightly smaller so outer ring shows
+                if castbarRingFrame.cooldown then
+                    local cooldownSize = size * 0.82
+                    castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
+                end
+                
                 -- Set color
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
                 
-                -- Set outer ring color (brighter than before)
-                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a * 0.8)
+                -- Set outer ring color (bright and visible)
+                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a)
                 
-                -- Set cooldown swipe color
+                -- Set cooldown swipe color (slightly darker to contrast with outer ring)
                 if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeColor then
-                    castbarRingFrame.cooldown:SetSwipeColor(r, g, b, a)
+                    castbarRingFrame.cooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
                 end
                 
                 castbarRingFrame:Show()
@@ -1181,14 +1198,22 @@ function CursorTrail:UpdateCastbarRingTexture()
     if not self.db then return end
     
     if castbarRingFrame then
-        local texture = TEXTURES[self.db.profile.castbarRingTexture] or TEXTURES["Circle"]
+        local texture = TEXTURES[self.db.profile.castbarRingTexture] or TEXTURES["CircleThick"]
         castbarRingFrame.outerRing:SetTexture(texture)
-        castbarRingFrame:SetSize(self.db.profile.castbarRingSize, self.db.profile.castbarRingSize)
         
-        -- Update cooldown swipe texture to match
-        if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeTexture then
-            local swipeTexture = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512"
-            castbarRingFrame.cooldown:SetSwipeTexture(swipeTexture)
+        local size = self.db.profile.castbarRingSize
+        castbarRingFrame:SetSize(size, size)
+        
+        -- Make cooldown slightly smaller than frame so outer ring is visible
+        if castbarRingFrame.cooldown then
+            local cooldownSize = size * 0.82  -- 82% of frame size
+            castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
+            
+            -- Update cooldown swipe texture to match
+            if castbarRingFrame.cooldown.SetSwipeTexture then
+                local swipeTexture = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512"
+                castbarRingFrame.cooldown:SetSwipeTexture(swipeTexture)
+            end
         end
     end
 end
@@ -1686,7 +1711,7 @@ function CursorTrail:GetOptions()
             },
             castbarRingSize = {
                 name = "Castbar Ring Size",
-                desc = "Size of the castbar ring (should be larger than regular ring)",
+                desc = "Size of the castbar ring (should be larger than regular ring for visibility)",
                 type = "range",
                 order = 68,
                 min = 48,
@@ -1695,6 +1720,7 @@ function CursorTrail:GetOptions()
                 get = function() return self.db.profile.castbarRingSize end,
                 set = function(_, value)
                     self.db.profile.castbarRingSize = value
+                    self:UpdateCastbarRingTexture()
                 end,
             },
             castbarRingColor = {
@@ -1709,6 +1735,24 @@ function CursorTrail:GetOptions()
                 end,
                 set = function(_, r, g, b, a)
                     self.db.profile.castbarRingColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
+            castbarRingTexture = {
+                name = "Castbar Ring Texture",
+                desc = "Visual style of the castbar ring",
+                type = "select",
+                order = 69.5,
+                values = {
+                    ["Circle"] = "Circle",
+                    ["CircleThick"] = "Circle Thick (Recommended)",
+                    ["Square"] = "Square",
+                    ["Diamond"] = "Diamond",
+                    ["Star"] = "Star",
+                },
+                get = function() return self.db.profile.castbarRingTexture end,
+                set = function (_, value)
+                    self.db.profile.castbarRingTexture = value
+                    self:UpdateCastbarRingTexture()
                 end,
             },
             header5 = {
