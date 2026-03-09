@@ -393,6 +393,16 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
     print("|cff00FF7F[CursorAnimate]|r Cast events registered")
     
+    -- DEBUG: Create a raw frame to test if events fire at all
+    if not self.debugFrame then
+        self.debugFrame = CreateFrame("Frame")
+        self.debugFrame:RegisterEvent("UNIT_SPELLCAST_START")
+        self.debugFrame:SetScript("OnEvent", function(frame, event, unit)
+            print("|cffFF0000[DEBUG FRAME]|r Event fired: " .. event .. ", unit=" .. tostring(unit))
+        end)
+        print("|cff00FF7F[CursorAnimate]|r Debug frame created and registered for UNIT_SPELLCAST_START")
+    end
+    
     if self.db.profile.enabled then
         self:Disable()
         self:Enable()
