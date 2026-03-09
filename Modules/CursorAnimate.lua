@@ -1343,6 +1343,7 @@ function CursorTrail:GetOptions()
                         desc = "Enable or disable the cursor animation effect",
                         type = "toggle",
                         order = 1,
+                        width = "half",
                         get = function() return self.db.profile.enabled end,
                         set = function(_, value)
                             self.db.profile.enabled = value
@@ -1363,6 +1364,7 @@ function CursorTrail:GetOptions()
                 desc = "Show a trail following the cursor",
                 type = "toggle",
                 order = 31,
+                width = "half",
                 get = function() return self.db.profile.trailEnabled end,
                 set = function(_, value)
                     self.db.profile.trailEnabled = value
@@ -1373,6 +1375,7 @@ function CursorTrail:GetOptions()
                 desc = "Number of trail particles",
                 type = "range",
                 order = 32,
+                width = "half",
                 min = 5,
                 max = 30,
                 step = 1,
@@ -1386,6 +1389,7 @@ function CursorTrail:GetOptions()
                 desc = "Size of each trail particle",
                 type = "range",
                 order = 33,
+                width = "half",
                 min = 16,
                 max = 64,
                 step = 1,
@@ -1399,6 +1403,7 @@ function CursorTrail:GetOptions()
                 desc = "How quickly trail particles fade (seconds)",
                 type = "range",
                 order = 34,
+                width = "half",
                 min = 0.05,
                 max = 0.5,
                 step = 0.01,
@@ -1412,6 +1417,7 @@ function CursorTrail:GetOptions()
                 desc = "Frames between trail updates (lower = smoother but more particles)",
                 type = "range",
                 order = 35,
+                width = "half",
                 min = 1,
                 max = 10,
                 step = 1,
@@ -1439,6 +1445,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style of the trail",
                 type = "select",
                 order = 37,
+                width = "half",
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1463,6 +1470,7 @@ function CursorTrail:GetOptions()
                 desc = "How the trail blends with the background",
                 type = "select",
                 order = 38,
+                width = "half",
                 values = {
                     ["ADD"] = "Additive (Bright)",
                     ["BLEND"] = "Normal (Blend)",
@@ -1479,6 +1487,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style/animation of the trail",
                 type = "select",
                 order = 39,
+                width = "half",
                 values = {
                     ["classic"] = "Classic (Solid Color)",
                     ["rainbow"] = "Rainbow (Cycling Colors)",
@@ -1499,6 +1508,7 @@ function CursorTrail:GetOptions()
                 desc = "Show a glow/highlight around the cursor",
                 type = "toggle",
                 order = 41,
+                width = "half",
                 get = function() return self.db.profile.highlightEnabled end,
                 set = function(_, value)
                     self.db.profile.highlightEnabled = value
@@ -1509,6 +1519,7 @@ function CursorTrail:GetOptions()
                 desc = "Size of the cursor highlight",
                 type = "range",
                 order = 42,
+                width = "half",
                 min = 24,
                 max = 96,
                 step = 1,
@@ -1523,6 +1534,7 @@ function CursorTrail:GetOptions()
                 desc = "Make the highlight pulse",
                 type = "toggle",
                 order = 43,
+                width = "half",
                 get = function() return self.db.profile.highlightPulse end,
                 set = function(_, value)
                     self.db.profile.highlightPulse = value
@@ -1547,6 +1559,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style of the highlight",
                 type = "select",
                 order = 45,
+                width = "half",
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1567,6 +1580,7 @@ function CursorTrail:GetOptions()
                 desc = "How the highlight blends with the background",
                 type = "select",
                 order = 46,
+                width = "half",
                 values = {
                     ["ADD"] = "Additive (Bright)",
                     ["BLEND"] = "Normal (Blend)",
@@ -1588,6 +1602,7 @@ function CursorTrail:GetOptions()
                 desc = "Show sparkle effects when cursor is idle",
                 type = "toggle",
                 order = 51,
+                width = "half",
                 get = function() return self.db.profile.sparklesEnabled end,
                 set = function(_, value)
                     self.db.profile.sparklesEnabled = value
@@ -1598,6 +1613,7 @@ function CursorTrail:GetOptions()
                 desc = "Seconds before sparkles appear when cursor stops moving",
                 type = "range",
                 order = 52,
+                width = "half",
                 min = 0.5,
                 max = 3.0,
                 step = 0.1,
@@ -1611,6 +1627,7 @@ function CursorTrail:GetOptions()
                 desc = "Seconds between sparkle spawns",
                 type = "range",
                 order = 53,
+                width = "half",
                 min = 0.05,
                 max = 0.5,
                 step = 0.05,
@@ -1624,6 +1641,7 @@ function CursorTrail:GetOptions()
                 desc = "Size of sparkle particles",
                 type = "range",
                 order = 54,
+                width = "half",
                 min = 8,
                 max = 24,
                 step = 1,
@@ -1637,6 +1655,7 @@ function CursorTrail:GetOptions()
                 desc = "How long sparkles last (seconds)",
                 type = "range",
                 order = 55,
+                width = "half",
                 min = 0.3,
                 max = 2.0,
                 step = 0.1,
@@ -1664,6 +1683,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style of sparkles",
                 type = "select",
                 order = 57,
+                width = "half",
                 values = {
                     ["Glow"] = "Glow",
                     ["GlowSoft"] = "Glow Soft",
@@ -1687,6 +1707,7 @@ function CursorTrail:GetOptions()
                 desc = "Show a ring around the cursor",
                 type = "toggle",
                 order = 61,
+                width = "half",
                 get = function() return self.db.profile.ringEnabled end,
                 set = function(_, value)
                     self.db.profile.ringEnabled = value
@@ -1697,6 +1718,7 @@ function CursorTrail:GetOptions()
                 desc = "Size of the cursor ring",
                 type = "range",
                 order = 62,
+                width = "half",
                 min = 32,
                 max = 128,
                 step = 1,
@@ -1720,6 +1742,7 @@ function CursorTrail:GetOptions()
                 desc = "Make the ring pulse",
                 type = "toggle",
                 order = 63,
+                width = "half",
                 get = function() return self.db.profile.ringPulse end,
                 set = function(_, value)
                     self.db.profile.ringPulse = value
@@ -1730,6 +1753,7 @@ function CursorTrail:GetOptions()
                 desc = "Display global cooldown on the ring",
                 type = "toggle",
                 order = 64,
+                width = "half",
                 get = function() return self.db.profile.ringShowGCD end,
                 set = function(_, value)
                     self.db.profile.ringShowGCD = value
@@ -1754,6 +1778,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style of the ring",
                 type = "select",
                 order = 66,
+                width = "half",
                 values = {
                     ["Circle"] = "Circle",
                     ["CircleThick"] = "Circle Thick",
@@ -1772,6 +1797,7 @@ function CursorTrail:GetOptions()
                 desc = "Show a progress ring around the cursor when casting or channeling (only visible during casts)",
                 type = "toggle",
                 order = 67,
+                width = "half",
                 get = function() return self.db.profile.castbarRingEnabled end,
                 set = function(_, value)
                     self.db.profile.castbarRingEnabled = value
@@ -1782,6 +1808,7 @@ function CursorTrail:GetOptions()
                 desc = "Size of the castbar ring (must be larger than regular ring for visibility)",
                 type = "range",
                 order = 68,
+                width = "half",
                 min = 48,
                 max = 160,
                 step = 1,
@@ -1816,6 +1843,7 @@ function CursorTrail:GetOptions()
                 desc = "Visual style of the castbar ring",
                 type = "select",
                 order = 69.5,
+                width = "half",
                 values = {
                     ["Circle"] = "Circle",
                     ["CircleThick"] = "Circle Thick (Recommended)",
@@ -1839,6 +1867,7 @@ function CursorTrail:GetOptions()
                 desc = "Change cursor color based on health and combat status",
                 type = "toggle",
                 order = 71,
+                width = "half",
                 get = function() return self.db.profile.alertsEnabled end,
                 set = function(_, value)
                     self.db.profile.alertsEnabled = value
@@ -1849,6 +1878,7 @@ function CursorTrail:GetOptions()
                 desc = "Turn cursor red when health is low",
                 type = "toggle",
                 order = 72,
+                width = "half",
                 get = function() return self.db.profile.lowHealthWarning end,
                 set = function(_, value)
                     self.db.profile.lowHealthWarning = value
@@ -1859,6 +1889,7 @@ function CursorTrail:GetOptions()
                 desc = "Health percentage to trigger warning",
                 type = "range",
                 order = 73,
+                width = "half",
                 min = 10,
                 max = 50,
                 step = 5,
@@ -1872,6 +1903,7 @@ function CursorTrail:GetOptions()
                 desc = "Turn cursor orange when you have threat/aggro",
                 type = "toggle",
                 order = 74,
+                width = "half",
                 get = function() return self.db.profile.aggroWarning end,
                 set = function(_, value)
                     self.db.profile.aggroWarning = value
@@ -1887,6 +1919,7 @@ function CursorTrail:GetOptions()
                 desc = "Hide cursor effects during combat",
                 type = "toggle",
                 order = 81,
+                width = "half",
                 get = function() return self.db.profile.hideInCombat end,
                 set = function(_, value)
                     self.db.profile.hideInCombat = value
@@ -1898,6 +1931,7 @@ function CursorTrail:GetOptions()
                 desc = "Only show highlight during combat (ignores 'Hide in Combat')",
                 type = "toggle",
                 order = 82,
+                width = "half",
                 get = function() return self.db.profile.combatOnlyHighlight end,
                 set = function(_, value)
                     self.db.profile.combatOnlyHighlight = value
