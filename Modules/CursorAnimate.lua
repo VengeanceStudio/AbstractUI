@@ -310,6 +310,8 @@ function CursorTrail:OnEnable()
     end
     
     if updateFrame then
+        -- Re-enable the OnUpdate script
+        updateFrame:SetScript("OnUpdate", updateFrame.updateScript)
         updateFrame:Show()
     end
     
@@ -317,9 +319,12 @@ function CursorTrail:OnEnable()
 end
 
 function CursorTrail:OnDisable()
+    -- Stop the update loop entirely
     if updateFrame then
+        updateFrame:SetScript("OnUpdate", nil)
         updateFrame:Hide()
     end
+    -- Hide all cursor effect frames
     if highlightFrame then
         highlightFrame:Hide()
     end
@@ -528,11 +533,9 @@ function CursorTrail:CreateUpdateFrame()
     local sparkleTimer = 0
     local lastX, lastY = 0, 0
     
-    updateFrame:SetScript("OnUpdate", function(self, elapsed)
+    -- Store the update function so we can re-enable it later
+    updateFrame.updateScript = function(self, elapsed)
         if not CursorTrail.db then 
-            return 
-        end
-        if not CursorTrail.db.profile.enabled then 
             return 
         end
         
@@ -730,7 +733,10 @@ function CursorTrail:CreateUpdateFrame()
                 frame:Hide()
             end
         end
-    end)
+    end
+    
+    -- Set the OnUpdate script
+    updateFrame:SetScript("OnUpdate", updateFrame.updateScript)
 end
 
 function CursorTrail:AddTrailParticle(x, y, alertR, alertG, alertB)

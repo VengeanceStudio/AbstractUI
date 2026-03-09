@@ -340,6 +340,12 @@ function MacroIconSelector:LoadIconFileData()
 end
 
 function MacroIconSelector:CreateSearchBox(popup)
+    -- Verify the popup has the expected structure before creating search box
+    if not popup.BorderBox or not popup.BorderBox.OkayButton then
+        -- Frame doesn't have the expected structure, skip search box creation
+        return
+    end
+    
     local sb = CreateFrame("EditBox", "$parentSearchBox", popup, "InputBoxTemplate")
     sb:SetPoint("BOTTOMLEFT", 74, 15)
     sb:SetPoint("RIGHT", popup.BorderBox.OkayButton, "LEFT", 0, 0)
