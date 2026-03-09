@@ -613,7 +613,8 @@ function CursorTrail:CreateRingFrame()
     
     -- Main ring texture (inner regular ring)
     local texture = ringFrame:CreateTexture(nil, "BACKGROUND")
-    texture:SetAllPoints()
+    texture:SetPoint("CENTER")
+    texture:SetSize(64, 64)  -- Default size, will be updated in OnUpdate
     texture:SetTexture(TEXTURES["Circle"])
     texture:SetBlendMode("ADD")
     
@@ -631,7 +632,8 @@ function CursorTrail:CreateRingFrame()
     
     -- GCD cooldown overlay (for the inner ring)
     local cooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
-    cooldown:SetAllPoints()
+    cooldown:SetPoint("CENTER")
+    cooldown:SetSize(64, 64)  -- Default size, will be updated to match regular ring
     cooldown:SetHideCountdownNumbers(true)
     if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
     if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
@@ -775,6 +777,21 @@ function CursorTrail:CreateUpdateFrame()
             if showRegularRing or showCastRing then
                 -- Position at cursor
                 ringFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                
+                -- Size the frame to the larger of the two rings so both fit
+                local frameSize = math.max(
+                    showRegularRing and CursorTrail.db.profile.ringSize or 0,
+                    showCastRing and CursorTrail.db.profile.castbarRingSize or 0
+                )
+                
+                -- Apply pulse to frame size if regular ring has pulse enabled
+                if showRegularRing and CursorTrail.db.profile.ringPulse then
+                    local pulse = (math.sin(GetTime() * 3) + 1) / 2
+                    local regularRingSize = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
+                    frameSize = math.max(frameSize, regularRingSize)
+                end
+                
+                ringFrame:SetSize(frameSize, frameSize)
                 ringFrame:Show()
                 
                 -- Update regular ring
@@ -787,15 +804,13 @@ function CursorTrail:CreateUpdateFrame()
                     if alertG then g = alertG end
                     if alertB then b = alertB end
                     
-                    -- Pulse effect
+                    -- Size the regular ring texture
+                    local size = CursorTrail.db.profile.ringSize
                     if CursorTrail.db.profile.ringPulse then
                         local pulse = (math.sin(GetTime() * 3) + 1) / 2
-                        local size = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
-                        ringFrame:SetSize(size, size)
-                    else
-                        ringFrame:SetSize(CursorTrail.db.profile.ringSize, CursorTrail.db.profile.ringSize)
+                        size = size * (0.9 + pulse * 0.2)
                     end
-                    
+                    ringFrame.texture:SetSize(size, size)
                     ringFrame.texture:SetVertexColor(r, g, b, a)
                     
                     -- Update GCD cooldown
@@ -995,6 +1010,14 @@ end
 
 function CursorTrail:UpdateGCD()
     if not ringFrame or not ringFrame.cooldown then return end
+    
+    -- Size GCD cooldown to match the regular ring
+    local size = self.db.profile.ringSize
+    if self.db.profile.ringPulse then
+        local pulse = (math.sin(GetTime() * 3) + 1) / 2
+        size = size * (0.9 + pulse * 0.2)
+    end
+    ringFrame.cooldown:SetSize(size, size)
     
     -- Use C_Spell.GetSpellCooldown for modern WoW API
     local cooldownInfo = C_Spell.GetSpellCooldown(61304) -- Global Cooldown spell ID
