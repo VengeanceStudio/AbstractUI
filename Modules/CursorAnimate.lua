@@ -343,6 +343,42 @@ function CursorTrail:ValidateColor(color)
     return true
 end
 
+-- Safely extract numeric color components from potentially malformed color tables
+function CursorTrail:GetColorComponents(color, defaultR, defaultG, defaultB, defaultA)
+    if type(color) ~= "table" then
+        return defaultR or 1, defaultG or 1, defaultB or 1, defaultA or 1
+    end
+    
+    local r, g, b, a
+    
+    -- Handle case where color component might be a table instead of a number
+    if type(color.r) == "table" then
+        r = tonumber(color.r[1] or color.r.r) or defaultR or 1
+    else
+        r = tonumber(color.r) or defaultR or 1
+    end
+    
+    if type(color.g) == "table" then
+        g = tonumber(color.g[1] or color.g.g) or defaultG or 1
+    else
+        g = tonumber(color.g) or defaultG or 1
+    end
+    
+    if type(color.b) == "table" then
+        b = tonumber(color.b[1] or color.b.b) or defaultB or 1
+    else
+        b = tonumber(color.b) or defaultB or 1
+    end
+    
+    if type(color.a) == "table" then
+        a = tonumber(color.a[1] or color.a.a) or defaultA or 1
+    else
+        a = tonumber(color.a) or defaultA or 1
+    end
+    
+    return r, g, b, a
+end
+
 -- HSV to RGB conversion for rainbow trail effect
 function CursorTrail:HSVtoRGB(h, s, v)
     local i = math.floor(h * 6)
@@ -535,9 +571,14 @@ function CursorTrail:CreateUpdateFrame()
             if shouldShowHighlight then
                 highlightFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
                 
-                -- Use alert color if available
+                -- Use alert color if available, safely extract components
                 local color = CursorTrail.db.profile.highlightColor
-                local r, g, b, a = alertR or color.r, alertG or color.g, alertB or color.b, color.a
+                local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                
+                -- Override with alert colors if available
+                if alertR then r = alertR end
+                if alertG then g = alertG end
+                if alertB then b = alertB end
                 
                 -- Pulse effect
                 if CursorTrail.db.profile.highlightPulse then
@@ -563,7 +604,12 @@ function CursorTrail:CreateUpdateFrame()
                 ringFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
                 
                 local color = CursorTrail.db.profile.ringColor
-                local r, g, b, a = alertR or color.r, alertG or color.g, alertB or color.b, color.a
+                local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                
+                -- Override with alert colors if available
+                if alertR then r = alertR end
+                if alertG then g = alertG end
+                if alertB then b = alertB end
                 
                 -- Pulse effect
                 if CursorTrail.db.profile.ringPulse then
@@ -618,13 +664,20 @@ function CursorTrail:CreateUpdateFrame()
                             r, g, b = CursorTrail:HSVtoRGB(hue, 1, 1)
                         elseif CursorTrail.db.profile.trailStyle == "comet" then
                             local color = CursorTrail.db.profile.trailColor
-                            r, g, b = color.r * (1 + progress), color.g * (1 + progress), color.b
+                            local cr, cg, cb = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                            r, g, b = cr * (1 + progress), cg * (1 + progress), cb
                         else -- classic
                             local color = CursorTrail.db.profile.trailColor
-                            r, g, b = alertR or color.r, alertG or color.g, alertB or color.b
+                            r, g, b = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                            
+                            -- Override with alert colors if available
+                            if alertR then r = alertR end
+                            if alertG then g = alertG end
+                            if alertB then b = alertB end
                         end
                         
-                        frame.texture:SetVertexColor(r, g, b, alpha * CursorTrail.db.profile.trailColor.a)
+                        local _, _, _, colorA = CursorTrail:GetColorComponents(CursorTrail.db.profile.trailColor, 1, 1, 1, 0.8)
+                        frame.texture:SetVertexColor(r, g, b, alpha * colorA)
                     end
                 end
             end
@@ -667,7 +720,8 @@ function CursorTrail:CreateUpdateFrame()
                             currentY + frame.velocityY * elapsed)
                         
                         local color = CursorTrail.db.profile.sparklesColor
-                        frame.texture:SetVertexColor(color.r, color.g, color.b, alpha * color.a)
+                        local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                        frame.texture:SetVertexColor(r, g, b, alpha * a)
                     end
                 end
             end

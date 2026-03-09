@@ -441,8 +441,12 @@ function Tooltips:OnTooltipShow(tooltip)
     end
     
     -- Position shopping tooltips if this is GameTooltip
+    -- Use pcall to prevent tainting in protected contexts (world map, etc.)
     if tooltip == GameTooltip then
-        self:PositionShoppingTooltips()
+        local success = pcall(function()
+            self:PositionShoppingTooltips()
+        end)
+        -- Silently fail if in protected context
     end
 end
 
@@ -587,6 +591,7 @@ end
 
 function Tooltips:PositionShoppingTooltips()
     -- Position shopping tooltips intelligently based on GameTooltip position
+    -- Skip if GameTooltip isn't shown or if we're in a protected context
     if not GameTooltip:IsShown() then return end
     
     local shoppingTooltip1 = ShoppingTooltip1
@@ -605,7 +610,11 @@ function Tooltips:PositionShoppingTooltips()
         end
         
         -- Check if GameTooltip is on the right side of screen
-        local gameTooltipCenter = GameTooltip:GetCenter()
+        -- Use pcall to protect against taint in secure contexts
+        local gameTooltipCenter = nil
+        pcall(function()
+            gameTooltipCenter = GameTooltip:GetCenter()
+        end)
         local screenWidth = GetScreenWidth()
         
         if questOnRight or (gameTooltipCenter and gameTooltipCenter > (screenWidth / 2)) then
