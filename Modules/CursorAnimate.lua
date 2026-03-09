@@ -296,6 +296,12 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
     
+    -- Check if the module is enabled in AbstractUI general settings before initializing
+    if AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
+        -- Module is disabled in general settings, don't enable
+        return
+    end
+    
     if self.db.profile.enabled then
         self:Disable()
         self:Enable()
@@ -304,6 +310,14 @@ function CursorTrail:OnDBReady()
 end
 
 function CursorTrail:OnEnable()
+    -- Check if the module is enabled in AbstractUI general settings
+    local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
+    if AbstractUI and AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
+        -- Module is disabled in general settings, don't initialize
+        self:Disable()
+        return
+    end
+    
     -- Don't do anything if DB isn't ready yet
     if not self.db then 
         return 
