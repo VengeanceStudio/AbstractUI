@@ -275,12 +275,41 @@ function CursorTrail:OnInitialize()
                 highlightFrame.texture:SetVertexColor(1, 0, 0, 1) -- Red, full alpha
                 highlightFrame:Show()
             end
+        elseif msg == "testcast" then
+            -- Force show castbar ring for testing
+            if castbarRingFrame then
+                local x, y = GetCursorPosition()
+                local scale = UIParent:GetEffectiveScale()
+                x = x / scale
+                y = y / scale
+                castbarRingFrame:ClearAllPoints()
+                castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                castbarRingFrame:SetSize(CursorTrail.db.profile.castbarRingSize, CursorTrail.db.profile.castbarRingSize)
+                
+                local color = CursorTrail.db.profile.castbarRingColor
+                local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
+                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a * 0.8)
+                
+                -- Start a fake 3 second cast
+                if castbarRingFrame.cooldown then
+                    castbarRingFrame.cooldown:SetCooldown(GetTime(), 3)
+                    if castbarRingFrame.cooldown.SetSwipeColor then
+                        castbarRingFrame.cooldown:SetSwipeColor(r, g, b, a)
+                    end
+                end
+                
+                castbarRingFrame:Show()
+                print("|cff00FF7FCursor Animate:|r Castbar ring forced visible at cursor for 3 seconds")
+            else
+                print("|cff00FF7FCursor Animate:|r ERROR: Castbar ring frame doesn't exist!")
+            end
         else
             print("|cff00FF7FCursor Animate Commands:|r")
-            print("  /ca on     - Enable animations")
-            print("  /ca off    - Disable animations")
-            print("  /ca status - Show current status")
-            print("  /ca test   - Force show red highlight at cursor")
+            print("  /ca on       - Enable animations")
+            print("  /ca off      - Disable animations")
+            print("  /ca status   - Show current status")
+            print("  /ca test     - Force show red highlight at cursor")
+            print("  /ca testcast - Force show castbar ring at cursor")
         end
     end
 end
@@ -583,6 +612,15 @@ function CursorTrail:CreateCastbarRingFrame()
     castbarRingFrame:SetFrameLevel(996) -- Just below the regular ring
     castbarRingFrame:Hide()
     
+    -- Outer ring texture (visible background) - make this brighter and on OVERLAY so it's visible
+    local outerRing = castbarRingFrame:CreateTexture(nil, "OVERLAY")
+    outerRing:SetAllPoints()
+    outerRing:SetTexture(TEXTURES["Circle"])
+    outerRing:SetBlendMode("ADD")
+    outerRing:SetVertexColor(0.2, 0.8, 1.0, 0.5)  -- Default color, brighter
+    
+    castbarRingFrame.outerRing = outerRing
+    
     -- Progress cooldown (shows cast/channel progress as a circular sweep)
     local cooldown = CreateFrame("Cooldown", nil, castbarRingFrame, "CooldownFrameTemplate")
     cooldown:SetAllPoints()
@@ -599,15 +637,12 @@ function CursorTrail:CreateCastbarRingFrame()
     -- Start from top (12 o'clock) and go clockwise
     cooldown:SetReverse(false)
     
+    -- Set swipe color to be visible
+    if cooldown.SetSwipeColor then
+        cooldown:SetSwipeColor(0.2, 0.8, 1.0, 0.8)
+    end
+    
     castbarRingFrame.cooldown = cooldown
-    
-    -- Outer ring texture (visible background)
-    local outerRing = castbarRingFrame:CreateTexture(nil, "BACKGROUND")
-    outerRing:SetAllPoints()
-    outerRing:SetTexture(TEXTURES["Circle"])
-    outerRing:SetBlendMode("ADD")
-    
-    castbarRingFrame.outerRing = outerRing
 end
 
 function CursorTrail:CreateUpdateFrame()
@@ -742,6 +777,7 @@ function CursorTrail:CreateUpdateFrame()
             
             if shouldShowCastbarRing then
                 -- Position at cursor
+                castbarRingFrame:ClearAllPoints()
                 castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
                 
                 -- Set size
@@ -752,13 +788,13 @@ function CursorTrail:CreateUpdateFrame()
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
                 
-                -- Set cooldown color (tint the swipe)
+                -- Set outer ring color (brighter than before)
+                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a * 0.8)
+                
+                -- Set cooldown swipe color
                 if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeColor then
                     castbarRingFrame.cooldown:SetSwipeColor(r, g, b, a)
                 end
-                
-                -- Set outer ring color (slightly dimmer)
-                castbarRingFrame.outerRing:SetVertexColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
                 
                 castbarRingFrame:Show()
             else
@@ -1033,6 +1069,7 @@ function CursorTrail:UNIT_SPELLCAST_START(event, unit)
         -- Set cooldown to show progress
         if castbarRingFrame and castbarRingFrame.cooldown then
             castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+            castbarRingFrame:Show()  -- Force show when cast starts
         end
     end
 end
@@ -1051,6 +1088,7 @@ function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
         -- For channeling, we want to show remaining time (reverse)
         if castbarRingFrame and castbarRingFrame.cooldown then
             castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+            castbarRingFrame:Show()  -- Force show when channel starts
         end
     end
 end
