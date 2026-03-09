@@ -29,7 +29,6 @@ local sparkleFreeList = {}
 local updateFrame
 local highlightFrame
 local ringFrame
-local castbarRingFrame
 
 -- State tracking
 local lastCursorX, lastCursorY = 0, 0
@@ -257,9 +256,13 @@ function CursorTrail:OnInitialize()
                     print("|cff00FF7FCursor Animate:|r HighlightFrame:IsShown(): " .. tostring(highlightFrame:IsShown()))
                 end
                 print("|cff00FF7FCursor Animate:|r RingFrame exists: " .. tostring(ringFrame ~= nil))
-                print("|cff00FF7FCursor Animate:|r CastbarRingFrame exists: " .. tostring(castbarRingFrame ~= nil))
-                if castbarRingFrame then
-                    print("|cff00FF7FCursor Animate:|r CastbarRingFrame:IsShown(): " .. tostring(castbarRingFrame:IsShown()))
+                if ringFrame then
+                    print("|cff00FF7FCursor Animate:|r RingFrame:IsShown(): " .. tostring(ringFrame:IsShown()))
+                    print("|cff00FF7FCursor Animate:|r OuterCastRing exists: " .. tostring(ringFrame.outerCastRing ~= nil))
+                    print("|cff00FF7FCursor Animate:|r CastCooldown exists: " .. tostring(ringFrame.castCooldown ~= nil))
+                    if ringFrame.castCooldown then
+                        print("|cff00FF7FCursor Animate:|r CastCooldown:IsShown(): " .. tostring(ringFrame.castCooldown:IsShown()))
+                    end
                     print("|cff00FF7FCursor Animate:|r Casting: " .. tostring(isCasting) .. " | Channeling: " .. tostring(isChanneling))
                 end
             end
@@ -276,41 +279,52 @@ function CursorTrail:OnInitialize()
                 highlightFrame:Show()
             end
         elseif msg == "testcast" then
-            -- Force show castbar ring for testing
-            if castbarRingFrame then
-                local x, y = GetCursorPosition()
-                local scale = UIParent:GetEffectiveScale()
-                x = x / scale
-                y = y / scale
-                castbarRingFrame:ClearAllPoints()
-                castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+            -- Force show outer cast ring for testing
+            if ringFrame and ringFrame.outerCastRing and ringFrame.castCooldown then
+                -- Force set casting state
+                isCasting = true
                 
                 local size = CursorTrail.db.profile.castbarRingSize
-                castbarRingFrame:SetSize(size, size)
+                ringFrame.outerCastRing:SetSize(size, size)
                 
-                -- Make cooldown slightly smaller so outer ring shows
-                if castbarRingFrame.cooldown then
+                if ringFrame.castCooldown then
                     local cooldownSize = size * 0.82
-                    castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
+                    ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
                 end
                 
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
-                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a)
+                ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
                 
                 -- Start a fake 3 second cast
-                if castbarRingFrame.cooldown then
-                    castbarRingFrame.cooldown:SetCooldown(GetTime(), 3)
-                    if castbarRingFrame.cooldown.SetSwipeColor then
-                        castbarRingFrame.cooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                if ringFrame.castCooldown then
+                    ringFrame.castCooldown:SetCooldown(GetTime(), 3)
+                    ringFrame.castCooldown:Show()
+                    if ringFrame.castCooldown.SetSwipeColor then
+                        ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
                     end
                 end
                 
-                castbarRingFrame:Show()
-                print("|cff00FF7FCursor Animate:|r Castbar ring forced visible at cursor for 3 seconds")
+                -- Auto-hide and reset after 3.1 seconds
+                C_Timer.After(3.1, function()
+                    isCasting = false
+                    if ringFrame and ringFrame.outerCastRing then
+                        ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
+                    end
+                    if ringFrame and ringFrame.castCooldown then
+                        ringFrame.castCooldown:Hide()
+                    end
+                end)
+                
+                print("|cff00FF7FCursor Animate:|r Outer cast ring forced visible at cursor for 3 seconds")
                 print("|cff00FF7FCursor Animate:|r Outer ring size: " .. size .. "px, cooldown size: " .. (size * 0.82) .. "px")
             else
-                print("|cff00FF7FCursor Animate:|r ERROR: Castbar ring frame doesn't exist!")
+                print("|cff00FF7FCursor Animate:|r ERROR: Ring frame or outer cast ring doesn't exist!")
+                if ringFrame then
+                    print("|cff00FF7FCursor Animate:|r RingFrame exists: " .. tostring(ringFrame ~= nil))
+                    print("|cff00FF7FCursor Animate:|r OuterCastRing exists: " .. tostring(ringFrame.outerCastRing ~= nil))
+                    print("|cff00FF7FCursor Animate:|r CastCooldown exists: " .. tostring(ringFrame.castCooldown ~= nil))
+                end
             end
         else
             print("|cff00FF7FCursor Animate Commands:|r")
@@ -357,7 +371,6 @@ function CursorTrail:OnDBReady()
     self:CreateHighlightFrame()
     self:CreateSparkleFrames()
     self:CreateRingFrame()
-    self:CreateCastbarRingFrame()
     self:CreateUpdateFrame()
     
     self:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
@@ -416,9 +429,12 @@ function CursorTrail:OnDisable()
     end
     if ringFrame then
         ringFrame:Hide()
-    end
-    if castbarRingFrame then
-        castbarRingFrame:Hide()
+        if ringFrame.outerCastRing then
+            ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
+        end
+        if ringFrame.castCooldown then
+            ringFrame.castCooldown:Hide()
+        end
     end
     for _, frame in ipairs(trailFrames) do
         frame:Hide()
@@ -582,7 +598,7 @@ function CursorTrail:CreateRingFrame()
     ringFrame:SetFrameLevel(997)
     ringFrame:Hide()
     
-    -- Main ring texture
+    -- Main ring texture (inner regular ring)
     local texture = ringFrame:CreateTexture(nil, "BACKGROUND")
     texture:SetAllPoints()
     texture:SetTexture(TEXTURES["Circle"])
@@ -590,7 +606,17 @@ function CursorTrail:CreateRingFrame()
     
     ringFrame.texture = texture
     
-    -- GCD cooldown overlay
+    -- Outer cast ring texture (larger, only visible during casts)
+    local outerCastRing = ringFrame:CreateTexture(nil, "ARTWORK")
+    outerCastRing:SetPoint("CENTER")
+    outerCastRing:SetSize(110, 110)  -- Larger than main ring
+    outerCastRing:SetTexture(TEXTURES["CircleThick"])
+    outerCastRing:SetBlendMode("ADD")
+    outerCastRing:SetVertexColor(0.2, 0.8, 1.0, 0)  -- Start fully transparent
+    
+    ringFrame.outerCastRing = outerCastRing
+    
+    -- GCD cooldown overlay (for the inner ring)
     local cooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
     cooldown:SetAllPoints()
     cooldown:SetHideCountdownNumbers(true)
@@ -607,53 +633,31 @@ function CursorTrail:CreateRingFrame()
     cooldown:SetReverse(false)
     
     ringFrame.cooldown = cooldown
-end
-
-function CursorTrail:CreateCastbarRingFrame()
-    -- Only create frame if it doesn't already exist
-    if castbarRingFrame then
-        return
+    
+    -- Cast progress cooldown (for the outer ring during casts)
+    local castCooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
+    castCooldown:SetPoint("CENTER")
+    castCooldown:SetSize(90, 90)  -- Slightly smaller than outer ring so the ring edge is visible
+    castCooldown:SetHideCountdownNumbers(true)
+    if castCooldown.SetDrawEdge then castCooldown:SetDrawEdge(false) end
+    if castCooldown.SetDrawBling then castCooldown:SetDrawBling(false) end
+    if castCooldown.SetDrawSwipe then castCooldown:SetDrawSwipe(true) end
+    
+    -- Make cooldown circular
+    if castCooldown.SetSwipeTexture then
+        castCooldown:SetSwipeTexture("Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512")
     end
     
-    castbarRingFrame = CreateFrame("Frame", "AbstractUI_CursorCastbarRing", UIParent)
-    castbarRingFrame:SetSize(110, 110) -- Larger than regular ring
-    castbarRingFrame:SetFrameStrata("TOOLTIP")
-    castbarRingFrame:SetFrameLevel(998) -- Above the regular ring (997)
-    castbarRingFrame:Hide()
+    castCooldown:SetReverse(false)
     
-    -- Outer ring texture (visible background) - use ARTWORK layer and make it larger
-    local outerRing = castbarRingFrame:CreateTexture(nil, "ARTWORK")
-    outerRing:SetAllPoints()
-    outerRing:SetTexture(TEXTURES["CircleThick"])  -- Use thick ring texture
-    outerRing:SetBlendMode("ADD")
-    outerRing:SetVertexColor(0.2, 0.8, 1.0, 0.7)  -- Bright cyan, visible
-    
-    castbarRingFrame.outerRing = outerRing
-    
-    -- Progress cooldown (shows cast/channel progress as a circular sweep)
-    -- Make it slightly smaller than the frame so the outer ring shows around it
-    local cooldown = CreateFrame("Cooldown", nil, castbarRingFrame, "CooldownFrameTemplate")
-    cooldown:SetPoint("CENTER")
-    cooldown:SetSize(90, 90)  -- Smaller than the frame (110) so outer ring shows
-    cooldown:SetHideCountdownNumbers(true)
-    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
-    if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
-    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(true) end
-    
-    -- Make cooldown circular by setting swipe texture to match ring
-    if cooldown.SetSwipeTexture then
-        cooldown:SetSwipeTexture("Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512")
+    -- Set swipe color
+    if castCooldown.SetSwipeColor then
+        castCooldown:SetSwipeColor(0.1, 0.5, 0.8, 0.5)
     end
     
-    -- Start from top (12 o'clock) and go clockwise
-    cooldown:SetReverse(false)
+    castCooldown:Hide()  -- Start hidden
     
-    -- Set swipe color to be visible and distinct
-    if cooldown.SetSwipeColor then
-        cooldown:SetSwipeColor(0.1, 0.6, 0.9, 0.6)  -- Slightly darker than outer ring
-    end
-    
-    castbarRingFrame.cooldown = cooldown
+    ringFrame.castCooldown = castCooldown
 end
 
 function CursorTrail:CreateUpdateFrame()
@@ -675,8 +679,11 @@ function CursorTrail:CreateUpdateFrame()
         local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
         if AbstractUI and AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
             if highlightFrame then highlightFrame:Hide() end
-            if ringFrame then ringFrame:Hide() end
-            if castbarRingFrame then castbarRingFrame:Hide() end
+            if ringFrame then
+                ringFrame:Hide()
+                if ringFrame.outerCastRing then ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0) end
+                if ringFrame.castCooldown then ringFrame.castCooldown:Hide() end
+            end
             for _, frame in ipairs(trailFrames) do frame:Hide() end
             for _, frame in ipairs(sparkleFrames) do frame:Hide() end
             return
@@ -782,43 +789,40 @@ function CursorTrail:CreateUpdateFrame()
             if ringFrame then ringFrame:Hide() end
         end
         
-        -- Update castbar ring (shows cast/channel progress)
-        if CursorTrail.db.profile.castbarRingEnabled and castbarRingFrame then
-            local shouldShowCastbarRing = (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
+        -- Update outer cast ring on main ring (shows cast/channel progress)
+        if CursorTrail.db.profile.castbarRingEnabled and ringFrame and ringFrame.outerCastRing then
+            local shouldShowCastRing = (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             
-            if shouldShowCastbarRing then
-                -- Position at cursor
-                castbarRingFrame:ClearAllPoints()
-                castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
-                
-                -- Set size
-                local size = CursorTrail.db.profile.castbarRingSize
-                castbarRingFrame:SetSize(size, size)
-                
-                -- Make cooldown slightly smaller so outer ring shows
-                if castbarRingFrame.cooldown then
-                    local cooldownSize = size * 0.82
-                    castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
-                end
-                
-                -- Set color
+            if shouldShowCastRing then
+                -- Set outer cast ring color and size
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
                 
-                -- Set outer ring color (bright and visible)
-                castbarRingFrame.outerRing:SetVertexColor(r, g, b, a)
+                -- Set size
+                local size = CursorTrail.db.profile.castbarRingSize
+                ringFrame.outerCastRing:SetSize(size, size)
                 
-                -- Set cooldown swipe color (slightly darker to contrast with outer ring)
-                if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeColor then
-                    castbarRingFrame.cooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                -- Make outer ring visible
+                ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
+                
+                -- Update cast cooldown size and color
+                if ringFrame.castCooldown then
+                    local cooldownSize = size * 0.82
+                    ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
+                    
+                    if ringFrame.castCooldown.SetSwipeColor then
+                        ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                    end
                 end
-                
-                castbarRingFrame:Show()
             else
-                castbarRingFrame:Hide()
+                -- Hide outer cast ring by making it transparent
+                ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
             end
         else
-            if castbarRingFrame then castbarRingFrame:Hide() end
+            -- Castbar ring disabled, make outer ring transparent
+            if ringFrame and ringFrame.outerCastRing then
+                ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
+            end
         end
         
         -- Update trail
@@ -1028,8 +1032,11 @@ function CursorTrail:UpdateVisibility()
         -- Module is disabled in general settings - hide everything
         if updateFrame then updateFrame:Hide() end
         if highlightFrame then highlightFrame:Hide() end
-        if ringFrame then ringFrame:Hide() end
-        if castbarRingFrame then castbarRingFrame:Hide() end
+        if ringFrame then
+            ringFrame:Hide()
+            if ringFrame.outerCastRing then ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0) end
+            if ringFrame.castCooldown then ringFrame.castCooldown:Hide() end
+        end
         for _, frame in ipairs(trailFrames) do frame:Hide() end
         for _, frame in ipairs(sparkleFrames) do frame:Hide() end
         return
@@ -1046,8 +1053,11 @@ function CursorTrail:UpdateVisibility()
     else
         if updateFrame then updateFrame:Hide() end
         if highlightFrame then highlightFrame:Hide() end
-        if ringFrame then ringFrame:Hide() end
-        if castbarRingFrame then castbarRingFrame:Hide() end
+        if ringFrame then
+            ringFrame:Hide()
+            if ringFrame.outerCastRing then ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0) end
+            if ringFrame.castCooldown then ringFrame.castCooldown:Hide() end
+        end
         for _, frame in ipairs(trailFrames) do frame:Hide() end
         for _, frame in ipairs(sparkleFrames) do frame:Hide() end
     end
@@ -1083,10 +1093,10 @@ function CursorTrail:UNIT_SPELLCAST_START(event, unit)
         castEndTime = endTimeMS / 1000
         castDuration = castEndTime - castStartTime
         
-        -- Set cooldown to show progress
-        if castbarRingFrame and castbarRingFrame.cooldown then
-            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
-            castbarRingFrame:Show()  -- Force show when cast starts
+        -- Set cooldown to show progress on the outer cast ring
+        if ringFrame and ringFrame.castCooldown then
+            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
+            ringFrame.castCooldown:Show()
         end
     end
 end
@@ -1102,10 +1112,10 @@ function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
         castEndTime = endTimeMS / 1000
         castDuration = castEndTime - castStartTime
         
-        -- For channeling, we want to show remaining time (reverse)
-        if castbarRingFrame and castbarRingFrame.cooldown then
-            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
-            castbarRingFrame:Show()  -- Force show when channel starts
+        -- Set cooldown to show channel progress on the outer cast ring
+        if ringFrame and ringFrame.castCooldown then
+            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
+            ringFrame.castCooldown:Show()
         end
     end
 end
@@ -1113,29 +1123,44 @@ end
 function CursorTrail:UNIT_SPELLCAST_STOP(event, unit)
     if unit ~= "player" then return end
     isCasting = false
+    if ringFrame and ringFrame.castCooldown then
+        ringFrame.castCooldown:Hide()
+    end
 end
 
 function CursorTrail:UNIT_SPELLCAST_SUCCEEDED(event, unit)
     if unit ~= "player" then return end
     isCasting = false
     isChanneling = false
+    if ringFrame and ringFrame.castCooldown then
+        ringFrame.castCooldown:Hide()
+    end
 end
 
 function CursorTrail:UNIT_SPELLCAST_FAILED(event, unit)
     if unit ~= "player" then return end
     isCasting = false
     isChanneling = false
+    if ringFrame and ringFrame.castCooldown then
+        ringFrame.castCooldown:Hide()
+    end
 end
 
 function CursorTrail:UNIT_SPELLCAST_INTERRUPTED(event, unit)
     if unit ~= "player" then return end
     isCasting = false
     isChanneling = false
+    if ringFrame and ringFrame.castCooldown then
+        ringFrame.castCooldown:Hide()
+    end
 end
 
 function CursorTrail:UNIT_SPELLCAST_CHANNEL_STOP(event, unit)
     if unit ~= "player" then return end
     isChanneling = false
+    if ringFrame and ringFrame.castCooldown then
+        ringFrame.castCooldown:Hide()
+    end
 end
 
 function CursorTrail:UNIT_SPELLCAST_CHANNEL_UPDATE(event, unit)
@@ -1148,8 +1173,8 @@ function CursorTrail:UNIT_SPELLCAST_CHANNEL_UPDATE(event, unit)
         castEndTime = endTimeMS / 1000
         castDuration = castEndTime - castStartTime
         
-        if castbarRingFrame and castbarRingFrame.cooldown then
-            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+        if ringFrame and ringFrame.castCooldown then
+            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
         end
     end
 end
@@ -1197,22 +1222,22 @@ end
 function CursorTrail:UpdateCastbarRingTexture()
     if not self.db then return end
     
-    if castbarRingFrame then
+    if ringFrame and ringFrame.outerCastRing then
         local texture = TEXTURES[self.db.profile.castbarRingTexture] or TEXTURES["CircleThick"]
-        castbarRingFrame.outerRing:SetTexture(texture)
+        ringFrame.outerCastRing:SetTexture(texture)
         
         local size = self.db.profile.castbarRingSize
-        castbarRingFrame:SetSize(size, size)
+        ringFrame.outerCastRing:SetSize(size, size)
         
-        -- Make cooldown slightly smaller than frame so outer ring is visible
-        if castbarRingFrame.cooldown then
-            local cooldownSize = size * 0.82  -- 82% of frame size
-            castbarRingFrame.cooldown:SetSize(cooldownSize, cooldownSize)
+        -- Make cast cooldown slightly smaller than outer ring so the ring edge is visible
+        if ringFrame.castCooldown then
+            local cooldownSize = size * 0.82  -- 82% of outer ring size
+            ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
             
             -- Update cooldown swipe texture to match
-            if castbarRingFrame.cooldown.SetSwipeTexture then
+            if ringFrame.castCooldown.SetSwipeTexture then
                 local swipeTexture = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512"
-                castbarRingFrame.cooldown:SetSwipeTexture(swipeTexture)
+                ringFrame.castCooldown:SetSwipeTexture(swipeTexture)
             end
         end
     end
