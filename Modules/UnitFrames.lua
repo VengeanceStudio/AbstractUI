@@ -2967,40 +2967,54 @@ end
                         end
                     end
                     
-                    -- Skip other status updates if in combat or specifically requested (to avoid taint)
-                    -- AFK/Resting APIs return protected values during combat
-                    if skipNonCombat or inCombat then
+                    -- Movement events should clear AFK immediately, even in combat
+                    local isMovementEvent = (caller == "PLAYER_STARTED_MOVING" or caller == "PLAYER_STOPPED_MOVING")
+                    
+                    -- Skip other status updates if in combat (unless it's a movement event for AFK clearing)
+                    if skipNonCombat or (inCombat and not isMovementEvent) then
                         return
                     end
                     
-                    -- Update AFK text - only called out of combat
+                    -- Update AFK text - use pcall to avoid taint from protected contexts (e.g., CameraOrSelectOrMoveStart)
+                    -- Movement should clear AFK immediately, even during combat
                     if frame.afkTextFrame then
-                        local isAFK = UnitIsAFK("player")
-                        if isAFK then
+                        local success, isAFK = pcall(UnitIsAFK, "player")
+                        if success and isAFK then
                             frame.afkTextFrame:Show()
-                        else
+                        elseif success then
                             frame.afkTextFrame:Hide()
                         end
+                        -- If pcall fails, leave current state unchanged
                     end
                     
-                    -- Update Resting icon - only called out of combat
-                    if frame.restingIconFrame then
-                        local isResting = IsResting()
-                        if isResting then
-                            frame.restingIconFrame:Show()
+                    -- Update Resting icon - use pcall to avoid taint from protected contexts
+                    -- Only check if not in an instance (you can't rest in dungeons/raids/delves)
+                    if frame.restingIconFrame and not isMovementEvent then
+                        local inInstance = IsInInstance()
+                        if not inInstance then
+                            local success, isResting = pcall(IsResting)
+                            if success and isResting then
+                                frame.restingIconFrame:Show()
+                            elseif success then
+                                frame.restingIconFrame:Hide()
+                            end
+                            -- If pcall fails, leave current state unchanged
                         else
+                            -- In instance, always hide resting icon
                             frame.restingIconFrame:Hide()
                         end
                     end
                     
-                    -- Update Dead indicator
-                    if frame.deadTextFrame then
-                        local isDead = UnitIsDead("player")
-                        if isDead then
+                    -- Update Dead indicator - use pcall to avoid taint from protected contexts
+                    -- Skip during movement events (dead players can't move anyway)
+                    if frame.deadTextFrame and not isMovementEvent then
+                        local success, isDead = pcall(UnitIsDead, "player")
+                        if success and isDead then
                             frame.deadTextFrame:Show()
-                        else
+                        elseif success then
                             frame.deadTextFrame:Hide()
                         end
+                        -- If pcall fails, leave current state unchanged
                     end
                 end
 
