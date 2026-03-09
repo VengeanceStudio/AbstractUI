@@ -29,6 +29,7 @@ local sparkleFreeList = {}
 local updateFrame
 local highlightFrame
 local ringFrame
+local castbarRingFrame
 
 -- State tracking
 local lastCursorX, lastCursorY = 0, 0
@@ -37,6 +38,13 @@ local rainbowPhase = 0
 local pulseTime = 0
 local isInCombat = false
 local hasLowHealth = false
+
+-- Cast tracking
+local isCasting = false
+local isChanneling = false
+local castStartTime = 0
+local castEndTime = 0
+local castDuration = 0
 
 local defaults = {
     profile = {
@@ -78,6 +86,13 @@ local defaults = {
         ringTexture = "Circle",
         ringPulse = true,
         ringShowGCD = true,
+        
+        -- Castbar Ring settings
+        castbarRingEnabled = true,
+        castbarRingSize = 80, -- Slightly larger than regular ring
+        castbarRingColor = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 },
+        castbarRingTexture = "Circle",
+        castbarRingThickness = 8, -- Thickness of the progress indicator
         
         -- Combat/Health alerts
         alertsEnabled = false,
@@ -242,6 +257,11 @@ function CursorTrail:OnInitialize()
                     print("|cff00FF7FCursor Animate:|r HighlightFrame:IsShown(): " .. tostring(highlightFrame:IsShown()))
                 end
                 print("|cff00FF7FCursor Animate:|r RingFrame exists: " .. tostring(ringFrame ~= nil))
+                print("|cff00FF7FCursor Animate:|r CastbarRingFrame exists: " .. tostring(castbarRingFrame ~= nil))
+                if castbarRingFrame then
+                    print("|cff00FF7FCursor Animate:|r CastbarRingFrame:IsShown(): " .. tostring(castbarRingFrame:IsShown()))
+                    print("|cff00FF7FCursor Animate:|r Casting: " .. tostring(isCasting) .. " | Channeling: " .. tostring(isChanneling))
+                end
             end
         elseif msg == "test" then
             -- Force show highlight for testing
@@ -290,16 +310,31 @@ function CursorTrail:OnDBReady()
         self.db.profile.ringColor = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 }
     end
     
+    if not self:ValidateColor(self.db.profile.castbarRingColor) then
+        self.db.profile.castbarRingColor = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 }
+    end
+    
     -- Create frames only if module is enabled
     self:CreateTrailFrames()
     self:CreateHighlightFrame()
     self:CreateSparkleFrames()
     self:CreateRingFrame()
+    self:CreateCastbarRingFrame()
     self:CreateUpdateFrame()
     
     self:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
+    
+    -- Register cast events for castbar ring
+    self:RegisterEvent("UNIT_SPELLCAST_START")
+    self:RegisterEvent("UNIT_SPELLCAST_STOP")
+    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    self:RegisterEvent("UNIT_SPELLCAST_FAILED")
+    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
     
     if self.db.profile.enabled then
         self:Disable()
@@ -343,6 +378,9 @@ function CursorTrail:OnDisable()
     end
     if ringFrame then
         ringFrame:Hide()
+    end
+    if castbarRingFrame then
+        castbarRingFrame:Hide()
     end
     for _, frame in ipairs(trailFrames) do
         frame:Hide()
@@ -533,6 +571,45 @@ function CursorTrail:CreateRingFrame()
     ringFrame.cooldown = cooldown
 end
 
+function CursorTrail:CreateCastbarRingFrame()
+    -- Only create frame if it doesn't already exist
+    if castbarRingFrame then
+        return
+    end
+    
+    castbarRingFrame = CreateFrame("Frame", "AbstractUI_CursorCastbarRing", UIParent)
+    castbarRingFrame:SetSize(80, 80) -- Will be overridden by settings
+    castbarRingFrame:SetFrameStrata("TOOLTIP")
+    castbarRingFrame:SetFrameLevel(996) -- Just below the regular ring
+    castbarRingFrame:Hide()
+    
+    -- Progress cooldown (shows cast/channel progress as a circular sweep)
+    local cooldown = CreateFrame("Cooldown", nil, castbarRingFrame, "CooldownFrameTemplate")
+    cooldown:SetAllPoints()
+    cooldown:SetHideCountdownNumbers(true)
+    if cooldown.SetDrawEdge then cooldown:SetDrawEdge(false) end
+    if cooldown.SetDrawBling then cooldown:SetDrawBling(false) end
+    if cooldown.SetDrawSwipe then cooldown:SetDrawSwipe(true) end
+    
+    -- Make cooldown circular by setting swipe texture to match ring
+    if cooldown.SetSwipeTexture then
+        cooldown:SetSwipeTexture("Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512")
+    end
+    
+    -- Start from top (12 o'clock) and go clockwise
+    cooldown:SetReverse(false)
+    
+    castbarRingFrame.cooldown = cooldown
+    
+    -- Outer ring texture (visible background)
+    local outerRing = castbarRingFrame:CreateTexture(nil, "BACKGROUND")
+    outerRing:SetAllPoints()
+    outerRing:SetTexture(TEXTURES["Circle"])
+    outerRing:SetBlendMode("ADD")
+    
+    castbarRingFrame.outerRing = outerRing
+end
+
 function CursorTrail:CreateUpdateFrame()
     -- Only create frame if it doesn't already exist (prevent duplication on reload/zone change)
     if updateFrame then
@@ -553,6 +630,7 @@ function CursorTrail:CreateUpdateFrame()
         if AbstractUI and AbstractUI.db and AbstractUI.db.profile.modules and not AbstractUI.db.profile.modules.cursorTrail then
             if highlightFrame then highlightFrame:Hide() end
             if ringFrame then ringFrame:Hide() end
+            if castbarRingFrame then castbarRingFrame:Hide() end
             for _, frame in ipairs(trailFrames) do frame:Hide() end
             for _, frame in ipairs(sparkleFrames) do frame:Hide() end
             return
@@ -656,6 +734,38 @@ function CursorTrail:CreateUpdateFrame()
             end
         else
             if ringFrame then ringFrame:Hide() end
+        end
+        
+        -- Update castbar ring (shows cast/channel progress)
+        if CursorTrail.db.profile.castbarRingEnabled and castbarRingFrame then
+            local shouldShowCastbarRing = (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            
+            if shouldShowCastbarRing then
+                -- Position at cursor
+                castbarRingFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+                
+                -- Set size
+                local size = CursorTrail.db.profile.castbarRingSize
+                castbarRingFrame:SetSize(size, size)
+                
+                -- Set color
+                local color = CursorTrail.db.profile.castbarRingColor
+                local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
+                
+                -- Set cooldown color (tint the swipe)
+                if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeColor then
+                    castbarRingFrame.cooldown:SetSwipeColor(r, g, b, a)
+                end
+                
+                -- Set outer ring color (slightly dimmer)
+                castbarRingFrame.outerRing:SetVertexColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                
+                castbarRingFrame:Show()
+            else
+                castbarRingFrame:Hide()
+            end
+        else
+            if castbarRingFrame then castbarRingFrame:Hide() end
         end
         
         -- Update trail
@@ -866,6 +976,7 @@ function CursorTrail:UpdateVisibility()
         if updateFrame then updateFrame:Hide() end
         if highlightFrame then highlightFrame:Hide() end
         if ringFrame then ringFrame:Hide() end
+        if castbarRingFrame then castbarRingFrame:Hide() end
         for _, frame in ipairs(trailFrames) do frame:Hide() end
         for _, frame in ipairs(sparkleFrames) do frame:Hide() end
         return
@@ -883,6 +994,7 @@ function CursorTrail:UpdateVisibility()
         if updateFrame then updateFrame:Hide() end
         if highlightFrame then highlightFrame:Hide() end
         if ringFrame then ringFrame:Hide() end
+        if castbarRingFrame then castbarRingFrame:Hide() end
         for _, frame in ipairs(trailFrames) do frame:Hide() end
         for _, frame in ipairs(sparkleFrames) do frame:Hide() end
     end
@@ -903,6 +1015,87 @@ end
 function CursorTrail:UNIT_HEALTH(event, unit)
     if unit == "player" and self.db and self.db.profile.alertsEnabled then
         self:UpdateAlerts()
+    end
+end
+
+-- Cast event handlers for castbar ring
+function CursorTrail:UNIT_SPELLCAST_START(event, unit)
+    if unit ~= "player" or not self.db or not self.db.profile.castbarRingEnabled then return end
+    
+    local name, text, texture, startTimeMS, endTimeMS = UnitCastingInfo("player")
+    if name then
+        isCasting = true
+        isChanneling = false
+        castStartTime = startTimeMS / 1000
+        castEndTime = endTimeMS / 1000
+        castDuration = castEndTime - castStartTime
+        
+        -- Set cooldown to show progress
+        if castbarRingFrame and castbarRingFrame.cooldown then
+            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+        end
+    end
+end
+
+function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
+    if unit ~= "player" or not self.db or not self.db.profile.castbarRingEnabled then return end
+    
+    local name, text, texture, startTimeMS, endTimeMS = UnitChannelInfo("player")
+    if name then
+        isCasting = false
+        isChanneling = true
+        castStartTime = startTimeMS / 1000
+        castEndTime = endTimeMS / 1000
+        castDuration = castEndTime - castStartTime
+        
+        -- For channeling, we want to show remaining time (reverse)
+        if castbarRingFrame and castbarRingFrame.cooldown then
+            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+        end
+    end
+end
+
+function CursorTrail:UNIT_SPELLCAST_STOP(event, unit)
+    if unit ~= "player" then return end
+    isCasting = false
+end
+
+function CursorTrail:UNIT_SPELLCAST_SUCCEEDED(event, unit)
+    if unit ~= "player" then return end
+    isCasting = false
+    isChanneling = false
+end
+
+function CursorTrail:UNIT_SPELLCAST_FAILED(event, unit)
+    if unit ~= "player" then return end
+    isCasting = false
+    isChanneling = false
+end
+
+function CursorTrail:UNIT_SPELLCAST_INTERRUPTED(event, unit)
+    if unit ~= "player" then return end
+    isCasting = false
+    isChanneling = false
+end
+
+function CursorTrail:UNIT_SPELLCAST_CHANNEL_STOP(event, unit)
+    if unit ~= "player" then return end
+    isChanneling = false
+end
+
+function CursorTrail:UNIT_SPELLCAST_CHANNEL_UPDATE(event, unit)
+    if unit ~= "player" or not self.db or not self.db.profile.castbarRingEnabled then return end
+    
+    -- Update channel progress
+    local name, text, texture, startTimeMS, endTimeMS = UnitChannelInfo("player")
+    if name then
+        castStartTime = startTimeMS / 1000
+        castEndTime = endTimeMS / 1000
+        castDuration = castEndTime - castStartTime
+        
+        if castbarRingFrame and castbarRingFrame.cooldown then
+            castbarRingFrame.cooldown:SetCooldown(castStartTime, castDuration)
+        end
     end
 end
 
