@@ -280,44 +280,34 @@ function CursorTrail:OnInitialize()
             end
         elseif msg == "testcast" then
             -- Force show outer cast ring for testing
-            if ringFrame and ringFrame.outerCastRing and ringFrame.castCooldown then
+            if ringFrame and ringFrame.castCooldown then
                 -- Force set casting state
                 isCasting = true
                 
                 local size = CursorTrail.db.profile.castbarRingSize
-                ringFrame.outerCastRing:SetSize(size, size)
-                
-                if ringFrame.castCooldown then
-                    local cooldownSize = size * 0.82
-                    ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
-                end
-                
                 local color = CursorTrail.db.profile.castbarRingColor
                 local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
-                ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
                 
-                -- Start a fake 3 second cast
+                -- Start a fake 3 second cast using cooldown swipe
                 if ringFrame.castCooldown then
+                    ringFrame.castCooldown:SetSize(size, size)
                     ringFrame.castCooldown:SetCooldown(GetTime(), 3)
                     ringFrame.castCooldown:Show()
                     if ringFrame.castCooldown.SetSwipeColor then
-                        ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                        ringFrame.castCooldown:SetSwipeColor(r, g, b, a)
                     end
                 end
                 
                 -- Auto-hide and reset after 3.1 seconds
                 C_Timer.After(3.1, function()
                     isCasting = false
-                    if ringFrame and ringFrame.outerCastRing then
-                        ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
-                    end
                     if ringFrame and ringFrame.castCooldown then
                         ringFrame.castCooldown:Hide()
                     end
                 end)
                 
-                print("|cff00FF7FCursor Animate:|r Outer cast ring forced visible at cursor for 3 seconds")
-                print("|cff00FF7FCursor Animate:|r Outer ring size: " .. size .. "px, cooldown size: " .. (size * 0.82) .. "px")
+                print("|cff00FF7FCursor Animate:|r Cast ring test - 3 second animated sweep")
+                print("|cff00FF7FCursor Animate:|r Ring size: " .. size .. "px")
             else
                 print("|cff00FF7FCursor Animate:|r ERROR: Ring frame or outer cast ring doesn't exist!")
                 if ringFrame then
@@ -655,22 +645,22 @@ function CursorTrail:CreateRingFrame()
     -- Cast progress cooldown (for the outer ring during casts)
     local castCooldown = CreateFrame("Cooldown", nil, ringFrame, "CooldownFrameTemplate")
     castCooldown:SetPoint("CENTER")
-    castCooldown:SetSize(90, 90)  -- Slightly smaller than outer ring so the ring edge is visible
+    castCooldown:SetSize(110, 110)  -- Same size as outer ring
     castCooldown:SetHideCountdownNumbers(true)
     if castCooldown.SetDrawEdge then castCooldown:SetDrawEdge(false) end
     if castCooldown.SetDrawBling then castCooldown:SetDrawBling(false) end
     if castCooldown.SetDrawSwipe then castCooldown:SetDrawSwipe(true) end
     
-    -- Make cooldown circular
+    -- Make cooldown circular by setting swipe texture to match outer ring
     if castCooldown.SetSwipeTexture then
         castCooldown:SetSwipeTexture("Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512")
     end
     
-    castCooldown:SetReverse(false)
+    castCooldown:SetReverse(true)  -- TRUE = fill clockwise instead of empty
     
-    -- Set swipe color
+    -- Set swipe color to match outer ring
     if castCooldown.SetSwipeColor then
-        castCooldown:SetSwipeColor(0.1, 0.5, 0.8, 0.5)
+        castCooldown:SetSwipeColor(0.2, 0.8, 1.0, 0.8)  -- Cyan to match outer ring   
     end
     
     castCooldown:Hide()  -- Start hidden
@@ -812,33 +802,25 @@ function CursorTrail:CreateUpdateFrame()
                     ringFrame.texture:SetVertexColor(0, 0, 0, 0)
                 end
                 
-                -- Update outer cast ring
-                if showCastRing and ringFrame.outerCastRing then
-                    -- Set outer cast ring color and size
+                -- Update cast cooldown
+                if showCastRing and ringFrame.castCooldown then
+                    -- The cooldown swipe (with SetReverse=true) will be the cast ring animation
+                    -- No need for outer ring texture since the swipe does all the work
                     local color = CursorTrail.db.profile.castbarRingColor
                     local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
                     
-                    -- Set size
+                    -- Set size to match the configured cast ring size
                     local size = CursorTrail.db.profile.castbarRingSize
-                    ringFrame.outerCastRing:SetSize(size, size)
+                    ringFrame.castCooldown:SetSize(size, size)
                     
-                    -- Make outer ring visible
-                    ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
-                    
-                    -- Update cast cooldown size and color
-                    if ringFrame.castCooldown then
-                        local cooldownSize = size * 0.82
-                        ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
-                        
-                        if ringFrame.castCooldown.SetSwipeColor then
-                            ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
-                        end
+                    if ringFrame.castCooldown.SetSwipeColor then
+                        ringFrame.castCooldown:SetSwipeColor(r, g, b, a)
                     end
-                else
-                    -- Hide outer cast ring by making it transparent
-                    if ringFrame.outerCastRing then
-                        ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
-                    end
+                end
+                
+                -- Hide outer ring texture - we use the cooldown swipe for animation instead
+                if ringFrame.outerCastRing then
+                    ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
                 end
             else
                 -- Hide entire ring frame
@@ -1117,11 +1099,9 @@ function CursorTrail:HandleSpellcastStart(unit)
         
         -- Set cooldown to show progress on the outer cast ring
         if ringFrame and ringFrame.castCooldown then
-            ringFrame.castCooldown:SetCooldown(GetTime(), castDuration)
+            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
             ringFrame.castCooldown:Show()
         end
-        
-        print("|cff00FF7F[CursorAnimate]|r Cast started: " .. name .. " (isCasting=" .. tostring(isCasting) .. ")")
     end
 end
 
@@ -1139,11 +1119,9 @@ function CursorTrail:HandleChannelStart(unit)
         
         -- Set cooldown to show channel progress on the outer cast ring
         if ringFrame and ringFrame.castCooldown then
-            ringFrame.castCooldown:SetCooldown(GetTime(), castDuration)
+            ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
             ringFrame.castCooldown:Show()
         end
-        
-        print("|cff00FF7F[CursorAnimate]|r Channel started: " .. name .. " (isChanneling=" .. tostring(isChanneling) .. ")")
     end
 end
 
