@@ -132,78 +132,91 @@ local COLOR_THEMES = {
     ["Default"] = {
         trail = { r = 0.0, g = 0.8, b = 1.0, a = 1.0 },
         ring = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        castbarRing = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
         sparkles = { r = 0.3, g = 0.9, b = 1.0, a = 0.7 },
         highlight = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
     },
     ["Dark"] = {
         trail = { r = 0.15, g = 0.15, b = 0.15, a = 1.0 },
         ring = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+        castbarRing = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
         sparkles = { r = 0.3, g = 0.3, b = 0.3, a = 0.7 },
         highlight = { r = 0.25, g = 0.25, b = 0.25, a = 0.7 },
     },
     ["Light"] = {
         trail = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
         ring = { r = 0.95, g = 0.95, b = 0.95, a = 0.8 },
+        castbarRing = { r = 0.95, g = 0.95, b = 0.95, a = 0.8 },
         sparkles = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
         highlight = { r = 0.9, g = 0.9, b = 0.9, a = 0.7 },
     },
     ["Neon"] = {
         trail = { r = 0.0, g = 1.0, b = 0.5, a = 1.0 },
         ring = { r = 0.0, g = 1.0, b = 0.5, a = 0.8 },
+        castbarRing = { r = 0.0, g = 1.0, b = 0.5, a = 0.8 },
         sparkles = { r = 0.0, g = 1.0, b = 0.8, a = 0.7 },
         highlight = { r = 0.0, g = 1.0, b = 0.6, a = 0.7 },
     },
     ["Fire"] = {
         trail = { r = 1.0, g = 0.5, b = 0.0, a = 1.0 },
         ring = { r = 1.0, g = 0.3, b = 0.0, a = 0.8 },
+        castbarRing = { r = 1.0, g = 0.3, b = 0.0, a = 0.8 },
         sparkles = { r = 1.0, g = 0.6, b = 0.2, a = 0.7 },
         highlight = { r = 1.0, g = 0.4, b = 0.0, a = 0.7 },
     },
     ["Frost"] = {
         trail = { r = 0.3, g = 0.7, b = 1.0, a = 1.0 },
         ring = { r = 0.4, g = 0.8, b = 1.0, a = 0.8 },
+        castbarRing = { r = 0.4, g = 0.8, b = 1.0, a = 0.8 },
         sparkles = { r = 0.5, g = 0.85, b = 1.0, a = 0.7 },
         highlight = { r = 0.4, g = 0.75, b = 1.0, a = 0.7 },
     },
     ["Nature"] = {
         trail = { r = 0.2, g = 0.9, b = 0.2, a = 1.0 },
         ring = { r = 0.3, g = 1.0, b = 0.3, a = 0.8 },
+        castbarRing = { r = 0.3, g = 1.0, b = 0.3, a = 0.8 },
         sparkles = { r = 0.4, g = 1.0, b = 0.4, a = 0.7 },
         highlight = { r = 0.25, g = 0.95, b = 0.25, a = 0.7 },
     },
     ["Shadow"] = {
         trail = { r = 0.4, g = 0.2, b = 0.6, a = 1.0 },
         ring = { r = 0.5, g = 0.3, b = 0.7, a = 0.8 },
+        castbarRing = { r = 0.5, g = 0.3, b = 0.7, a = 0.8 },
         sparkles = { r = 0.6, g = 0.4, b = 0.8, a = 0.7 },
         highlight = { r = 0.45, g = 0.25, b = 0.65, a = 0.7 },
     },
     ["Golden"] = {
         trail = { r = 1.0, g = 0.8, b = 0.0, a = 1.0 },
         ring = { r = 1.0, g = 0.75, b = 0.0, a = 0.8 },
+        castbarRing = { r = 1.0, g = 0.75, b = 0.0, a = 0.8 },
         sparkles = { r = 1.0, g = 0.85, b = 0.3, a = 0.7 },
         highlight = { r = 1.0, g = 0.8, b = 0.1, a = 0.7 },
     },
     ["Blood"] = {
         trail = { r = 0.8, g = 0.0, b = 0.0, a = 1.0 },
         ring = { r = 0.9, g = 0.1, b = 0.1, a = 0.8 },
+        castbarRing = { r = 0.9, g = 0.1, b = 0.1, a = 0.8 },
         sparkles = { r = 1.0, g = 0.2, b = 0.2, a = 0.7 },
         highlight = { r = 0.85, g = 0.0, b = 0.0, a = 0.7 },
     },
     ["Arcane"] = {
         trail = { r = 0.6, g = 0.4, b = 1.0, a = 1.0 },
         ring = { r = 0.7, g = 0.5, b = 1.0, a = 0.8 },
+        castbarRing = { r = 0.7, g = 0.5, b = 1.0, a = 0.8 },
         sparkles = { r = 0.8, g = 0.6, b = 1.0, a = 0.7 },
         highlight = { r = 0.65, g = 0.45, b = 1.0, a = 0.7 },
     },
     ["Minimal"] = {
         trail = { r = 0.6, g = 0.6, b = 0.6, a = 0.5 },
         ring = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 },
+        castbarRing = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 },
         sparkles = { r = 0.8, g = 0.8, b = 0.8, a = 0.4 },
         highlight = { r = 0.65, g = 0.65, b = 0.65, a = 0.5 },
     },
     ["Comet"] = {
         trail = { r = 0.0, g = 0.6, b = 1.0, a = 1.0 },
         ring = { r = 0.1, g = 0.7, b = 1.0, a = 0.8 },
+        castbarRing = { r = 0.1, g = 0.7, b = 1.0, a = 0.8 },
         sparkles = { r = 0.2, g = 0.8, b = 1.0, a = 0.7 },
         highlight = { r = 0.0, g = 0.65, b = 1.0, a = 0.7 },
     },
@@ -211,6 +224,7 @@ local COLOR_THEMES = {
         -- Special case: dynamically set in ApplyColorTheme
         trail = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
         ring = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
+        castbarRing = { r = 1.0, g = 1.0, b = 1.0, a = 0.8 },
         sparkles = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
         highlight = { r = 1.0, g = 1.0, b = 1.0, a = 0.7 },
     },
@@ -1284,6 +1298,7 @@ function CursorTrail:ApplyColorTheme(themeName)
         if classColor then
             self.db.profile.trailColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1.0 }
             self.db.profile.ringColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 0.8 }
+            self.db.profile.castbarRingColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 0.8 }
             self.db.profile.sparklesColor = { r = classColor.r * 1.2, g = classColor.g * 1.2, b = classColor.b * 1.2, a = 0.7 }
             self.db.profile.highlightColor = { r = classColor.r * 1.1, g = classColor.g * 1.1, b = classColor.b * 1.1, a = 0.7 }
         end
@@ -1294,6 +1309,9 @@ function CursorTrail:ApplyColorTheme(themeName)
         end
         if theme.ring then
             self.db.profile.ringColor = CopyTable(theme.ring)
+        end
+        if theme.castbarRing then
+            self.db.profile.castbarRingColor = CopyTable(theme.castbarRing)
         end
         if theme.sparkles then
             self.db.profile.sparklesColor = CopyTable(theme.sparkles)
@@ -1685,6 +1703,15 @@ function CursorTrail:GetOptions()
                 get = function() return self.db.profile.ringSize end,
                 set = function(_, value)
                     self.db.profile.ringSize = value
+                    
+                    -- If regular ring becomes larger than or equal to castbar ring, auto-adjust castbar ring
+                    if self.db.profile.castbarRingSize <= value then
+                        local newCastbarSize = value + 6
+                        self.db.profile.castbarRingSize = newCastbarSize
+                        print("|cffFFFF00[Cursor Animate]|r Castbar ring size auto-adjusted to " .. newCastbarSize .. "px to maintain visibility")
+                        self:UpdateCastbarRingTexture()
+                    end
+                    
                     self:UpdateRingTexture()
                 end,
             },
@@ -1752,7 +1779,7 @@ function CursorTrail:GetOptions()
             },
             castbarRingSize = {
                 name = "Castbar Ring Size",
-                desc = "Size of the castbar ring (should be larger than regular ring for visibility)",
+                desc = "Size of the castbar ring (must be larger than regular ring for visibility)",
                 type = "range",
                 order = 68,
                 min = 48,
@@ -1760,6 +1787,12 @@ function CursorTrail:GetOptions()
                 step = 1,
                 get = function() return self.db.profile.castbarRingSize end,
                 set = function(_, value)
+                    local regularRingSize = self.db.profile.ringSize
+                    if value < regularRingSize then
+                        print("|cffFF0000[Cursor Animate]|r Castbar ring size (" .. value .. "px) cannot be smaller than regular ring size (" .. regularRingSize .. "px)")
+                        print("|cffFFFF00[Cursor Animate]|r Setting castbar ring to " .. (regularRingSize + 6) .. "px (regular ring + 6px gap)")
+                        value = regularRingSize + 6
+                    end
                     self.db.profile.castbarRingSize = value
                     self:UpdateCastbarRingTexture()
                 end,
