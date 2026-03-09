@@ -754,74 +754,77 @@ function CursorTrail:CreateUpdateFrame()
         end
         
         -- Update ring
-        if CursorTrail.db.profile.ringEnabled and ringFrame then
-            local shouldShowRing = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+        if ringFrame then
+            local showRegularRing = CursorTrail.db.profile.ringEnabled and not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            local showCastRing = CursorTrail.db.profile.castbarRingEnabled and (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             
-            if shouldShowRing then
+            -- Show ringFrame if either regular ring OR cast ring should be visible
+            if showRegularRing or showCastRing then
+                -- Position at cursor
                 ringFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
-                
-                local color = CursorTrail.db.profile.ringColor
-                local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
-                
-                -- Override with alert colors if available
-                if alertR then r = alertR end
-                if alertG then g = alertG end
-                if alertB then b = alertB end
-                
-                -- Pulse effect
-                if CursorTrail.db.profile.ringPulse then
-                    local pulse = (math.sin(GetTime() * 3) + 1) / 2
-                    local size = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
-                    ringFrame:SetSize(size, size)
-                end
-                
-                ringFrame.texture:SetVertexColor(r, g, b, a)
                 ringFrame:Show()
                 
-                -- Update GCD cooldown
-                if CursorTrail.db.profile.ringShowGCD then
-                    CursorTrail:UpdateGCD()
-                end
-            else
-                ringFrame:Hide()
-            end
-        else
-            if ringFrame then ringFrame:Hide() end
-        end
-        
-        -- Update outer cast ring on main ring (shows cast/channel progress)
-        if CursorTrail.db.profile.castbarRingEnabled and ringFrame and ringFrame.outerCastRing then
-            local shouldShowCastRing = (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
-            
-            if shouldShowCastRing then
-                -- Set outer cast ring color and size
-                local color = CursorTrail.db.profile.castbarRingColor
-                local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
-                
-                -- Set size
-                local size = CursorTrail.db.profile.castbarRingSize
-                ringFrame.outerCastRing:SetSize(size, size)
-                
-                -- Make outer ring visible
-                ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
-                
-                -- Update cast cooldown size and color
-                if ringFrame.castCooldown then
-                    local cooldownSize = size * 0.82
-                    ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
+                -- Update regular ring
+                if showRegularRing then
+                    local color = CursorTrail.db.profile.ringColor
+                    local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                     
-                    if ringFrame.castCooldown.SetSwipeColor then
-                        ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                    -- Override with alert colors if available
+                    if alertR then r = alertR end
+                    if alertG then g = alertG end
+                    if alertB then b = alertB end
+                    
+                    -- Pulse effect
+                    if CursorTrail.db.profile.ringPulse then
+                        local pulse = (math.sin(GetTime() * 3) + 1) / 2
+                        local size = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
+                        ringFrame:SetSize(size, size)
+                    else
+                        ringFrame:SetSize(CursorTrail.db.profile.ringSize, CursorTrail.db.profile.ringSize)
+                    end
+                    
+                    ringFrame.texture:SetVertexColor(r, g, b, a)
+                    
+                    -- Update GCD cooldown
+                    if CursorTrail.db.profile.ringShowGCD then
+                        CursorTrail:UpdateGCD()
+                    end
+                else
+                    -- Hide regular ring texture if regular ring is disabled
+                    ringFrame.texture:SetVertexColor(0, 0, 0, 0)
+                end
+                
+                -- Update outer cast ring
+                if showCastRing and ringFrame.outerCastRing then
+                    -- Set outer cast ring color and size
+                    local color = CursorTrail.db.profile.castbarRingColor
+                    local r, g, b, a = CursorTrail:GetColorComponents(color, 0.2, 0.8, 1.0, 0.8)
+                    
+                    -- Set size
+                    local size = CursorTrail.db.profile.castbarRingSize
+                    ringFrame.outerCastRing:SetSize(size, size)
+                    
+                    -- Make outer ring visible
+                    ringFrame.outerCastRing:SetVertexColor(r, g, b, a)
+                    
+                    -- Update cast cooldown size and color
+                    if ringFrame.castCooldown then
+                        local cooldownSize = size * 0.82
+                        ringFrame.castCooldown:SetSize(cooldownSize, cooldownSize)
+                        
+                        if ringFrame.castCooldown.SetSwipeColor then
+                            ringFrame.castCooldown:SetSwipeColor(r * 0.5, g * 0.5, b * 0.5, a * 0.6)
+                        end
+                    end
+                else
+                    -- Hide outer cast ring by making it transparent
+                    if ringFrame.outerCastRing then
+                        ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
                     end
                 end
             else
-                -- Hide outer cast ring by making it transparent
-                ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
-            end
-        else
-            -- Castbar ring disabled, make outer ring transparent
-            if ringFrame and ringFrame.outerCastRing then
-                ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
+                -- Hide entire ring frame
+                ringFrame:Hide()
             end
         end
         
