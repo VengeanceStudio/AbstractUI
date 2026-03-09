@@ -2979,10 +2979,12 @@ end
                     -- Movement should clear AFK immediately, even during combat
                     if frame.afkTextFrame then
                         local success, isAFK = pcall(UnitIsAFK, "player")
-                        if success and isAFK then
-                            frame.afkTextFrame:Show()
-                        elseif success then
-                            frame.afkTextFrame:Hide()
+                        if success then
+                            if isAFK then
+                                frame.afkTextFrame:Show()
+                            else
+                                frame.afkTextFrame:Hide()
+                            end
                         end
                         -- If pcall fails, leave current state unchanged
                     end
@@ -2993,10 +2995,12 @@ end
                         local inInstance = IsInInstance()
                         if not inInstance then
                             local success, isResting = pcall(IsResting)
-                            if success and isResting then
-                                frame.restingIconFrame:Show()
-                            elseif success then
-                                frame.restingIconFrame:Hide()
+                            if success then
+                                if isResting then
+                                    frame.restingIconFrame:Show()
+                                else
+                                    frame.restingIconFrame:Hide()
+                                end
                             end
                             -- If pcall fails, leave current state unchanged
                         else
@@ -3009,10 +3013,12 @@ end
                     -- Skip during movement events (dead players can't move anyway)
                     if frame.deadTextFrame and not isMovementEvent then
                         local success, isDead = pcall(UnitIsDead, "player")
-                        if success and isDead then
-                            frame.deadTextFrame:Show()
-                        elseif success then
-                            frame.deadTextFrame:Hide()
+                        if success then
+                            if isDead then
+                                frame.deadTextFrame:Show()
+                            else
+                                frame.deadTextFrame:Hide()
+                            end
                         end
                         -- If pcall fails, leave current state unchanged
                     end

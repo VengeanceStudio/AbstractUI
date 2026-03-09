@@ -127,8 +127,8 @@ function Tooltips:Initialize()
         -- Fallback for older API - hook OnShow and check for unit
         if not self.fallbackUnitHooked then
             GameTooltip:HookScript("OnShow", function(tooltip)
-                local _, unit = tooltip:GetUnit()
-                if unit then
+                local success, _, unit = pcall(function() return tooltip:GetUnit() end)
+                if success and unit then
                     self:OnTooltipSetUnit(tooltip)
                 end
             end)
@@ -504,8 +504,15 @@ function Tooltips:OnGameTooltipShow(tooltip)
         return
     end
     
+    -- Skip if in protected context to avoid tainting money/trade calculations
+    if self:IsProtectedTooltipContext(tooltip) then return end
+    
     -- Check if this tooltip is being shown from a quest frame element
-    local owner = tooltip:GetOwner()
+    -- Use pcall to protect against secret values
+    local owner = nil
+    pcall(function()
+        owner = tooltip:GetOwner()
+    end)
     if not owner then return end
     
     -- Detect if the owner is part of the quest frame hierarchy
@@ -569,19 +576,71 @@ end
 -- Item Tooltip Handling
 -- ============================================================================
 
+-- Check if tooltip is being shown from a protected frame that could cause taint
+function Tooltips:IsProtectedTooltipContext(tooltip)
+    if not tooltip then return true end
+    
+    -- Don't modify tooltips during combat to avoid taint
+    if InCombatLockdown() then return true end
+    
+    -- Check if tooltip owner is from a protected frame
+    local success, owner = pcall(function()
+        return tooltip:GetOwner()
+    end)
+    
+    if not success or not owner then return false end
+    
+    -- Check the owner and its parents for protected frames
+    local frame = owner
+    local depth = 0
+    while frame and depth < 10 do  -- Limit depth to prevent infinite loops
+        local frameName = frame:GetName()
+        if frameName then
+            -- List of frame prefixes that involve money/trade operations that can cause taint
+            local protectedPrefixes = {
+                "Mail", "Inbox", "Send",  -- Mail frames
+                "Trade",  -- Trade windows
+                "Bank",  -- Banking
+                "Merchant",  -- Vendor frames
+                "Auction",  -- Auction house
+                "Container",  -- Bag frames (can show money)
+                "Loot",  -- Loot windows (can show money)
+                "Store",  -- In-game store
+            }
+            
+            for _, prefix in ipairs(protectedPrefixes) do
+                if frameName:find(prefix) then
+                    return true  -- Protected context, bail out
+                end
+            end
+        end
+        frame = frame:GetParent()
+        depth = depth + 1
+    end
+    
+    return false
+end
+
 function Tooltips:OnTooltipSetItem(tooltip)
     if not tooltip then return end
     
+    -- Skip if in protected context to avoid tainting money/trade calculations
+    if self:IsProtectedTooltipContext(tooltip) then return end
+    
     -- Get item quality for border coloring
+    -- Use pcall to avoid taint from GetItem() which can return secret values
     if tooltip.GetItem then
-        local _, item = tooltip:GetItem()
-        if item then
+        local success, _, item = pcall(function() return tooltip:GetItem() end)
+        if success and item then
             local itemQuality = C_Item.GetItemQualityByID(item)
             if itemQuality then
                 -- Only use quality color for uncommon+ items, but always restyle
                 local qualityForBorder = (itemQuality >= Enum.ItemQuality.Uncommon) and itemQuality or nil
                 self:StyleTooltip(tooltip, qualityForBorder)
             end
+        else
+            -- If GetItem fails, just apply basic styling
+            self:StyleTooltip(tooltip)
         end
     else
         -- For tooltips without GetItem (like ShoppingTooltips), just apply basic styling
@@ -611,13 +670,16 @@ function Tooltips:PositionShoppingTooltips()
         
         -- Check if GameTooltip is on the right side of screen
         -- Use pcall to protect against taint in secure contexts
-        local gameTooltipCenter = nil
-        pcall(function()
-            gameTooltipCenter = GameTooltip:GetCenter()
+        local tooltipOnRight = false
+        local success, centerX = pcall(function()
+            return GameTooltip:GetCenter()
         end)
-        local screenWidth = GetScreenWidth()
+        if success and centerX then
+            local screenWidth = GetScreenWidth()
+            tooltipOnRight = centerX > (screenWidth / 2)
+        end
         
-        if questOnRight or (gameTooltipCenter and gameTooltipCenter > (screenWidth / 2)) then
+        if questOnRight or tooltipOnRight then
             -- Quest frame or GameTooltip is on right, place shopping tooltip on left
             shoppingTooltip1:SetPoint("TOPRIGHT", GameTooltip, "TOPLEFT", -3, 0)
         else
@@ -666,12 +728,21 @@ end
 -- ============================================================================
 
 function Tooltips:OnTooltipSetUnit(tooltip)
-    local _, unit = tooltip:GetUnit()
+    -- Skip if in protected context to avoid tainting money/trade calculations
+    if self:IsProtectedTooltipContext(tooltip) then return end
+    
+    -- Use pcall to protect against secret values from GetUnit()
+    local unit = nil
+    local success = pcall(function()
+        local _, u = tooltip:GetUnit()
+        unit = u
+    end)
+    if not success or not unit then return end
     
     -- Protect against secret unit values in combat
     local unitExists = false
     local ok = pcall(function()
-        unitExists = unit and UnitExists(unit)
+        unitExists = UnitExists(unit)
     end)
     if not ok or not unitExists then return end
     
@@ -732,10 +803,15 @@ function Tooltips:OnTooltipSetUnit(tooltip)
         local afkSuccess, isAFK = pcall(UnitIsAFK, unit)
         local dndSuccess, isDND = pcall(UnitIsDND, unit)
         
-        if afkSuccess and isAFK then
-            tooltip:AddLine("|cffFF0000<AFK>|r")
-        elseif dndSuccess and isDND then
-            tooltip:AddLine("|cffFF0000<DND>|r")
+        if afkSuccess then
+            if isAFK then
+                tooltip:AddLine("|cffFF0000<AFK>|r")
+            end
+        end
+        if dndSuccess then
+            if isDND then
+                tooltip:AddLine("|cffFF0000<DND>|r")
+            end
         end
     end
     
