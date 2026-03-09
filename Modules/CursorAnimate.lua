@@ -286,10 +286,12 @@ function CursorTrail:OnInitialize()
                 
                 local size = CursorTrail.db.profile.castbarRingSize
                 local color = CursorTrail.db.profile.castbarRingColor
-                local r = color and color.r or 0.2
-                local g = color and color.g or 0.8
-                local b = color and color.b or 1.0
-                local a = color and color.a or 0.8
+                
+                -- Handle color components that might be tables or numbers
+                local r = (type(color.r) == "table" and color.r[1]) or color.r or 0.2
+                local g = (type(color.g) == "table" and color.g[1]) or color.g or 0.8
+                local b = (type(color.b) == "table" and color.b[1]) or color.b or 1.0
+                local a = (type(color.a) == "table" and color.a[1]) or color.a or 0.8
                 
                 -- Start a fake 3 second cast using cooldown swipe
                 if ringFrame.castCooldown then
@@ -829,7 +831,12 @@ function CursorTrail:CreateUpdateFrame()
                     if not color or type(color) ~= "table" then
                         color = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 }
                     end
-                    local r, g, b, a = color.r or 0.2, color.g or 0.8, color.b or 1.0, color.a or 0.8
+                    
+                    -- Handle color components that might be tables or numbers
+                    local r = (type(color.r) == "table" and color.r[1]) or color.r or 0.2
+                    local g = (type(color.g) == "table" and color.g[1]) or color.g or 0.8
+                    local b = (type(color.b) == "table" and color.b[1]) or color.b or 1.0
+                    local a = (type(color.a) == "table" and color.a[1]) or color.a or 0.8
                     
                     -- Set size to match the configured cast ring size
                     local size = CursorTrail.db.profile.castbarRingSize
