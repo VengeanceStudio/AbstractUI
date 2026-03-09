@@ -758,6 +758,11 @@ function CursorTrail:CreateUpdateFrame()
             local showRegularRing = CursorTrail.db.profile.ringEnabled and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             local showCastRing = CursorTrail.db.profile.castbarRingEnabled and (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             
+            -- Debug: Print cast ring state periodically
+            if isCasting or isChanneling then
+                print("|cff00FF7F[CursorAnimate]|r Update: isCasting=" .. tostring(isCasting) .. ", isChanneling=" .. tostring(isChanneling) .. ", showCastRing=" .. tostring(showCastRing))
+            end
+            
             -- Show ringFrame if either regular ring OR cast ring should be visible
             if showRegularRing or showCastRing then
                 -- Position at cursor
@@ -1086,7 +1091,15 @@ end
 
 -- Cast event handlers for castbar ring
 function CursorTrail:UNIT_SPELLCAST_START(event, unit)
-    if unit ~= "player" or not self.db or not self.db.profile.castbarRingEnabled then return end
+    print("|cff00FF7F[CursorAnimate]|r UNIT_SPELLCAST_START fired, unit=" .. tostring(unit))
+    if unit ~= "player" then 
+        print("|cff00FF7F[CursorAnimate]|r Not player, returning")
+        return 
+    end
+    if not self.db or not self.db.profile.castbarRingEnabled then 
+        print("|cff00FF7F[CursorAnimate]|r Castbar ring disabled or DB not ready, returning")
+        return 
+    end
     
     local name, text, texture, startTimeMS, endTimeMS = UnitCastingInfo("player")
     if name then
@@ -1101,11 +1114,14 @@ function CursorTrail:UNIT_SPELLCAST_START(event, unit)
             ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
             ringFrame.castCooldown:Show()
         end
+        
+        print("|cff00FF7F[CursorAnimate]|r Cast started: " .. name .. " (isCasting=" .. tostring(isCasting) .. ")")
     end
 end
 
 function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
-    if unit ~= "player" or not self.db or not self.db.profile.castbarRingEnabled then return end
+    if unit ~= "player" then return end
+    if not self.db or not self.db.profile.castbarRingEnabled then return end
     
     local name, text, texture, startTimeMS, endTimeMS = UnitChannelInfo("player")
     if name then
@@ -1120,6 +1136,8 @@ function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
             ringFrame.castCooldown:SetCooldown(castStartTime, castDuration)
             ringFrame.castCooldown:Show()
         end
+        
+        print("|cff00FF7F[CursorAnimate]|r Channel started: " .. name .. " (isChanneling=" .. tostring(isChanneling) .. ")")
     end
 end
 
