@@ -804,12 +804,20 @@ function Tooltips:OnTooltipSetUnit(tooltip)
         local dndSuccess, isDND = pcall(UnitIsDND, unit)
         
         if afkSuccess then
-            if isAFK then
+            -- Wrap the boolean test in pcall to handle secret boolean taint
+            local testSuccess, shouldShow = pcall(function()
+                return isAFK == true
+            end)
+            if testSuccess and shouldShow then
                 tooltip:AddLine("|cffFF0000<AFK>|r")
             end
         end
         if dndSuccess then
-            if isDND then
+            -- Wrap the boolean test in pcall to handle secret boolean taint
+            local testSuccess, shouldShow = pcall(function()
+                return isDND == true
+            end)
+            if testSuccess and shouldShow then
                 tooltip:AddLine("|cffFF0000<DND>|r")
             end
         end

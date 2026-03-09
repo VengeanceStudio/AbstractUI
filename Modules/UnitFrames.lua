@@ -1652,6 +1652,18 @@ end
         
         local playerFrame = _G["AbstractUI_PlayerFrame"]
         if playerFrame then
+            -- Clear AFK/Resting/Dead icons when entering combat
+            -- You cannot be AFK, resting, or dead while in combat
+            if playerFrame.afkTextFrame then
+                playerFrame.afkTextFrame:Hide()
+            end
+            if playerFrame.restingIconFrame then
+                playerFrame.restingIconFrame:Hide()
+            end
+            if playerFrame.deadTextFrame then
+                playerFrame.deadTextFrame:Hide()
+            end
+            
             self:UpdateUnitFrame("PlayerFrame", "player")
             self:UpdatePlayerStatusIcons(true)
         end
@@ -2967,23 +2979,26 @@ end
                         end
                     end
                     
-                    -- Movement events should clear AFK immediately, even in combat
-                    local isMovementEvent = (caller == "PLAYER_STARTED_MOVING" or caller == "PLAYER_STOPPED_MOVING")
-                    
-                    -- Skip other status updates if in combat (unless it's a movement event for AFK clearing)
-                    if skipNonCombat or (inCombat and not isMovementEvent) then
+                    -- Skip all status updates during combat
+                    -- You cannot be AFK, resting, or need status updates while in combat
+                    if skipNonCombat or inCombat then
                         return
                     end
                     
                     -- Update AFK text - use pcall to avoid taint from protected contexts (e.g., CameraOrSelectOrMoveStart)
-                    -- Movement should clear AFK immediately, even during combat
                     if frame.afkTextFrame then
                         local success, isAFK = pcall(UnitIsAFK, "player")
                         if success then
-                            if isAFK then
-                                frame.afkTextFrame:Show()
-                            else
-                                frame.afkTextFrame:Hide()
+                            -- Wrap the boolean test in pcall to handle secret boolean taint
+                            local testSuccess, shouldShow = pcall(function()
+                                return isAFK == true
+                            end)
+                            if testSuccess then
+                                if shouldShow then
+                                    frame.afkTextFrame:Show()
+                                else
+                                    frame.afkTextFrame:Hide()
+                                end
                             end
                         end
                         -- If pcall fails, leave current state unchanged
@@ -2991,15 +3006,21 @@ end
                     
                     -- Update Resting icon - use pcall to avoid taint from protected contexts
                     -- Only check if not in an instance (you can't rest in dungeons/raids/delves)
-                    if frame.restingIconFrame and not isMovementEvent then
+                    if frame.restingIconFrame then
                         local inInstance = IsInInstance()
                         if not inInstance then
                             local success, isResting = pcall(IsResting)
                             if success then
-                                if isResting then
-                                    frame.restingIconFrame:Show()
-                                else
-                                    frame.restingIconFrame:Hide()
+                                -- Wrap the boolean test in pcall to handle secret boolean taint
+                                local testSuccess, shouldShow = pcall(function()
+                                    return isResting == true
+                                end)
+                                if testSuccess then
+                                    if shouldShow then
+                                        frame.restingIconFrame:Show()
+                                    else
+                                        frame.restingIconFrame:Hide()
+                                    end
                                 end
                             end
                             -- If pcall fails, leave current state unchanged
@@ -3010,14 +3031,19 @@ end
                     end
                     
                     -- Update Dead indicator - use pcall to avoid taint from protected contexts
-                    -- Skip during movement events (dead players can't move anyway)
-                    if frame.deadTextFrame and not isMovementEvent then
+                    if frame.deadTextFrame then
                         local success, isDead = pcall(UnitIsDead, "player")
                         if success then
-                            if isDead then
-                                frame.deadTextFrame:Show()
-                            else
-                                frame.deadTextFrame:Hide()
+                            -- Wrap the boolean test in pcall to handle secret boolean taint
+                            local testSuccess, shouldShow = pcall(function()
+                                return isDead == true
+                            end)
+                            if testSuccess then
+                                if shouldShow then
+                                    frame.deadTextFrame:Show()
+                                else
+                                    frame.deadTextFrame:Hide()
+                                end
                             end
                         end
                         -- If pcall fails, leave current state unchanged
