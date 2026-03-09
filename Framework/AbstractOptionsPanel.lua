@@ -885,6 +885,11 @@ function AbstractOptionsPanel:SelectNestedTreeNode(node)
     local panel = self.frame.contentPanel
     local ColorPalette = _G.AbstractUI_ColorPalette
     
+    -- Reset scroll position to top when switching tree nodes
+    if panel.scrollFrame and panel.scrollFrame.scrollArea then
+        panel.scrollFrame.scrollArea:SetVerticalScroll(0)
+    end
+    
     -- Clear previous nested selection
     if self.selectedNestedNode then
         for _, btn in ipairs(panel.nestedTreeButtons or {}) do
@@ -1020,6 +1025,11 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
         return
     end
     
+    -- Reset scroll position to top when switching nested tabs
+    if panel.scrollFrame and panel.scrollFrame.scrollArea then
+        panel.scrollFrame.scrollArea:SetVerticalScroll(0)
+    end
+    
     -- Update nested tab appearance
     for i, tab in ipairs(panel.nestedTabs) do
         if i == tabIndex then
@@ -1147,6 +1157,11 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     
     if not panel.tabs or not panel.tabs[tabIndex] then
         return
+    end
+    
+    -- Reset scroll position to top when switching tabs
+    if panel.scrollFrame and panel.scrollFrame.scrollArea then
+        panel.scrollFrame.scrollArea:SetVerticalScroll(0)
     end
     
     -- Update tab appearance
