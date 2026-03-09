@@ -217,13 +217,11 @@ local COLOR_THEMES = {
 }
 
 function CursorTrail:OnInitialize()
-    print("|cff00FF7F[CursorAnimate]|r OnInitialize called")
     -- Register namespace so self.db is available
     self.db = AbstractUI.db:RegisterNamespace("CursorTrail", defaults)
     
     -- Listen for DB ready signal to check if module should create frames
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
-    print("|cff00FF7F[CursorAnimate]|r Waiting for AbstractUI_DB_READY message")
     
     -- Register slash command for quick enable/disable
     SLASH_CURSORANIMATE1 = "/cursoranimate"
@@ -340,15 +338,12 @@ function CursorTrail:OnInitialize()
 end
 
 function CursorTrail:OnDBReady()
-    print("|cff00FF7F[CursorAnimate]|r OnDBReady called")
     -- NOW check if module is enabled in general settings
     if not AbstractUI.db.profile.modules.cursorTrail then
         -- Module is disabled - don't create any frames
-        print("|cff00FF7F[CursorAnimate]|r Module disabled in AbstractUI settings, not registering events")
         self:Disable()
         return
     end
-    print("|cff00FF7F[CursorAnimate]|r Module enabled, continuing setup")
     
     -- Ensure colors are valid
     if not self:ValidateColor(self.db.profile.trailColor) then
@@ -383,24 +378,31 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
     
     -- Register cast events for castbar ring
-    self:RegisterEvent("UNIT_SPELLCAST_START")
-    self:RegisterEvent("UNIT_SPELLCAST_STOP")
-    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    self:RegisterEvent("UNIT_SPELLCAST_FAILED")
-    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
-    print("|cff00FF7F[CursorAnimate]|r Cast events registered")
-    
-    -- DEBUG: Create a raw frame to test if events fire at all
-    if not self.debugFrame then
-        self.debugFrame = CreateFrame("Frame")
-        self.debugFrame:RegisterEvent("UNIT_SPELLCAST_START")
-        self.debugFrame:SetScript("OnEvent", function(frame, event, unit)
-            print("|cffFF0000[DEBUG FRAME]|r Event fired: " .. event .. ", unit=" .. tostring(unit))
+    -- Note: Using a dedicated event frame since Ace event routing seems to have issues with these events
+    if not self.castEventFrame then
+        self.castEventFrame = CreateFrame("Frame")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_START")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_STOP")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+        self.castEventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
+        
+        self.castEventFrame:SetScript("OnEvent", function(frame, event, unit, ...)
+            -- Route to appropriate handler
+            if event == "UNIT_SPELLCAST_START" then
+                CursorTrail:HandleSpellcastStart(unit)
+            elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
+                CursorTrail:HandleChannelStart(unit)
+            elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_SUCCEEDED" or 
+                   event == "UNIT_SPELLCAST_FAILED" or event == "UNIT_SPELLCAST_INTERRUPTED" then
+                CursorTrail:HandleCastStop(unit)
+            elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" or event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
+                CursorTrail:HandleChannelStop(unit)
+            end
         end)
-        print("|cff00FF7F[CursorAnimate]|r Debug frame created and registered for UNIT_SPELLCAST_START")
     end
     
     if self.db.profile.enabled then
@@ -774,11 +776,6 @@ function CursorTrail:CreateUpdateFrame()
             local showRegularRing = CursorTrail.db.profile.ringEnabled and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             local showCastRing = CursorTrail.db.profile.castbarRingEnabled and (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
             
-            -- Debug: Print cast ring state periodically
-            if isCasting or isChanneling then
-                print("|cff00FF7F[CursorAnimate]|r Update: isCasting=" .. tostring(isCasting) .. ", isChanneling=" .. tostring(isChanneling) .. ", showCastRing=" .. tostring(showCastRing))
-            end
-            
             -- Show ringFrame if either regular ring OR cast ring should be visible
             if showRegularRing or showCastRing then
                 -- Position at cursor
@@ -1106,16 +1103,9 @@ function CursorTrail:UNIT_HEALTH(event, unit)
 end
 
 -- Cast event handlers for castbar ring
-function CursorTrail:UNIT_SPELLCAST_START(event, unit)
-    print("|cff00FF7F[CursorAnimate]|r UNIT_SPELLCAST_START fired, unit=" .. tostring(unit))
-    if unit ~= "player" then 
-        print("|cff00FF7F[CursorAnimate]|r Not player, returning")
-        return 
-    end
-    if not self.db or not self.db.profile.castbarRingEnabled then 
-        print("|cff00FF7F[CursorAnimate]|r Castbar ring disabled or DB not ready, returning")
-        return 
-    end
+function CursorTrail:HandleSpellcastStart(unit)
+    if unit ~= "player" then return end
+    if not self.db or not self.db.profile.castbarRingEnabled then return end
     
     local name, text, texture, startTimeMS, endTimeMS = UnitCastingInfo("player")
     if name then
@@ -1135,7 +1125,7 @@ function CursorTrail:UNIT_SPELLCAST_START(event, unit)
     end
 end
 
-function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
+function CursorTrail:HandleChannelStart(unit)
     if unit ~= "player" then return end
     if not self.db or not self.db.profile.castbarRingEnabled then return end
     
@@ -1157,15 +1147,7 @@ function CursorTrail:UNIT_SPELLCAST_CHANNEL_START(event, unit)
     end
 end
 
-function CursorTrail:UNIT_SPELLCAST_STOP(event, unit)
-    if unit ~= "player" then return end
-    isCasting = false
-    if ringFrame and ringFrame.castCooldown then
-        ringFrame.castCooldown:Hide()
-    end
-end
-
-function CursorTrail:UNIT_SPELLCAST_SUCCEEDED(event, unit)
+function CursorTrail:HandleCastStop(unit)
     if unit ~= "player" then return end
     isCasting = false
     isChanneling = false
@@ -1174,25 +1156,7 @@ function CursorTrail:UNIT_SPELLCAST_SUCCEEDED(event, unit)
     end
 end
 
-function CursorTrail:UNIT_SPELLCAST_FAILED(event, unit)
-    if unit ~= "player" then return end
-    isCasting = false
-    isChanneling = false
-    if ringFrame and ringFrame.castCooldown then
-        ringFrame.castCooldown:Hide()
-    end
-end
-
-function CursorTrail:UNIT_SPELLCAST_INTERRUPTED(event, unit)
-    if unit ~= "player" then return end
-    isCasting = false
-    isChanneling = false
-    if ringFrame and ringFrame.castCooldown then
-        ringFrame.castCooldown:Hide()
-    end
-end
-
-function CursorTrail:UNIT_SPELLCAST_CHANNEL_STOP(event, unit)
+function CursorTrail:HandleChannelStop(unit)
     if unit ~= "player" then return end
     isChanneling = false
     if ringFrame and ringFrame.castCooldown then
