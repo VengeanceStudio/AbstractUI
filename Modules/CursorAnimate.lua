@@ -1139,6 +1139,22 @@ function CursorTrail:UpdateRingTexture()
     end
 end
 
+function CursorTrail:UpdateCastbarRingTexture()
+    if not self.db then return end
+    
+    if castbarRingFrame then
+        local texture = TEXTURES[self.db.profile.castbarRingTexture] or TEXTURES["Circle"]
+        castbarRingFrame.outerRing:SetTexture(texture)
+        castbarRingFrame:SetSize(self.db.profile.castbarRingSize, self.db.profile.castbarRingSize)
+        
+        -- Update cooldown swipe texture to match
+        if castbarRingFrame.cooldown and castbarRingFrame.cooldown.SetSwipeTexture then
+            local swipeTexture = "Interface\\AddOns\\AbstractUI\\Media\\Textures\\ring_circle_512"
+            castbarRingFrame.cooldown:SetSwipeTexture(swipeTexture)
+        end
+    end
+end
+
 function CursorTrail:UpdateSettings()
     if not self.db then return end
     
@@ -1146,6 +1162,7 @@ function CursorTrail:UpdateSettings()
     self:UpdateHighlightTexture()
     self:UpdateSparklesTexture()
     self:UpdateRingTexture()
+    self:UpdateCastbarRingTexture()
     self:UpdateVisibility()
 end
 
@@ -1619,6 +1636,43 @@ function CursorTrail:GetOptions()
                     self:UpdateRingTexture()
                 end,
             },
+            castbarRingEnabled = {
+                name = "Enable Castbar Ring",
+                desc = "Show a progress ring around the cursor when casting or channeling (only visible during casts)",
+                type = "toggle",
+                order = 67,
+                get = function() return self.db.profile.castbarRingEnabled end,
+                set = function(_, value)
+                    self.db.profile.castbarRingEnabled = value
+                end,
+            },
+            castbarRingSize = {
+                name = "Castbar Ring Size",
+                desc = "Size of the castbar ring (should be larger than regular ring)",
+                type = "range",
+                order = 68,
+                min = 48,
+                max = 160,
+                step = 1,
+                get = function() return self.db.profile.castbarRingSize end,
+                set = function(_, value)
+                    self.db.profile.castbarRingSize = value
+                end,
+            },
+            castbarRingColor = {
+                name = "Castbar Ring Color",
+                desc = "Color of the castbar ring progress indicator",
+                type = "color",
+                order = 69,
+                hasAlpha = true,
+                get = function()
+                    local c = self.db.profile.castbarRingColor
+                    return c.r, c.g, c.b, c.a
+                end,
+                set = function(_, r, g, b, a)
+                    self.db.profile.castbarRingColor = { r = r, g = g, b = b, a = a }
+                end,
+            },
             header5 = {
                 name = "Health & Combat Alerts",
                 type = "header",
@@ -1870,6 +1924,7 @@ function CursorTrail:GetOptions()
                             self.db.profile.highlightEnabled = true
                             self.db.profile.ringEnabled = true
                             self.db.profile.sparklesEnabled = true
+                            self.db.profile.castbarRingEnabled = true
                             self:UpdateVisibility()
                             print("|cff00FF7FCursor Animate:|r Enabled Full FX mode")
                         end,
