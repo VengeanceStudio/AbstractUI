@@ -377,15 +377,15 @@ function CursorTrail:OnDBReady()
     self:RegisterEvent("PLAYER_REGEN_ENABLED") -- Leaving combat
     self:RegisterEvent("UNIT_HEALTH") -- Health changes
     
-    -- Register cast events for castbar ring
-    self:RegisterEvent("UNIT_SPELLCAST_START")
-    self:RegisterEvent("UNIT_SPELLCAST_STOP")
-    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    self:RegisterEvent("UNIT_SPELLCAST_FAILED")
-    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
-    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
+    -- Register cast events for castbar ring (must use RegisterUnitEvent for UNIT_* events)
+    self:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_STOP", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "player")
     
     if self.db.profile.enabled then
         self:Disable()
