@@ -1298,16 +1298,36 @@ function Movable:MakeBlizzardFrameMovable(frameName)
             x = x,
             y = y,
         }
+        AbstractUI:Print(frameName .. " position saved.")
     end)
     
     -- Mark as handled
     self.blizzardFrames[frameName] = true
+    
+    -- Print confirmation for UIWidget frames
+    if frameName:match("UIWidget") then
+        AbstractUI:Print(frameName .. " is now movable! Click and drag it to reposition.")
+    end
     
     -- Restore saved position if it exists
     if self.db and self.db.profile.blizzardFramePositions and self.db.profile.blizzardFramePositions[frameName] then
         local pos = self.db.profile.blizzardFramePositions[frameName]
         frame:ClearAllPoints()
         frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    end
+    
+    -- Special handling for UIWidget frames - they get repositioned by Blizzard code
+    if frameName:match("UIWidget") then
+        -- Hook OnShow to restore position
+        frame:HookScript("OnShow", function(self)
+            C_Timer.After(0.1, function()
+                if Movable.db and Movable.db.profile.blizzardFramePositions and Movable.db.profile.blizzardFramePositions[frameName] then
+                    local pos = Movable.db.profile.blizzardFramePositions[frameName]
+                    self:ClearAllPoints()
+                    self:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+                end
+            end)
+        end)
     end
 end
 
@@ -1323,6 +1343,13 @@ function Movable:InitializeBlizzardFrames()
             self:MakeBlizzardFrameMovable(frameName)
         end
     end)
+    
+    -- UIWidget frames need extra loading attempts as they're created dynamically
+    for i = 1, 10 do
+        C_Timer.After(i * 2, function()
+            self:MakeBlizzardFrameMovable("UIWidgetTopCenterContainerFrame")
+        end)
+    end
     
     -- Hook ADDON_LOADED to catch addon frames as they load
     self:RegisterEvent("ADDON_LOADED")
