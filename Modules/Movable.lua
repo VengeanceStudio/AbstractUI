@@ -1298,16 +1298,10 @@ function Movable:MakeBlizzardFrameMovable(frameName)
             x = x,
             y = y,
         }
-        AbstractUI:Print(frameName .. " position saved.")
     end)
     
     -- Mark as handled
     self.blizzardFrames[frameName] = true
-    
-    -- Print confirmation for UIWidget frames
-    if frameName:match("UIWidget") then
-        AbstractUI:Print(frameName .. " is now movable! Click and drag it to reposition.")
-    end
     
     -- Restore saved position if it exists
     if self.db and self.db.profile.blizzardFramePositions and self.db.profile.blizzardFramePositions[frameName] then
