@@ -441,16 +441,19 @@ function Tooltips:OnTooltipShow(tooltip)
     end
     
     -- Position shopping tooltips if this is GameTooltip
-    -- Use pcall to prevent tainting in protected contexts (world map, etc.)
-    if tooltip == GameTooltip then
+    -- Skip if in protected context to avoid tainting ItemTooltip dimensions
+    if tooltip == GameTooltip and not self:IsProtectedTooltipContext(tooltip) then
         local success = pcall(function()
             self:PositionShoppingTooltips()
         end)
-        -- Silently fail if in protected context
+        -- Silently fail if pcall fails
     end
 end
 
 function Tooltips:GameTooltip_SetDefaultAnchor(tooltip, parent)
+    -- Skip if in protected context to avoid taint
+    if self:IsProtectedTooltipContext(tooltip) then return end
+    
     -- Handle cursor following
     if self.db.profile.cursorFollow then
         tooltip:SetOwner(parent, "ANCHOR_CURSOR")
@@ -596,7 +599,7 @@ function Tooltips:IsProtectedTooltipContext(tooltip)
     while frame and depth < 10 do  -- Limit depth to prevent infinite loops
         local frameName = frame:GetName()
         if frameName then
-            -- List of frame prefixes that involve money/trade operations that can cause taint
+            -- List of frame prefixes that involve money/trade operations or protected UI that can cause taint
             local protectedPrefixes = {
                 "Mail", "Inbox", "Send",  -- Mail frames
                 "Trade",  -- Trade windows
@@ -606,6 +609,7 @@ function Tooltips:IsProtectedTooltipContext(tooltip)
                 "Container",  -- Bag frames (can show money)
                 "Loot",  -- Loot windows (can show money)
                 "Store",  -- In-game store
+                "WorldMap",  -- World map (quest tooltips)
             }
             
             for _, prefix in ipairs(protectedPrefixes) do
