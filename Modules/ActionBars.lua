@@ -180,11 +180,19 @@ function AB:CheckForConflicts()
                     print("|cff9482c9AbstractUI:|r Opening AddOns menu. Please uncheck " .. addonList .. " and click 'Okay' to reload.")
                     -- Use a small delay to let the popup close first
                     C_Timer.After(0.1, function()
-                        if AddonList_Show then
-                            AddonList_Show()
+                        -- Load Blizzard's addon manager if not already loaded
+                        if not AddonList then
+                            local loaded, reason = LoadAddOn("Blizzard_AddOnManager")
+                            if not loaded then
+                                print("|cffff0000AbstractUI:|r Unable to load AddOn Manager. Type /reload, then at character select, click 'AddOns' and uncheck " .. addonList .. ".")
+                                return
+                            end
+                        end
+                        -- Show the addon list
+                        if AddonList then
+                            AddonList:Show()
                         else
-                            -- Fallback: show instructions if function doesn't exist
-                            print("|cff9482c9AbstractUI:|r Type /reload, then at the character select screen, click 'AddOns' and uncheck " .. addonList .. ".")
+                            print("|cffff0000AbstractUI:|r Type /reload, then at the character select screen, click 'AddOns' and uncheck " .. addonList .. ".")
                         end
                     end)
                 end,
