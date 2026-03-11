@@ -364,7 +364,7 @@ function GroupManager:CreateExpandedContent()
     
     -- Actions Section
     local actionsLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
-    actionsLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 120)
+    actionsLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 90)
     actionsLabel:SetText("Actions:")
     actionsLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
