@@ -52,6 +52,7 @@ local defaults = {
             tweaks = true,
             cursorTrail = true,
             macroIconSelector = true,
+            partyFrames = false,  -- Disabled by default - user must enable
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true

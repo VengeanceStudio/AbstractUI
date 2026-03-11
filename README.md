@@ -306,7 +306,7 @@ AbstractUI is built for the **Midnight expansion (12.0+)** and uses the latest W
 
 ## ⚠️ Known Limitations
 
-* **Party/Raid Frames:** Due to major changes in WoW 12.0's secure frame API, AbstractUI does not support custom party/raid frames. We recommend using dedicated addons like Grid2, VuhDo, or ElvUI for raid frame needs.
+* **Party Frames:** AbstractUI includes compact party frames that show health and status. For full raid frame functionality (raid healing, detailed buffs/debuffs, mouseover casting), we recommend using dedicated raid frame addons like Grid2, VuhDo, or ElvUI.
 * **Combat Restrictions:** Some frame movements and visibility changes are restricted during combat per Blizzard's secure frame policies.
 
 ## 🤝 Contributing
