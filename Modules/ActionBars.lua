@@ -164,10 +164,9 @@ function AB:CheckForConflicts()
                 OnAccept = function()
                     -- Disable AbstractUI action bars
                     AbstractUI.db.profile.modules.actionbars = false
-                    print("|cff9482c9AbstractUI:|r Action Bars module disabled. Reloading UI...")
-                    C_Timer.After(0.1, function()
-                        ReloadUI()
-                    end)
+                    print("|cff9482c9AbstractUI:|r Action Bars module disabled.")
+                    -- Show reload confirmation
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end,
                 OnCancel = function()
                     -- User chose to keep both - warn them and offer reload
