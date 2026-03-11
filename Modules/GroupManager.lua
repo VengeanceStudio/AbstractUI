@@ -83,8 +83,9 @@ end
 function GroupManager:CreateManagerFrame()
     if managerFrame then return end
     
-    -- Create main panel using FrameFactory
-    managerFrame = FrameFactory:CreatePanel(UIParent, self.db.profile.compactWidth, self.db.profile.compactHeight)
+    -- Create container frame for positioning
+    managerFrame = CreateFrame("Frame", nil, UIParent)
+    managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
     managerFrame:SetPoint(
         self.db.profile.position.point,
         UIParent,
@@ -94,29 +95,35 @@ function GroupManager:CreateManagerFrame()
     )
     managerFrame:SetFrameStrata("MEDIUM")
     managerFrame:SetMovable(true)
-    managerFrame:EnableMouse(true)
-    managerFrame:RegisterForDrag("LeftButton")
+    managerFrame:EnableMouse(false)  -- Let children handle mouse
     
-    managerFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    managerFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local point, _, _, x, y = self:GetPoint()
+    -- Toggle button (standalone with its own background)
+    local toggleBtn = FrameFactory:CreateButton(managerFrame, self.db.profile.compactWidth, self.db.profile.compactHeight, "")
+    toggleBtn:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 0, 0)
+    toggleBtn:EnableMouse(true)
+    toggleBtn:SetMovable(true)
+    toggleBtn:RegisterForDrag("LeftButton")
+    
+    toggleBtn:SetScript("OnDragStart", function(self)
+        managerFrame:StartMoving()
+    end)
+    toggleBtn:SetScript("OnDragStop", function(self)
+        managerFrame:StopMovingOrSizing()
+        local point, _, _, x, y = managerFrame:GetPoint()
         GroupManager.db.profile.position.point = point
         GroupManager.db.profile.position.x = x
         GroupManager.db.profile.position.y = y
     end)
     
-    -- Toggle button (using framework) - stays in top left corner
-    local toggleBtn = FrameFactory:CreateButton(managerFrame, 26, 26, "")
-    toggleBtn:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 2, -2)
-    toggleBtn:SetFrameLevel(managerFrame:GetFrameLevel() + 10)  -- Keep on top when expanded
-    
-    -- Icon for collapsed state
+    -- Icon for toggle button
     local icon = toggleBtn:CreateTexture(nil, "ARTWORK")
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
     icon:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
     icon:SetVertexColor(ColorPalette:GetColor('text-primary'))
+    
+    -- Hide the text since we only want the icon
+    toggleBtn.text:Hide()
     
     managerFrame.toggleBtn = toggleBtn
     managerFrame.icon = icon
@@ -142,12 +149,8 @@ function GroupManager:CreateManagerFrame()
         GameTooltip:Hide()
     end)
     
-    -- Create expanded content (hidden by default)
+    -- Create expanded content panel (separate from toggle button)
     self:CreateExpandedContent()
-    
-    -- Start in collapsed state - hide main frame background/border
-    if managerFrame.bg then managerFrame.bg:Hide() end
-    if managerFrame.border then managerFrame.border:Hide() end
     
     managerFrame:Hide()
 end
@@ -155,22 +158,21 @@ end
 function GroupManager:CreateExpandedContent()
     if not managerFrame then return end
     
-    -- Plain frame for content - managerFrame provides the background
-    local content = CreateFrame("Frame", nil, managerFrame)
-    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 6, -34)  -- Start below toggle button with some padding
-    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -6, 6)  -- Padding from edges
-    content:Hide()
+    -- Create separate content panel using FrameFactory (appears below toggle button)
+    local contentPanel = FrameFactory:CreatePanel(managerFrame, self.db.profile.expandedWidth, self.db.profile.expandedHeight)
+    contentPanel:SetPoint("TOP", managerFrame, "BOTTOM", 0, -3)  -- 3px gap below toggle button
+    contentPanel:Hide()
     
-    managerFrame.content = content
+    managerFrame.contentPanel = contentPanel
     
     -- Title
-    local title = FontKit:CreateFontString(content, 'header', 'large')
-    title:SetPoint("TOPLEFT", content, "TOPLEFT", 3, -3)
+    local title = FontKit:CreateFontString(contentPanel, 'header', 'large')
+    title:SetPoint("TOPLEFT", contentPanel, "TOPLEFT", 8, -8)
     title:SetText("Group Controls")
     title:SetTextColor(ColorPalette:GetColor('text-primary'))
     
     -- Raid Markers Section
-    local markersLabel = FontKit:CreateFontString(content, 'body', 'normal')
+    local markersLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
     markersLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
     markersLabel:SetText("Raid Markers:")
     markersLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
@@ -178,7 +180,7 @@ function GroupManager:CreateExpandedContent()
     -- Create marker buttons in 2 rows of 4
     local markerButtons = {}
     for i, marker in ipairs(RAID_MARKERS) do
-        local btn = FrameFactory:CreateButton(content, 30, 30, "")
+        local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
         
         local col = ((i - 1) % 4)
         local row = math.floor((i - 1) / 4)
@@ -246,14 +248,14 @@ function GroupManager:CreateExpandedContent()
     end
     
     -- World Markers Section
-    local worldLabel = FontKit:CreateFontString(content, 'body', 'normal')
+    local worldLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
     worldLabel:SetPoint("TOPLEFT", markerButtons[5], "BOTTOMLEFT", 0, -15)
     worldLabel:SetText("World Markers:")
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4)
     for i = 1, 8 do
-        local btn = FrameFactory:CreateButton(content, 30, 30, "")
+        local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
         
         local col = ((i - 1) % 4)
         local row = math.floor((i - 1) / 4)
@@ -296,13 +298,13 @@ function GroupManager:CreateExpandedContent()
     end
     
     -- Actions Section
-    local actionsLabel = FontKit:CreateFontString(content, 'body', 'normal')
-    actionsLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 3, 120)
+    local actionsLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
+    actionsLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 120)
     actionsLabel:SetText("Actions:")
     actionsLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- Leave Party button (using FrameFactory)
-    local leaveBtn = FrameFactory:CreateButton(content, 180, 22, "Leave Party")
+    local leaveBtn = FrameFactory:CreateButton(contentPanel, 180, 22, "Leave Party")
     leaveBtn:SetPoint("TOPLEFT", actionsLabel, "BOTTOMLEFT", 0, -5)
     
     leaveBtn:SetScript("OnClick", function()
@@ -314,7 +316,7 @@ function GroupManager:CreateExpandedContent()
     end)
     
     -- Ready Check button (using FrameFactory)
-    local readyBtn = FrameFactory:CreateButton(content, 180, 22, "Ready Check")
+    local readyBtn = FrameFactory:CreateButton(contentPanel, 180, 22, "Ready Check")
     readyBtn:SetPoint("TOPLEFT", leaveBtn, "BOTTOMLEFT", 0, -3)
     
     readyBtn:SetScript("OnClick", function()
@@ -334,7 +336,7 @@ function GroupManager:CreateExpandedContent()
     end)
     
     -- Convert to Raid button (using FrameFactory)
-    local convertBtn = FrameFactory:CreateButton(content, 180, 22, "Convert to Raid")
+    local convertBtn = FrameFactory:CreateButton(contentPanel, 180, 22, "Convert to Raid")
     convertBtn:SetPoint("TOPLEFT", readyBtn, "BOTTOMLEFT", 0, -3)
     
     convertBtn:SetScript("OnClick", function()
@@ -364,13 +366,13 @@ function GroupManager:CreateExpandedContent()
     end)
     
     -- Difficulty Settings Section
-    local difficultyLabel = FontKit:CreateFontString(content, 'body', 'normal')
-    difficultyLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 3, 5)
+    local difficultyLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
+    difficultyLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 8)
     difficultyLabel:SetText("Difficulty:")
     difficultyLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- Dungeon Difficulty Button (using FrameFactory)
-    local dungeonBtn = FrameFactory:CreateButton(content, 87, 20, "Normal")
+    local dungeonBtn = FrameFactory:CreateButton(contentPanel, 87, 20, "Normal")
     dungeonBtn:SetPoint("LEFT", difficultyLabel, "RIGHT", 5, 0)
     
     local function UpdateDungeonText()
@@ -410,7 +412,7 @@ function GroupManager:CreateExpandedContent()
     end)
     
     -- Raid Difficulty Button (using FrameFactory)
-    local raidBtn = FrameFactory:CreateButton(content, 87, 20, "Normal")
+    local raidBtn = FrameFactory:CreateButton(contentPanel, 87, 20, "Normal")
     raidBtn:SetPoint("LEFT", dungeonBtn, "RIGHT", 3, 0)
     
     local function UpdateRaidText()
@@ -460,17 +462,11 @@ function GroupManager:ToggleExpanded()
     isExpanded = not isExpanded
     
     if isExpanded then
-        managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
-        managerFrame.content:Show()
-        -- Show the main frame background/border when expanded
-        if managerFrame.bg then managerFrame.bg:Show() end
-        if managerFrame.border then managerFrame.border:Show() end
+        -- Show the content panel below the toggle button
+        managerFrame.contentPanel:Show()
     else
-        managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
-        managerFrame.content:Hide()
-        -- Hide the main frame background/border when collapsed (just show button)
-        if managerFrame.bg then managerFrame.bg:Hide() end
-        if managerFrame.border then managerFrame.border:Hide() end
+        -- Hide the content panel, just showing the toggle button
+        managerFrame.contentPanel:Hide()
     end
 end
 
@@ -593,10 +589,13 @@ end
 function GroupManager:UpdateManagerFrame()
     if not managerFrame then return end
     
-    if isExpanded then
-        managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
-    else
-        managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+    -- Update toggle button size
+    managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+    managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+    
+    -- Update content panel size
+    if managerFrame.contentPanel then
+        managerFrame.contentPanel:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
     end
 end
 

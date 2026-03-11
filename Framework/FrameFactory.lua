@@ -111,24 +111,15 @@ function FrameFactory:CreatePanel(parent, width, height)
     local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     panel:SetSize(width or 400, height or 300)
     
-    -- Background
-    panel.bg = panel:CreateTexture(nil, "BACKGROUND")
-    panel.bg:SetAllPoints()
-    if not Atlas:SetTexture(panel.bg, self.activeTheme, "panel-bg") then
-        panel.bg:SetColorTexture(ColorPalette:GetColor("panel-bg"))
-    else
-        panel.bg:SetVertexColor(ColorPalette:GetColor("panel-bg"))
-    end
-    
-    -- Border
-    panel.border = panel:CreateTexture(nil, "BORDER")
-    panel.border:SetPoint("TOPLEFT", -2, 2)
-    panel.border:SetPoint("BOTTOMRIGHT", 2, -2)
-    if not Atlas:SetTexture(panel.border, self.activeTheme, "panel-border") then
-        panel.border:SetColorTexture(ColorPalette:GetColor("panel-border"))
-    else
-        panel.border:SetVertexColor(ColorPalette:GetColor("panel-border"))
-    end
+    -- Use the same backdrop approach as AbstractOptionsPanel for consistency
+    panel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false, edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    panel:SetBackdropColor(ColorPalette:GetColor('panel-bg'))
+    panel:SetBackdropBorderColor(ColorPalette:GetColor('panel-border'))
     
     return panel
 end
