@@ -106,9 +106,10 @@ function GroupManager:CreateManagerFrame()
         GroupManager.db.profile.position.y = y
     end)
     
-    -- Toggle button (using framework)
-    local toggleBtn = FrameFactory:CreateButton(managerFrame, self.db.profile.compactWidth - 4, self.db.profile.compactHeight - 4, "")
-    toggleBtn:SetPoint("CENTER", managerFrame, "CENTER", 0, 0)
+    -- Toggle button (using framework) - stays in top left corner
+    local toggleBtn = FrameFactory:CreateButton(managerFrame, 26, 26, "")
+    toggleBtn:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 2, -2)
+    toggleBtn:SetFrameLevel(managerFrame:GetFrameLevel() + 10)  -- Keep on top when expanded
     
     -- Icon for collapsed state
     local icon = toggleBtn:CreateTexture(nil, "ARTWORK")
@@ -151,7 +152,7 @@ function GroupManager:CreateExpandedContent()
     if not managerFrame then return end
     
     local content = CreateFrame("Frame", nil, managerFrame)
-    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 4, -4)
+    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 4, -32)  -- Start below toggle button
     content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -4, 4)
     content:Hide()
     
@@ -587,7 +588,6 @@ function GroupManager:UpdateManagerFrame()
         managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
     else
         managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
-        managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth - 4, self.db.profile.compactHeight - 4)
     end
 end
 
