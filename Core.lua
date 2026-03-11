@@ -13,9 +13,7 @@ StaticPopupDialogs["AbstractUI_RELOAD_CONFIRM"] = {
     button2 = "No",
     OnAccept = function()
         if not InCombatLockdown() then
-            C_Timer.After(0.1, function()
-                ReloadUI()
-            end)
+            ReloadUI()
         else
             print("|cffff0000AbstractUI:|r Cannot reload UI while in combat. Please leave combat and run /reload.")
         end
