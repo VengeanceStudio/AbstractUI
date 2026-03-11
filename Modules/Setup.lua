@@ -10,6 +10,16 @@ local defaults = {
     }
 }
 
+-- Define 4K not available dialog
+StaticPopupDialogs["AbstractUI_4K_UNAVAILABLE"] = {
+    text = "Currently 4K resolution isn't built-in as I don't have a 4K monitor. Coming soon.\n\n-Vengeance",
+    button1 = "OK",
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 -- Edit Mode preset strings for each resolution
 local editModePresets = {
     ["4K"] = "YOUR_4K_EDIT_MODE_STRING_HERE",
@@ -344,7 +354,7 @@ function Setup:CompleteSetup(frame)
     
     -- Check if 4K is selected (not yet supported)
     if res == "4K" then
-        print("|cffff0000AbstractUI:|r 4K presets are not available yet. Please choose 1440p or 1080p.")
+        StaticPopup_Show("AbstractUI_4K_UNAVAILABLE")
         return
     end
     
