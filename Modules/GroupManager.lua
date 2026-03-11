@@ -20,7 +20,7 @@ local defaults = {
         compactWidth = 30,
         compactHeight = 30,
         expandedWidth = 200,
-        expandedHeight = 340,
+        expandedHeight = 400,
         position = {
             point = "TOPLEFT",
             x = 10,
@@ -379,7 +379,7 @@ function GroupManager:CreateExpandedContent()
     
     -- Actions Section
     local actionsLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
-    actionsLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 90)
+    actionsLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 120)
     actionsLabel:SetText("Actions:")
     actionsLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
