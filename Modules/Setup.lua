@@ -368,12 +368,16 @@ function Setup:CompleteSetup(frame)
                     error("C_EditMode API not available")
                 end
                 
+                if not EditModeManagerFrame then
+                    error("EditModeManagerFrame not available")
+                end
+                
                 local layoutInfo = C_EditMode.ConvertStringToLayoutInfo(editModePresets[res])
                 if not layoutInfo then
                     error("Failed to convert layout string")
                 end
                 
-                C_EditMode.SetLayouts(layoutInfo)
+                EditModeManagerFrame:ImportLayouts(layoutInfo)
             end)
             
             if success then
