@@ -83,8 +83,10 @@ end
 function GroupManager:CreateManagerFrame()
     if managerFrame then return end
     
+    local Movable = AbstractUI:GetModule("Movable", true)
+    
     -- Create container frame for positioning
-    managerFrame = CreateFrame("Frame", nil, UIParent)
+    managerFrame = CreateFrame("Frame", "AbstractUI_GroupManagerIcon", UIParent)
     managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
     managerFrame:SetPoint(
         self.db.profile.position.point,
@@ -95,25 +97,12 @@ function GroupManager:CreateManagerFrame()
     )
     managerFrame:SetFrameStrata("MEDIUM")
     managerFrame:SetMovable(true)
-    managerFrame:EnableMouse(false)  -- Let children handle mouse
+    managerFrame:SetClampedToScreen(true)
     
     -- Toggle button (standalone with its own background)
     local toggleBtn = FrameFactory:CreateButton(managerFrame, self.db.profile.compactWidth, self.db.profile.compactHeight, "")
-    toggleBtn:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 0, 0)
+    toggleBtn:SetPoint("CENTER", managerFrame, "CENTER", 0, 0)
     toggleBtn:EnableMouse(true)
-    toggleBtn:SetMovable(true)
-    toggleBtn:RegisterForDrag("LeftButton")
-    
-    toggleBtn:SetScript("OnDragStart", function(self)
-        managerFrame:StartMoving()
-    end)
-    toggleBtn:SetScript("OnDragStop", function(self)
-        managerFrame:StopMovingOrSizing()
-        local point, _, _, x, y = managerFrame:GetPoint()
-        GroupManager.db.profile.position.point = point
-        GroupManager.db.profile.position.x = x
-        GroupManager.db.profile.position.y = y
-    end)
     
     -- Icon for toggle button
     local icon = toggleBtn:CreateTexture(nil, "ARTWORK")
@@ -140,6 +129,9 @@ function GroupManager:CreateManagerFrame()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Group Manager", 1, 1, 1)
         GameTooltip:AddLine("Click to expand/collapse", 0.7, 0.7, 0.7)
+        if AbstractUI.moveMode then
+            GameTooltip:AddLine("Drag to move", 0.5, 1, 0.5)
+        end
         GameTooltip:Show()
     end)
     
@@ -148,6 +140,73 @@ function GroupManager:CreateManagerFrame()
         if originalOnLeave then originalOnLeave(self) end
         GameTooltip:Hide()
     end)
+    
+    -- Movable system integration
+    if Movable then
+        -- Create highlight overlay for move mode
+        local highlight = CreateFrame("Frame", nil, managerFrame)
+        highlight:SetAllPoints(managerFrame)
+        highlight:SetFrameStrata("HIGH")
+        highlight:SetFrameLevel(100)
+        highlight:EnableMouse(false)
+        highlight:Hide()
+        
+        -- Green border for move mode
+        highlight.texture = highlight:CreateTexture(nil, "OVERLAY")
+        highlight.texture:SetAllPoints()
+        highlight.texture:SetColorTexture(0, 1, 0, 0.3)
+        
+        -- Label
+        highlight.label = highlight:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        highlight.label:SetPoint("TOP", highlight, "TOP", 0, -2)
+        highlight.label:SetText("Group Manager")
+        highlight.label:SetTextColor(1, 1, 1, 1)
+        
+        managerFrame.movableHighlight = highlight
+        managerFrame.movableHighlightLabel = highlight.label
+        
+        -- Make draggable in move mode
+        highlight:EnableMouse(true)
+        highlight:SetMovable(true)
+        highlight:RegisterForDrag("LeftButton")
+        
+        local isDragging = false
+        highlight:SetScript("OnDragStart", function(self)
+            if AbstractUI.moveMode then
+                isDragging = true
+                managerFrame:StartMoving()
+            end
+        end)
+        
+        highlight:SetScript("OnDragStop", function(self)
+            if not isDragging then return end
+            managerFrame:StopMovingOrSizing()
+            isDragging = false
+            
+            local point, relativeTo, relativePoint, xOfs, yOfs = managerFrame:GetPoint()
+            GroupManager.db.profile.position.point = point or "TOPLEFT"
+            GroupManager.db.profile.position.x = xOfs or 0
+            GroupManager.db.profile.position.y = yOfs or 0
+            
+            -- Update content panel position if open
+            if isExpanded then
+                GroupManager:UpdateContentPanelPosition()
+            end
+        end)
+        
+        -- Register with Movable system
+        table.insert(Movable.registeredFrames, highlight)
+        
+        -- Add nudge arrows
+        Movable:CreateNudgeArrows(managerFrame, self.db.profile.position, function()
+            -- Reset callback: center the icon
+            self.db.profile.position.point = "CENTER"
+            self.db.profile.position.x = 0
+            self.db.profile.position.y = 0
+            managerFrame:ClearAllPoints()
+            managerFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        end)
+    end
     
     -- Create expanded content panel (separate from toggle button)
     self:CreateExpandedContent()
@@ -158,9 +217,11 @@ end
 function GroupManager:CreateExpandedContent()
     if not managerFrame then return end
     
-    -- Create separate content panel using FrameFactory (appears below toggle button)
-    local contentPanel = FrameFactory:CreatePanel(managerFrame, self.db.profile.expandedWidth, self.db.profile.expandedHeight)
-    contentPanel:SetPoint("TOP", managerFrame, "BOTTOM", 0, -3)  -- 3px gap below toggle button
+    -- Create separate content panel using FrameFactory (positioned relative to toggle button)
+    local contentPanel = FrameFactory:CreatePanel(UIParent, self.db.profile.expandedWidth, self.db.profile.expandedHeight)
+    contentPanel:SetFrameStrata("MEDIUM")
+    contentPanel:SetFrameLevel(managerFrame:GetFrameLevel() - 1)
+    contentPanel:SetClampedToScreen(true)
     contentPanel:Hide()
     
     managerFrame.contentPanel = contentPanel
@@ -458,11 +519,57 @@ function GroupManager:CreateExpandedContent()
     managerFrame.updateRaidText = UpdateRaidText
 end
 
+function GroupManager:UpdateContentPanelPosition()
+    if not managerFrame or not managerFrame.contentPanel then return end
+    
+    local contentPanel = managerFrame.contentPanel
+    local panelWidth = self.db.profile.expandedWidth
+    local panelHeight = self.db.profile.expandedHeight
+    local gap = 3
+    
+    -- Get toggle button position
+    local iconX = managerFrame:GetLeft() or 0
+    local iconY = managerFrame:GetTop() or 0
+    local iconWidth = managerFrame:GetWidth()
+    local iconHeight = managerFrame:GetHeight()
+    
+    -- Get screen dimensions
+    local screenWidth = GetScreenWidth()
+    local screenHeight = GetScreenHeight()
+    
+    -- Determine best direction based on available space
+    local spaceRight = screenWidth - (iconX + iconWidth)
+    local spaceLeft = iconX
+    local spaceDown = iconY
+    local spaceUp = screenHeight - (iconY - iconHeight)
+    
+    contentPanel:ClearAllPoints()
+    
+    -- Try right first (preferred)
+    if spaceRight >= panelWidth + gap then
+        contentPanel:SetPoint("TOPLEFT", managerFrame, "TOPRIGHT", gap, 0)
+    -- Try left
+    elseif spaceLeft >= panelWidth + gap then
+        contentPanel:SetPoint("TOPRIGHT", managerFrame, "TOPLEFT", -gap, 0)
+    -- Try down
+    elseif spaceDown >= panelHeight + gap then
+        contentPanel:SetPoint("TOPLEFT", managerFrame, "BOTTOMLEFT", 0, -gap)
+    -- Try up
+    elseif spaceUp >= panelHeight + gap then
+        contentPanel:SetPoint("BOTTOMLEFT", managerFrame, "TOPLEFT", 0, gap)
+    else
+        -- Not enough space anywhere, default to right and let it go offscreen
+        contentPanel:SetPoint("TOPLEFT", managerFrame, "TOPRIGHT", gap, 0)
+    end
+end
+
 function GroupManager:ToggleExpanded()
     isExpanded = not isExpanded
     
     if isExpanded then
-        -- Show the content panel below the toggle button
+        -- Update position based on current icon location
+        self:UpdateContentPanelPosition()
+        -- Show the content panel
         managerFrame.contentPanel:Show()
     else
         -- Hide the content panel, just showing the toggle button
@@ -596,6 +703,11 @@ function GroupManager:UpdateManagerFrame()
     -- Update content panel size
     if managerFrame.contentPanel then
         managerFrame.contentPanel:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
+        
+        -- Update position if expanded
+        if isExpanded then
+            self:UpdateContentPanelPosition()
+        end
     end
 end
 
