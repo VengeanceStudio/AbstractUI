@@ -64,6 +64,7 @@ function GroupManager:OnEnable()
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
+    self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     
     -- Create frames
     self:CreateManagerFrame()
@@ -238,13 +239,15 @@ function GroupManager:CreateExpandedContent()
     markersLabel:SetText("Raid Markers:")
     markersLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- Create marker buttons in 2 rows of 4
+    -- Create marker buttons in 2 rows of 4 (reversed order: Skull to Star)
     local markerButtons = {}
-    for i, marker in ipairs(RAID_MARKERS) do
+    for i = #RAID_MARKERS, 1, -1 do
+        local marker = RAID_MARKERS[i]
         local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
         
-        local col = ((i - 1) % 4)
-        local row = math.floor((i - 1) / 4)
+        local displayIndex = #RAID_MARKERS - i + 1
+        local col = ((displayIndex - 1) % 4)
+        local row = math.floor((displayIndex - 1) / 4)
         btn:SetPoint("TOPLEFT", markersLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
         -- Hide the button text since we'll show an icon instead
@@ -310,16 +313,17 @@ function GroupManager:CreateExpandedContent()
     
     -- World Markers Section
     local worldLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
-    worldLabel:SetPoint("TOPLEFT", markerButtons[5], "BOTTOMLEFT", 0, -15)
+    worldLabel:SetPoint("TOPLEFT", markerButtons[4], "BOTTOMLEFT", 0, -15)
     worldLabel:SetText("World Markers:")
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- World marker buttons (in 2 rows of 4)
-    for i = 1, 8 do
+    -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
+    for i = 8, 1, -1 do
         local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
         
-        local col = ((i - 1) % 4)
-        local row = math.floor((i - 1) / 4)
+        local displayIndex = 9 - i
+        local col = ((displayIndex - 1) % 4)
+        local row = math.floor((displayIndex - 1) / 4)
         btn:SetPoint("TOPLEFT", worldLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
         -- Hide the button text since we'll show an icon instead
@@ -427,96 +431,87 @@ function GroupManager:CreateExpandedContent()
     end)
     
     -- Difficulty Settings Section
-    local difficultyLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
-    difficultyLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 8)
-    difficultyLabel:SetText("Difficulty:")
-    difficultyLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
+    -- Dungeon Difficulty Label
+    local dungeonLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
+    dungeonLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 30)
+    dungeonLabel:SetText("Dungeon Difficulty:")
+    dungeonLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- Dungeon Difficulty Button (using FrameFactory)
-    local dungeonBtn = FrameFactory:CreateButton(contentPanel, 87, 20, "Normal")
-    dungeonBtn:SetPoint("LEFT", difficultyLabel, "RIGHT", 5, 0)
+    -- Dungeon Difficulty Dropdown
+    local dungeonDropdown = FrameFactory:CreateDropdown(contentPanel, 180, 22)
+    dungeonDropdown:SetPoint("TOPLEFT", dungeonLabel, "BOTTOMLEFT", 0, -3)
     
-    local function UpdateDungeonText()
+    dungeonDropdown:SetItems({
+        {value = 1, text = "Normal"},
+        {value = 2, text = "Heroic"},
+        {value = 23, text = "Mythic"}
+    })
+    
+    dungeonDropdown.onChange = function(value)
+        SetDungeonDifficultyID(value)
+    end
+    
+    local function UpdateDungeonDropdown()
         local difficultyID = GetDungeonDifficultyID()
         local difficultyName = GetDifficultyInfo(difficultyID)
-        dungeonBtn:SetButtonText(difficultyName or "Normal")
+        dungeonDropdown:SetValue(difficultyID, difficultyName or "Normal")
+        
+        -- Show only in dungeons
+        local _, instanceType = IsInInstance()
+        if instanceType == "party" then
+            dungeonLabel:Show()
+            dungeonDropdown:Show()
+        else
+            dungeonLabel:Hide()
+            dungeonDropdown:Hide()
+        end
     end
     
-    UpdateDungeonText()
+    UpdateDungeonDropdown()
     
-    dungeonBtn:SetScript("OnClick", function(self)
-        local currentDiff = GetDungeonDifficultyID()
-        local newDiff
-        
-        -- Cycle through: 1=Normal, 2=Heroic, 23=Mythic
-        if currentDiff == 1 then
-            newDiff = 2  -- Heroic
-        elseif currentDiff == 2 then
-            newDiff = 23 -- Mythic
-        else
-            newDiff = 1  -- Normal
-        end
-        
-        SetDungeonDifficultyID(newDiff)
-        UpdateDungeonText()
-    end)
+    -- Raid Difficulty Label (same position as dungeon, since they never show together)
+    local raidLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
+    raidLabel:SetPoint("BOTTOMLEFT", contentPanel, "BOTTOMLEFT", 8, 30)
+    raidLabel:SetText("Raid Difficulty:")
+    raidLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- Custom tooltip for dungeon button
-    local originalDungeonEnter = dungeonBtn:GetScript("OnEnter")
-    dungeonBtn:SetScript("OnEnter", function(self)
-        if originalDungeonEnter then originalDungeonEnter(self) end
-        
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Dungeon Difficulty", 1, 1, 1)
-        GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
-        GameTooltip:Show()
-    end)
+    -- Raid Difficulty Dropdown (same position as dungeon, since they never show together)
+    local raidDropdown = FrameFactory:CreateDropdown(contentPanel, 180, 22)
+    raidDropdown:SetPoint("TOPLEFT", raidLabel, "BOTTOMLEFT", 0, -3)
     
-    -- Raid Difficulty Button (using FrameFactory)
-    local raidBtn = FrameFactory:CreateButton(contentPanel, 87, 20, "Normal")
-    raidBtn:SetPoint("LEFT", dungeonBtn, "RIGHT", 3, 0)
+    raidDropdown:SetItems({
+        {value = 14, text = "Normal"},
+        {value = 15, text = "Heroic"},
+        {value = 16, text = "Mythic"}
+    })
     
-    local function UpdateRaidText()
+    raidDropdown.onChange = function(value)
+        SetRaidDifficultyID(value)
+    end
+    
+    local function UpdateRaidDropdown()
         local difficultyID = GetRaidDifficultyID()
         local difficultyName = GetDifficultyInfo(difficultyID)
-        raidBtn:SetButtonText(difficultyName or "Normal")
+        raidDropdown:SetValue(difficultyID, difficultyName or "Normal")
+        
+        -- Show only in raids
+        local _, instanceType = IsInInstance()
+        if instanceType == "raid" then
+            raidLabel:Show()
+            raidDropdown:Show()
+        else
+            raidLabel:Hide()
+            raidDropdown:Hide()
+        end
     end
     
-    UpdateRaidText()
-    
-    raidBtn:SetScript("OnClick", function(self)
-        local currentDiff = GetRaidDifficultyID()
-        local newDiff
-        
-        -- Cycle through: 14=Normal, 15=Heroic, 16=Mythic
-        if currentDiff == 14 then
-            newDiff = 15  -- Heroic
-        elseif currentDiff == 15 then
-            newDiff = 16 -- Mythic
-        else
-            newDiff = 14  -- Normal
-        end
-        
-        SetRaidDifficultyID(newDiff)
-        UpdateRaidText()
-    end)
-    
-    -- Custom tooltip for raid button
-    local originalRaidEnter = raidBtn:GetScript("OnEnter")
-    raidBtn:SetScript("OnEnter", function(self)
-        if originalRaidEnter then originalRaidEnter(self) end
-        
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Raid Difficulty", 1, 1, 1)
-        GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
-        GameTooltip:Show()
-    end)
+    UpdateRaidDropdown()
     
     -- Store references for updates
-    managerFrame.dungeonBtn = dungeonBtn
-    managerFrame.raidBtn = raidBtn
-    managerFrame.updateDungeonText = UpdateDungeonText
-    managerFrame.updateRaidText = UpdateRaidText
+    managerFrame.dungeonDropdown = dungeonDropdown
+    managerFrame.raidDropdown = raidDropdown
+    managerFrame.updateDungeonDropdown = UpdateDungeonDropdown
+    managerFrame.updateRaidDropdown = UpdateRaidDropdown
 end
 
 function GroupManager:UpdateContentPanelPosition()
@@ -588,18 +583,26 @@ end
 function GroupManager:PLAYER_ENTERING_WORLD()
     self:UpdateVisibility()
     
-    -- Update difficulty buttons if frame exists
-    if managerFrame and managerFrame.updateDungeonText then
-        managerFrame.updateDungeonText()
-        managerFrame.updateRaidText()
+    -- Update difficulty dropdowns if frame exists
+    if managerFrame and managerFrame.updateDungeonDropdown then
+        managerFrame.updateDungeonDropdown()
+        managerFrame.updateRaidDropdown()
     end
 end
 
 function GroupManager:PLAYER_DIFFICULTY_CHANGED()
-    -- Update difficulty buttons when difficulty changes
-    if managerFrame and managerFrame.updateDungeonText then
-        managerFrame.updateDungeonText()
-        managerFrame.updateRaidText()
+    -- Update difficulty dropdowns when difficulty changes
+    if managerFrame and managerFrame.updateDungeonDropdown then
+        managerFrame.updateDungeonDropdown()
+        managerFrame.updateRaidDropdown()
+    end
+end
+
+function GroupManager:ZONE_CHANGED_NEW_AREA()
+    -- Update difficulty dropdown visibility based on instance type
+    if managerFrame and managerFrame.updateDungeonDropdown then
+        managerFrame.updateDungeonDropdown()
+        managerFrame.updateRaidDropdown()
     end
 end
 
