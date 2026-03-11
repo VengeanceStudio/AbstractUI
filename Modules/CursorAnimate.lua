@@ -720,19 +720,6 @@ function CursorTrail:CreateUpdateFrame()
             return
         end
         
-        -- Check if /fstack is active - if so, hide all cursor animations to avoid interference
-        if FrameStackTooltip and FrameStackTooltip:IsShown() then
-            if highlightFrame then highlightFrame:Hide() end
-            if ringFrame then
-                ringFrame:Hide()
-                if ringFrame.outerCastRing then ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0) end
-                if ringFrame.castCooldown then ringFrame.castCooldown:Hide() end
-            end
-            for _, frame in ipairs(trailFrames) do frame:Hide() end
-            for _, frame in ipairs(sparkleFrames) do frame:Hide() end
-            return
-        end
-        
         if not CursorTrail.db then 
             return 
         end
