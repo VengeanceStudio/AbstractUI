@@ -1086,7 +1086,11 @@ function AddonManager:CreateUI()
     local reloadBtn = FrameFactory:CreateButton(mainFrame, 100, 25, "Reload UI")
     reloadBtn:SetPoint("RIGHT", closeBottomBtn, "LEFT", -5, 0)
     reloadBtn:SetScript("OnClick", function()
-        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+        if not InCombatLockdown() then
+            ReloadUI()
+        else
+            print("|cffff0000AbstractUI:|r Cannot reload UI while in combat. Please leave combat and try again.")
+        end
     end)
     
     mainFrame:SetScript("OnShow", function()
