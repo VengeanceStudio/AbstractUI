@@ -12,6 +12,7 @@ local defaults = {
         fastLoot = true,
         hideGryphons = true,
         hideBagBar = true,
+        hidePartyFrame = false,
         importOverwriteEnabled = true,
         autoRepair = true,
         autoRepairGuild = false,
@@ -128,6 +129,15 @@ function Tweaks:OnDBReady()
         C_Timer.After(5, function() self:HideBagBar() end)
     end
     
+    -- Immediate party frame hiding setup
+    if self.db.profile.hidePartyFrame then
+        self:HidePartyFrame()
+        -- Set up repeated attempts to catch late-loading frames
+        C_Timer.After(0.5, function() self:HidePartyFrame() end)
+        C_Timer.After(2, function() self:HidePartyFrame() end)
+        C_Timer.After(5, function() self:HidePartyFrame() end)
+    end
+    
     -- Hook cutscene frames for auto-skip
     if self.db.profile.skipCutscenes then
         self:HookCutscenes()
@@ -174,6 +184,9 @@ end
 function Tweaks:UPDATE_INVENTORY_DURABILITY()
     if self.db.profile.hideBagBar then
         self:HideBagBar()
+    end
+    if self.db.profile.hidePartyFrame then
+        self:HidePartyFrame()
     end
 end
 
@@ -226,6 +239,9 @@ function Tweaks:BAG_UPDATE_DELAYED()
     if self.db.profile.hideBagBar then
         self:HideBagBar()
     end
+    if self.db.profile.hidePartyFrame then
+        self:HidePartyFrame()
+    end
     
     if self.db.profile.autoInsertKey then
         self:AutoInsertKeystone()
@@ -241,6 +257,14 @@ function Tweaks:PLAYER_LOGIN()
             self:HideBagBar()
         end)
     end
+    if self.db.profile.hidePartyFrame then
+        C_Timer.After(1, function()
+            self:HidePartyFrame()
+        end)
+        C_Timer.After(3, function()
+            self:HidePartyFrame()
+        end)
+    end
 end
 
 function Tweaks:ADDON_LOADED(event, addonName)
@@ -249,6 +273,15 @@ function Tweaks:ADDON_LOADED(event, addonName)
         if self.db and self.db.profile.hideBagBar then
             C_Timer.After(0.5, function()
                 self:HideBagBar()
+            end)
+        end
+    end
+    
+    -- Hide party frame when relevant addons load
+    if addonName == "Blizzard_CompactRaidFrames" or addonName == "Blizzard_EditMode" then
+        if self.db and self.db.profile.hidePartyFrame then
+            C_Timer.After(0.5, function()
+                self:HidePartyFrame()
             end)
         end
     end
@@ -303,6 +336,13 @@ function Tweaks:PLAYER_ENTERING_WORLD()
         self:HideBagBar()
         C_Timer.After(1, function() self:HideBagBar() end)
         C_Timer.After(3, function() self:HideBagBar() end)
+    end
+    
+    -- Party frame hiding with repeated attempts
+    if self.db.profile.hidePartyFrame then
+        self:HidePartyFrame()
+        C_Timer.After(1, function() self:HidePartyFrame() end)
+        C_Timer.After(3, function() self:HidePartyFrame() end)
     end
     
     -- Reveal map if enabled (initial load only)
@@ -720,6 +760,64 @@ function Tweaks:ShowBagBar()
     end
 end
 
+function Tweaks:HidePartyFrame()
+    -- Hide CompactPartyFrame (modern party frames)
+    if CompactPartyFrame then
+        CompactPartyFrame:SetParent(hiddenFrame)
+        CompactPartyFrame:Hide()
+        CompactPartyFrame:SetAlpha(0)
+        CompactPartyFrame:UnregisterAllEvents()
+        
+        -- Hook Show to prevent it from appearing
+        if not CompactPartyFrame.abstractHooked then
+            hooksecurefunc(CompactPartyFrame, "Show", function()
+                if Tweaks.db and Tweaks.db.profile.hidePartyFrame then
+                    CompactPartyFrame:Hide()
+                end
+            end)
+            CompactPartyFrame.abstractHooked = true
+        end
+    end
+    
+    -- Also try to hide EditMode party frame
+    if EditModeManagerFrame and EditModeManagerFrame.GetSystemFrame then
+        local partyFrame = EditModeManagerFrame:GetSystemFrame(Enum.EditModeSystem.UnitFrame)
+        if partyFrame then
+            partyFrame:SetParent(hiddenFrame)
+            partyFrame:Hide()
+            partyFrame:SetAlpha(0)
+            
+            -- Hook Show to prevent it from appearing
+            if not partyFrame.abstractHooked then
+                hooksecurefunc(partyFrame, "Show", function()
+                    if Tweaks.db and Tweaks.db.profile.hidePartyFrame then
+                        partyFrame:Hide()
+                    end
+                end)
+                partyFrame.abstractHooked = true
+            end
+        end
+    end
+end
+
+function Tweaks:ShowPartyFrame()
+    if CompactPartyFrame then
+        CompactPartyFrame:SetParent(UIParent)
+        CompactPartyFrame:Show()
+        CompactPartyFrame:SetAlpha(1)
+    end
+    
+    -- Also show EditMode party frame
+    if EditModeManagerFrame and EditModeManagerFrame.GetSystemFrame then
+        local partyFrame = EditModeManagerFrame:GetSystemFrame(Enum.EditModeSystem.UnitFrame)
+        if partyFrame then
+            partyFrame:SetParent(UIParent)
+            partyFrame:Show()
+            partyFrame:SetAlpha(1)
+        end
+    end
+end
+
 function Tweaks:ApplyTweaks()
     if self.db.profile.fastLoot then
         -- Set Auto Loot CVars
@@ -766,6 +864,32 @@ function Tweaks:ApplyTweaks()
         end
     else
         self:ShowBagBar()
+    end
+    
+    -- Handle party frame hiding
+    if self.db.profile.hidePartyFrame then
+        self:HidePartyFrame()
+        
+        -- Set up persistent hooks if not already done
+        if not self.partyFrameHooked then
+            if CompactPartyFrame then
+                hooksecurefunc(CompactPartyFrame, "Show", function()
+                    if self.db.profile.hidePartyFrame then
+                        CompactPartyFrame:Hide()
+                    end
+                end)
+                hooksecurefunc(CompactPartyFrame, "SetParent", function(frame, parent)
+                    if self.db.profile.hidePartyFrame and parent ~= hiddenFrame then
+                        C_Timer.After(0, function()
+                            frame:SetParent(hiddenFrame)
+                        end)
+                    end
+                end)
+            end
+            self.partyFrameHooked = true
+        end
+    else
+        self:ShowPartyFrame()
     end
 end
 
@@ -874,30 +998,44 @@ function Tweaks:GetOptions()
                 end },
             hideBagBar = { name = "Hide Bag Bar", type = "toggle", order = 3,
                 set = function(_, v) self.db.profile.hideBagBar = v; self:ApplyTweaks() end },
+            hidePartyFrame = { 
+                name = "Hide Party Frame", 
+                desc = "Hides the default party frame. Use if you have a replacement party frame addon.",
+                type = "toggle", 
+                order = 4,
+                set = function(_, v) 
+                    self.db.profile.hidePartyFrame = v
+                    if v then
+                        self:HidePartyFrame()
+                    else
+                        self:ShowPartyFrame()
+                    end
+                end 
+            },
             autoRepair = {
                 name = "Auto Repair at Vendors",
                 desc = "Automatically repair all items when opening a merchant that can repair",
                 type = "toggle",
-                order = 4,
+                order = 5,
             },
             autoRepairGuild = {
                 name = "Use Guild Bank for Repairs",
                 desc = "Use guild bank funds for repairs if available (requires guild repair privileges)",
                 type = "toggle",
-                order = 5,
+                order = 6,
                 disabled = function() return not self.db.profile.autoRepair end,
             },
             autoSellJunk = {
                 name = "Auto Sell Junk at Vendors",
                 desc = "Automatically sell all grey (poor quality) items when opening a merchant",
                 type = "toggle",
-                order = 6,
+                order = 7,
             },
             revealMap = {
                 name = "Reveal Entire Map (Remove Fog of War)",
                 desc = "Attempts to hide the fog of war overlay on the world map, revealing unexplored areas. Note: Blizzard has restrictions on this feature - it may not work on all maps or may require opening the map to take effect.",
                 type = "toggle",
-                order = 7,
+                order = 8,
                 set = function(_, v)
                     self.db.profile.revealMap = v
                     if v then
@@ -915,7 +1053,7 @@ function Tweaks:GetOptions()
                 name = "Auto-Fill Delete Confirmation",
                 desc = "Automatically fills in the DELETE confirmation text and enables the delete button when deleting items",
                 type = "toggle",
-                order = 8,
+                order = 9,
                 set = function(_, v)
                     self.db.profile.autoDelete = v
                     if v then
@@ -927,7 +1065,7 @@ function Tweaks:GetOptions()
                 name = "Auto Screenshot on Achievement",
                 desc = "Automatically takes a screenshot whenever you earn an achievement",
                 type = "toggle",
-                order = 9,
+                order = 10,
                 set = function(_, v)
                     self.db.profile.autoScreenshot = v
                     if v then
@@ -941,7 +1079,7 @@ function Tweaks:GetOptions()
                 name = "Skip Cutscenes",
                 desc = "Automatically skips cinematics and movie cutscenes",
                 type = "toggle",
-                order = 10,
+                order = 11,
                 set = function(_, v)
                     self.db.profile.skipCutscenes = v
                     if v then
@@ -953,13 +1091,13 @@ function Tweaks:GetOptions()
                 name = "Auto-Insert Mythic Keystone",
                 desc = "Automatically places Mythic Keystones from your bags into the keystone font",
                 type = "toggle",
-                order = 11,
+                order = 12,
             },
             importOverwriteEnabled = { 
                 name = "Enable Talent Import Overwrite", 
                 desc = "Adds a checkbox to the talent import dialog to overwrite the current loadout instead of creating a new one",
                 type = "toggle", 
-                order = 12,
+                order = 13,
                 set = function(_, v) 
                     self.db.profile.importOverwriteEnabled = v
                     if v then
@@ -976,7 +1114,7 @@ function Tweaks:GetOptions()
                 min = 0.5,
                 max = 2.0,
                 step = 0.05,
-                order = 13,
+                order = 14,
                 set = function(_, v)
                     self.db.profile.questFrameScale = v
                     self:ApplyQuestFrameScale()
@@ -986,7 +1124,7 @@ function Tweaks:GetOptions()
                 name = "Use Custom Quest/Dialogue Position",
                 desc = "Enable to set a custom default position for Quest and Dialogue/Gossip windows",
                 type = "toggle",
-                order = 14,
+                order = 15,
                 set = function(_, v)
                     self.db.profile.questFrameCustomPosition = v
                     self:ApplyQuestFrameScale()
@@ -999,7 +1137,7 @@ function Tweaks:GetOptions()
                 min = -800,
                 max = 800,
                 step = 1,
-                order = 15,
+                order = 16,
                 disabled = function() return not self.db.profile.questFrameCustomPosition end,
                 set = function(_, v)
                     self.db.profile.questFrameX = v
@@ -1013,7 +1151,7 @@ function Tweaks:GetOptions()
                 min = -500,
                 max = 500,
                 step = 1,
-                order = 16,
+                order = 17,
                 disabled = function() return not self.db.profile.questFrameCustomPosition end,
                 set = function(_, v)
                     self.db.profile.questFrameY = v
@@ -1024,7 +1162,7 @@ function Tweaks:GetOptions()
                 name = "Recolor Delve Pins",
                 desc = "Makes Delve entrance pins on the world map more visible with a custom color",
                 type = "toggle",
-                order = 17,
+                order = 18,
                 set = function(_, v)
                     self.db.profile.recolorDelvePins = v
                     if v then
@@ -1037,7 +1175,7 @@ function Tweaks:GetOptions()
                 name = "Delve Pin Color",
                 desc = "Color to use for Delve entrance pins on the world map",
                 type = "color",
-                order = 18,
+                order = 19,
                 hasAlpha = false,
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
@@ -1076,7 +1214,7 @@ function Tweaks:GetOptions()
                        "2. Press once to cast your fishing line\n" ..
                        "3. Hover over the fishing bobber and press again to hook the fish",
                 type = "toggle",
-                order = 19,
+                order = 20,
                 set = function(_, v)
                     self.db.profile.oneKeyFishing = v
                     if v then
