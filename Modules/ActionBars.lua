@@ -169,45 +169,23 @@ function AB:CheckForConflicts()
                     StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end,
                 OnCancel = function()
-                    -- User chose to keep both - warn them and offer reload
+                    -- User chose to keep both - warn them
                     print("|cff9482c9AbstractUI:|r Warning: Running multiple action bar addons may cause conflicts.")
-                    StaticPopupDialogs["AbstractUI_ACTIONBAR_RELOAD"] = {
-                        text = "Reload UI to ensure changes take effect?",
-                        button1 = "Reload Now",
-                        button2 = "Later",
-                        OnAccept = function()
-                            C_Timer.After(0.1, function()
-                                ReloadUI()
-                            end)
-                        end,
-                        timeout = 0,
-                        whileDead = true,
-                        hideOnEscape = true,
-                        preferredIndex = 3,
-                    }
-                    C_Timer.After(0.5, function()
-                        StaticPopup_Show("AbstractUI_ACTIONBAR_RELOAD")
-                    end)
+                    print("|cff9482c9AbstractUI:|r Recommend reloading UI to ensure proper functionality.")
+                    -- Use standard reload confirm dialog
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end,
                 OnAlt = function()
-                    -- Show instructions to disable the other addon
-                    print("|cff9482c9AbstractUI:|r To disable " .. addonList .. ", type /reload, then at the character select screen, click 'AddOns' and uncheck it.")
-                    StaticPopupDialogs["AbstractUI_ACTIONBAR_RELOAD"] = {
-                        text = "Reload UI now to access the AddOns menu?",
-                        button1 = "Reload Now",
-                        button2 = "Later",
-                        OnAccept = function()
-                            C_Timer.After(0.1, function()
-                                ReloadUI()
-                            end)
-                        end,
-                        timeout = 0,
-                        whileDead = true,
-                        hideOnEscape = true,
-                        preferredIndex = 3,
-                    }
-                    C_Timer.After(0.5, function()
-                        StaticPopup_Show("AbstractUI_ACTIONBAR_RELOAD")
+                    -- Open Blizzard's addon list so user can disable the other addon
+                    print("|cff9482c9AbstractUI:|r Opening AddOns menu. Please uncheck " .. addonList .. " and click 'Okay' to reload.")
+                    -- Use a small delay to let the popup close first
+                    C_Timer.After(0.1, function()
+                        if AddonList_Show then
+                            AddonList_Show()
+                        else
+                            -- Fallback: show instructions if function doesn't exist
+                            print("|cff9482c9AbstractUI:|r Type /reload, then at the character select screen, click 'AddOns' and uncheck " .. addonList .. ".")
+                        end
                     end)
                 end,
                 timeout = 0,

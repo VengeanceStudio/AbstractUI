@@ -2552,21 +2552,8 @@ function AbstractUI:DoImport(importString, newProfileName, suppressDialog)
     
     -- Show reload dialog (unless suppressed by caller)
     if not suppressDialog then
-        StaticPopupDialogs["AbstractUI_IMPORT_RELOAD"] = {
-            text = "Profile imported successfully!\n\nReload UI now to apply changes?",
-            button1 = "Reload Now",
-            button2 = "Later",
-            OnAccept = function()
-                C_Timer.After(0.1, function()
-                    ReloadUI()
-                end)
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-        StaticPopup_Show("AbstractUI_IMPORT_RELOAD")
+        print("|cff00ff00AbstractUI:|r Profile imported successfully!")
+        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
     end
 end
 

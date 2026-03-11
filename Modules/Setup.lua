@@ -419,21 +419,7 @@ function Setup:CompleteSetup(frame)
     frame:Hide()
     
     -- Show reload confirmation with secure reload button
-    StaticPopupDialogs["AbstractUI_SETUP_COMPLETE"] = {
-        text = "AbstractUI: Setup complete! Your UI needs to reload to apply the changes.",
-        button1 = "Reload Now",
-        button2 = "Later",
-        OnAccept = function()
-            C_Timer.After(0.1, function()
-                ReloadUI()
-            end)
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-    StaticPopup_Show("AbstractUI_SETUP_COMPLETE")
+    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
 end
 
 function Setup:GetOptions()
