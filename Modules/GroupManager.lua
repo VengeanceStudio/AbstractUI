@@ -145,15 +145,20 @@ function GroupManager:CreateManagerFrame()
     -- Create expanded content (hidden by default)
     self:CreateExpandedContent()
     
+    -- Start in collapsed state - hide main frame background/border
+    if managerFrame.bg then managerFrame.bg:Hide() end
+    if managerFrame.border then managerFrame.border:Hide() end
+    
     managerFrame:Hide()
 end
 
 function GroupManager:CreateExpandedContent()
     if not managerFrame then return end
     
+    -- Plain frame for content - managerFrame provides the background
     local content = CreateFrame("Frame", nil, managerFrame)
-    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 4, -32)  -- Start below toggle button
-    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -4, 4)
+    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 6, -34)  -- Start below toggle button with some padding
+    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -6, 6)  -- Padding from edges
     content:Hide()
     
     managerFrame.content = content
@@ -457,11 +462,15 @@ function GroupManager:ToggleExpanded()
     if isExpanded then
         managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
         managerFrame.content:Show()
-        managerFrame.icon:Hide()
+        -- Show the main frame background/border when expanded
+        if managerFrame.bg then managerFrame.bg:Show() end
+        if managerFrame.border then managerFrame.border:Show() end
     else
         managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
         managerFrame.content:Hide()
-        managerFrame.icon:Show()
+        -- Hide the main frame background/border when collapsed (just show button)
+        if managerFrame.bg then managerFrame.bg:Hide() end
+        if managerFrame.border then managerFrame.border:Hide() end
     end
 end
 
