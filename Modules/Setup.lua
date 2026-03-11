@@ -368,16 +368,25 @@ function Setup:CompleteSetup(frame)
                     error("C_EditMode API not available")
                 end
                 
-                if not EditModeManagerFrame then
-                    error("EditModeManagerFrame not available")
-                end
-                
                 local layoutInfo = C_EditMode.ConvertStringToLayoutInfo(editModePresets[res])
                 if not layoutInfo then
                     error("Failed to convert layout string")
                 end
                 
-                EditModeManagerFrame:ImportLayouts(layoutInfo)
+                -- Get current layouts
+                local layouts = C_EditMode.GetLayouts()
+                if not layouts or not layouts.layouts then
+                    error("Failed to get Edit Mode layouts")
+                end
+                
+                -- Determine which layout type to use (Character or Account)
+                local layoutType = layouts.activeLayout or Enum.EditModeLayoutType.Character
+                
+                -- Update the layout
+                layouts.layouts[layoutType] = layoutInfo
+                
+                -- Save the changes (this triggers the game to update)
+                C_EditMode.SaveLayouts(layouts)
             end)
             
             if success then
