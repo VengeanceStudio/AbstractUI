@@ -52,7 +52,7 @@ local defaults = {
             tweaks = true,
             cursorTrail = true,
             macroIconSelector = true,
-            partyFrames = false,  -- Disabled by default - user must enable
+            groupManager = false,  -- Disabled by default - user must enable
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true
@@ -1987,10 +1987,10 @@ function AbstractUI:GetOptions()
                         desc = "Display a custom player cast bar",
                         get = function() return self.db.profile.modules.castBar end,
                         set = function(_, v) self.db.profile.modules.castBar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    partyFrames = { name = "Party Frames", type = "toggle", order = 2.73, width = "normal",
-                        desc = "Compact party frames that expand on click (enable 'Hide Party Frame' in Tweaks to hide Blizzard's default)",
-                        get = function() return self.db.profile.modules.partyFrames end,
-                        set = function(_, v) self.db.profile.modules.partyFrames = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    groupManager = { name = "Group Manager", type = "toggle", order = 2.73, width = "normal",
+                        desc = "Compact group frames that expand on click and can be positioned anywhere (enable 'Hide Compact Party/Raid Manager' in Tweaks to hide Blizzard's default)",
+                        get = function() return self.db.profile.modules.groupManager end,
+                        set = function(_, v) self.db.profile.modules.groupManager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
                     tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "normal",
                         get = function() return self.db.profile.modules.tweaks end,
                         set = function(_, v) self.db.profile.modules.tweaks = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },

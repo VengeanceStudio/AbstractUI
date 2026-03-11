@@ -1,17 +1,17 @@
 -- ============================================================================
--- Party Frames Module
+-- Group Manager Module
 -- ============================================================================
--- Compact party frames that expand on click for more details
+-- Compact party/raid frames that expand on click for more details
 -- ============================================================================
 
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
-local PartyFrames = AbstractUI:NewModule("PartyFrames", "AceEvent-3.0")
+local GroupManager = AbstractUI:NewModule("GroupManager", "AceEvent-3.0")
 local ColorPalette = _G.AbstractUI_ColorPalette
 local FontKit = _G.AbstractUI_FontKit
 local FrameFactory = _G.AbstractUI_FrameFactory
 
 -- State
-local partyFrames = {}
+local groupFrames = {}
 local containerFrame = nil
 local isExpanded = false
 local MAX_PARTY_MEMBERS = 4
@@ -38,13 +38,13 @@ local defaults = {
 -- INITIALIZATION
 -- ============================================================================
 
-function PartyFrames:OnInitialize()
-    self.db = AbstractUI.db:RegisterNamespace("PartyFrames", defaults)
+function GroupManager:OnInitialize()
+    self.db = AbstractUI.db:RegisterNamespace("GroupManager", defaults)
 end
 
-function PartyFrames:OnEnable()
+function GroupManager:OnEnable()
     -- Check if module is enabled
-    if not AbstractUI.db.profile.modules.partyFrames then
+    if not AbstractUI.db.profile.modules.groupManager then
         return
     end
     
@@ -59,10 +59,10 @@ function PartyFrames:OnEnable()
     
     -- Create frames
     self:CreateContainer()
-    self:UpdatePartyFrames()
+    self:UpdateGroupFrames()
 end
 
-function PartyFrames:OnDisable()
+function GroupManager:OnDisable()
     if containerFrame then
         containerFrame:Hide()
     end
@@ -72,10 +72,10 @@ end
 -- FRAME CREATION
 -- ============================================================================
 
-function PartyFrames:CreateContainer()
+function GroupManager:CreateContainer()
     if containerFrame then return end
     
-    containerFrame = CreateFrame("Frame", "AbstractUI_PartyContainer", UIParent, "BackdropTemplate")
+    containerFrame = CreateFrame("Frame", "AbstractUI_GroupContainer", UIParent, "BackdropTemplate")
     containerFrame:SetSize(200, 200)
     containerFrame:SetPoint(
         self.db.profile.position.point,
@@ -92,9 +92,9 @@ function PartyFrames:CreateContainer()
     containerFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, _, x, y = self:GetPoint()
-        PartyFrames.db.profile.position.point = point
-        PartyFrames.db.profile.position.x = x
-        PartyFrames.db.profile.position.y = y
+        GroupManager.db.profile.position.point = point
+        GroupManager.db.profile.position.x = x
+        GroupManager.db.profile.position.y = y
     end)
     
     -- Toggle button (always visible)
@@ -108,10 +108,10 @@ function PartyFrames:CreateContainer()
     })
     
     if ColorPalette then
-        local bg = ColorPalette:GetColor('background')
-        local border = ColorPalette:GetColor('border')
-        toggleBtn:SetBackdropColor(bg.r, bg.g, bg.b, bg.a or 0.9)
-        toggleBtn:SetBackdropBorderColor(border.r, border.g, border.b, border.a or 1)
+        local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
+        local bordr, bordg, bordb, borda = ColorPalette:GetColor('panel-border')
+        toggleBtn:SetBackdropColor(bgr, bgg, bgb, bga or 0.9)
+        toggleBtn:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
     else
         toggleBtn:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
         toggleBtn:SetBackdropBorderColor(0, 0, 0, 1)
@@ -125,13 +125,13 @@ function PartyFrames:CreateContainer()
     end
     
     toggleBtn:SetScript("OnClick", function()
-        PartyFrames:ToggleExpanded()
+        GroupManager:ToggleExpanded()
     end)
     
     toggleBtn:SetScript("OnEnter", function(self)
         if ColorPalette then
-            local hover = ColorPalette:GetColor('hover')
-            self:SetBackdropColor(hover.r, hover.g, hover.b, hover.a or 0.9)
+            local r, g, b, a = ColorPalette:GetColor('button-hover')
+            self:SetBackdropColor(r, g, b, a or 0.9)
         else
             self:SetBackdropColor(0.2, 0.2, 0.2, 0.9)
         end
@@ -139,8 +139,8 @@ function PartyFrames:CreateContainer()
     
     toggleBtn:SetScript("OnLeave", function(self)
         if ColorPalette then
-            local bg = ColorPalette:GetColor('background')
-            self:SetBackdropColor(bg.r, bg.g, bg.b, bg.a or 0.9)
+            local r, g, b, a = ColorPalette:GetColor('panel-bg')
+            self:SetBackdropColor(r, g, b, a or 0.9)
         else
             self:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
         end
@@ -153,12 +153,12 @@ function PartyFrames:CreateContainer()
     containerFrame:Hide()
 end
 
-function PartyFrames:CreatePartyFrame(index)
-    if partyFrames[index] then
-        return partyFrames[index]
+function GroupManager:CreateGroupFrame(index)
+    if groupFrames[index] then
+        return groupFrames[index]
     end
     
-    local frame = CreateFrame("Button", "AbstractUI_PartyFrame" .. index, containerFrame, "BackdropTemplate")
+    local frame = CreateFrame("Button", "AbstractUI_GroupFrame" .. index, containerFrame, "BackdropTemplate")
     frame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -210,7 +210,7 @@ function PartyFrames:CreatePartyFrame(index)
     frame.index = index
     frame:Hide()
     
-    partyFrames[index] = frame
+    groupFrames[index] = frame
     return frame
 end
 
@@ -218,7 +218,7 @@ end
 -- UPDATE FUNCTIONS
 -- ============================================================================
 
-function PartyFrames:UpdatePartyFrames()
+function GroupManager:UpdateGroupFrames()
     if not containerFrame then return end
     
     local numMembers = GetNumSubgroupMembers()
@@ -237,24 +237,24 @@ function PartyFrames:UpdatePartyFrames()
     
     containerFrame:SetSize(width + 25, totalHeight) -- +25 for toggle button
     
-    -- Update each party member frame
+    -- Update each group member frame
     for i = 1, MAX_PARTY_MEMBERS do
         if i <= numMembers and UnitExists("party" .. i) then
-            local frame = self:CreatePartyFrame(i)
+            local frame = self:CreateGroupFrame(i)
             frame:ClearAllPoints()
             
             if i == 1 then
                 frame:SetPoint("TOPLEFT", containerFrame, "TOPLEFT", 0, -20)
             else
-                frame:SetPoint("TOPLEFT", partyFrames[i-1], "BOTTOMLEFT", 0, -self.db.profile.spacing)
+                frame:SetPoint("TOPLEFT", groupFrames[i-1], "BOTTOMLEFT", 0, -self.db.profile.spacing)
             end
             
             frame:SetSize(width, height)
             frame:Show()
             
             self:UpdateUnitFrame(frame)
-        elseif partyFrames[i] then
-            partyFrames[i]:Hide()
+        elseif groupFrames[i] then
+            groupFrames[i]:Hide()
         end
     end
     
@@ -264,7 +264,7 @@ function PartyFrames:UpdatePartyFrames()
     end
 end
 
-function PartyFrames:UpdateUnitFrame(frame)
+function GroupManager:UpdateUnitFrame(frame)
     if not frame or not UnitExists(frame.unit) then return end
     
     local unit = frame.unit
@@ -361,50 +361,50 @@ function PartyFrames:UpdateUnitFrame(frame)
     end
 end
 
-function PartyFrames:ToggleExpanded()
+function GroupManager:ToggleExpanded()
     isExpanded = not isExpanded
-    self:UpdatePartyFrames()
+    self:UpdateGroupFrames()
 end
 
 -- ============================================================================
 -- EVENT HANDLERS
 -- ============================================================================
 
-function PartyFrames:GROUP_ROSTER_UPDATE()
-    self:UpdatePartyFrames()
+function GroupManager:GROUP_ROSTER_UPDATE()
+    self:UpdateGroupFrames()
 end
 
-function PartyFrames:PLAYER_ENTERING_WORLD()
-    self:UpdatePartyFrames()
+function GroupManager:PLAYER_ENTERING_WORLD()
+    self:UpdateGroupFrames()
 end
 
-function PartyFrames:UNIT_HEALTH(event, unit)
+function GroupManager:UNIT_HEALTH(event, unit)
     if not unit or not unit:match("^party%d$") then return end
     
     local index = tonumber(unit:match("%d+"))
-    if partyFrames[index] and partyFrames[index]:IsShown() then
-        self:UpdateUnitFrame(partyFrames[index])
+    if groupFrames[index] and groupFrames[index]:IsShown() then
+        self:UpdateUnitFrame(groupFrames[index])
     end
 end
 
-function PartyFrames:UNIT_MAXHEALTH(event, unit)
+function GroupManager:UNIT_MAXHEALTH(event, unit)
     self:UNIT_HEALTH(event, unit)
 end
 
-function PartyFrames:UNIT_POWER_UPDATE(event, unit)
+function GroupManager:UNIT_POWER_UPDATE(event, unit)
     -- Could add power bar functionality here if desired
 end
 
-function PartyFrames:UNIT_MAXPOWER(event, unit)
+function GroupManager:UNIT_MAXPOWER(event, unit)
     -- Could add power bar functionality here if desired
 end
 
-function PartyFrames:UNIT_CONNECTION(event, unit)
+function GroupManager:UNIT_CONNECTION(event, unit)
     if not unit or not unit:match("^party%d$") then return end
     
     local index = tonumber(unit:match("%d+"))
-    if partyFrames[index] and partyFrames[index]:IsShown() then
-        self:UpdateUnitFrame(partyFrames[index])
+    if groupFrames[index] and groupFrames[index]:IsShown() then
+        self:UpdateUnitFrame(groupFrames[index])
     end
 end
 
@@ -412,24 +412,24 @@ end
 -- OPTIONS
 -- ============================================================================
 
-function PartyFrames:GetOptions()
+function GroupManager:GetOptions()
     return {
         type = "group",
-        name = "Party Frames",
+        name = "Group Manager",
         get = function(info) return self.db.profile[info[#info]] end,
         set = function(info, value) 
             self.db.profile[info[#info]] = value
-            self:UpdatePartyFrames()
+            self:UpdateGroupFrames()
         end,
         args = {
             enabled = {
-                name = "Enable Custom Party Frames",
-                desc = "Show compact party frames that expand on click. Make sure to enable 'Hide Party Frame' in Tweaks if using this.",
+                name = "Enable Custom Group Manager",
+                desc = "Show compact group frames that expand on click. Make sure to enable 'Hide Compact Party/Raid Manager' in Tweaks to hide Blizzard's default.",
                 type = "toggle",
                 order = 1,
                 set = function(info, value)
                     self.db.profile.enabled = value
-                    AbstractUI.db.profile.modules.partyFrames = value
+                    AbstractUI.db.profile.modules.groupManager = value
                     if value then
                         self:OnEnable()
                     else
@@ -444,7 +444,7 @@ function PartyFrames:GetOptions()
             },
             compactWidth = {
                 name = "Compact Width",
-                desc = "Width of party frames in compact mode",
+                desc = "Width of group frames in compact mode",
                 type = "range",
                 min = 40,
                 max = 200,
@@ -453,7 +453,7 @@ function PartyFrames:GetOptions()
             },
             compactHeight = {
                 name = "Compact Height",
-                desc = "Height of party frames in compact mode",
+                desc = "Height of group frames in compact mode",
                 type = "range",
                 min = 4,
                 max = 20,
@@ -467,7 +467,7 @@ function PartyFrames:GetOptions()
             },
             expandedWidth = {
                 name = "Expanded Width",
-                desc = "Width of party frames in expanded mode",
+                desc = "Width of group frames in expanded mode",
                 type = "range",
                 min = 100,
                 max = 300,
@@ -476,7 +476,7 @@ function PartyFrames:GetOptions()
             },
             expandedHeight = {
                 name = "Expanded Height",
-                desc = "Height of party frames in expanded mode",
+                desc = "Height of group frames in expanded mode",
                 type = "range",
                 min = 20,
                 max = 80,
@@ -485,7 +485,7 @@ function PartyFrames:GetOptions()
             },
             spacing = {
                 name = "Frame Spacing",
-                desc = "Vertical spacing between party frames",
+                desc = "Vertical spacing between group frames",
                 type = "range",
                 min = 0,
                 max = 10,
@@ -496,4 +496,4 @@ function PartyFrames:GetOptions()
     }
 end
 
-return PartyFrames
+return GroupManager

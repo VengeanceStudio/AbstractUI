@@ -1069,8 +1069,8 @@ function Tweaks:GetOptions()
             hideBagBar = { name = "Hide Bag Bar", type = "toggle", order = 3,
                 set = function(_, v) self.db.profile.hideBagBar = v; self:ApplyTweaks() end },
             hidePartyFrame = { 
-                name = "Hide Party Frame", 
-                desc = "Hides the default party frame (only visible when in a party). Enable the Party Frames module for a compact replacement.",
+                name = "Hide Compact Party/Raid Manager", 
+                desc = "Hides Blizzard's Compact Party/Raid Manager frame. Use the custom Party Frames module for a compact, expandable replacement.",
                 type = "toggle", 
                 order = 4,
                 set = function(_, v) 
@@ -1078,13 +1078,13 @@ function Tweaks:GetOptions()
                     if v then
                         local hidden = self:HidePartyFrame()
                         if hidden then
-                            print("|cff00ff00[AbstractUI]|r Party frame hidden (will hide when you join a party)")
+                            print("|cff00ff00[AbstractUI]|r Compact Party/Raid Manager hidden")
                         else
-                            print("|cff00ff00[AbstractUI]|r Party frame will be hidden when you join a party")
+                            print("|cff00ff00[AbstractUI]|r Compact Party/Raid Manager will be hidden when present")
                         end
                     else
                         self:ShowPartyFrame()
-                        print("|cff00ff00[AbstractUI]|r Party frame restored")
+                        print("|cff00ff00[AbstractUI]|r Compact Party/Raid Manager restored")
                     end
                 end 
             },
