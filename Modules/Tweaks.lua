@@ -766,12 +766,8 @@ function Tweaks:HidePartyFrame()
     
     -- Hide CompactRaidFrameManager (the main party/raid frame manager)
     if CompactRaidFrameManager then
-        CompactRaidFrameManager:SetParent(hiddenFrame)
         CompactRaidFrameManager:Hide()
         CompactRaidFrameManager:SetAlpha(0)
-        if CompactRaidFrameManager.UnregisterAllEvents then
-            CompactRaidFrameManager:UnregisterAllEvents()
-        end
         
         -- Hook Show to prevent it from appearing
         if not CompactRaidFrameManager.abstractHooked then
@@ -787,12 +783,8 @@ function Tweaks:HidePartyFrame()
     
     -- Hide CompactPartyFrame (modern party frames)
     if CompactPartyFrame then
-        CompactPartyFrame:SetParent(hiddenFrame)
         CompactPartyFrame:Hide()
         CompactPartyFrame:SetAlpha(0)
-        if CompactPartyFrame.UnregisterAllEvents then
-            CompactPartyFrame:UnregisterAllEvents()
-        end
         
         -- Hook Show to prevent it from appearing
         if not CompactPartyFrame.abstractHooked then
@@ -808,7 +800,6 @@ function Tweaks:HidePartyFrame()
     
     -- Also try to hide Party container
     if CompactRaidFrameContainer then
-        CompactRaidFrameContainer:SetParent(hiddenFrame)
         CompactRaidFrameContainer:Hide()
         CompactRaidFrameContainer:SetAlpha(0)
         
@@ -827,7 +818,6 @@ function Tweaks:HidePartyFrame()
     if EditModeManagerFrame and EditModeManagerFrame.GetSystemFrame then
         local partyFrame = EditModeManagerFrame:GetSystemFrame(Enum.EditModeSystem.UnitFrame)
         if partyFrame then
-            partyFrame:SetParent(hiddenFrame)
             partyFrame:Hide()
             partyFrame:SetAlpha(0)
             
@@ -849,19 +839,16 @@ end
 
 function Tweaks:ShowPartyFrame()
     if CompactRaidFrameManager then
-        CompactRaidFrameManager:SetParent(UIParent)
         CompactRaidFrameManager:Show()
         CompactRaidFrameManager:SetAlpha(1)
     end
     
     if CompactPartyFrame then
-        CompactPartyFrame:SetParent(UIParent)
         CompactPartyFrame:Show()
         CompactPartyFrame:SetAlpha(1)
     end
     
     if CompactRaidFrameContainer then
-        CompactRaidFrameContainer:SetParent(UIParent)
         CompactRaidFrameContainer:Show()
         CompactRaidFrameContainer:SetAlpha(1)
     end
@@ -870,7 +857,6 @@ function Tweaks:ShowPartyFrame()
     if EditModeManagerFrame and EditModeManagerFrame.GetSystemFrame then
         local partyFrame = EditModeManagerFrame:GetSystemFrame(Enum.EditModeSystem.UnitFrame)
         if partyFrame then
-            partyFrame:SetParent(UIParent)
             partyFrame:Show()
             partyFrame:SetAlpha(1)
         end
