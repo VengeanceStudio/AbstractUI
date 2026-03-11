@@ -1,37 +1,43 @@
 -- ============================================================================
 -- Group Manager Module
 -- ============================================================================
--- Compact party/raid frames that expand on click for more details
+-- Compact group management toolbar with markers and controls
 -- ============================================================================
 
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local GroupManager = AbstractUI:NewModule("GroupManager", "AceEvent-3.0")
 local ColorPalette = _G.AbstractUI_ColorPalette
 local FontKit = _G.AbstractUI_FontKit
-local FrameFactory = _G.AbstractUI_FrameFactory
 
 -- State
-local groupFrames = {}
-local containerFrame = nil
+local managerFrame = nil
 local isExpanded = false
-local MAX_PARTY_MEMBERS = 4
 
 local defaults = {
     profile = {
         enabled = true,
-        compactMode = true, -- Start in compact mode
-        showPets = false,
-        compactWidth = 80,
-        compactHeight = 8,
-        expandedWidth = 180,
-        expandedHeight = 40,
-        spacing = 2,
+        compactWidth = 30,
+        compactHeight = 30,
+        expandedWidth = 200,
+        expandedHeight = 340,
         position = {
             point = "TOPLEFT",
             x = 10,
             y = -200,
         },
     }
+}
+
+-- Raid marker icons in order
+local RAID_MARKERS = {
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1", index = 1, name = "Star"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_2", index = 2, name = "Circle"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_3", index = 3, name = "Diamond"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_4", index = 4, name = "Triangle"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_5", index = 5, name = "Moon"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_6", index = 6, name = "Square"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_7", index = 7, name = "Cross"},
+    {icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8", index = 8, name = "Skull"},
 }
 
 -- ============================================================================
@@ -50,21 +56,17 @@ function GroupManager:OnEnable()
     
     -- Register events
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
-    self:RegisterEvent("UNIT_HEALTH")
-    self:RegisterEvent("UNIT_MAXHEALTH")
-    self:RegisterEvent("UNIT_POWER_UPDATE")
-    self:RegisterEvent("UNIT_MAXPOWER")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    self:RegisterEvent("UNIT_CONNECTION")
+    self:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
     
     -- Create frames
-    self:CreateContainer()
-    self:UpdateGroupFrames()
+    self:CreateManagerFrame()
+    self:UpdateVisibility()
 end
 
 function GroupManager:OnDisable()
-    if containerFrame then
-        containerFrame:Hide()
+    if managerFrame then
+        managerFrame:Hide()
     end
 end
 
@@ -72,36 +74,24 @@ end
 -- FRAME CREATION
 -- ============================================================================
 
-function GroupManager:CreateContainer()
-    if containerFrame then return end
+function GroupManager:CreateManagerFrame()
+    if managerFrame then return end
     
-    containerFrame = CreateFrame("Frame", "AbstractUI_GroupContainer", UIParent, "BackdropTemplate")
-    containerFrame:SetSize(200, 200)
-    containerFrame:SetPoint(
+    managerFrame = CreateFrame("Frame", "AbstractUI_GroupManager", UIParent, "BackdropTemplate")
+    managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+    managerFrame:SetPoint(
         self.db.profile.position.point,
         UIParent,
         self.db.profile.position.point,
         self.db.profile.position.x,
         self.db.profile.position.y
     )
-    containerFrame:SetFrameStrata("LOW")
-    containerFrame:SetMovable(true)
-    containerFrame:EnableMouse(true)
-    containerFrame:RegisterForDrag("LeftButton")
-    containerFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
-    containerFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local point, _, _, x, y = self:GetPoint()
-        GroupManager.db.profile.position.point = point
-        GroupManager.db.profile.position.x = x
-        GroupManager.db.profile.position.y = y
-    end)
+    managerFrame:SetFrameStrata("MEDIUM")
+    managerFrame:SetMovable(true)
+    managerFrame:EnableMouse(true)
+    managerFrame:RegisterForDrag("LeftButton")
     
-    -- Toggle button (always visible)
-    local toggleBtn = CreateFrame("Button", nil, containerFrame, "BackdropTemplate")
-    toggleBtn:SetSize(20, 20)
-    toggleBtn:SetPoint("TOPRIGHT", containerFrame, "TOPRIGHT", 0, 0)
-    toggleBtn:SetBackdrop({
+    managerFrame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = 1,
@@ -110,19 +100,51 @@ function GroupManager:CreateContainer()
     if ColorPalette then
         local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
         local bordr, bordg, bordb, borda = ColorPalette:GetColor('panel-border')
-        toggleBtn:SetBackdropColor(bgr, bgg, bgb, bga or 0.9)
-        toggleBtn:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
+        managerFrame:SetBackdropColor(bgr, bgg, bgb, bga or 0.9)
+        managerFrame:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
     else
-        toggleBtn:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
-        toggleBtn:SetBackdropBorderColor(0, 0, 0, 1)
+        managerFrame:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
+        managerFrame:SetBackdropBorderColor(0, 0, 0, 1)
     end
     
-    local toggleText = toggleBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    toggleText:SetPoint("CENTER")
-    toggleText:SetText("+")
-    if FontKit then
-        FontKit:SetFont(toggleText, 'body', 'normal')
+    managerFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    managerFrame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local point, _, _, x, y = self:GetPoint()
+        GroupManager.db.profile.position.point = point
+        GroupManager.db.profile.position.x = x
+        GroupManager.db.profile.position.y = y
+    end)
+    
+    -- Toggle button
+    local toggleBtn = CreateFrame("Button", nil, managerFrame, "BackdropTemplate")
+    toggleBtn:SetSize(self.db.profile.compactWidth - 2, self.db.profile.compactHeight - 2)
+    toggleBtn:SetPoint("CENTER", managerFrame, "CENTER", 0, 0)
+    toggleBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    
+    if ColorPalette then
+        local bgr, bgg, bgb, bga = ColorPalette:GetColor('button-bg')
+        local bordr, bordg, bordb, borda = ColorPalette:GetColor('panel-border')
+        toggleBtn:SetBackdropColor(bgr, bgg, bgb, bga or 0.8)
+        toggleBtn:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
+    else
+        toggleBtn:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+        toggleBtn:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
     end
+    
+    -- Icon for collapsed state (group icon)
+    local icon = toggleBtn:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER")
+    icon:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
+    icon:SetVertexColor(0.8, 0.8, 0.8, 1)
+    
+    managerFrame.toggleBtn = toggleBtn
+    managerFrame.icon = icon
     
     toggleBtn:SetScript("OnClick", function()
         GroupManager:ToggleExpanded()
@@ -133,278 +155,379 @@ function GroupManager:CreateContainer()
             local r, g, b, a = ColorPalette:GetColor('button-hover')
             self:SetBackdropColor(r, g, b, a or 0.9)
         else
-            self:SetBackdropColor(0.2, 0.2, 0.2, 0.9)
+            self:SetBackdropColor(0.25, 0.25, 0.25, 0.9)
         end
+        
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Group Manager", 1, 1, 1)
+        GameTooltip:AddLine("Click to expand/collapse", 0.7, 0.7, 0.7)
+        GameTooltip:Show()
     end)
     
     toggleBtn:SetScript("OnLeave", function(self)
         if ColorPalette then
-            local r, g, b, a = ColorPalette:GetColor('panel-bg')
-            self:SetBackdropColor(r, g, b, a or 0.9)
+            local r, g, b, a = ColorPalette:GetColor('button-bg')
+            self:SetBackdropColor(r, g, b, a or 0.8)
         else
-            self:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
+            self:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
+        end
+        GameTooltip:Hide()
+    end)
+    
+    -- Create expanded content (hidden by default)
+    self:CreateExpandedContent()
+    
+    managerFrame:Hide()
+end
+
+function GroupManager:CreateExpandedContent()
+    if not managerFrame then return end
+    
+    local content = CreateFrame("Frame", nil, managerFrame)
+    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 2, -2)
+    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -2, 2)
+    content:Hide()
+    
+    managerFrame.content = content
+    
+    -- Title
+    local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
+    title:SetText("Group Controls")
+    if FontKit then
+        FontKit:SetFont(title, 'header', 'large')
+    end
+    
+    -- Raid Markers Section
+    local markersLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    markersLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
+    markersLabel:SetText("Raid Markers:")
+    if FontKit then
+        FontKit:SetFont(markersLabel, 'body', 'normal')
+    end
+    
+    -- Create marker buttons in 2 rows of 4
+    local markerButtons = {}
+    for i, marker in ipairs(RAID_MARKERS) do
+        local btn = CreateFrame("Button", nil, content)
+        btn:SetSize(30, 30)
+        
+        local col = ((i - 1) % 4)
+        local row = math.floor((i - 1) / 4)
+        btn:SetPoint("TOPLEFT", markersLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
+        
+        local icon = btn:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(btn)
+        icon:SetTexture(marker.icon)
+        
+        btn:SetScript("OnClick", function(self, button)
+            if button == "LeftButton" then
+                -- Mark target
+                if UnitExists("target") then
+                    SetRaidTarget("target", marker.index)
+                end
+            elseif button == "RightButton" then
+                -- Clear marker
+                for j = 1, 40 do
+                    local unit = "raid" .. j
+                    if UnitExists(unit) and GetRaidTargetIndex(unit) == marker.index then
+                        SetRaidTarget(unit, 0)
+                        break
+                    end
+                end
+                for j = 1, 4 do
+                    local unit = "party" .. j
+                    if UnitExists(unit) and GetRaidTargetIndex(unit) == marker.index then
+                        SetRaidTarget(unit, 0)
+                        break
+                    end
+                end
+                if GetRaidTargetIndex("player") == marker.index then
+                    SetRaidTarget("player", 0)
+                end
+            end
+        end)
+        
+        btn:SetScript("OnEnter", function(self)
+            icon:SetVertexColor(1, 1, 0.5)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(marker.name, 1, 1, 1)
+            GameTooltip:AddLine("Left-click: Mark target", 0.7, 0.7, 0.7)
+            GameTooltip:AddLine("Right-click: Clear marker", 0.7, 0.7, 0.7)
+            GameTooltip:Show()
+        end)
+        
+        btn:SetScript("OnLeave", function(self)
+            icon:SetVertexColor(1, 1, 1)
+            GameTooltip:Hide()
+        end)
+        
+        btn:RegisterForClicks("LeftButtonDown", "RightButtonDown")
+        
+        markerButtons[i] = btn
+    end
+    
+    -- World Markers Section
+    local worldLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    worldLabel:SetPoint("TOPLEFT", markerButtons[5], "BOTTOMLEFT", 0, -15)
+    worldLabel:SetText("World Markers:")
+    if FontKit then
+        FontKit:SetFont(worldLabel, 'body', 'normal')
+    end
+    
+    -- World marker buttons (in 2 rows of 4)
+    for i = 1, 8 do
+        local btn = CreateFrame("Button", nil, content)
+        btn:SetSize(30, 30)
+        
+        local col = ((i - 1) % 4)
+        local row = math.floor((i - 1) / 4)
+        btn:SetPoint("TOPLEFT", worldLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
+        
+        local icon = btn:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(btn)
+        icon:SetTexture(RAID_MARKERS[i].icon)
+        icon:SetVertexColor(0.7, 0.7, 0.7)
+        
+        btn:SetScript("OnClick", function(self)
+            PlaceRaidMarker(i)
+        end)
+        
+        btn:SetScript("OnEnter", function(self)
+            icon:SetVertexColor(1, 1, 0.5)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Place " .. RAID_MARKERS[i].name, 1, 1, 1)
+            GameTooltip:AddLine("Click to place on ground", 0.7, 0.7, 0.7)
+            GameTooltip:Show()
+        end)
+        
+        btn:SetScript("OnLeave", function(self)
+            icon:SetVertexColor(0.7, 0.7, 0.7)
+            GameTooltip:Hide()
+        end)
+    end
+    
+    -- Actions Section
+    local actionsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    actionsLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 120)
+    actionsLabel:SetText("Actions:")
+    if FontKit then
+        FontKit:SetFont(actionsLabel, 'body', 'normal')
+    end
+    
+    -- Leave Party button
+    local leaveBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    leaveBtn:SetSize(180, 20)
+    leaveBtn:SetPoint("TOPLEFT", actionsLabel, "BOTTOMLEFT", 0, -5)
+    leaveBtn:SetText("Leave Party")
+    
+    leaveBtn:SetScript("OnClick", function()
+        if IsInRaid() then
+            LeaveParty()
+        elseif IsInGroup() then
+            LeaveParty()
         end
     end)
     
-    containerFrame.toggleBtn = toggleBtn
-    containerFrame.toggleText = toggleText
+    -- Ready Check button
+    local readyBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    readyBtn:SetSize(180, 20)
+    readyBtn:SetPoint("TOPLEFT", leaveBtn, "BOTTOMLEFT", 0, -5)
+    readyBtn:SetText("Ready Check")
     
-    -- Start hidden
-    containerFrame:Hide()
-end
-
-function GroupManager:CreateGroupFrame(index)
-    if groupFrames[index] then
-        return groupFrames[index]
-    end
+    readyBtn:SetScript("OnClick", function()
+        DoReadyCheck()
+    end)
     
-    local frame = CreateFrame("Button", "AbstractUI_GroupFrame" .. index, containerFrame, "BackdropTemplate")
-    frame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    
-    -- Health bar background
-    frame.healthBg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.healthBg:SetTexture("Interface\\Buttons\\WHITE8x8")
-    frame.healthBg:SetPoint("TOPLEFT", 1, -1)
-    frame.healthBg:SetPoint("BOTTOMRIGHT", -1, 1)
-    frame.healthBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
-    
-    -- Health bar
-    frame.health = frame:CreateTexture(nil, "ARTWORK")
-    frame.health:SetTexture("Interface\\Buttons\\WHITE8x8")
-    frame.health:SetPoint("TOPLEFT", 1, -1)
-    frame.health:SetPoint("BOTTOMLEFT", 1, 1)
-    frame.health:SetWidth(self.db.profile.compactWidth - 2)
-    
-    -- Name text (hidden in compact mode)
-    frame.name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.name:SetPoint("LEFT", frame, "LEFT", 4, 0)
-    frame.name:SetJustifyH("LEFT")
-    if FontKit then
-        FontKit:SetFont(frame.name, 'body', 'small')
-    end
-    frame.name:Hide()
-    
-    -- Health text (hidden in compact mode)
-    frame.healthText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    frame.healthText:SetPoint("RIGHT", frame, "RIGHT", -4, 0)
-    frame.healthText:SetJustifyH("RIGHT")
-    if FontKit then
-        FontKit:SetFont(frame.healthText, 'body', 'small')
-    end
-    frame.healthText:Hide()
-    
-    -- Offline/dead indicator
-    frame.status = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.status:SetPoint("CENTER")
-    if FontKit then
-        FontKit:SetFont(frame.status, 'body', 'small')
-    end
-    frame.status:Hide()
-    
-    frame.unit = "party" .. index
-    frame.index = index
-    frame:Hide()
-    
-    groupFrames[index] = frame
-    return frame
-end
-
--- ============================================================================
--- UPDATE FUNCTIONS
--- ============================================================================
-
-function GroupManager:UpdateGroupFrames()
-    if not containerFrame then return end
-    
-    local numMembers = GetNumSubgroupMembers()
-    
-    if numMembers == 0 then
-        containerFrame:Hide()
-        return
-    end
-    
-    containerFrame:Show()
-    
-    -- Update size based on number of members and mode
-    local width = isExpanded and self.db.profile.expandedWidth or self.db.profile.compactWidth
-    local height = isExpanded and self.db.profile.expandedHeight or self.db.profile.compactHeight
-    local totalHeight = (height + self.db.profile.spacing) * numMembers + 20 -- +20 for toggle button
-    
-    containerFrame:SetSize(width + 25, totalHeight) -- +25 for toggle button
-    
-    -- Update each group member frame
-    for i = 1, MAX_PARTY_MEMBERS do
-        if i <= numMembers and UnitExists("party" .. i) then
-            local frame = self:CreateGroupFrame(i)
-            frame:ClearAllPoints()
-            
-            if i == 1 then
-                frame:SetPoint("TOPLEFT", containerFrame, "TOPLEFT", 0, -20)
-            else
-                frame:SetPoint("TOPLEFT", groupFrames[i-1], "BOTTOMLEFT", 0, -self.db.profile.spacing)
-            end
-            
-            frame:SetSize(width, height)
-            frame:Show()
-            
-            self:UpdateUnitFrame(frame)
-        elseif groupFrames[i] then
-            groupFrames[i]:Hide()
+    readyBtn:SetScript("OnEnter", function(self)
+        if not (IsInRaid() or IsInGroup()) or not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Requires Leader/Assistant", 1, 0.3, 0.3)
+            GameTooltip:Show()
         end
+    end)
+    
+    readyBtn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    
+    -- Convert to Raid button
+    local convertBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    convertBtn:SetSize(180, 20)
+    convertBtn:SetPoint("TOPLEFT", readyBtn, "BOTTOMLEFT", 0, -5)
+    convertBtn:SetText("Convert to Raid")
+    
+    convertBtn:SetScript("OnClick", function()
+        if IsInGroup() and not IsInRaid() and UnitIsGroupLeader("player") then
+            ConvertToRaid()
+        end
+    end)
+    
+    convertBtn:SetScript("OnEnter", function(self)
+        if not IsInGroup() then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Not in a group", 1, 0.3, 0.3)
+            GameTooltip:Show()
+        elseif IsInRaid() then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Already in a raid", 1, 0.3, 0.3)
+            GameTooltip:Show()
+        elseif not UnitIsGroupLeader("player") then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Requires Group Leader", 1, 0.3, 0.3)
+            GameTooltip:Show()
+        end
+    end)
+    
+    convertBtn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    
+    -- Difficulty Settings Section
+    local difficultyLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    difficultyLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 5)
+    difficultyLabel:SetText("Difficulty:")
+    if FontKit then
+        FontKit:SetFont(difficultyLabel, 'body', 'normal')
     end
     
-    -- Update toggle button text
-    if containerFrame.toggleText then
-        containerFrame.toggleText:SetText(isExpanded and "-" or "+")
+    -- Dungeon Difficulty Dropdown
+    local dungeonBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    dungeonBtn:SetSize(87, 20)
+    dungeonBtn:SetPoint("LEFT", difficultyLabel, "RIGHT", 5, 0)
+    
+    local function UpdateDungeonText()
+        local difficultyID = GetDungeonDifficultyID()
+        local difficultyName = GetDifficultyInfo(difficultyID)
+        dungeonBtn:SetText(difficultyName or "Dungeon")
     end
-end
-
-function GroupManager:UpdateUnitFrame(frame)
-    if not frame or not UnitExists(frame.unit) then return end
     
-    local unit = frame.unit
+    UpdateDungeonText()
     
-    -- Update health
-    local health = UnitHealth(unit)
-    local maxHealth = UnitHealthMax(unit)
-    local healthPct = maxHealth > 0 and (health / maxHealth) or 0
-    
-    -- Get class color
-    local _, class = UnitClass(unit)
-    local color
-    if UnitIsConnected(unit) then
-        if class then
-            color = RAID_CLASS_COLORS[class]
+    dungeonBtn:SetScript("OnClick", function(self)
+        local currentDiff = GetDungeonDifficultyID()
+        local newDiff
+        
+        -- Cycle through: 1=Normal, 2=Heroic, 23=Mythic
+        if currentDiff == 1 then
+            newDiff = 2  -- Heroic
+        elseif currentDiff == 2 then
+            newDiff = 23 -- Mythic
         else
-            color = { r = 0.5, g = 0.5, b = 0.5 }
+            newDiff = 1  -- Normal
         end
-    else
-        color = { r = 0.5, g = 0.5, b = 0.5 }
+        
+        SetDungeonDifficultyID(newDiff)
+        UpdateDungeonText()
+    end)
+    
+    dungeonBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Dungeon Difficulty", 1, 1, 1)
+        GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
+    
+    dungeonBtn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    
+    -- Raid Difficulty Dropdown
+    local raidBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    raidBtn:SetSize(87, 20)
+    raidBtn:SetPoint("LEFT", dungeonBtn, "RIGHT", 3, 0)
+    
+    local function UpdateRaidText()
+        local difficultyID = GetRaidDifficultyID()
+        local difficultyName = GetDifficultyInfo(difficultyID)
+        raidBtn:SetText(difficultyName or "Raid")
     end
     
-    -- Update health bar
-    if frame.health then
-        local width = isExpanded and self.db.profile.expandedWidth or self.db.profile.compactWidth
-        frame.health:SetWidth((width - 2) * healthPct)
+    UpdateRaidText()
+    
+    raidBtn:SetScript("OnClick", function(self)
+        local currentDiff = GetRaidDifficultyID()
+        local newDiff
         
-        -- Color based on health percentage
-        if not UnitIsConnected(unit) then
-            frame.health:SetVertexColor(0.5, 0.5, 0.5, 0.8)
-        elseif UnitIsDeadOrGhost(unit) then
-            frame.health:SetVertexColor(0.3, 0.3, 0.3, 0.8)
-        elseif healthPct <= 0.25 then
-            frame.health:SetVertexColor(1, 0, 0, 0.8)
-        elseif healthPct <= 0.5 then
-            frame.health:SetVertexColor(1, 0.5, 0, 0.8)
+        -- Cycle through: 14=Normal, 15=Heroic, 16=Mythic
+        if currentDiff == 14 then
+            newDiff = 15  -- Heroic
+        elseif currentDiff == 15 then
+            newDiff = 16 -- Mythic
         else
-            frame.health:SetVertexColor(color.r, color.g, color.b, 0.8)
+            newDiff = 14  -- Normal
         end
-    end
+        
+        SetRaidDifficultyID(newDiff)
+        UpdateRaidText()
+    end)
     
-    -- Update border color with class color
-    if frame.SetBackdropBorderColor then
-        frame:SetBackdropBorderColor(color.r, color.g, color.b, 1)
-    end
+    raidBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Raid Difficulty", 1, 1, 1)
+        GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
     
-    -- Update texts (only in expanded mode)
-    if isExpanded then
-        if frame.name then
-            frame.name:SetText(UnitName(unit))
-            frame.name:Show()
-        end
-        
-        if frame.healthText then
-            if UnitIsConnected(unit) then
-                if UnitIsDeadOrGhost(unit) then
-                    frame.healthText:SetText("DEAD")
-                else
-                    frame.healthText:SetText(string.format("%d%%", healthPct * 100))
-                end
-            else
-                frame.healthText:SetText("OFF")
-            end
-            frame.healthText:Show()
-        end
-        
-        -- Hide status indicator in expanded mode
-        if frame.status then
-            frame.status:Hide()
-        end
-    else
-        -- Compact mode - hide texts
-        if frame.name then
-            frame.name:Hide()
-        end
-        if frame.healthText then
-            frame.healthText:Hide()
-        end
-        
-        -- Show status indicator for offline/dead
-        if frame.status then
-            if not UnitIsConnected(unit) then
-                frame.status:SetText("D/C")
-                frame.status:SetTextColor(0.5, 0.5, 0.5, 1)
-                frame.status:Show()
-            elseif UnitIsDeadOrGhost(unit) then
-                frame.status:SetText("X")
-                frame.status:SetTextColor(1, 0, 0, 1)
-                frame.status:Show()
-            else
-                frame.status:Hide()
-            end
-        end
-    end
+    raidBtn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    
+    -- Store references for updates
+    managerFrame.dungeonBtn = dungeonBtn
+    managerFrame.raidBtn = raidBtn
+    managerFrame.updateDungeonText = UpdateDungeonText
+    managerFrame.updateRaidText = UpdateRaidText
 end
 
 function GroupManager:ToggleExpanded()
     isExpanded = not isExpanded
-    self:UpdateGroupFrames()
-end
-
--- ============================================================================
--- EVENT HANDLERS
--- ============================================================================
-
-function GroupManager:GROUP_ROSTER_UPDATE()
-    self:UpdateGroupFrames()
-end
-
-function GroupManager:PLAYER_ENTERING_WORLD()
-    self:UpdateGroupFrames()
-end
-
-function GroupManager:UNIT_HEALTH(event, unit)
-    if not unit or not unit:match("^party%d$") then return end
     
-    local index = tonumber(unit:match("%d+"))
-    if groupFrames[index] and groupFrames[index]:IsShown() then
-        self:UpdateUnitFrame(groupFrames[index])
+    if isExpanded then
+        managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
+        managerFrame.content:Show()
+        managerFrame.icon:Hide()
+    else
+        managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+        managerFrame.content:Hide()
+        managerFrame.icon:Show()
     end
 end
 
-function GroupManager:UNIT_MAXHEALTH(event, unit)
-    self:UNIT_HEALTH(event, unit)
+-- ============================================================================
+-- EVENTS
+-- ============================================================================
+
+function GroupManager:GROUP_ROSTER_UPDATE()
+    self:UpdateVisibility()
 end
 
-function GroupManager:UNIT_POWER_UPDATE(event, unit)
-    -- Could add power bar functionality here if desired
-end
-
-function GroupManager:UNIT_MAXPOWER(event, unit)
-    -- Could add power bar functionality here if desired
-end
-
-function GroupManager:UNIT_CONNECTION(event, unit)
-    if not unit or not unit:match("^party%d$") then return end
+function GroupManager:PLAYER_ENTERING_WORLD()
+    self:UpdateVisibility()
     
-    local index = tonumber(unit:match("%d+"))
-    if groupFrames[index] and groupFrames[index]:IsShown() then
-        self:UpdateUnitFrame(groupFrames[index])
+    -- Update difficulty buttons if frame exists
+    if managerFrame and managerFrame.updateDungeonText then
+        managerFrame.updateDungeonText()
+        managerFrame.updateRaidText()
+    end
+end
+
+function GroupManager:PLAYER_DIFFICULTY_CHANGED()
+    -- Update difficulty buttons when difficulty changes
+    if managerFrame and managerFrame.updateDungeonText then
+        managerFrame.updateDungeonText()
+        managerFrame.updateRaidText()
+    end
+end
+
+function GroupManager:UpdateVisibility()
+    if not managerFrame then return end
+    
+    -- Show manager if in a group
+    if IsInGroup() or IsInRaid() then
+        managerFrame:Show()
+    else
+        managerFrame:Hide()
     end
 end
 
@@ -419,12 +542,12 @@ function GroupManager:GetOptions()
         get = function(info) return self.db.profile[info[#info]] end,
         set = function(info, value) 
             self.db.profile[info[#info]] = value
-            self:UpdateGroupFrames()
+            self:UpdateManagerFrame()
         end,
         args = {
             enabled = {
-                name = "Enable Custom Group Manager",
-                desc = "Show compact group frames that expand on click. Make sure to enable 'Hide Compact Party/Raid Manager' in Tweaks to hide Blizzard's default.",
+                name = "Enable Group Manager",
+                desc = "Show compact group management toolbar with raid markers and controls. Enable 'Hide Compact Party/Raid Manager' in Tweaks to hide Blizzard's default.",
                 type = "toggle",
                 order = 1,
                 set = function(info, value)
@@ -444,19 +567,19 @@ function GroupManager:GetOptions()
             },
             compactWidth = {
                 name = "Compact Width",
-                desc = "Width of group frames in compact mode",
+                desc = "Width of toolbar when collapsed",
                 type = "range",
-                min = 40,
-                max = 200,
+                min = 25,
+                max = 60,
                 step = 1,
                 order = 3,
             },
             compactHeight = {
                 name = "Compact Height",
-                desc = "Height of group frames in compact mode",
+                desc = "Height of toolbar when collapsed",
                 type = "range",
-                min = 4,
-                max = 20,
+                min = 25,
+                max = 60,
                 step = 1,
                 order = 4,
             },
@@ -467,33 +590,35 @@ function GroupManager:GetOptions()
             },
             expandedWidth = {
                 name = "Expanded Width",
-                desc = "Width of group frames in expanded mode",
+                desc = "Width of toolbar when expanded",
                 type = "range",
-                min = 100,
+                min = 150,
                 max = 300,
                 step = 1,
                 order = 6,
             },
             expandedHeight = {
                 name = "Expanded Height",
-                desc = "Height of group frames in expanded mode",
+                desc = "Height of toolbar when expanded",
                 type = "range",
-                min = 20,
-                max = 80,
+                min = 150,
+                max = 400,
                 step = 1,
                 order = 7,
             },
-            spacing = {
-                name = "Frame Spacing",
-                desc = "Vertical spacing between group frames",
-                type = "range",
-                min = 0,
-                max = 10,
-                step = 1,
-                order = 8,
-            },
         }
     }
+end
+
+function GroupManager:UpdateManagerFrame()
+    if not managerFrame then return end
+    
+    if isExpanded then
+        managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
+    else
+        managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+        managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth - 2, self.db.profile.compactHeight - 2)
+    end
 end
 
 return GroupManager
