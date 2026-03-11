@@ -6,8 +6,9 @@
 
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local GroupManager = AbstractUI:NewModule("GroupManager", "AceEvent-3.0")
-local ColorPalette = _G.AbstractUI_ColorPalette
-local FontKit = _G.AbstractUI_FontKit
+
+-- Framework references
+local ColorPalette, FontKit, FrameFactory
 
 -- State
 local managerFrame = nil
@@ -46,6 +47,11 @@ local RAID_MARKERS = {
 
 function GroupManager:OnInitialize()
     self.db = AbstractUI.db:RegisterNamespace("GroupManager", defaults)
+    
+    -- Get framework references
+    ColorPalette = _G.AbstractUI_ColorPalette
+    FontKit = _G.AbstractUI_FontKit
+    FrameFactory = _G.AbstractUI_FrameFactory
 end
 
 function GroupManager:OnEnable()
@@ -77,8 +83,8 @@ end
 function GroupManager:CreateManagerFrame()
     if managerFrame then return end
     
-    managerFrame = CreateFrame("Frame", "AbstractUI_GroupManager", UIParent, "BackdropTemplate")
-    managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+    -- Create main panel using FrameFactory
+    managerFrame = FrameFactory:CreatePanel(UIParent, self.db.profile.compactWidth, self.db.profile.compactHeight)
     managerFrame:SetPoint(
         self.db.profile.position.point,
         UIParent,
@@ -91,22 +97,6 @@ function GroupManager:CreateManagerFrame()
     managerFrame:EnableMouse(true)
     managerFrame:RegisterForDrag("LeftButton")
     
-    managerFrame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    
-    if ColorPalette then
-        local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
-        local bordr, bordg, bordb, borda = ColorPalette:GetColor('panel-border')
-        managerFrame:SetBackdropColor(bgr, bgg, bgb, bga or 0.9)
-        managerFrame:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
-    else
-        managerFrame:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
-        managerFrame:SetBackdropBorderColor(0, 0, 0, 1)
-    end
-    
     managerFrame:SetScript("OnDragStart", function(self) self:StartMoving() end)
     managerFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
@@ -116,32 +106,16 @@ function GroupManager:CreateManagerFrame()
         GroupManager.db.profile.position.y = y
     end)
     
-    -- Toggle button
-    local toggleBtn = CreateFrame("Button", nil, managerFrame, "BackdropTemplate")
-    toggleBtn:SetSize(self.db.profile.compactWidth - 2, self.db.profile.compactHeight - 2)
+    -- Toggle button (using framework)
+    local toggleBtn = FrameFactory:CreateButton(managerFrame, self.db.profile.compactWidth - 4, self.db.profile.compactHeight - 4, "")
     toggleBtn:SetPoint("CENTER", managerFrame, "CENTER", 0, 0)
-    toggleBtn:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
     
-    if ColorPalette then
-        local bgr, bgg, bgb, bga = ColorPalette:GetColor('button-bg')
-        local bordr, bordg, bordb, borda = ColorPalette:GetColor('panel-border')
-        toggleBtn:SetBackdropColor(bgr, bgg, bgb, bga or 0.8)
-        toggleBtn:SetBackdropBorderColor(bordr, bordg, bordb, borda or 1)
-    else
-        toggleBtn:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
-        toggleBtn:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
-    end
-    
-    -- Icon for collapsed state (group icon)
+    -- Icon for collapsed state
     local icon = toggleBtn:CreateTexture(nil, "ARTWORK")
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
     icon:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
-    icon:SetVertexColor(0.8, 0.8, 0.8, 1)
+    icon:SetVertexColor(ColorPalette:GetColor('text-primary'))
     
     managerFrame.toggleBtn = toggleBtn
     managerFrame.icon = icon
@@ -150,13 +124,10 @@ function GroupManager:CreateManagerFrame()
         GroupManager:ToggleExpanded()
     end)
     
+    -- Custom hover behavior for icon button
+    local originalOnEnter = toggleBtn:GetScript("OnEnter")
     toggleBtn:SetScript("OnEnter", function(self)
-        if ColorPalette then
-            local r, g, b, a = ColorPalette:GetColor('button-hover')
-            self:SetBackdropColor(r, g, b, a or 0.9)
-        else
-            self:SetBackdropColor(0.25, 0.25, 0.25, 0.9)
-        end
+        if originalOnEnter then originalOnEnter(self) end
         
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Group Manager", 1, 1, 1)
@@ -164,13 +135,9 @@ function GroupManager:CreateManagerFrame()
         GameTooltip:Show()
     end)
     
+    local originalOnLeave = toggleBtn:GetScript("OnLeave")
     toggleBtn:SetScript("OnLeave", function(self)
-        if ColorPalette then
-            local r, g, b, a = ColorPalette:GetColor('button-bg')
-            self:SetBackdropColor(r, g, b, a or 0.8)
-        else
-            self:SetBackdropColor(0.15, 0.15, 0.15, 0.8)
-        end
+        if originalOnLeave then originalOnLeave(self) end
         GameTooltip:Hide()
     end)
     
@@ -184,41 +151,45 @@ function GroupManager:CreateExpandedContent()
     if not managerFrame then return end
     
     local content = CreateFrame("Frame", nil, managerFrame)
-    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 2, -2)
-    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -2, 2)
+    content:SetPoint("TOPLEFT", managerFrame, "TOPLEFT", 4, -4)
+    content:SetPoint("BOTTOMRIGHT", managerFrame, "BOTTOMRIGHT", -4, 4)
     content:Hide()
     
     managerFrame.content = content
     
     -- Title
-    local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
+    local title = FontKit:CreateFontString(content, 'header', 'large')
+    title:SetPoint("TOPLEFT", content, "TOPLEFT", 3, -3)
     title:SetText("Group Controls")
-    if FontKit then
-        FontKit:SetFont(title, 'header', 'large')
-    end
+    title:SetTextColor(ColorPalette:GetColor('text-primary'))
     
     -- Raid Markers Section
-    local markersLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local markersLabel = FontKit:CreateFontString(content, 'body', 'normal')
     markersLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
     markersLabel:SetText("Raid Markers:")
-    if FontKit then
-        FontKit:SetFont(markersLabel, 'body', 'normal')
-    end
+    markersLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- Create marker buttons in 2 rows of 4
     local markerButtons = {}
     for i, marker in ipairs(RAID_MARKERS) do
-        local btn = CreateFrame("Button", nil, content)
-        btn:SetSize(30, 30)
+        local btn = FrameFactory:CreateButton(content, 30, 30, "")
         
         local col = ((i - 1) % 4)
         local row = math.floor((i - 1) / 4)
         btn:SetPoint("TOPLEFT", markersLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
+        -- Hide the button text since we'll show an icon instead
+        btn.text:Hide()
+        
+        -- Marker icon (Blizzard asset - only thing that should be Blizzard)
         local icon = btn:CreateTexture(nil, "ARTWORK")
-        icon:SetAllPoints(btn)
+        icon:SetSize(24, 24)
+        icon:SetPoint("CENTER")
         icon:SetTexture(marker.icon)
+        
+        -- Preserve the framework's original OnEnter/OnLeave
+        local originalOnEnter = btn:GetScript("OnEnter")
+        local originalOnLeave = btn:GetScript("OnLeave")
         
         btn:SetScript("OnClick", function(self, button)
             if button == "LeftButton" then
@@ -249,7 +220,8 @@ function GroupManager:CreateExpandedContent()
         end)
         
         btn:SetScript("OnEnter", function(self)
-            icon:SetVertexColor(1, 1, 0.5)
+            if originalOnEnter then originalOnEnter(self) end
+            
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(marker.name, 1, 1, 1)
             GameTooltip:AddLine("Left-click: Mark target", 0.7, 0.7, 0.7)
@@ -258,7 +230,7 @@ function GroupManager:CreateExpandedContent()
         end)
         
         btn:SetScript("OnLeave", function(self)
-            icon:SetVertexColor(1, 1, 1)
+            if originalOnLeave then originalOnLeave(self) end
             GameTooltip:Hide()
         end)
         
@@ -268,33 +240,41 @@ function GroupManager:CreateExpandedContent()
     end
     
     -- World Markers Section
-    local worldLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local worldLabel = FontKit:CreateFontString(content, 'body', 'normal')
     worldLabel:SetPoint("TOPLEFT", markerButtons[5], "BOTTOMLEFT", 0, -15)
     worldLabel:SetText("World Markers:")
-    if FontKit then
-        FontKit:SetFont(worldLabel, 'body', 'normal')
-    end
+    worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4)
     for i = 1, 8 do
-        local btn = CreateFrame("Button", nil, content)
-        btn:SetSize(30, 30)
+        local btn = FrameFactory:CreateButton(content, 30, 30, "")
         
         local col = ((i - 1) % 4)
         local row = math.floor((i - 1) / 4)
         btn:SetPoint("TOPLEFT", worldLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
+        -- Hide the button text since we'll show an icon instead
+        btn.text:Hide()
+        
+        -- World marker icon (Blizzard asset)
         local icon = btn:CreateTexture(nil, "ARTWORK")
-        icon:SetAllPoints(btn)
+        icon:SetSize(24, 24)
+        icon:SetPoint("CENTER")
         icon:SetTexture(RAID_MARKERS[i].icon)
-        icon:SetVertexColor(0.7, 0.7, 0.7)
+        icon:SetDesaturated(true)  -- Gray out for world markers
+        
+        -- Preserve the framework's original OnEnter/OnLeave
+        local originalOnEnter = btn:GetScript("OnEnter")
+        local originalOnLeave = btn:GetScript("OnLeave")
         
         btn:SetScript("OnClick", function(self)
             PlaceRaidMarker(i)
         end)
         
         btn:SetScript("OnEnter", function(self)
-            icon:SetVertexColor(1, 1, 0.5)
+            if originalOnEnter then originalOnEnter(self) end
+            
+            icon:SetDesaturated(false)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Place " .. RAID_MARKERS[i].name, 1, 1, 1)
             GameTooltip:AddLine("Click to place on ground", 0.7, 0.7, 0.7)
@@ -302,24 +282,22 @@ function GroupManager:CreateExpandedContent()
         end)
         
         btn:SetScript("OnLeave", function(self)
-            icon:SetVertexColor(0.7, 0.7, 0.7)
+            if originalOnLeave then originalOnLeave(self) end
+            
+            icon:SetDesaturated(true)
             GameTooltip:Hide()
         end)
     end
     
     -- Actions Section
-    local actionsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    actionsLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 120)
+    local actionsLabel = FontKit:CreateFontString(content, 'body', 'normal')
+    actionsLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 3, 120)
     actionsLabel:SetText("Actions:")
-    if FontKit then
-        FontKit:SetFont(actionsLabel, 'body', 'normal')
-    end
+    actionsLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- Leave Party button
-    local leaveBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-    leaveBtn:SetSize(180, 20)
+    -- Leave Party button (using FrameFactory)
+    local leaveBtn = FrameFactory:CreateButton(content, 180, 22, "Leave Party")
     leaveBtn:SetPoint("TOPLEFT", actionsLabel, "BOTTOMLEFT", 0, -5)
-    leaveBtn:SetText("Leave Party")
     
     leaveBtn:SetScript("OnClick", function()
         if IsInRaid() then
@@ -329,17 +307,19 @@ function GroupManager:CreateExpandedContent()
         end
     end)
     
-    -- Ready Check button
-    local readyBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-    readyBtn:SetSize(180, 20)
-    readyBtn:SetPoint("TOPLEFT", leaveBtn, "BOTTOMLEFT", 0, -5)
-    readyBtn:SetText("Ready Check")
+    -- Ready Check button (using FrameFactory)
+    local readyBtn = FrameFactory:CreateButton(content, 180, 22, "Ready Check")
+    readyBtn:SetPoint("TOPLEFT", leaveBtn, "BOTTOMLEFT", 0, -3)
     
     readyBtn:SetScript("OnClick", function()
         DoReadyCheck()
     end)
     
+    -- Custom tooltip for ready check
+    local originalReadyEnter = readyBtn:GetScript("OnEnter")
     readyBtn:SetScript("OnEnter", function(self)
+        if originalReadyEnter then originalReadyEnter(self) end
+        
         if not (IsInRaid() or IsInGroup()) or not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Requires Leader/Assistant", 1, 0.3, 0.3)
@@ -347,15 +327,9 @@ function GroupManager:CreateExpandedContent()
         end
     end)
     
-    readyBtn:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-    
-    -- Convert to Raid button
-    local convertBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-    convertBtn:SetSize(180, 20)
-    convertBtn:SetPoint("TOPLEFT", readyBtn, "BOTTOMLEFT", 0, -5)
-    convertBtn:SetText("Convert to Raid")
+    -- Convert to Raid button (using FrameFactory)
+    local convertBtn = FrameFactory:CreateButton(content, 180, 22, "Convert to Raid")
+    convertBtn:SetPoint("TOPLEFT", readyBtn, "BOTTOMLEFT", 0, -3)
     
     convertBtn:SetScript("OnClick", function()
         if IsInGroup() and not IsInRaid() and UnitIsGroupLeader("player") then
@@ -363,7 +337,11 @@ function GroupManager:CreateExpandedContent()
         end
     end)
     
+    -- Custom tooltip for convert button
+    local originalConvertEnter = convertBtn:GetScript("OnEnter")
     convertBtn:SetScript("OnEnter", function(self)
+        if originalConvertEnter then originalConvertEnter(self) end
+        
         if not IsInGroup() then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Not in a group", 1, 0.3, 0.3)
@@ -379,27 +357,20 @@ function GroupManager:CreateExpandedContent()
         end
     end)
     
-    convertBtn:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-    
     -- Difficulty Settings Section
-    local difficultyLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    difficultyLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 5)
+    local difficultyLabel = FontKit:CreateFontString(content, 'body', 'normal')
+    difficultyLabel:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 3, 5)
     difficultyLabel:SetText("Difficulty:")
-    if FontKit then
-        FontKit:SetFont(difficultyLabel, 'body', 'normal')
-    end
+    difficultyLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
-    -- Dungeon Difficulty Dropdown
-    local dungeonBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-    dungeonBtn:SetSize(87, 20)
+    -- Dungeon Difficulty Button (using FrameFactory)
+    local dungeonBtn = FrameFactory:CreateButton(content, 87, 20, "Normal")
     dungeonBtn:SetPoint("LEFT", difficultyLabel, "RIGHT", 5, 0)
     
     local function UpdateDungeonText()
         local difficultyID = GetDungeonDifficultyID()
         local difficultyName = GetDifficultyInfo(difficultyID)
-        dungeonBtn:SetText(difficultyName or "Dungeon")
+        dungeonBtn:SetButtonText(difficultyName or "Normal")
     end
     
     UpdateDungeonText()
@@ -421,26 +392,25 @@ function GroupManager:CreateExpandedContent()
         UpdateDungeonText()
     end)
     
+    -- Custom tooltip for dungeon button
+    local originalDungeonEnter = dungeonBtn:GetScript("OnEnter")
     dungeonBtn:SetScript("OnEnter", function(self)
+        if originalDungeonEnter then originalDungeonEnter(self) end
+        
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Dungeon Difficulty", 1, 1, 1)
         GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
         GameTooltip:Show()
     end)
     
-    dungeonBtn:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-    
-    -- Raid Difficulty Dropdown
-    local raidBtn = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-    raidBtn:SetSize(87, 20)
+    -- Raid Difficulty Button (using FrameFactory)
+    local raidBtn = FrameFactory:CreateButton(content, 87, 20, "Normal")
     raidBtn:SetPoint("LEFT", dungeonBtn, "RIGHT", 3, 0)
     
     local function UpdateRaidText()
         local difficultyID = GetRaidDifficultyID()
         local difficultyName = GetDifficultyInfo(difficultyID)
-        raidBtn:SetText(difficultyName or "Raid")
+        raidBtn:SetButtonText(difficultyName or "Normal")
     end
     
     UpdateRaidText()
@@ -462,15 +432,15 @@ function GroupManager:CreateExpandedContent()
         UpdateRaidText()
     end)
     
+    -- Custom tooltip for raid button
+    local originalRaidEnter = raidBtn:GetScript("OnEnter")
     raidBtn:SetScript("OnEnter", function(self)
+        if originalRaidEnter then originalRaidEnter(self) end
+        
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Raid Difficulty", 1, 1, 1)
         GameTooltip:AddLine("Click to cycle difficulty", 0.7, 0.7, 0.7)
         GameTooltip:Show()
-    end)
-    
-    raidBtn:SetScript("OnLeave", function()
-        GameTooltip:Hide()
     end)
     
     -- Store references for updates
@@ -617,7 +587,7 @@ function GroupManager:UpdateManagerFrame()
         managerFrame:SetSize(self.db.profile.expandedWidth, self.db.profile.expandedHeight)
     else
         managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
-        managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth - 2, self.db.profile.compactHeight - 2)
+        managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth - 4, self.db.profile.compactHeight - 4)
     end
 end
 
