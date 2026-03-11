@@ -66,6 +66,9 @@ function GroupManager:OnEnable()
     self:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     
+    -- Listen for move mode changes
+    self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
+    
     -- Create frames
     self:CreateManagerFrame()
     self:UpdateVisibility()
@@ -119,7 +122,10 @@ function GroupManager:CreateManagerFrame()
     managerFrame.icon = icon
     
     toggleBtn:SetScript("OnClick", function()
-        GroupManager:ToggleExpanded()
+        -- Don't expand/collapse in move mode
+        if not AbstractUI.moveMode then
+            GroupManager:ToggleExpanded()
+        end
     end)
     
     -- Custom hover behavior for icon button
@@ -144,62 +150,68 @@ function GroupManager:CreateManagerFrame()
     
     -- Movable system integration
     if Movable then
-        -- Create highlight overlay for move mode
-        local highlight = CreateFrame("Frame", nil, managerFrame)
+        -- Create highlight overlay for move mode (simple backdrop like Tooltips anchor)
+        local highlight = CreateFrame("Frame", nil, managerFrame, "BackdropTemplate")
         highlight:SetAllPoints(managerFrame)
         highlight:SetFrameStrata("HIGH")
         highlight:SetFrameLevel(100)
-        highlight:EnableMouse(false)
-        highlight:Hide()
         
-        -- Green border for move mode
-        highlight.texture = highlight:CreateTexture(nil, "OVERLAY")
-        highlight.texture:SetAllPoints()
-        highlight.texture:SetColorTexture(0, 1, 0, 0.3)
+        -- Backdrop (match Tooltips anchor style)
+        highlight:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 2,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        
+        highlight:SetBackdropColor(0, 0.5, 0, 0.2)  -- Semi-transparent green
+        highlight:SetBackdropBorderColor(0, 1, 0, 1) -- Bright green border
         
         -- Label
-        highlight.label = highlight:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        highlight.label:SetPoint("TOP", highlight, "TOP", 0, -2)
-        highlight.label:SetText("Group Manager")
-        highlight.label:SetTextColor(1, 1, 1, 1)
+        highlight.text = highlight:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        highlight.text:SetPoint("CENTER", highlight, "CENTER", 0, 0)
+        highlight.text:SetText("GM")
+        highlight.text:SetTextColor(1, 1, 1, 1)
+        highlight.text:SetShadowOffset(2, -2)
+        highlight.text:SetShadowColor(0, 0, 0, 1)
         
-        managerFrame.movableHighlight = highlight
-        managerFrame.movableHighlightLabel = highlight.label
+        -- Store as movableHighlight for the Movable system
+        managerFrame.movableHighlight = highlight:CreateTexture(nil, "OVERLAY")
+        managerFrame.movableHighlight:SetAllPoints(highlight)
+        managerFrame.movableHighlight:SetColorTexture(0, 1, 0, 0.2)
+        managerFrame.movableHighlight:Hide()
         
-        -- Make draggable in move mode
-        highlight:EnableMouse(true)
-        highlight:SetMovable(true)
-        highlight:RegisterForDrag("LeftButton")
+        managerFrame.movableHighlightLabel = highlight.text
         
-        local isDragging = false
-        highlight:SetScript("OnDragStart", function(self)
-            if AbstractUI.moveMode then
-                isDragging = true
-                managerFrame:StartMoving()
-            end
-        end)
+        -- Hide the backdrop highlight by default (only show in move mode)
+        highlight:Hide()
         
-        highlight:SetScript("OnDragStop", function(self)
-            if not isDragging then return end
-            managerFrame:StopMovingOrSizing()
-            isDragging = false
-            
-            local point, relativeTo, relativePoint, xOfs, yOfs = managerFrame:GetPoint()
-            GroupManager.db.profile.position.point = point or "TOPLEFT"
-            GroupManager.db.profile.position.x = xOfs or 0
-            GroupManager.db.profile.position.y = yOfs or 0
-            
-            -- Update content panel position if open
-            if isExpanded then
-                GroupManager:UpdateContentPanelPosition()
-            end
-        end)
-        
-        -- Register with Movable system
-        table.insert(Movable.registeredFrames, highlight)
+        -- Use Movable:MakeFrameDraggable for proper drag functionality
+        Movable:MakeFrameDraggable(
+            highlight,
+            function(point, x, y)
+                GroupManager.db.profile.position.point = point or "TOPLEFT"
+                GroupManager.db.profile.position.x = x or 0
+                GroupManager.db.profile.position.y = y or 0
+                
+                -- Move the parent frame
+                managerFrame:ClearAllPoints()
+                managerFrame:SetPoint(point, UIParent, point, x, y)
+                
+                -- Update content panel position if open
+                if isExpanded then
+                    GroupManager:UpdateContentPanelPosition()
+                end
+                
+                -- Update nudge arrows
+                Movable:UpdateNudgeArrows(highlight)
+            end,
+            function() return true end -- Always movable when visible
+        )
         
         -- Add nudge arrows
-        Movable:CreateNudgeArrows(managerFrame, self.db.profile.position, function()
+        Movable:CreateNudgeArrows(highlight, self.db.profile.position, function()
             -- Reset callback: center the icon
             self.db.profile.position.point = "CENTER"
             self.db.profile.position.x = 0
@@ -207,6 +219,9 @@ function GroupManager:CreateManagerFrame()
             managerFrame:ClearAllPoints()
             managerFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         end)
+        
+        -- Store reference to the highlight frame
+        managerFrame.moveHighlight = highlight
     end
     
     -- Create expanded content panel (separate from toggle button)
@@ -603,6 +618,26 @@ function GroupManager:ZONE_CHANGED_NEW_AREA()
     if managerFrame and managerFrame.updateDungeonDropdown then
         managerFrame.updateDungeonDropdown()
         managerFrame.updateRaidDropdown()
+    end
+end
+
+function GroupManager:OnMoveModeChanged(event, moveMode)
+    if not managerFrame or not managerFrame.moveHighlight then return end
+    
+    if moveMode then
+        -- Show the green highlight frame in move mode
+        managerFrame.moveHighlight:Show()
+        -- Disable toggle button mouse interaction so highlight can be dragged
+        if managerFrame.toggleBtn then
+            managerFrame.toggleBtn:EnableMouse(false)
+        end
+    else
+        -- Hide the highlight frame when not in move mode
+        managerFrame.moveHighlight:Hide()
+        -- Re-enable toggle button mouse interaction
+        if managerFrame.toggleBtn then
+            managerFrame.toggleBtn:EnableMouse(true)
+        end
     end
 end
 
