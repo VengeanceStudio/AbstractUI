@@ -13,7 +13,9 @@ StaticPopupDialogs["AbstractUI_RELOAD_CONFIRM"] = {
     button2 = "No",
     OnAccept = function()
         if not InCombatLockdown() then
-            C_UI.Reload()
+            C_Timer.After(0.1, function()
+                ReloadUI()
+            end)
         else
             print("|cffff0000AbstractUI:|r Cannot reload UI while in combat. Please leave combat and run /reload.")
         end
@@ -2557,7 +2559,9 @@ function AbstractUI:DoImport(importString, newProfileName, suppressDialog)
             button1 = "Reload Now",
             button2 = "Later",
             OnAccept = function()
-                ReloadUI()
+                C_Timer.After(0.1, function()
+                    ReloadUI()
+                end)
             end,
             timeout = 0,
             whileDead = true,

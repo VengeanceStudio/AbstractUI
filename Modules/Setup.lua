@@ -424,7 +424,9 @@ function Setup:CompleteSetup(frame)
         button1 = "Reload Now",
         button2 = "Later",
         OnAccept = function()
-            ReloadUI()
+            C_Timer.After(0.1, function()
+                ReloadUI()
+            end)
         end,
         timeout = 0,
         whileDead = true,

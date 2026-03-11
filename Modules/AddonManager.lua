@@ -1087,7 +1087,9 @@ function AddonManager:CreateUI()
     reloadBtn:SetPoint("RIGHT", closeBottomBtn, "LEFT", -5, 0)
     reloadBtn:SetScript("OnClick", function()
         if not InCombatLockdown() then
-            C_UI.Reload()
+            C_Timer.After(0.1, function()
+                ReloadUI()
+            end)
         else
             print("|cffff0000AbstractUI:|r Cannot reload UI while in combat.")
         end
