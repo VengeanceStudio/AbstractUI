@@ -177,7 +177,7 @@ function AB:CheckForConflicts()
                 end,
                 OnAlt = function()
                     -- Open Blizzard's addon list so user can disable the other addon
-                    print("|cff9482c9AbstractUI:|r Opening AddOns menu. Please uncheck " .. addonList .. " and click 'Okay' to reload.")
+                    print("|cff9482c9AbstractUI:|r Opening AddOns menu. Please uncheck " .. addonList .. " and click 'ReloadUI' to reload.")
                     -- Use a small delay to let the popup close first
                     C_Timer.After(0.1, function()
                         -- Load Blizzard's addon manager if not already loaded
