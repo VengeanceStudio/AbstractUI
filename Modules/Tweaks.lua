@@ -110,6 +110,7 @@ function Tweaks:OnDBReady()
     self:RegisterEvent("MERCHANT_SHOW")
     self:RegisterEvent("MERCHANT_CLOSED")
     self:RegisterEvent("ADDON_LOADED")
+    self:RegisterEvent("GROUP_ROSTER_UPDATE")  -- To handle party frame visibility when joining/leaving parties
     
     if self.db.profile.autoScreenshot then
         self:RegisterEvent("ACHIEVEMENT_EARNED")
@@ -761,12 +762,37 @@ function Tweaks:ShowBagBar()
 end
 
 function Tweaks:HidePartyFrame()
+    local framesHidden = false
+    
+    -- Hide CompactRaidFrameManager (the main party/raid frame manager)
+    if CompactRaidFrameManager then
+        CompactRaidFrameManager:SetParent(hiddenFrame)
+        CompactRaidFrameManager:Hide()
+        CompactRaidFrameManager:SetAlpha(0)
+        if CompactRaidFrameManager.UnregisterAllEvents then
+            CompactRaidFrameManager:UnregisterAllEvents()
+        end
+        
+        -- Hook Show to prevent it from appearing
+        if not CompactRaidFrameManager.abstractHooked then
+            hooksecurefunc(CompactRaidFrameManager, "Show", function()
+                if Tweaks.db and Tweaks.db.profile.hidePartyFrame then
+                    CompactRaidFrameManager:Hide()
+                end
+            end)
+            CompactRaidFrameManager.abstractHooked = true
+        end
+        framesHidden = true
+    end
+    
     -- Hide CompactPartyFrame (modern party frames)
     if CompactPartyFrame then
         CompactPartyFrame:SetParent(hiddenFrame)
         CompactPartyFrame:Hide()
         CompactPartyFrame:SetAlpha(0)
-        CompactPartyFrame:UnregisterAllEvents()
+        if CompactPartyFrame.UnregisterAllEvents then
+            CompactPartyFrame:UnregisterAllEvents()
+        end
         
         -- Hook Show to prevent it from appearing
         if not CompactPartyFrame.abstractHooked then
@@ -777,6 +803,24 @@ function Tweaks:HidePartyFrame()
             end)
             CompactPartyFrame.abstractHooked = true
         end
+        framesHidden = true
+    end
+    
+    -- Also try to hide Party container
+    if CompactRaidFrameContainer then
+        CompactRaidFrameContainer:SetParent(hiddenFrame)
+        CompactRaidFrameContainer:Hide()
+        CompactRaidFrameContainer:SetAlpha(0)
+        
+        if not CompactRaidFrameContainer.abstractHooked then
+            hooksecurefunc(CompactRaidFrameContainer, "Show", function()
+                if Tweaks.db and Tweaks.db.profile.hidePartyFrame then
+                    CompactRaidFrameContainer:Hide()
+                end
+            end)
+            CompactRaidFrameContainer.abstractHooked = true
+        end
+        framesHidden = true
     end
     
     -- Also try to hide EditMode party frame
@@ -796,15 +840,30 @@ function Tweaks:HidePartyFrame()
                 end)
                 partyFrame.abstractHooked = true
             end
+            framesHidden = true
         end
     end
+    
+    return framesHidden
 end
 
 function Tweaks:ShowPartyFrame()
+    if CompactRaidFrameManager then
+        CompactRaidFrameManager:SetParent(UIParent)
+        CompactRaidFrameManager:Show()
+        CompactRaidFrameManager:SetAlpha(1)
+    end
+    
     if CompactPartyFrame then
         CompactPartyFrame:SetParent(UIParent)
         CompactPartyFrame:Show()
         CompactPartyFrame:SetAlpha(1)
+    end
+    
+    if CompactRaidFrameContainer then
+        CompactRaidFrameContainer:SetParent(UIParent)
+        CompactRaidFrameContainer:Show()
+        CompactRaidFrameContainer:SetAlpha(1)
     end
     
     -- Also show EditMode party frame
@@ -919,6 +978,17 @@ function Tweaks:MERCHANT_CLOSED()
     -- Cleanup if needed
 end
 
+function Tweaks:GROUP_ROSTER_UPDATE()
+    -- Ensure party frames stay hidden when joining/leaving parties
+    if self.db.profile.hidePartyFrame then
+        C_Timer.After(0.1, function()
+            if self.db and self.db.profile.hidePartyFrame then
+                self:HidePartyFrame()
+            end
+        end)
+    end
+end
+
 function Tweaks:AutoRepair()
     if not CanMerchantRepair() then
         return
@@ -1000,15 +1070,21 @@ function Tweaks:GetOptions()
                 set = function(_, v) self.db.profile.hideBagBar = v; self:ApplyTweaks() end },
             hidePartyFrame = { 
                 name = "Hide Party Frame", 
-                desc = "Hides the default party frame. Use if you have a replacement party frame addon.",
+                desc = "Hides the default party frame (only visible when in a party). Enable the Party Frames module for a compact replacement.",
                 type = "toggle", 
                 order = 4,
                 set = function(_, v) 
                     self.db.profile.hidePartyFrame = v
                     if v then
-                        self:HidePartyFrame()
+                        local hidden = self:HidePartyFrame()
+                        if hidden then
+                            print("|cff00ff00[AbstractUI]|r Party frame hidden (will hide when you join a party)")
+                        else
+                            print("|cff00ff00[AbstractUI]|r Party frame will be hidden when you join a party")
+                        end
                     else
                         self:ShowPartyFrame()
+                        print("|cff00ff00[AbstractUI]|r Party frame restored")
                     end
                 end 
             },
