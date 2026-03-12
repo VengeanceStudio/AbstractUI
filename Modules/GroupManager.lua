@@ -252,6 +252,17 @@ function GroupManager:ReskinBlizzardManager()
     blizzardManager:SetMovable(false)
     blizzardManager:EnableMouse(false)
     
+    -- Hook Show to prevent Blizzard from showing it automatically
+    if not blizzardManager.abstractUIHooked then
+        blizzardManager:HookScript("OnShow", function(self)
+            -- Only allow showing if we explicitly set isExpanded to true
+            if not isExpanded then
+                self:Hide()
+            end
+        end)
+        blizzardManager.abstractUIHooked = true
+    end
+    
 end
 
 function GroupManager:ReskinBlizzardButtons(frame)
