@@ -255,18 +255,33 @@ function GroupManager:CreateExpandedContent()
     markersLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- Create marker buttons in 2 rows of 4 (reversed order: Skull to Star)
+    -- Must use SecureActionButtonTemplate for protected marker functions
     local markerButtons = {}
     for i = #RAID_MARKERS, 1, -1 do
         local marker = RAID_MARKERS[i]
-        local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
+        
+        -- Create secure button for raid markers
+        local btn = CreateFrame("Button", "AbstractUI_RaidMarker"..marker.index, contentPanel, "SecureActionButtonTemplate, BackdropTemplate")
+        btn:SetSize(30, 30)
         
         local displayIndex = #RAID_MARKERS - i + 1
         local col = ((displayIndex - 1) % 4)
         local row = math.floor((displayIndex - 1) / 4)
         btn:SetPoint("TOPLEFT", markersLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
-        -- Hide the button text since we'll show an icon instead
-        btn.text:Hide()
+        -- Style to match FrameFactory buttons
+        btn:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            tileSize = 16,
+            edgeSize = 1,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        local bgColor = ColorPalette:GetColor('background-tertiary')
+        local borderColor = ColorPalette:GetColor('border-primary')
+        btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
+        btn:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         
         -- Marker icon (Blizzard asset - only thing that should be Blizzard)
         local icon = btn:CreateTexture(nil, "ARTWORK")
@@ -274,50 +289,29 @@ function GroupManager:CreateExpandedContent()
         icon:SetPoint("CENTER")
         icon:SetTexture(marker.icon)
         
-        -- Preserve the framework's original OnEnter/OnLeave
-        local originalOnEnter = btn:GetScript("OnEnter")
-        local originalOnLeave = btn:GetScript("OnLeave")
+        -- Set secure attributes for marker functionality
+        -- Left-click: Set marker on target
+        btn:SetAttribute("type1", "macro")
+        btn:SetAttribute("macrotext1", "/targetmarker " .. marker.index)
         
-        btn:SetScript("OnClick", function(self, button)
-            if button == "LeftButton" then
-                -- Mark target
-                if UnitExists("target") then
-                    SetRaidTarget("target", marker.index)
-                end
-            elseif button == "RightButton" then
-                -- Clear marker
-                for j = 1, 40 do
-                    local unit = "raid" .. j
-                    if UnitExists(unit) and GetRaidTargetIndex(unit) == marker.index then
-                        SetRaidTarget(unit, 0)
-                        break
-                    end
-                end
-                for j = 1, 4 do
-                    local unit = "party" .. j
-                    if UnitExists(unit) and GetRaidTargetIndex(unit) == marker.index then
-                        SetRaidTarget(unit, 0)
-                        break
-                    end
-                end
-                if GetRaidTargetIndex("player") == marker.index then
-                    SetRaidTarget("player", 0)
-                end
-            end
-        end)
+        -- Right-click: Clear marker from target
+        btn:SetAttribute("type2", "macro")
+        btn:SetAttribute("macrotext2", "/targetmarker 0")
         
+        -- Hover effects
         btn:SetScript("OnEnter", function(self)
-            if originalOnEnter then originalOnEnter(self) end
+            local hoverColor = ColorPalette:GetColor('background-hover')
+            btn:SetBackdropColor(hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a or 1)
             
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(marker.name, 1, 1, 1)
             GameTooltip:AddLine("Left-click: Mark target", 0.7, 0.7, 0.7)
-            GameTooltip:AddLine("Right-click: Clear marker", 0.7, 0.7, 0.7)
+            GameTooltip:AddLine("Right-click: Clear target marker", 0.7, 0.7, 0.7)
             GameTooltip:Show()
         end)
         
         btn:SetScript("OnLeave", function(self)
-            if originalOnLeave then originalOnLeave(self) end
+            btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
             GameTooltip:Hide()
         end)
         
@@ -333,16 +327,30 @@ function GroupManager:CreateExpandedContent()
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
+    -- Must use SecureActionButtonTemplate for protected marker functions
     for i = 8, 1, -1 do
-        local btn = FrameFactory:CreateButton(contentPanel, 30, 30, "")
+        -- Create secure button for world markers
+        local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, BackdropTemplate")
+        btn:SetSize(30, 30)
         
         local displayIndex = 9 - i
         local col = ((displayIndex - 1) % 4)
         local row = math.floor((displayIndex - 1) / 4)
         btn:SetPoint("TOPLEFT", worldLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
         
-        -- Hide the button text since we'll show an icon instead
-        btn.text:Hide()
+        -- Style to match FrameFactory buttons
+        btn:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            tileSize = 16,
+            edgeSize = 1,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        local bgColor = ColorPalette:GetColor('background-tertiary')
+        local borderColor = ColorPalette:GetColor('border-primary')
+        btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
+        btn:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         
         -- World marker icon (Blizzard asset)
         local icon = btn:CreateTexture(nil, "ARTWORK")
@@ -351,16 +359,14 @@ function GroupManager:CreateExpandedContent()
         icon:SetTexture(RAID_MARKERS[i].icon)
         icon:SetDesaturated(true)  -- Gray out for world markers
         
-        -- Preserve the framework's original OnEnter/OnLeave
-        local originalOnEnter = btn:GetScript("OnEnter")
-        local originalOnLeave = btn:GetScript("OnLeave")
+        -- Set secure attributes for world marker functionality
+        btn:SetAttribute("type", "macro")
+        btn:SetAttribute("macrotext", "/worldmarker " .. i)
         
-        btn:SetScript("OnClick", function(self)
-            PlaceRaidMarker(i)
-        end)
-        
+        -- Hover effects
         btn:SetScript("OnEnter", function(self)
-            if originalOnEnter then originalOnEnter(self) end
+            local hoverColor = ColorPalette:GetColor('background-hover')
+            btn:SetBackdropColor(hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a or 1)
             
             icon:SetDesaturated(false)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -370,7 +376,7 @@ function GroupManager:CreateExpandedContent()
         end)
         
         btn:SetScript("OnLeave", function(self)
-            if originalOnLeave then originalOnLeave(self) end
+            btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
             
             icon:SetDesaturated(true)
             GameTooltip:Hide()
