@@ -329,11 +329,11 @@ function GroupManager:CreateExpandedContent()
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
-    -- Must use SecureActionButtonTemplate with secure handlers for combat support
+    -- Clicks Blizzard's world marker buttons for combat support
     local worldStartY = markerStartY - 70 - 20  -- Position below raid markers + gap for label
     for i = 8, 1, -1 do
         -- Create secure button for world markers (required for in-combat functionality)
-        local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, SecureHandlerClickTemplate, BackdropTemplate")
+        local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, BackdropTemplate")
         btn:SetSize(30, 30)
         
         local displayIndex = 9 - i
@@ -362,10 +362,9 @@ function GroupManager:CreateExpandedContent()
         icon:SetTexture(RAID_MARKERS[i].icon)
         icon:SetDesaturated(true)  -- Gray out for world markers
         
-        -- Set secure click handler to call PlaceRaidMarker (works in combat)
-        btn:SetAttribute("_onclick", string.format([[
-            PlaceRaidMarker(%d)
-        ]], i))
+        -- Click Blizzard's world marker button (works in combat)
+        btn:SetAttribute("type", "click")
+        btn:SetAttribute("clickbutton", _G["CompactRaidFrameManagerDisplayFrameLeaderOptionsRaidWorldMarkerButton"..i])
         
         -- Hover effects (non-secure, but that's OK)
         btn:SetScript("OnEnter", function(self)
