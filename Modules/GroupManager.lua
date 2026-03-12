@@ -257,8 +257,7 @@ function GroupManager:ReskinBlizzardManager()
             end
         elseif region:IsObjectType("FontString") then
             -- Style title text with AbstractUI colors
-            local textPrimary = ColorPalette:GetColor('text-primary')
-            region:SetTextColor(textPrimary)
+            region:SetTextColor(ColorPalette:GetColor('text-primary'))
         end
     end
     
@@ -320,8 +319,6 @@ function GroupManager:ReskinBlizzardButtons(frame)
     local bgColor = ColorPalette:GetColorTable('background-tertiary')
     local borderColor = ColorPalette:GetColorTable('border-primary')
     local hoverColor = ColorPalette:GetColorTable('background-hover')
-    local textPrimary = ColorPalette:GetColor('text-primary')
-    local textSecondary = ColorPalette:GetColor('text-secondary')
     
     -- Reskin all children recursively
     for i = 1, frame:GetNumChildren() do
@@ -351,9 +348,9 @@ function GroupManager:ReskinBlizzardButtons(frame)
                     -- Headers/titles are usually larger
                     local _, fontSize = region:GetFont()
                     if fontSize and fontSize >= 14 then
-                        region:SetTextColor(textPrimary)
+                        region:SetTextColor(ColorPalette:GetColor('text-primary'))
                     else
-                        region:SetTextColor(textSecondary)
+                        region:SetTextColor(ColorPalette:GetColor('text-secondary'))
                     end
                     region.abstractUIStyled = true
                 end
@@ -432,7 +429,7 @@ function GroupManager:ReskinBlizzardButtons(frame)
             -- Style button text
             local buttonText = child:GetFontString()
             if buttonText and not buttonText.abstractUIStyled then
-                buttonText:SetTextColor(textPrimary)
+                buttonText:SetTextColor(ColorPalette:GetColor('text-primary'))
                 buttonText.abstractUIStyled = true
             end
         end
