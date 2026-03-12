@@ -256,7 +256,9 @@ function GroupManager:CreateExpandedContent()
     
     -- Create marker buttons in 2 rows of 4 (reversed order: Skull to Star)
     -- Must use SecureActionButtonTemplate for protected marker functions
+    -- Note: Secure frames cannot anchor to FontStrings, must anchor to contentPanel
     local markerButtons = {}
+    local markerStartY = -48  -- Position below title and label
     for i = #RAID_MARKERS, 1, -1 do
         local marker = RAID_MARKERS[i]
         
@@ -267,7 +269,7 @@ function GroupManager:CreateExpandedContent()
         local displayIndex = #RAID_MARKERS - i + 1
         local col = ((displayIndex - 1) % 4)
         local row = math.floor((displayIndex - 1) / 4)
-        btn:SetPoint("TOPLEFT", markersLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
+        btn:SetPoint("TOPLEFT", contentPanel, "TOPLEFT", 8 + col * 35, markerStartY - (row * 35))
         
         -- Style to match FrameFactory buttons
         btn:SetBackdrop({
@@ -322,12 +324,14 @@ function GroupManager:CreateExpandedContent()
     
     -- World Markers Section
     local worldLabel = FontKit:CreateFontString(contentPanel, 'body', 'normal')
-    worldLabel:SetPoint("TOPLEFT", markerButtons[4], "BOTTOMLEFT", 0, -15)
+    worldLabel:SetPoint("TOPLEFT", contentPanel, "TOPLEFT", 8, markerStartY - 70 - 5)  -- Position below raid markers
     worldLabel:SetText("World Markers:")
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
     -- Must use SecureActionButtonTemplate for protected marker functions
+    -- Note: Secure frames cannot anchor to FontStrings, must anchor to contentPanel
+    local worldStartY = markerStartY - 70 - 20  -- Position below raid markers + gap for label
     for i = 8, 1, -1 do
         -- Create secure button for world markers
         local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, BackdropTemplate")
@@ -336,7 +340,7 @@ function GroupManager:CreateExpandedContent()
         local displayIndex = 9 - i
         local col = ((displayIndex - 1) % 4)
         local row = math.floor((displayIndex - 1) / 4)
-        btn:SetPoint("TOPLEFT", worldLabel, "BOTTOMLEFT", col * 35, -5 - (row * 35))
+        btn:SetPoint("TOPLEFT", contentPanel, "TOPLEFT", 8 + col * 35, worldStartY - (row * 35))
         
         -- Style to match FrameFactory buttons
         btn:SetBackdrop({
