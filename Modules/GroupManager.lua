@@ -329,7 +329,7 @@ function GroupManager:CreateExpandedContent()
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
-    -- Clicks Blizzard's world marker buttons for combat support
+    -- Use PostClick script to call PlaceRaidMarker for cursor placement
     local worldStartY = markerStartY - 70 - 20  -- Position below raid markers + gap for label
     for i = 8, 1, -1 do
         -- Create secure button for world markers (required for in-combat functionality)
@@ -362,9 +362,13 @@ function GroupManager:CreateExpandedContent()
         icon:SetTexture(RAID_MARKERS[i].icon)
         icon:SetDesaturated(true)  -- Gray out for world markers
         
-        -- Click Blizzard's world marker button (works in combat)
-        btn:SetAttribute("type", "click")
-        btn:SetAttribute("clickbutton", _G["CompactRaidFrameManagerDisplayFrameLeaderOptionsRaidWorldMarkerButton"..i])
+        -- Store marker index for PostClick
+        btn.markerIndex = i
+        
+        -- PostClick can call protected functions from secure buttons
+        btn:SetScript("PostClick", function(self, button)
+            PlaceRaidMarker(self.markerIndex)
+        end)
         
         -- Hover effects (non-secure, but that's OK)
         btn:SetScript("OnEnter", function(self)
