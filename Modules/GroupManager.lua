@@ -10,6 +10,10 @@ local GroupManager = AbstractUI:NewModule("GroupManager", "AceEvent-3.0")
 -- Framework references
 local ColorPalette, FontKit, FrameFactory
 
+-- WoW API compatibility (modern C_AddOns or legacy globals)
+local IsAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
+local LoadAddOn = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+
 -- State
 local managerFrame = nil
 local isExpanded = false
