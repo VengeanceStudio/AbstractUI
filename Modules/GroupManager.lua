@@ -244,7 +244,56 @@ function GroupManager:ReskinBlizzardManager()
         blizzardManager:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
     end
     
-    -- Reskin all buttons in the display frame
+    -- Hide all Blizzard art textures on the main frame
+    for _, region in ipairs({blizzardManager:GetRegions()}) do
+        if region:IsObjectType("Texture") then
+            local texPath = region:GetTexture()
+            if texPath then
+                local texStr = tostring(texPath)
+                -- Hide everything except WHITE8X8 (which is our backdrop)
+                if not texStr:match("WHITE8X8") then
+                    region:SetAlpha(0)
+                end
+            end
+        elseif region:IsObjectType("FontString") then
+            -- Style title text with AbstractUI colors
+            local textPrimary = ColorPalette:GetColor('text-primary')
+            region:SetTextColor(textPrimary)
+        end
+    end
+    
+    -- Also hide textures on the display frame
+    if displayFrame then
+        for _, region in ipairs({displayFrame:GetRegions()}) do
+            if region:IsObjectType("Texture") then
+                local texPath = region:GetTexture()
+                if texPath then
+                    local texStr = tostring(texPath)
+                    if not texStr:match("WHITE8X8") then
+                        region:SetAlpha(0)
+                    end
+                end
+            end
+        end
+        
+        -- Apply backdrop to display frame if it has SetBackdrop
+        if displayFrame.SetBackdrop then
+            local bgTertiary = ColorPalette:GetColorTable('background-tertiary')
+            local borderColor = ColorPalette:GetColorTable('border-primary')
+            
+            displayFrame:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                tile = false,
+                edgeSize = 1,
+                insets = { left = 1, right = 1, top = 1, bottom = 1 }
+            })
+            displayFrame:SetBackdropColor(bgTertiary.r, bgTertiary.g, bgTertiary.b, bgTertiary.a or 0.9)
+            displayFrame:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+        end
+    end
+    
+    -- Reskin all buttons and UI elements in the display frame
     self:ReskinBlizzardButtons(displayFrame)
     
     -- Hide initially (will show when expanded)
@@ -271,11 +320,75 @@ function GroupManager:ReskinBlizzardButtons(frame)
     local bgColor = ColorPalette:GetColorTable('background-tertiary')
     local borderColor = ColorPalette:GetColorTable('border-primary')
     local hoverColor = ColorPalette:GetColorTable('background-hover')
+    local textPrimary = ColorPalette:GetColor('text-primary')
+    local textSecondary = ColorPalette:GetColor('text-secondary')
     
-    -- Reskin all child buttons recursively
+    -- Reskin all children recursively
     for i = 1, frame:GetNumChildren() do
         local child = select(i, frame:GetChildren())
+        local childName = child:GetName() or ""
         
+        -- Hide default Blizzard art textures on the frame itself
+        for _, region in ipairs({child:GetRegions()}) do
+            if region:IsObjectType("Texture") then
+                local texPath = region:GetTexture()
+                if texPath then
+                    local texStr = tostring(texPath)
+                    -- Keep raid marker icons and important textures, hide decorative Blizzard art
+                    if not (texStr:match("RaidTargetingIcon") or texStr:match("RaidIcon") or texStr:match("WHITE8X8")) then
+                        -- Check if it's a background or border texture (usually named)
+                        local regionName = region:GetName() or ""
+                        if regionName:match("Background") or regionName:match("Border") or regionName:match("Texture") or 
+                           regionName:match("Left") or regionName:match("Right") or regionName:match("Middle") or
+                           texStr:match("Interface\\FriendsFrame") or texStr:match("Interface\\ChatFrame") then
+                            region:SetAlpha(0)
+                        end
+                    end
+                end
+            elseif region:IsObjectType("FontString") then
+                -- Style all text with AbstractUI colors
+                if not region.abstractUIStyled then
+                    -- Headers/titles are usually larger
+                    local _, fontSize = region:GetFont()
+                    if fontSize and fontSize >= 14 then
+                        region:SetTextColor(textPrimary)
+                    else
+                        region:SetTextColor(textSecondary)
+                    end
+                    region.abstractUIStyled = true
+                end
+            end
+        end
+        
+        -- Style CheckButtons (checkboxes)
+        if child:IsObjectType("CheckButton") then
+            if child.SetBackdrop then
+                child:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    tile = false,
+                    edgeSize = 1,
+                    insets = { left = 0, right = 0, top = 0, bottom = 0 }
+                })
+                child:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
+                child:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+            end
+            
+            -- Replace check texture
+            local checkTexture = child:GetCheckedTexture()
+            if checkTexture then
+                checkTexture:SetColorTexture(0.2, 0.8, 0.2, 1)
+                checkTexture:SetAllPoints()
+            end
+            
+            -- Hide default textures
+            local normalTexture = child:GetNormalTexture()
+            if normalTexture then normalTexture:SetAlpha(0) end
+            local pushedTexture = child:GetPushedTexture()
+            if pushedTexture then pushedTexture:SetAlpha(0) end
+        end
+        
+        -- Style regular Buttons
         if child:IsObjectType("Button") and child.SetBackdrop then
             -- Apply AbstractUI button styling
             child:SetBackdrop({
@@ -303,14 +416,43 @@ function GroupManager:ReskinBlizzardButtons(frame)
                 child.abstractUIStyled = true
             end
             
-            -- Hide default textures
+            -- Hide default textures (but keep raid marker icons)
             for _, region in ipairs({child:GetRegions()}) do
                 if region:IsObjectType("Texture") and not region:GetName() then
                     local texture = region:GetTexture()
-                    if texture and not string.match(tostring(texture), "RaidTargetingIcon") then
-                        region:SetAlpha(0)
+                    if texture then
+                        local texStr = tostring(texture)
+                        if not (texStr:match("RaidTargetingIcon") or texStr:match("RaidIcon") or texStr:match("WHITE8X8")) then
+                            region:SetAlpha(0)
+                        end
                     end
                 end
+            end
+            
+            -- Style button text
+            local buttonText = child:GetFontString()
+            if buttonText and not buttonText.abstractUIStyled then
+                buttonText:SetTextColor(textPrimary)
+                buttonText.abstractUIStyled = true
+            end
+        end
+        
+        -- Style Frames that look like containers
+        if child:IsObjectType("Frame") and child.SetBackdrop then
+            -- Check if this frame has a backdrop (usually containers/panels)
+            local backdrop = child:GetBackdrop()
+            if backdrop then
+                -- Reskin it with AbstractUI colors
+                child:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    tile = false,
+                    edgeSize = 1,
+                    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                })
+                local bgPrimary = ColorPalette:GetColorTable('background-primary')
+                child:SetBackdropColor(bgPrimary.r, bgPrimary.g, bgPrimary.b, bgPrimary.a or 0.9)
+                child:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
             end
         end
         
