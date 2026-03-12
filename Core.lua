@@ -1988,7 +1988,7 @@ function AbstractUI:GetOptions()
                         get = function() return self.db.profile.modules.castBar end,
                         set = function(_, v) self.db.profile.modules.castBar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
                     groupManager = { name = "Group Manager", type = "toggle", order = 2.73, width = "normal",
-                        desc = "Compact group frames that expand on click and can be positioned anywhere (enable 'Hide Compact Party/Raid Manager' in Tweaks to hide Blizzard's default)",
+                        desc = "Compact toggle icon that opens Blizzard's CompactRaidFrameManager with AbstractUI styling when clicked",
                         get = function() return self.db.profile.modules.groupManager end,
                         set = function(_, v) self.db.profile.modules.groupManager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
                     tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "normal",
