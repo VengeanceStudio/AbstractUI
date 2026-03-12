@@ -329,12 +329,11 @@ function GroupManager:CreateExpandedContent()
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
-    -- Must use SecureActionButtonTemplate for protected marker functions
-    -- Note: Secure frames cannot anchor to FontStrings, must anchor to contentPanel
+    -- Must use SecureActionButtonTemplate with secure handlers for combat support
     local worldStartY = markerStartY - 70 - 20  -- Position below raid markers + gap for label
     for i = 8, 1, -1 do
-        -- Create secure button for world markers
-        local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, BackdropTemplate")
+        -- Create secure button for world markers (required for in-combat functionality)
+        local btn = CreateFrame("Button", "AbstractUI_WorldMarker"..i, contentPanel, "SecureActionButtonTemplate, SecureHandlerClickTemplate, BackdropTemplate")
         btn:SetSize(30, 30)
         
         local displayIndex = 9 - i
@@ -363,11 +362,12 @@ function GroupManager:CreateExpandedContent()
         icon:SetTexture(RAID_MARKERS[i].icon)
         icon:SetDesaturated(true)  -- Gray out for world markers
         
-        -- Set secure attributes for world marker functionality
-        btn:SetAttribute("type", "macro")
-        btn:SetAttribute("macrotext", "/worldmarker " .. i)
+        -- Set secure click handler to call PlaceRaidMarker (works in combat)
+        btn:SetAttribute("_onclick", string.format([[
+            PlaceRaidMarker(%d)
+        ]], i))
         
-        -- Hover effects
+        -- Hover effects (non-secure, but that's OK)
         btn:SetScript("OnEnter", function(self)
             local hoverColor = ColorPalette:GetColorTable('background-hover')
             btn:SetBackdropColor(hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a or 1)
@@ -375,7 +375,7 @@ function GroupManager:CreateExpandedContent()
             icon:SetDesaturated(false)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Place " .. RAID_MARKERS[i].name, 1, 1, 1)
-            GameTooltip:AddLine("Click to place on ground", 0.7, 0.7, 0.7)
+            GameTooltip:AddLine("Click for placement cursor", 0.7, 0.7, 0.7)
             GameTooltip:Show()
         end)
         
