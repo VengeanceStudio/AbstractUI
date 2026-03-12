@@ -60,6 +60,11 @@ function GroupManager:OnEnable()
         return
     end
     
+    -- Ensure Blizzard_CompactRaidFrames is loaded for world marker buttons
+    if not IsAddOnLoaded("Blizzard_CompactRaidFrames") then
+        LoadAddOn("Blizzard_CompactRaidFrames")
+    end
+    
     -- Register events
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -329,7 +334,7 @@ function GroupManager:CreateExpandedContent()
     worldLabel:SetTextColor(ColorPalette:GetColor('text-secondary'))
     
     -- World marker buttons (in 2 rows of 4, reversed order: Skull to Star)
-    -- Use PostClick script to call PlaceRaidMarker for cursor placement
+    -- Click Blizzard's world marker buttons (they exist even if parent frame is hidden)
     local worldStartY = markerStartY - 70 - 20  -- Position below raid markers + gap for label
     for i = 8, 1, -1 do
         -- Create secure button for world markers (required for in-combat functionality)
@@ -362,13 +367,17 @@ function GroupManager:CreateExpandedContent()
         icon:SetTexture(RAID_MARKERS[i].icon)
         icon:SetDesaturated(true)  -- Gray out for world markers
         
-        -- Store marker index for PostClick
-        btn.markerIndex = i
-        
-        -- PostClick can call protected functions from secure buttons
-        btn:SetScript("PostClick", function(self, button)
-            PlaceRaidMarker(self.markerIndex)
-        end)
+        -- Reference Blizzard's world marker button (exists even when CompactRaidFrameManager is hidden)
+        local blizzBtn = _G["CompactRaidFrameManagerDisplayFrameLeaderOptionsRaidWorldMarkerButton"..i]
+        if blizzBtn then
+            -- Click Blizzard's button (works in combat because it's their secure button)
+            btn:SetAttribute("type", "click")
+            btn:SetAttribute("clickbutton", blizzBtn)
+        else
+            -- Fallback: use macro (won't work in combat, but better than nothing)
+            btn:SetAttribute("type", "macro")
+            btn:SetAttribute("macrotext", "/wm " .. i)
+        end
         
         -- Hover effects (non-secure, but that's OK)
         btn:SetScript("OnEnter", function(self)
