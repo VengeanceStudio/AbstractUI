@@ -280,8 +280,8 @@ function GroupManager:CreateExpandedContent()
             edgeSize = 1,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        local bgColor = ColorPalette:GetColor('background-tertiary')
-        local borderColor = ColorPalette:GetColor('border-primary')
+        local bgColor = ColorPalette:GetColorTable('background-tertiary')
+        local borderColor = ColorPalette:GetColorTable('border-primary')
         btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
         btn:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         
@@ -302,7 +302,7 @@ function GroupManager:CreateExpandedContent()
         
         -- Hover effects
         btn:SetScript("OnEnter", function(self)
-            local hoverColor = ColorPalette:GetColor('background-hover')
+            local hoverColor = ColorPalette:GetColorTable('background-hover')
             btn:SetBackdropColor(hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a or 1)
             
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -351,8 +351,8 @@ function GroupManager:CreateExpandedContent()
             edgeSize = 1,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        local bgColor = ColorPalette:GetColor('background-tertiary')
-        local borderColor = ColorPalette:GetColor('border-primary')
+        local bgColor = ColorPalette:GetColorTable('background-tertiary')
+        local borderColor = ColorPalette:GetColorTable('border-primary')
         btn:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 1)
         btn:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         
@@ -369,7 +369,7 @@ function GroupManager:CreateExpandedContent()
         
         -- Hover effects
         btn:SetScript("OnEnter", function(self)
-            local hoverColor = ColorPalette:GetColor('background-hover')
+            local hoverColor = ColorPalette:GetColorTable('background-hover')
             btn:SetBackdropColor(hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a or 1)
             
             icon:SetDesaturated(false)
