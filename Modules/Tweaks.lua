@@ -29,6 +29,8 @@ local defaults = {
         delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
         oneKeyFishing = false,
         oneKeyFishingFirstTime = true,
+        customWhisperSound = false,
+        whisperSoundID = 3081, -- Default: TellMessage (Blizzard's default whisper sound)
     }
 }
 
@@ -155,6 +157,11 @@ function Tweaks:OnDBReady()
     -- Setup one-key fishing
     if self.db.profile.oneKeyFishing then
         self:SetupOneKeyFishing()
+    end
+    
+    -- Setup custom whisper sound
+    if self.db.profile.customWhisperSound then
+        self:SetupCustomWhisperSound()
     end
     
     -- Use event-based approach instead of constant ticker
@@ -996,8 +1003,8 @@ function Tweaks:GetOptions()
                 name = "Quest/Dialogue Horizontal Position",
                 desc = "Horizontal offset from center of screen (negative = left, positive = right)",
                 type = "range",
-                min = -800,
-                max = 800,
+                min = -1200,
+                max = 1200,
                 step = 1,
                 order = 16,
                 disabled = function() return not self.db.profile.questFrameCustomPosition end,
@@ -1083,6 +1090,47 @@ function Tweaks:GetOptions()
                         self:SetupOneKeyFishing()
                     else
                         self:DisableOneKeyFishing()
+                    end
+                end,
+            },
+            customWhisperSound = {
+                name = "Custom Whisper Sound",
+                desc = "Replace the default whisper notification sound with a custom sound",
+                type = "toggle",
+                order = 21,
+                set = function(_, v)
+                    self.db.profile.customWhisperSound = v
+                    if v then
+                        self:SetupCustomWhisperSound()
+                    else
+                        self:DisableCustomWhisperSound()
+                    end
+                end,
+            },
+            whisperSoundID = {
+                name = "Whisper Sound",
+                desc = "Sound ID to play when receiving a whisper. Common sounds:\n" ..
+                       "3081 = TellMessage (default)\n" ..
+                       "567 = Bell\n" ..
+                       "888 = Auction House Bell\n" ..
+                       "1441 = Short Click\n" ..
+                       "8959 = Quest Complete\n" ..
+                       "11466 = Interface Click\n" ..
+                       "12889 = Raid Warning\n" ..
+                       "You can test sounds at: https://www.wowhead.com/sounds",
+                type = "input",
+                order = 22,
+                disabled = function() return not self.db.profile.customWhisperSound end,
+                get = function() return tostring(self.db.profile.whisperSoundID) end,
+                set = function(_, v)
+                    local soundID = tonumber(v)
+                    if soundID and soundID > 0 then
+                        self.db.profile.whisperSoundID = soundID
+                        -- Test the sound
+                        PlaySound(soundID)
+                        print("|cff00ff00[AbstractUI]|r Whisper sound set to ID: " .. soundID)
+                    else
+                        print("|cffff6b6b[AbstractUI]|r Invalid sound ID. Please enter a number.")
                     end
                 end,
             },
@@ -1233,6 +1281,47 @@ function Tweaks:UNIT_SPELLCAST_CHANNEL_STOP(event, unit, _, spellID)
     -- Clear bindings when fishing stops
     if not InCombatLockdown() then
         ClearOverrideBindings(self.fishingButton)
+    end
+end
+
+-- ============================================================================
+-- CUSTOM WHISPER SOUND FUNCTIONALITY
+-- ============================================================================
+
+function Tweaks:SetupCustomWhisperSound()
+    if self.whisperSoundHooked then return end
+    
+    -- Register event to listen for incoming whispers
+    self:RegisterEvent("CHAT_MSG_WHISPER")
+    self:RegisterEvent("CHAT_MSG_BN_WHISPER") -- Battle.net whispers
+    
+    -- Mute the default whisper sound via CVar
+    SetCVar("Sound_EnableSoundWhenGameIsInBG", "0")
+    -- Note: There's no direct CVar to disable just whisper sounds,
+    -- so we'll play our custom sound on top of the default
+    
+    self.whisperSoundHooked = true
+    print("|cff00ff00[AbstractUI]|r Custom whisper sound enabled. Test it by whispering yourself: /w " .. UnitName("player") .. " test")
+end
+
+function Tweaks:DisableCustomWhisperSound()
+    -- Unregister the whisper events
+    self:UnregisterEvent("CHAT_MSG_WHISPER")
+    self:UnregisterEvent("CHAT_MSG_BN_WHISPER")
+    print("|cff00ff00[AbstractUI]|r Custom whisper sound disabled.")
+end
+
+function Tweaks:CHAT_MSG_WHISPER(event, text, playerName, ...)
+    -- Play custom sound when receiving a whisper
+    if self.db and self.db.profile.customWhisperSound then
+        PlaySound(self.db.profile.whisperSoundID)
+    end
+end
+
+function Tweaks:CHAT_MSG_BN_WHISPER(event, text, playerName, ...)
+    -- Play custom sound when receiving a Battle.net whisper
+    if self.db and self.db.profile.customWhisperSound then
+        PlaySound(self.db.profile.whisperSoundID)
     end
 end
 
