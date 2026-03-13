@@ -1168,6 +1168,7 @@ function Tweaks:GetOptions()
                 name = "Custom Sound ID",
                 desc = "Enter a custom sound ID. You can find sound IDs at wowhead.com/sounds\n\nClick 'Test Sound' after entering.",
                 type = "input",
+                width = "inline",
                 order = 23,
                 hidden = function() 
                     return not self.db.profile.customWhisperSound or self.db.profile.whisperSoundPreset ~= "custom"
@@ -1187,6 +1188,7 @@ function Tweaks:GetOptions()
                 name = "Test Sound",
                 desc = "Play the currently selected whisper sound",
                 type = "execute",
+                width = "inline",
                 order = 24,
                 hidden = function() return not self.db.profile.customWhisperSound end,
                 func = function()
