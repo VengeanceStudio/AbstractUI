@@ -1140,7 +1140,7 @@ function Tweaks:GetOptions()
                     
                     -- Map preset to File Data ID (from wowhead.com/sounds)
                     local soundMap = {
-                        default = 567482,  -- TellMessage (default whisper sound)
+                        default = 567421,  -- TellMessage (default whisper sound)
                         bell = 565853,     -- Bell Toll Horde
                         auction = 567499,  -- Auction House Bell
                         click = 567451,    -- Player Invite
@@ -1148,7 +1148,7 @@ function Tweaks:GetOptions()
                         interface = 567481, -- Interface Sound
                         raid = 567397,     -- Raid Warning
                         horn = 566719,     -- Zeppelin Horn
-                        gong = 566564,     -- Gong
+                        gong = 565564,     -- Gong
                     }
                     
                     if v ~= "custom" and soundMap[v] then
