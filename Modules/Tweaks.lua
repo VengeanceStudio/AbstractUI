@@ -31,7 +31,7 @@ local defaults = {
         oneKeyFishingFirstTime = true,
         customWhisperSound = false,
         whisperSoundPreset = "default", -- Preset selection: default, bell, auction, click, quest, interface, raid, custom
-        whisperSoundID = 3081, -- TellMessage (Blizzard's default whisper sound)
+        whisperSoundID = 567482, -- TellMessage file data ID (Blizzard's default whisper sound from wowhead.com/sounds)
     }
 }
 
@@ -1138,23 +1138,23 @@ function Tweaks:GetOptions()
                 set = function(_, v)
                     self.db.profile.whisperSoundPreset = v
                     
-                    -- Map preset to sound ID
+                    -- Map preset to File Data ID (from wowhead.com/sounds)
                     local soundMap = {
-                        default = 3081,  -- TellMessage
-                        bell = 567,      -- Bell
-                        auction = 888,   -- Auction House Bell
-                        click = 1441,    -- Short Click
-                        quest = 8959,    -- Quest Complete
-                        interface = 11466, -- Interface Click
-                        raid = 12889,    -- Raid Warning
-                        horn = 5274,     -- War Horn
-                        gong = 37666,    -- Gong
+                        default = 567482,  -- TellMessage (default whisper sound)
+                        bell = 566121,     -- Bell Toll Inn
+                        auction = 567482,  -- Auction House Bell (using same as default for now)
+                        click = 567451,    -- UI Click
+                        quest = 567439,    -- Quest Complete
+                        interface = 567499, -- Interface Sound
+                        raid = 567397,     -- Raid Warning
+                        horn = 566094,     -- War Horn
+                        gong = 566076,     -- Gong
                     }
                     
                     if v ~= "custom" and soundMap[v] then
                         self.db.profile.whisperSoundID = soundMap[v]
-                        -- Test the sound (presets use PlaySound for sound kit IDs)
-                        PlaySound(soundMap[v])
+                        -- Test the sound (all presets now use PlaySoundFile with file data IDs)
+                        PlaySoundFile(soundMap[v])
                         print("|cff00ff00[AbstractUI]|r Whisper sound set to: " .. v)
                     end
                     
@@ -1166,7 +1166,7 @@ function Tweaks:GetOptions()
             },
             whisperSoundCustomID = {
                 name = "Custom Sound ID",
-                desc = "Enter a custom sound ID. You can find sound IDs at wowhead.com/sounds\n\nClick 'Test Sound' after entering.",
+                desc = "Enter a custom sound file data ID from wowhead.com/sounds\n\nYou can search for sounds on wowhead, preview them, and copy the ID from the URL.\nExample: wowhead.com/sound=567482 → enter 567482\n\nClick 'Test Sound' after entering.",
                 type = "input",
                 width = "inline",
                 order = 23,
@@ -1193,13 +1193,9 @@ function Tweaks:GetOptions()
                 hidden = function() return not self.db.profile.customWhisperSound end,
                 func = function()
                     if self.db.profile.whisperSoundID then
-                        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
-                        if self.db.profile.whisperSoundPreset == "custom" then
-                            PlaySoundFile(self.db.profile.whisperSoundID)
-                        else
-                            PlaySound(self.db.profile.whisperSoundID)
-                        end
-                        print("|cff00ff00[AbstractUI]|r Playing sound ID: " .. self.db.profile.whisperSoundID)
+                        -- All sounds now use PlaySoundFile with file data IDs
+                        PlaySoundFile(self.db.profile.whisperSoundID)
+                        print("|cff00ff00[AbstractUI]|r Playing sound file data ID: " .. self.db.profile.whisperSoundID)
                     end
                 end,
             },
@@ -1360,6 +1356,10 @@ end
 function Tweaks:SetupCustomWhisperSound()
     if self.whisperSoundHooked then return end
     
+    -- Mute the default whisper sound files (using file data IDs)
+    MuteSoundFile(567482)  -- TellMessage (main whisper sound)
+    MuteSoundFile(567333)  -- BNet whisper sound
+    
     -- Register event to listen for incoming whispers
     self:RegisterEvent("CHAT_MSG_WHISPER")
     self:RegisterEvent("CHAT_MSG_BN_WHISPER") -- Battle.net whispers
@@ -1369,6 +1369,10 @@ function Tweaks:SetupCustomWhisperSound()
 end
 
 function Tweaks:DisableCustomWhisperSound()
+    -- Unmute the default whisper sound files (using file data IDs)
+    UnmuteSoundFile(567482)  -- TellMessage (main whisper sound)
+    UnmuteSoundFile(567333)  -- BNet whisper sound
+    
     -- Unregister the whisper events
     self:UnregisterEvent("CHAT_MSG_WHISPER")
     self:UnregisterEvent("CHAT_MSG_BN_WHISPER")
@@ -1377,25 +1381,17 @@ end
 
 function Tweaks:CHAT_MSG_WHISPER(event, text, playerName, ...)
     -- Play custom sound when receiving a whisper
-    if self.db and self.db.profile.customWhisperSound then
-        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
-        if self.db.profile.whisperSoundPreset == "custom" then
-            PlaySoundFile(self.db.profile.whisperSoundID)
-        else
-            PlaySound(self.db.profile.whisperSoundID)
-        end
+    if self.db and self.db.profile.customWhisperSound and self.db.profile.whisperSoundID then
+        -- All sounds now use PlaySoundFile with file data IDs
+        PlaySoundFile(self.db.profile.whisperSoundID)
     end
 end
 
 function Tweaks:CHAT_MSG_BN_WHISPER(event, text, playerName, ...)
     -- Play custom sound when receiving a Battle.net whisper
-    if self.db and self.db.profile.customWhisperSound then
-        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
-        if self.db.profile.whisperSoundPreset == "custom" then
-            PlaySoundFile(self.db.profile.whisperSoundID)
-        else
-            PlaySound(self.db.profile.whisperSoundID)
-        end
+    if self.db and self.db.profile.customWhisperSound and self.db.profile.whisperSoundID then
+        -- All sounds now use PlaySoundFile with file data IDs
+        PlaySoundFile(self.db.profile.whisperSoundID)
     end
 end
 
