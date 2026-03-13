@@ -1106,6 +1106,11 @@ function Tweaks:GetOptions()
                     else
                         self:DisableCustomWhisperSound()
                     end
+                    
+                    -- Refresh options panel to show/hide whisper sound options
+                    if _G.AbstractUI_OptionsPanel then
+                        _G.AbstractUI_OptionsPanel:Refresh()
+                    end
                 end,
             },
             whisperSoundPreset = {
@@ -1151,6 +1156,11 @@ function Tweaks:GetOptions()
                         -- Test the sound (presets use PlaySound for sound kit IDs)
                         PlaySound(soundMap[v])
                         print("|cff00ff00[AbstractUI]|r Whisper sound set to: " .. v)
+                    end
+                    
+                    -- Refresh options panel to show/hide Custom Sound ID input
+                    if _G.AbstractUI_OptionsPanel then
+                        _G.AbstractUI_OptionsPanel:Refresh()
                     end
                 end,
             },

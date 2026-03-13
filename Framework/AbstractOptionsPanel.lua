@@ -499,10 +499,22 @@ function AbstractOptionsPanel:RenderContent(node)
     for _, option in ipairs(sortedOptions) do
         -- Skip group types (they're in the tree)
         if option.type ~= "group" then
-            local isFullWidth = (option.width == "full" or not option.width)
+            -- Check if option is hidden
+            local isHidden = false
+            if option.hidden then
+                if type(option.hidden) == "function" then
+                    isHidden = option.hidden()
+                else
+                    isHidden = option.hidden
+                end
+            end
             
-            -- Check if we need to wrap to next row
-            if isFullWidth and xOffset > 0 then
+            -- Skip hidden options
+            if not isHidden then
+                local isFullWidth = (option.width == "full" or not option.width)
+                
+                -- Check if we need to wrap to next row
+                if isFullWidth and xOffset > 0 then
                 -- Move to next row
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
@@ -551,6 +563,7 @@ function AbstractOptionsPanel:RenderContent(node)
                     end
                 end
             end
+            end  -- end of not isHidden check
         end
     end
     
@@ -952,10 +965,22 @@ function AbstractOptionsPanel:RenderNestedTreeContent(node)
     for _, option in ipairs(sortedOptions) do
         -- Skip group types
         if option.type ~= "group" then
-            local isFullWidth = (option.width == "full" or not option.width)
+            -- Check if option is hidden
+            local isHidden = false
+            if option.hidden then
+                if type(option.hidden) == "function" then
+                    isHidden = option.hidden()
+                else
+                    isHidden = option.hidden
+                end
+            end
             
-            -- Check if we need to wrap to next row
-            if isFullWidth and xOffset > 0 then
+            -- Skip hidden options
+            if not isHidden then
+                local isFullWidth = (option.width == "full" or not option.width)
+                
+                -- Check if we need to wrap to next row
+                if isFullWidth and xOffset > 0 then
                 -- Move to next row
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
@@ -1004,6 +1029,7 @@ function AbstractOptionsPanel:RenderNestedTreeContent(node)
                     end
                 end
             end
+            end  -- end of not isHidden check
         end
     end
     
@@ -1085,10 +1111,22 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
     for _, option in ipairs(sortedOptions) do
         -- Skip group types
         if option.type ~= "group" then
-            local isFullWidth = (option.width == "full" or not option.width)
+            -- Check if option is hidden
+            local isHidden = false
+            if option.hidden then
+                if type(option.hidden) == "function" then
+                    isHidden = option.hidden()
+                else
+                    isHidden = option.hidden
+                end
+            end
             
-            -- Check if we need to wrap to next row
-            if isFullWidth and xOffset > 0 then
+            -- Skip hidden options
+            if not isHidden then
+                local isFullWidth = (option.width == "full" or not option.width)
+                
+                -- Check if we need to wrap to next row
+                if isFullWidth and xOffset > 0 then
                 -- Move to next row
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
@@ -1137,6 +1175,7 @@ function AbstractOptionsPanel:SelectNestedTab(tabIndex)
                     end
                 end
             end
+            end  -- end of not isHidden check
         end
     end
     
@@ -1254,10 +1293,22 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
     for _, option in ipairs(sortedOptions) do
         -- Skip group types
         if option.type ~= "group" then
-            local isFullWidth = (option.width == "full" or not option.width)
+            -- Check if option is hidden
+            local isHidden = false
+            if option.hidden then
+                if type(option.hidden) == "function" then
+                    isHidden = option.hidden()
+                else
+                    isHidden = option.hidden
+                end
+            end
             
-            -- Check if we need to wrap to next row
-            if isFullWidth and xOffset > 0 then
+            -- Skip hidden options
+            if not isHidden then
+                local isFullWidth = (option.width == "full" or not option.width)
+                
+                -- Check if we need to wrap to next row
+                if isFullWidth and xOffset > 0 then
                 -- Move to next row
                 yOffset = yOffset + rowHeight + 10
                 xOffset = 0
@@ -1306,6 +1357,7 @@ function AbstractOptionsPanel:SelectTab(tabIndex)
                     end
                 end
             end
+            end  -- end of not isHidden check
         end
     end
     
