@@ -30,7 +30,8 @@ local defaults = {
         oneKeyFishing = false,
         oneKeyFishingFirstTime = true,
         customWhisperSound = false,
-        whisperSoundID = 3081, -- Default: TellMessage (Blizzard's default whisper sound)
+        whisperSoundPreset = "default", -- Preset selection: default, bell, auction, click, quest, interface, raid, custom
+        whisperSoundID = 3081, -- TellMessage (Blizzard's default whisper sound)
     }
 }
 
@@ -1107,30 +1108,78 @@ function Tweaks:GetOptions()
                     end
                 end,
             },
-            whisperSoundID = {
+            whisperSoundPreset = {
                 name = "Whisper Sound",
-                desc = "Sound ID to play when receiving a whisper. Common sounds:\n" ..
-                       "3081 = TellMessage (default)\n" ..
-                       "567 = Bell\n" ..
-                       "888 = Auction House Bell\n" ..
-                       "1441 = Short Click\n" ..
-                       "8959 = Quest Complete\n" ..
-                       "11466 = Interface Click\n" ..
-                       "12889 = Raid Warning\n" ..
-                       "You can test sounds at: https://www.wowhead.com/sounds",
-                type = "input",
+                desc = "Select a sound to play when receiving a whisper",
+                type = "select",
                 order = 22,
                 disabled = function() return not self.db.profile.customWhisperSound end,
+                values = {
+                    default = "Default Whisper (TellMessage)",
+                    bell = "Bell",
+                    auction = "Auction House Bell",
+                    click = "Short Click",
+                    quest = "Quest Complete",
+                    interface = "Interface Click",
+                    raid = "Raid Warning",
+                    horn = "War Horn",
+                    gong = "Gong",
+                    custom = "Custom (Enter Sound ID)",
+                },
+                get = function() return self.db.profile.whisperSoundPreset end,
+                set = function(_, v)
+                    self.db.profile.whisperSoundPreset = v
+                    
+                    -- Map preset to sound ID
+                    local soundMap = {
+                        default = 3081,  -- TellMessage
+                        bell = 567,      -- Bell
+                        auction = 888,   -- Auction House Bell
+                        click = 1441,    -- Short Click
+                        quest = 8959,    -- Quest Complete
+                        interface = 11466, -- Interface Click
+                        raid = 12889,    -- Raid Warning
+                        horn = 5274,     -- War Horn
+                        gong = 37666,    -- Gong
+                    }
+                    
+                    if v ~= "custom" and soundMap[v] then
+                        self.db.profile.whisperSoundID = soundMap[v]
+                        -- Test the sound
+                        PlaySound(soundMap[v])
+                        print("|cff00ff00[AbstractUI]|r Whisper sound set to: " .. v)
+                    end
+                end,
+            },
+            whisperSoundCustomID = {
+                name = "Custom Sound ID",
+                desc = "Enter a custom sound ID. You can find sound IDs at wowhead.com/sounds\n\nClick 'Test Sound' after entering.",
+                type = "input",
+                order = 23,
+                disabled = function() 
+                    return not self.db.profile.customWhisperSound or self.db.profile.whisperSoundPreset ~= "custom"
+                end,
                 get = function() return tostring(self.db.profile.whisperSoundID) end,
                 set = function(_, v)
                     local soundID = tonumber(v)
                     if soundID and soundID > 0 then
                         self.db.profile.whisperSoundID = soundID
-                        -- Test the sound
-                        PlaySound(soundID)
-                        print("|cff00ff00[AbstractUI]|r Whisper sound set to ID: " .. soundID)
+                        print("|cff00ff00[AbstractUI]|r Custom whisper sound ID set to: " .. soundID)
                     else
-                        print("|cffff6b6b[AbstractUI]|r Invalid sound ID. Please enter a number.")
+                        print("|cffff6b6b[AbstractUI]|r Invalid sound ID. Please enter a positive number.")
+                    end
+                end,
+            },
+            whisperSoundTest = {
+                name = "Test Sound",
+                desc = "Play the currently selected whisper sound",
+                type = "execute",
+                order = 24,
+                disabled = function() return not self.db.profile.customWhisperSound end,
+                func = function()
+                    if self.db.profile.whisperSoundID then
+                        PlaySound(self.db.profile.whisperSoundID)
+                        print("|cff00ff00[AbstractUI]|r Playing sound ID: " .. self.db.profile.whisperSoundID)
                     end
                 end,
             },
