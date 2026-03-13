@@ -1347,11 +1347,6 @@ function Tweaks:SetupCustomWhisperSound()
     self:RegisterEvent("CHAT_MSG_WHISPER")
     self:RegisterEvent("CHAT_MSG_BN_WHISPER") -- Battle.net whispers
     
-    -- Mute the default whisper sound via CVar
-    SetCVar("Sound_EnableSoundWhenGameIsInBG", "0")
-    -- Note: There's no direct CVar to disable just whisper sounds,
-    -- so we'll play our custom sound on top of the default
-    
     self.whisperSoundHooked = true
     print("|cff00ff00[AbstractUI]|r Custom whisper sound enabled. Test it by whispering yourself: /w " .. UnitName("player") .. " test")
 end
