@@ -1126,9 +1126,9 @@ function Tweaks:GetOptions()
                     gong = "Gong",
                     custom = "Custom (Enter Sound ID)",
                 },
-                sorting = {
-                    "default", "bell", "auction", "click", "quest", "interface", "raid", "horn", "gong", "custom"
-                },
+                sorting = function()
+                    return {"default", "bell", "auction", "click", "quest", "interface", "raid", "horn", "gong", "custom"}
+                end,
                 get = function() return self.db.profile.whisperSoundPreset end,
                 set = function(_, v)
                     self.db.profile.whisperSoundPreset = v
@@ -1148,8 +1148,8 @@ function Tweaks:GetOptions()
                     
                     if v ~= "custom" and soundMap[v] then
                         self.db.profile.whisperSoundID = soundMap[v]
-                        -- Test the sound
-                        PlaySoundFile(soundMap[v])
+                        -- Test the sound (presets use PlaySound for sound kit IDs)
+                        PlaySound(soundMap[v])
                         print("|cff00ff00[AbstractUI]|r Whisper sound set to: " .. v)
                     end
                 end,
@@ -1181,7 +1181,12 @@ function Tweaks:GetOptions()
                 hidden = function() return not self.db.profile.customWhisperSound end,
                 func = function()
                     if self.db.profile.whisperSoundID then
-                        PlaySoundFile(self.db.profile.whisperSoundID)
+                        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
+                        if self.db.profile.whisperSoundPreset == "custom" then
+                            PlaySoundFile(self.db.profile.whisperSoundID)
+                        else
+                            PlaySound(self.db.profile.whisperSoundID)
+                        end
                         print("|cff00ff00[AbstractUI]|r Playing sound ID: " .. self.db.profile.whisperSoundID)
                     end
                 end,
@@ -1361,16 +1366,24 @@ end
 function Tweaks:CHAT_MSG_WHISPER(event, text, playerName, ...)
     -- Play custom sound when receiving a whisper
     if self.db and self.db.profile.customWhisperSound then
-        -- Use PlaySoundFile for file IDs from wowhead
-        PlaySoundFile(self.db.profile.whisperSoundID)
+        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
+        if self.db.profile.whisperSoundPreset == "custom" then
+            PlaySoundFile(self.db.profile.whisperSoundID)
+        else
+            PlaySound(self.db.profile.whisperSoundID)
+        end
     end
 end
 
 function Tweaks:CHAT_MSG_BN_WHISPER(event, text, playerName, ...)
     -- Play custom sound when receiving a Battle.net whisper
     if self.db and self.db.profile.customWhisperSound then
-        -- Use PlaySoundFile for file IDs from wowhead
-        PlaySoundFile(self.db.profile.whisperSoundID)
+        -- Use PlaySound for presets (sound kit IDs), PlaySoundFile for custom (file data IDs)
+        if self.db.profile.whisperSoundPreset == "custom" then
+            PlaySoundFile(self.db.profile.whisperSoundID)
+        else
+            PlaySound(self.db.profile.whisperSoundID)
+        end
     end
 end
 
