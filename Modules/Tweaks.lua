@@ -1113,7 +1113,7 @@ function Tweaks:GetOptions()
                 desc = "Select a sound to play when receiving a whisper",
                 type = "select",
                 order = 22,
-                disabled = function() return not self.db.profile.customWhisperSound end,
+                hidden = function() return not self.db.profile.customWhisperSound end,
                 values = {
                     default = "Default Whisper (TellMessage)",
                     bell = "Bell",
@@ -1125,6 +1125,9 @@ function Tweaks:GetOptions()
                     horn = "War Horn",
                     gong = "Gong",
                     custom = "Custom (Enter Sound ID)",
+                },
+                sorting = {
+                    "default", "bell", "auction", "click", "quest", "interface", "raid", "horn", "gong", "custom"
                 },
                 get = function() return self.db.profile.whisperSoundPreset end,
                 set = function(_, v)
@@ -1156,7 +1159,7 @@ function Tweaks:GetOptions()
                 desc = "Enter a custom sound ID. You can find sound IDs at wowhead.com/sounds\n\nClick 'Test Sound' after entering.",
                 type = "input",
                 order = 23,
-                disabled = function() 
+                hidden = function() 
                     return not self.db.profile.customWhisperSound or self.db.profile.whisperSoundPreset ~= "custom"
                 end,
                 get = function() return tostring(self.db.profile.whisperSoundID) end,
@@ -1175,7 +1178,7 @@ function Tweaks:GetOptions()
                 desc = "Play the currently selected whisper sound",
                 type = "execute",
                 order = 24,
-                disabled = function() return not self.db.profile.customWhisperSound end,
+                hidden = function() return not self.db.profile.customWhisperSound end,
                 func = function()
                     if self.db.profile.whisperSoundID then
                         PlaySound(self.db.profile.whisperSoundID)
