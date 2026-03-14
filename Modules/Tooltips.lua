@@ -975,27 +975,39 @@ function Tooltips:PLAYER_TARGET_CHANGED()
 end
 
 function Tooltips:GetUnitFromGUID(guid)
-    -- Check raid/party
+    -- Use UnitTokenFromGUID if available (handles taint issues)
+    if UnitTokenFromGUID then
+        return UnitTokenFromGUID(guid)
+    end
+    
+    -- Fallback: Check raid/party (protected from taint with pcall)
+    local function safeCompare(unit, targetGUID)
+        local success, result = pcall(function()
+            return UnitGUID(unit) == targetGUID
+        end)
+        return success and result
+    end
+    
     if IsInRaid() then
         for i = 1, GetNumGroupMembers() do
             local unit = "raid" .. i
-            if UnitGUID(unit) == guid then
+            if safeCompare(unit, guid) then
                 return unit
             end
         end
     elseif IsInGroup() then
         for i = 1, GetNumGroupMembers() - 1 do
             local unit = "party" .. i
-            if UnitGUID(unit) == guid then
+            if safeCompare(unit, guid) then
                 return unit
             end
         end
     end
     
-    -- Check target/focus
-    if UnitGUID("target") == guid then return "target" end
-    if UnitGUID("focus") == guid then return "focus" end
-    if UnitGUID("mouseover") == guid then return "mouseover" end
+    -- Check target/focus/mouseover
+    if safeCompare("target", guid) then return "target" end
+    if safeCompare("focus", guid) then return "focus" end
+    if safeCompare("mouseover", guid) then return "mouseover" end
     
     return nil
 end
