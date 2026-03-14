@@ -502,8 +502,8 @@ function Maps:SkinBlizzardButtons()
         end
     end
     
-    -- Hook to catch dynamically created quest rings
-    if not self.questBlobHooked then
+    -- Hook to catch dynamically created quest rings (only if function exists)
+    if not self.questBlobHooked and QuestPOI_DisplayDataBlobPulse then
         hooksecurefunc("QuestPOI_DisplayDataBlobPulse", function()
             -- Re-hide quest blob ring after it's shown
             if Minimap.QuestBlobRing then
