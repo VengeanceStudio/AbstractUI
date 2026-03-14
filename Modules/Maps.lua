@@ -477,6 +477,12 @@ function Maps:SkinBlizzardButtons()
     if MinimapBorderTop then MinimapBorderTop:Hide() end
     if MinimapNorthTag then MinimapNorthTag:Hide() end
     
+    -- Hide the circular quest area ring that appears on square minimaps
+    if Minimap.QuestBlobRing then 
+        Minimap.QuestBlobRing:Hide() 
+        Minimap.QuestBlobRing:SetAlpha(0)
+    end
+    
     -- Skin specific buttons
     local buttons = {
         GameTimeFrame,
