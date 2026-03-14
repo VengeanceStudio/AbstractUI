@@ -83,6 +83,33 @@ function Maps:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("Maps", defaults)
     
+    -- Debug command to identify minimap artifacts
+    SLASH_MINIMAPDEBUG1 = "/minimapdebug"
+    SlashCmdList["MINIMAPDEBUG"] = function()
+        print("|cff00FF7F=== Minimap Children ===|r")
+        for i = 1, Minimap:GetNumChildren() do
+            local child = select(i, Minimap:GetChildren())
+            local name = child:GetName() or "Anonymous"
+            local visible = child:IsVisible()
+            if visible then
+                print(string.format("[%d] %s (%s) - VISIBLE", i, name, child:GetObjectType()))
+            end
+        end
+        print("|cff00FF7F=== Minimap Texture Regions ===|r")
+        for i = 1, Minimap:GetNumRegions() do
+            local region = select(i, Minimap:GetRegions())
+            if region and region.GetObjectType then
+                local objType = region:GetObjectType()
+                if objType == "Texture" and region:IsVisible() then
+                    local tex = region:GetTexture()
+                    local name = region:GetName() or "Anonymous"
+                    print(string.format("[%d] %s - Texture: %s - VISIBLE", i, name, tostring(tex)))
+                end
+            end
+        end
+        print("|cff00FF7FRun this command when you see the artifact|r")
+    end
+    
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
     
@@ -477,45 +504,69 @@ function Maps:SkinBlizzardButtons()
     if MinimapBorderTop then MinimapBorderTop:Hide() end
     if MinimapNorthTag then MinimapNorthTag:Hide() end
     
-    -- Hide all circular quest area rings/artifacts on square minimaps
-    local questElements = {
-        Minimap.QuestBlobRing,
-        Minimap.AreaHighlightRing,
-        Minimap.AreaHighlightTexture,
-        Minimap.ScenarioHighlight,
-        Minimap.POIRing,
-    }
-    
-    -- Try MinimapCluster locations (retail)
-    if MinimapCluster and MinimapCluster.MinimapContainer then
-        table.insert(questElements, MinimapCluster.MinimapContainer.QuestBlobRing)
+    -- Hide the pulsing quest objective ring that creates circular artifacts
+    if Minimap.SuperTrackedPingFrame then
+        Minimap.SuperTrackedPingFrame:Hide()
+        Minimap.SuperTrackedPingFrame:SetAlpha(0)
     end
     
-    for _, element in ipairs(questElements) do
-        if element then
-            element:Hide()
-            element:SetAlpha(0)
-            -- Prevent re-showing
-            if element.Show then
-                element.Show = function() end
+    -- Hide circular quest blob overlays
+    for i = 1, Minimap:GetNumChildren() do
+        local child = select(i, Minimap:GetChildren())
+        if child then
+            local name = child:GetName() or ""
+            -- Hide any child frames related to quest blobs or pings
+            if name:find("Blob") or name:find("Quest") or name:find("POI") or name:find("Ping") or name:find("Area") then
+                if child.Ring then child.Ring:Hide() end
+                if child.Background then child.Background:Hide() end
+                -- Try to hide the child itself if it has texture layers
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region and region.Hide then
+                        region:Hide()
+                    end
+                end
             end
         end
     end
     
-    -- Hook to catch dynamically created quest rings (only if function exists)
-    if not self.questBlobHooked and QuestPOI_DisplayDataBlobPulse then
-        hooksecurefunc("QuestPOI_DisplayDataBlobPulse", function()
-            -- Re-hide quest blob ring after it's shown
-            if Minimap.QuestBlobRing then
-                Minimap.QuestBlobRing:Hide()
-                Minimap.QuestBlobRing:SetAlpha(0)
+    -- Hide all circular minimap texture regions
+    for i = 1, Minimap:GetNumRegions() do
+        local region = select(i, Minimap:GetRegions())
+        if region and region.GetObjectType then
+            local objType = region:GetObjectType()
+            if objType == "Texture" then
+                local texturePath = region:GetTexture()
+                if texturePath and type(texturePath) == "string" then
+                    -- Hide circular mask/ring textures
+                    if texturePath:find("Blob") or 
+                       texturePath:find("Mask") or
+                       texturePath:find("Circle") or
+                       texturePath:find("Ring") or
+                       texturePath:find("Ping") or
+                       texturePath:find("Area") then
+                        region:Hide()
+                        region:SetAlpha(0)
+                    end
+                end
+                -- Also check for numeric texture IDs (file data IDs)
+                if type(texturePath) == "number" then
+                    -- Common quest ring texture file IDs - hide them
+                    local questRingTextures = {
+                        235793, -- QuestBob ring
+                        235950, -- Quest area ring
+                        328082, -- Super tracked ping
+                    }
+                    for _, textureID in ipairs(questRingTextures) do
+                        if texturePath == textureID then
+                            region:Hide()
+                            region:SetAlpha(0)
+                            break
+                        end
+                    end
+                end
             end
-            if MinimapCluster and MinimapCluster.MinimapContainer and MinimapCluster.MinimapContainer.QuestBlobRing then
-                MinimapCluster.MinimapContainer.QuestBlobRing:Hide()
-                MinimapCluster.MinimapContainer.QuestBlobRing:SetAlpha(0)
-            end
-        end)
-        self.questBlobHooked = true
+        end
     end
     
     -- Skin specific buttons
