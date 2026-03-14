@@ -477,10 +477,45 @@ function Maps:SkinBlizzardButtons()
     if MinimapBorderTop then MinimapBorderTop:Hide() end
     if MinimapNorthTag then MinimapNorthTag:Hide() end
     
-    -- Hide the circular quest area ring that appears on square minimaps
-    if Minimap.QuestBlobRing then 
-        Minimap.QuestBlobRing:Hide() 
-        Minimap.QuestBlobRing:SetAlpha(0)
+    -- Hide all circular quest area rings/artifacts on square minimaps
+    local questElements = {
+        Minimap.QuestBlobRing,
+        Minimap.AreaHighlightRing,
+        Minimap.AreaHighlightTexture,
+        Minimap.ScenarioHighlight,
+        Minimap.POIRing,
+    }
+    
+    -- Try MinimapCluster locations (retail)
+    if MinimapCluster and MinimapCluster.MinimapContainer then
+        table.insert(questElements, MinimapCluster.MinimapContainer.QuestBlobRing)
+    end
+    
+    for _, element in ipairs(questElements) do
+        if element then
+            element:Hide()
+            element:SetAlpha(0)
+            -- Prevent re-showing
+            if element.Show then
+                element.Show = function() end
+            end
+        end
+    end
+    
+    -- Hook to catch dynamically created quest rings
+    if not self.questBlobHooked then
+        hooksecurefunc("QuestPOI_DisplayDataBlobPulse", function()
+            -- Re-hide quest blob ring after it's shown
+            if Minimap.QuestBlobRing then
+                Minimap.QuestBlobRing:Hide()
+                Minimap.QuestBlobRing:SetAlpha(0)
+            end
+            if MinimapCluster and MinimapCluster.MinimapContainer and MinimapCluster.MinimapContainer.QuestBlobRing then
+                MinimapCluster.MinimapContainer.QuestBlobRing:Hide()
+                MinimapCluster.MinimapContainer.QuestBlobRing:SetAlpha(0)
+            end
+        end)
+        self.questBlobHooked = true
     end
     
     -- Skin specific buttons
