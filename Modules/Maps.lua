@@ -89,10 +89,12 @@ function Maps:OnDBReady()
         print("|cff00FF7F=== Minimap Children ===|r")
         for i = 1, Minimap:GetNumChildren() do
             local child = select(i, Minimap:GetChildren())
-            local name = child:GetName() or "Anonymous"
-            local visible = child:IsVisible()
-            if visible then
-                print(string.format("[%d] %s (%s) - VISIBLE", i, name, child:GetObjectType()))
+            if child then
+                local name = child:GetName() or "Anonymous"
+                local visible = child:IsVisible()
+                if visible then
+                    print(string.format("[%d] %s (%s) - VISIBLE", i, name, child:GetObjectType()))
+                end
             end
         end
         print("|cff00FF7F=== Minimap Texture Regions ===|r")
