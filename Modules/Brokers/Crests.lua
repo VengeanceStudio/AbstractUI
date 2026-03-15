@@ -124,11 +124,5 @@ crestsObj = LDB:NewDataObject("AbstractCrests", {
 -- Update on load
 C_Timer.After(1, UpdateBrokerText)
 
--- Listen for currency changes
-local frame = CreateFrame("Frame")
-frame:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
-frame:SetScript("OnEvent", function(self, event, ...)
-    if event == "CURRENCY_DISPLAY_UPDATE" then
-        UpdateBrokerText()
-    end
-end)
+-- Use a repeating timer to update currency display periodically
+C_Timer.NewTicker(5, UpdateBrokerText)
