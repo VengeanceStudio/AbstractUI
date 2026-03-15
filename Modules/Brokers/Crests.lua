@@ -39,6 +39,7 @@ local function UpdateBrokerText()
     
     -- Get the highest tier crest that player has
     local displayText = ""
+    local displayIcon = nil
     local hasAny = false
     
     -- Check from highest to lowest
@@ -47,6 +48,11 @@ local function UpdateBrokerText()
         local count = GetCurrencyCount(crest.id)
         if count > 0 then
             displayText = FormatNumber(count)
+            -- Get the icon from currency info
+            local info = C_CurrencyInfo.GetCurrencyInfo(crest.id)
+            if info and info.iconFileID then
+                displayIcon = info.iconFileID
+            end
             hasAny = true
             break
         end
@@ -54,16 +60,24 @@ local function UpdateBrokerText()
     
     if not hasAny then
         displayText = "0"
+        -- Use default icon for lowest tier crest when player has none
+        local info = C_CurrencyInfo.GetCurrencyInfo(CREST_IDS[1].id)
+        if info and info.iconFileID then
+            displayIcon = info.iconFileID
+        end
     end
     
     crestsObj.text = displayText
+    if displayIcon then
+        crestsObj.icon = displayIcon
+    end
 end
 
 -- Register the broker
 crestsObj = LDB:NewDataObject("AbstractCrests", {
     type = "data source",
     text = "...",
-    icon = "Interface\\Icons\\inv_10_gearupgrade_flightstone",
+    icon = 5872034,  -- Default crest/upgrade icon (numeric ID)
     OnEnter = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_NONE")
         SmartAnchor(GameTooltip, self)
