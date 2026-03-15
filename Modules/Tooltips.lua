@@ -31,8 +31,8 @@ function Tooltips:OnInitialize()
             classColor = true,
             classColoredBorders = true,
             showGuild = true,
-            yourGuildColor = {r = 0.25, g = 1.0, b = 0.25},
-            otherGuildColor = {r = 0.67, g = 0.83, b = 0.45},
+            yourGuildColor = {r = 0.384, g = 0.349, b = 0.902},
+            otherGuildColor = {r = 0.071, g = 0.757, b = 0.035},
             showStatus = true,
             showItemLevel = true,
             showFaction = true,
@@ -95,23 +95,6 @@ function Tooltips:Initialize()
     self.ColorPalette = ColorPalette
     self.FontKit = FontKit
     self.initialized = true
-    
-    -- Validate and fix corrupted color values
-    local function ValidateColor(colorTable, defaultR, defaultG, defaultB)
-        if not colorTable or type(colorTable) ~= "table" then
-            return {r = defaultR, g = defaultG, b = defaultB}
-        end
-        
-        local r = tonumber(colorTable.r) or tonumber(colorTable[1]) or defaultR
-        local g = tonumber(colorTable.g) or tonumber(colorTable[2]) or defaultG
-        local b = tonumber(colorTable.b) or tonumber(colorTable[3]) or defaultB
-        
-        return {r = r, g = g, b = b}
-    end
-    
-    -- Fix guild colors if corrupted
-    self.db.profile.yourGuildColor = ValidateColor(self.db.profile.yourGuildColor, 0.25, 1.0, 0.25)
-    self.db.profile.otherGuildColor = ValidateColor(self.db.profile.otherGuildColor, 0.67, 0.83, 0.45)
     
     -- Apply styling to all tooltip frames
     self:StyleTooltips()
