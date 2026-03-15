@@ -41,7 +41,7 @@ local friendTitle, friendFooter, guildTitle, guildFooter
 local headerRefs, guildHeaderRefs = {}, {}
 
 -- Module Object References
-local friendObj, guildObj, diffObj, clockObj, sysObj, goldObj, bagObj, duraObj, locObj, tokenObj, volObj, ilvlObj
+local friendObj, guildObj, diffObj, clockObj, sysObj, goldObj, bagObj, duraObj, locObj, tokenObj, volObj, ilvlObj, crestsObj
 
 -- Data Cache
 local lastState = { 
@@ -57,7 +57,7 @@ local LABEL_MAP_FULL = {
     AbstractClock = "Clock", AbstractBags = "Bags", AbstractFriends = "Friends", 
     AbstractGold = "Gold", AbstractGuild = "Guild", AbstractLocation = "Location", 
     AbstractSystem = "System", AbstractToken = "Token", AbstractILvl = "Item Level",
-    AbstractTimePlayed = "Abstract Time Played"
+    AbstractTimePlayed = "Abstract Time Played", AbstractCrests = "Crests"
 }
 
 local LABEL_MAP_SHORT = { 
@@ -65,7 +65,7 @@ local LABEL_MAP_SHORT = {
     AbstractClock = "Time", AbstractBags = "Bags", AbstractFriends = "Frnd", 
     AbstractGold = "Gold", AbstractGuild = "Gld", AbstractLocation = "Loc", 
     AbstractSystem = "Sys", AbstractToken = "Tok", AbstractILvl = "iLvL",
-    AbstractTimePlayed = "Played" 
+    AbstractTimePlayed = "Played", AbstractCrests = "Crsts" 
 }
 
 local SHORTEN_REPLACEMENTS = {
@@ -492,6 +492,7 @@ function BrokerBar:InitializeBrokers()
     diffObj = LDB:GetDataObjectByName("AbstractDiff")
     ilvlObj = LDB:GetDataObjectByName("AbstractILvl")
     clockObj = LDB:GetDataObjectByName("AbstractClock")
+    crestsObj = LDB:GetDataObjectByName("AbstractCrests")
 end
 
 -- ============================================================================
@@ -1317,7 +1318,8 @@ function BrokerBar:GetPluginOptions()
         AbstractToken = "Abstract Token", 
         AbstractVolume = "Abstract Volume", 
         AbstractILvl = "Abstract Item Level",
-        AbstractTimePlayed = "Abstract Time Played" 
+        AbstractTimePlayed = "Abstract Time Played",
+        AbstractCrests = "Abstract Crests" 
     }
 
     for name in pairs(widgets) do
