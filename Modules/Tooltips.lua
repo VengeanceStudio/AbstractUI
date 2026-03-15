@@ -360,49 +360,53 @@ function Tooltips:StyleTooltip(tooltip, itemQuality, classColor)
     end
     
     -- Modern WoW uses NineSlice system for tooltips
-    -- Wrap in pcall to prevent taint from spreading to Blizzard's tooltip calculations
     if tooltip.NineSlice then
-        local success = pcall(function()
-            -- Style the NineSlice border textures
-            local borderSize = self.db.profile.borderSize or 2
-            
-            -- Set border color
-            if tooltip.NineSlice.TopEdge then
-                tooltip.NineSlice.TopEdge:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.TopEdge:SetHeight(borderSize)
-            end
-            if tooltip.NineSlice.BottomEdge then
-                tooltip.NineSlice.BottomEdge:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.BottomEdge:SetHeight(borderSize)
-            end
-            if tooltip.NineSlice.LeftEdge then
-                tooltip.NineSlice.LeftEdge:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.LeftEdge:SetWidth(borderSize)
-            end
-            if tooltip.NineSlice.RightEdge then
-                tooltip.NineSlice.RightEdge:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.RightEdge:SetWidth(borderSize)
-            end
-            
-            -- Set corner colors to match border
-            if tooltip.NineSlice.TopLeftCorner then
-                tooltip.NineSlice.TopLeftCorner:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.TopLeftCorner:SetSize(borderSize, borderSize)
-            end
-            if tooltip.NineSlice.TopRightCorner then
-                tooltip.NineSlice.TopRightCorner:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.TopRightCorner:SetSize(borderSize, borderSize)
-            end
-            if tooltip.NineSlice.BottomLeftCorner then
-                tooltip.NineSlice.BottomLeftCorner:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.BottomLeftCorner:SetSize(borderSize, borderSize)
-            end
-            if tooltip.NineSlice.BottomRightCorner then
-                tooltip.NineSlice.BottomRightCorner:SetColorTexture(br, bg, bb, ba)
-                tooltip.NineSlice.BottomRightCorner:SetSize(borderSize, borderSize)
-            end
-        end)
-        -- Silently fail if pcall fails (prevents taint errors)
+        -- Style the NineSlice border textures
+        local borderSize = self.db.profile.borderSize or 2
+        
+        -- Set border color
+        if tooltip.NineSlice.TopEdge then
+            tooltip.NineSlice.TopEdge:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.TopEdge:SetHeight(borderSize)
+        end
+        if tooltip.NineSlice.BottomEdge then
+            tooltip.NineSlice.BottomEdge:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.BottomEdge:SetHeight(borderSize)
+        end
+        if tooltip.NineSlice.LeftEdge then
+            tooltip.NineSlice.LeftEdge:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.LeftEdge:SetWidth(borderSize)
+        end
+        if tooltip.NineSlice.RightEdge then
+            tooltip.NineSlice.RightEdge:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.RightEdge:SetWidth(borderSize)
+        end
+        
+        -- Set corner colors to match border
+        if tooltip.NineSlice.TopLeftCorner then
+            tooltip.NineSlice.TopLeftCorner:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.TopLeftCorner:SetSize(borderSize, borderSize)
+        end
+        if tooltip.NineSlice.TopRightCorner then
+            tooltip.NineSlice.TopRightCorner:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.TopRightCorner:SetSize(borderSize, borderSize)
+        end
+        if tooltip.NineSlice.BottomLeftCorner then
+            tooltip.NineSlice.BottomLeftCorner:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.BottomLeftCorner:SetSize(borderSize, borderSize)
+        end
+        if tooltip.NineSlice.BottomRightCorner then
+            tooltip.NineSlice.BottomRightCorner:SetColorTexture(br, bg, bb, ba)
+            tooltip.NineSlice.BottomRightCorner:SetSize(borderSize, borderSize)
+        end
+        
+        -- Create or update background texture
+        if not tooltip.AbstractBG then
+            tooltip.AbstractBG = tooltip:CreateTexture(nil, "BACKGROUND")
+            tooltip.AbstractBG:SetAllPoints(tooltip)
+            tooltip.AbstractBG:SetDrawLayer("BACKGROUND", -8)
+        end
+        tooltip.AbstractBG:SetColorTexture(bgr, bgg, bgb, bga)
     end
     
     -- Hook to update font when tooltip shows
