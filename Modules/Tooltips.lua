@@ -834,6 +834,13 @@ function Tooltips:OnTooltipSetUnit(tooltip)
                     end
                     
                     textLeft2:SetTextColor(r, g, b)
+                    
+                    -- Apply our custom font to match the rest of the tooltip
+                    if self.FontKit then
+                        local font, size = self.FontKit:GetFont("body", "small")
+                        local fontSize = self.db.profile.fontSize or 12
+                        textLeft2:SetFont(font, fontSize, "")
+                    end
                 end
             end
             
