@@ -96,6 +96,24 @@ function Tooltips:Initialize()
     self.FontKit = FontKit
     self.initialized = true
     
+    -- One-time cleanup of corrupted guild color data
+    local function CleanupColor(colorTable, defaultR, defaultG, defaultB)
+        if not colorTable or type(colorTable) ~= "table" then
+            return {r = defaultR, g = defaultG, b = defaultB}
+        end
+        
+        -- If any value is not a proper number, reset to defaults
+        if type(colorTable.r) ~= "number" or type(colorTable.g) ~= "number" or type(colorTable.b) ~= "number" then
+            return {r = defaultR, g = defaultG, b = defaultB}
+        end
+        
+        return colorTable
+    end
+    
+    -- Clean up corrupted colors (will only reset if actually corrupted)
+    self.db.profile.yourGuildColor = CleanupColor(self.db.profile.yourGuildColor, 0.384, 0.349, 0.902)
+    self.db.profile.otherGuildColor = CleanupColor(self.db.profile.otherGuildColor, 0.071, 0.757, 0.035)
+    
     -- Apply styling to all tooltip frames
     self:StyleTooltips()
     
@@ -1402,7 +1420,8 @@ function Tooltips:GetOptions()
                 order = 40,
                 get = function()
                     local c = self.db.profile.yourGuildColor
-                    if not c or not c.r or not c.g or not c.b then
+                    -- Check if color values are valid numbers
+                    if not c or type(c.r) ~= "number" or type(c.g) ~= "number" or type(c.b) ~= "number" then
                         -- Return defaults if corrupted
                         return 0.384, 0.349, 0.902
                     end
@@ -1420,7 +1439,8 @@ function Tooltips:GetOptions()
                 order = 41,
                 get = function()
                     local c = self.db.profile.otherGuildColor
-                    if not c or not c.r or not c.g or not c.b then
+                    -- Check if color values are valid numbers
+                    if not c or type(c.r) ~= "number" or type(c.g) ~= "number" or type(c.b) ~= "number" then
                         -- Return defaults if corrupted
                         return 0.071, 0.757, 0.035
                     end
