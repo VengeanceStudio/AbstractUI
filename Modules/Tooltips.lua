@@ -775,6 +775,22 @@ function Tooltips:OnTooltipSetUnit(tooltip)
             if textLeft1 then
                 textLeft1:SetTextColor(classColor.r, classColor.g, classColor.b)
             end
+            
+            -- Also color the spec/class line (typically line 4 for players with guild)
+            -- Search for the line containing the class name
+            local localizedClassName = UnitClass(unit)
+            if localizedClassName then
+                for i = 2, tooltip:NumLines() do
+                    local leftText = _G[tooltip:GetName() .. "TextLeft" .. i]
+                    if leftText then
+                        local lineText = leftText:GetText()
+                        if lineText and lineText:find(localizedClassName) then
+                            leftText:SetTextColor(classColor.r, classColor.g, classColor.b)
+                            break
+                        end
+                    end
+                end
+            end
         end
     end
     
