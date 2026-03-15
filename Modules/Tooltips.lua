@@ -882,7 +882,25 @@ function Tooltips:OnTooltipSetUnit(tooltip)
         local faction = UnitFactionGroup(unit)
         if faction then
             local color = faction == "Horde" and {r = 1, g = 0.1, b = 0.1} or {r = 0.1, g = 0.3, b = 1}
-            tooltip:AddLine(faction, color.r, color.g, color.b)
+            
+            -- Blizzard already adds faction to the tooltip, find it and color it instead of duplicating
+            local foundFaction = false
+            for i = 1, tooltip:NumLines() do
+                local leftText = _G[tooltip:GetName() .. "TextLeft" .. i]
+                if leftText then
+                    local lineText = leftText:GetText()
+                    if lineText and (lineText == "Horde" or lineText == "Alliance" or lineText == faction) then
+                        leftText:SetTextColor(color.r, color.g, color.b)
+                        foundFaction = true
+                        break
+                    end
+                end
+            end
+            
+            -- If Blizzard didn't add it (shouldn't happen for players), add it ourselves
+            if not foundFaction then
+                tooltip:AddLine(faction, color.r, color.g, color.b)
+            end
         end
     end
     
