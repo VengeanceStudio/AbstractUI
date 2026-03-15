@@ -96,6 +96,35 @@ function Tooltips:Initialize()
     self.FontKit = FontKit
     self.initialized = true
     
+    -- Validate and fix corrupted color values (only if actually invalid)
+    local function ValidateColor(colorTable, defaultR, defaultG, defaultB)
+        -- If nil or not a table, return defaults
+        if not colorTable or type(colorTable) ~= "table" then
+            return {r = defaultR, g = defaultG, b = defaultB}
+        end
+        
+        -- Check if values are valid numbers
+        local rValid = type(colorTable.r) == "number" and colorTable.r >= 0 and colorTable.r <= 1
+        local gValid = type(colorTable.g) == "number" and colorTable.g >= 0 and colorTable.g <= 1
+        local bValid = type(colorTable.b) == "number" and colorTable.b >= 0 and colorTable.b <= 1
+        
+        -- If all valid, return as-is
+        if rValid and gValid and bValid then
+            return colorTable
+        end
+        
+        -- Otherwise fix the corrupted values
+        return {
+            r = rValid and colorTable.r or defaultR,
+            g = gValid and colorTable.g or defaultG,
+            b = bValid and colorTable.b or defaultB
+        }
+    end
+    
+    -- Fix guild colors only if they're corrupted
+    self.db.profile.yourGuildColor = ValidateColor(self.db.profile.yourGuildColor, 0.384, 0.349, 0.902)
+    self.db.profile.otherGuildColor = ValidateColor(self.db.profile.otherGuildColor, 0.071, 0.757, 0.035)
+    
     -- Apply styling to all tooltip frames
     self:StyleTooltips()
     
