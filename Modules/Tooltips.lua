@@ -96,6 +96,23 @@ function Tooltips:Initialize()
     self.FontKit = FontKit
     self.initialized = true
     
+    -- Validate and fix corrupted color values
+    local function ValidateColor(colorTable, defaultR, defaultG, defaultB)
+        if not colorTable or type(colorTable) ~= "table" then
+            return {r = defaultR, g = defaultG, b = defaultB}
+        end
+        
+        local r = tonumber(colorTable.r) or tonumber(colorTable[1]) or defaultR
+        local g = tonumber(colorTable.g) or tonumber(colorTable[2]) or defaultG
+        local b = tonumber(colorTable.b) or tonumber(colorTable[3]) or defaultB
+        
+        return {r = r, g = g, b = b}
+    end
+    
+    -- Fix guild colors if corrupted
+    self.db.profile.yourGuildColor = ValidateColor(self.db.profile.yourGuildColor, 0.25, 1.0, 0.25)
+    self.db.profile.otherGuildColor = ValidateColor(self.db.profile.otherGuildColor, 0.67, 0.83, 0.45)
+    
     -- Apply styling to all tooltip frames
     self:StyleTooltips()
     
@@ -830,36 +847,13 @@ function Tooltips:OnTooltipSetUnit(tooltip)
                 local lineText = textLeft2:GetText()
                 -- Check if line 2 contains the guild name (Blizzard's default guild line)
                 if lineText and lineText:find(guildName) then
-                    -- Extract color values, handling both table and direct numeric values
+                    -- Extract color values safely
                     local r, g, b = 1, 1, 1  -- Default to white
                     
-                    if color then
-                        -- Handle color.r being either a number or table
-                        if type(color.r) == "number" then
-                            r = color.r
-                        elseif type(color.r) == "table" then
-                            r = color.r[1] or color.r.r or 1
-                        elseif type(color[1]) == "number" then
-                            r = color[1]
-                        end
-                        
-                        -- Handle color.g
-                        if type(color.g) == "number" then
-                            g = color.g
-                        elseif type(color.g) == "table" then
-                            g = color.g[1] or color.g.g or 1
-                        elseif type(color[2]) == "number" then
-                            g = color[2]
-                        end
-                        
-                        -- Handle color.b
-                        if type(color.b) == "number" then
-                            b = color.b
-                        elseif type(color.b) == "table" then
-                            b = color.b[1] or color.b.b or 1
-                        elseif type(color[3]) == "number" then
-                            b = color[3]
-                        end
+                    if color and type(color) == "table" then
+                        r = tonumber(color.r) or tonumber(color[1]) or 1
+                        g = tonumber(color.g) or tonumber(color[2]) or 1
+                        b = tonumber(color.b) or tonumber(color[3]) or 1
                     end
                     
                     textLeft2:SetTextColor(r, g, b)
