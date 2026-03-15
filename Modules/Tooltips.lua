@@ -762,6 +762,19 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     
     if not name or not guid then return end
     
+    -- Color the level/race line gold for players
+    -- This is typically line 3 and contains "(Player)"
+    for i = 2, tooltip:NumLines() do
+        local leftText = _G[tooltip:GetName() .. "TextLeft" .. i]
+        if leftText then
+            local lineText = leftText:GetText()
+            if lineText and lineText:find("%(Player%)") then
+                leftText:SetTextColor(1, 0.82, 0)  -- Gold color #FFD100
+                break
+            end
+        end
+    end
+    
     -- Get class color for border (if enabled)
     local classColor = nil
     local _, class = UnitClass(unit)
