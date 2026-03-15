@@ -51,11 +51,13 @@ function Tooltips:OnInitialize()
     })
     
     -- Store references to tooltip frames we'll be styling
+    -- NOTE: GameTooltip and related tooltips are excluded to prevent taint issues
+    -- that break Blizzard's tooltip padding calculations
     self.tooltips = {
-        GameTooltip,
-        ItemRefTooltip,
-        ShoppingTooltip1,
-        ShoppingTooltip2,
+        -- GameTooltip,  -- EXCLUDED: Causes taint that spreads to ItemTooltip
+        -- ItemRefTooltip,  -- EXCLUDED: Related to GameTooltip
+        -- ShoppingTooltip1,  -- EXCLUDED: Child of GameTooltip
+        -- ShoppingTooltip2,  -- EXCLUDED: Child of GameTooltip
         FriendsTooltip,
         WorldMapTooltip,
         WorldMapCompareTooltip1,
@@ -104,10 +106,13 @@ function Tooltips:Initialize()
         self:SecureHook("GameTooltip_SetDefaultAnchor")
     end
     
-    -- Hook GameTooltip to handle quest reward positioning
+    -- Disabled: Quest tooltip repositioning causes taint in GameTooltip dimension calculations
+    -- which spreads to ItemTooltip arithmetic operations in Blizzard's tooltip code
+    --[[ 
     if not self:IsHooked(GameTooltip, "OnShow") then
         self:HookScript(GameTooltip, "OnShow", "OnGameTooltipShow")
     end
+    ]]
     
     -- Hook tooltip show events for cursor following
     if self.db.profile.cursorFollow then
@@ -332,6 +337,17 @@ end
 function Tooltips:StyleTooltip(tooltip, itemQuality, classColor)
     if not tooltip or not self.ColorPalette then return end
     
+    -- IMPORTANT: Do not style GameTooltip or any of its child tooltips
+    -- Modifying GameTooltip causes taint that spreads to ItemTooltip and breaks
+    -- Blizzard's tooltip padding calculations in secure contexts
+    if tooltip == GameTooltip or 
+       tooltip == ItemRefTooltip or
+       tooltip == ShoppingTooltip1 or
+       tooltip == ShoppingTooltip2 or
+       tooltip:GetParent() == GameTooltip then
+        return
+    end
+    
     local br, bg, bb, ba = self.ColorPalette:GetColor("panel-border")
     if type(br) == "table" then
         bg, bb, ba = br[2] or br.g or 1, br[3] or br.b or 1, br[4] or br.a or 1
@@ -450,42 +466,56 @@ function Tooltips:GameTooltip_SetDefaultAnchor(tooltip, parent)
     -- Skip if in protected context to avoid taint
     if self:IsProtectedTooltipContext(tooltip) then return end
     
-    -- Handle cursor following
-    if self.db.profile.cursorFollow then
-        tooltip:SetOwner(parent, "ANCHOR_CURSOR")
-        tooltip:ClearAllPoints()
-        
-        local scale = self.db.profile.scale or 1.0
-        tooltip:SetScale(scale)
-        
-        local x, y = GetCursorPosition()
-        local uiScale = UIParent:GetEffectiveScale()
-        x = x / uiScale
-        y = y / uiScale
-        
-        local anchor = self.db.profile.cursorAnchor or "BOTTOMRIGHT"
-        local offsetX = self.db.profile.offsetX or 0
-        local offsetY = self.db.profile.offsetY or 0
-        
-        tooltip:SetPoint(anchor, UIParent, "BOTTOMLEFT", x + offsetX, y + offsetY)
-        
-        -- Set fade delay
-        if tooltip.FadeOut then
-            tooltip.FadeOut:SetStartDelay(self.db.profile.fadeDelay or 0.2)
-        end
-    else
-        -- Use custom anchor position when not following cursor
-        local scale = self.db.profile.scale or 1.0
-        tooltip:SetScale(scale)
-        
-        -- Anchor to our custom position
-        local pos = self.db.profile.anchorPosition
-        tooltip:ClearAllPoints()
-        tooltip:SetPoint("BOTTOMLEFT", UIParent, pos.point, pos.x, pos.y)
+    -- CRITICAL: Don't modify GameTooltip if it has ItemTooltip attached
+    -- Modifying geometry after ItemTooltip is created taints dimension calculations
+    if tooltip.ItemTooltip and tooltip.ItemTooltip:IsShown() then
+        return
     end
     
-    -- Reapply styling when tooltip anchor is set
-    self:StyleTooltip(tooltip)
+    -- Wrap all geometric modifications in pcall to contain taint errors
+    local success = pcall(function()
+        -- Handle cursor following
+        if self.db.profile.cursorFollow then
+            tooltip:SetOwner(parent, "ANCHOR_CURSOR")
+            tooltip:ClearAllPoints()
+            
+            local scale = self.db.profile.scale or 1.0
+            tooltip:SetScale(scale)
+            
+            local x, y = GetCursorPosition()
+            local uiScale = UIParent:GetEffectiveScale()
+            x = x / uiScale
+            y = y / uiScale
+            
+            local anchor = self.db.profile.cursorAnchor or "BOTTOMRIGHT"
+            local offsetX = self.db.profile.offsetX or 0
+            local offsetY = self.db.profile.offsetY or 0
+            
+            tooltip:SetPoint(anchor, UIParent, "BOTTOMLEFT", x + offsetX, y + offsetY)
+            
+            -- Set fade delay
+            if tooltip.FadeOut then
+                tooltip.FadeOut:SetStartDelay(self.db.profile.fadeDelay or 0.2)
+            end
+        else
+            -- Use custom anchor position when not following cursor
+            local scale = self.db.profile.scale or 1.0
+            tooltip:SetScale(scale)
+            
+            -- Anchor to our custom position
+            local pos = self.db.profile.anchorPosition
+            tooltip:ClearAllPoints()
+            tooltip:SetPoint("BOTTOMLEFT", UIParent, pos.point, pos.x, pos.y)
+        end
+        
+        -- Reapply styling when tooltip anchor is set
+        self:StyleTooltip(tooltip)
+    end)
+    
+    if not success then
+        -- Failed to modify tooltip, likely due to taint - silently skip
+        return
+    end
 end
 
 function Tooltips:OnThemeChanged()
@@ -582,6 +612,12 @@ function Tooltips:IsProtectedTooltipContext(tooltip)
     -- Don't modify tooltips during combat to avoid taint
     if InCombatLockdown() then return true end
     
+    -- CRITICAL: Skip all world map tooltips to avoid ItemTooltip taint
+    -- World quests show item rewards which spawn ItemTooltip for comparisons
+    if WorldMapFrame and WorldMapFrame:IsShown() then
+        return true
+    end
+    
     -- Check if tooltip owner is from a protected frame
     local success, owner = pcall(function()
         return tooltip:GetOwner()
@@ -606,6 +642,7 @@ function Tooltips:IsProtectedTooltipContext(tooltip)
                 "Loot",  -- Loot windows (can show money)
                 "Store",  -- In-game store
                 "WorldMap",  -- World map (quest tooltips)
+                "QuestInfo", "QuestLog",  -- Quest-related frames
             }
             
             for _, prefix in ipairs(protectedPrefixes) do
