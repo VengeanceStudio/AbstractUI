@@ -732,8 +732,8 @@ end
 -- ============================================================================
 
 function Tooltips:OnTooltipSetUnit(tooltip)
-    -- Skip if in protected context to avoid tainting money/trade calculations
-    if self:IsProtectedTooltipContext(tooltip) then return end
+    -- Note: We don't check IsProtectedTooltipContext here because adding informational text
+    -- to tooltips doesn't cause taint - only geometric modifications do (position, scale, etc.)
     
     -- Use pcall to protect against secret values from GetUnit()
     local unit = nil
@@ -794,7 +794,24 @@ function Tooltips:OnTooltipSetUnit(tooltip)
                 color = self.db.profile.yourGuildColor
             end
             
-            tooltip:AddLine(string.format("<%s>", guildName), color.r, color.g, color.b)
+            -- Blizzard automatically adds guild name on line 2 as "GuildName-Server"
+            -- Instead of adding a duplicate line, color the existing line 2
+            local textLeft2 = _G[tooltip:GetName().."TextLeft2"]
+            if textLeft2 then
+                local lineText = textLeft2:GetText()
+                -- Check if line 2 contains the guild name (Blizzard's default guild line)
+                if lineText and lineText:find(guildName) then
+                    -- Validate color table exists and has valid r, g, b values
+                    if color and color.r and color.g and color.b then
+                        textLeft2:SetTextColor(color.r, color.g, color.b)
+                    else
+                        -- Fallback to white if color is invalid
+                        textLeft2:SetTextColor(1, 1, 1)
+                    end
+                end
+            end
+            
+            -- Add guild rank below if available
             if guildRankName then
                 tooltip:AddLine(guildRankName, 0.7, 0.7, 0.7)
             end
