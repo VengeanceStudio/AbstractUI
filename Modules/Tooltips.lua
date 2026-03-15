@@ -801,13 +801,39 @@ function Tooltips:OnTooltipSetUnit(tooltip)
                 local lineText = textLeft2:GetText()
                 -- Check if line 2 contains the guild name (Blizzard's default guild line)
                 if lineText and lineText:find(guildName) then
-                    -- Validate color table exists and has valid r, g, b values
-                    if color and color.r and color.g and color.b then
-                        textLeft2:SetTextColor(color.r, color.g, color.b)
-                    else
-                        -- Fallback to white if color is invalid
-                        textLeft2:SetTextColor(1, 1, 1)
+                    -- Extract color values, handling both table and direct numeric values
+                    local r, g, b = 1, 1, 1  -- Default to white
+                    
+                    if color then
+                        -- Handle color.r being either a number or table
+                        if type(color.r) == "number" then
+                            r = color.r
+                        elseif type(color.r) == "table" then
+                            r = color.r[1] or color.r.r or 1
+                        elseif type(color[1]) == "number" then
+                            r = color[1]
+                        end
+                        
+                        -- Handle color.g
+                        if type(color.g) == "number" then
+                            g = color.g
+                        elseif type(color.g) == "table" then
+                            g = color.g[1] or color.g.g or 1
+                        elseif type(color[2]) == "number" then
+                            g = color[2]
+                        end
+                        
+                        -- Handle color.b
+                        if type(color.b) == "number" then
+                            b = color.b
+                        elseif type(color.b) == "table" then
+                            b = color.b[1] or color.b.b or 1
+                        elseif type(color[3]) == "number" then
+                            b = color[3]
+                        end
                     end
+                    
+                    textLeft2:SetTextColor(r, g, b)
                 end
             end
             
