@@ -1078,12 +1078,12 @@ function Maps:CollectMinimapButtons()
         local rows = math.ceil(numButtons / buttonsPerRow)
         local cols = math.min(numButtons, buttonsPerRow)
         -- Use a more accurate size calculation based on actual button sizes
-        local effectiveSize = buttonSize
+        local firstButton = buttons[1]
+        local buttonWidth, buttonHeight = firstButton:GetSize()
+        local effectiveSize = math.max(buttonWidth, buttonHeight) * iconScale
         self.buttonBar.expandedWidth = cols * (effectiveSize + spacing) + spacing
         self.buttonBar.expandedHeight = rows * (effectiveSize + spacing) + spacing
-    elsefirstButton = buttons[1]
-        local buttonWidth, buttonHeight = firstButton:GetSize()
-        local effectiveSize = math.max(buttonWidth, buttonHeight) * iconScal
+    else
         self.buttonBar.expandedWidth = 100
         self.buttonBar.expandedHeight = 100
     end
