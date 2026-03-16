@@ -1422,13 +1422,14 @@ function Tooltips:GetOptions()
                     local c = self.db.profile.yourGuildColor
                     -- Check if color values are valid numbers
                     if not c or type(c.r) ~= "number" or type(c.g) ~= "number" or type(c.b) ~= "number" then
-                        -- Return defaults if corrupted
-                        return 0.384, 0.349, 0.902
+                        -- Return defaults if corrupted (as array)
+                        return {0.384, 0.349, 0.902, 1}
                     end
-                    return c.r, c.g, c.b
+                    return {c.r, c.g, c.b, 1}
                 end,
-                set = function(_, r, g, b)
-                    self.db.profile.yourGuildColor = {r = r, g = g, b = b}
+                set = function(_, colorTable)
+                    -- colorTable is {r, g, b, a} (array format)
+                    self.db.profile.yourGuildColor = {r = colorTable[1], g = colorTable[2], b = colorTable[3]}
                 end,
                 disabled = function() return not self:IsEnabled() or not self.db.profile.showGuild end,
             },
@@ -1441,13 +1442,14 @@ function Tooltips:GetOptions()
                     local c = self.db.profile.otherGuildColor
                     -- Check if color values are valid numbers
                     if not c or type(c.r) ~= "number" or type(c.g) ~= "number" or type(c.b) ~= "number" then
-                        -- Return defaults if corrupted
-                        return 0.071, 0.757, 0.035
+                        -- Return defaults if corrupted (as array)
+                        return {0.071, 0.757, 0.035, 1}
                     end
-                    return c.r, c.g, c.b
+                    return {c.r, c.g, c.b, 1}
                 end,
-                set = function(_, r, g, b)
-                    self.db.profile.otherGuildColor = {r = r, g = g, b = b}
+                set = function(_, colorTable)
+                    -- colorTable is {r, g, b, a} (array format)
+                    self.db.profile.otherGuildColor = {r = colorTable[1], g = colorTable[2], b = colorTable[3]}
                 end,
                 disabled = function() return not self:IsEnabled() or not self.db.profile.showGuild end,
             },
