@@ -678,6 +678,83 @@ end
 -- -----------------------------------------------------------------------------
 -- MINIMAP BUTTON BAR
 -- -----------------------------------------------------------------------------
+
+function Maps:SkinMinimapButton(button)
+    if not button then return end
+    
+    -- Find the button's icon texture
+    local icon = nil
+    
+    -- Try common icon names
+    if button.Icon then
+        icon = button.Icon
+    elseif button.icon then
+        icon = button.icon
+    else
+        -- Search for a texture that looks like an icon
+        for i = 1, button:GetNumRegions() do
+            local region = select(i, button:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                local texture = region:GetTexture()
+                -- Skip background/overlay textures, look for actual icon
+                if texture and not (texture:find("Border") or texture:find("Background") or texture:find("Highlight")) then
+                    icon = region
+                    break
+                end
+            end
+        end
+    end
+    
+    -- Apply square cropping to the icon
+    if icon and icon.SetTexCoord then
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    end
+    
+    -- Hide any circular borders/backgrounds
+    if button.Border then button.Border:Hide() end
+    if button.Background then button.Background:Hide() end
+    
+    -- Add custom border if it doesn't exist
+    if not button._abstractBorder then
+        button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
+        button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+        button._abstractBorder:SetAllPoints(button)
+        
+        local ColorPalette = _G.AbstractUI_ColorPalette
+        if ColorPalette then
+            local r, g, b = ColorPalette:GetColor('accent-primary')
+            button._abstractBorder:SetVertexColor(r, g, b, 1)
+        else
+            button._abstractBorder:SetVertexColor(1, 0.8, 0, 1)  -- Fallback gold
+        end
+    end
+    
+    -- Add custom background if it doesn't exist
+    if not button._abstractBackground then
+        button._abstractBackground = button:CreateTexture(nil, "BACKGROUND")
+        button._abstractBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
+        local borderThickness = 2
+        button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+        
+        local ColorPalette = _G.AbstractUI_ColorPalette
+        if ColorPalette then
+            local r, g, b = ColorPalette:GetColor('panel-bg')
+            button._abstractBackground:SetVertexColor(r, g, b, 1)
+        else
+            button._abstractBackground:SetVertexColor(0, 0, 0, 0.8)  -- Fallback dark background
+        end
+    end
+    
+    -- Reposition the icon if we found it
+    if icon then
+        local borderThickness = 2
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+    end
+end
+
 function Maps:SetupButtonBar()
     local db = self.db.profile
     if not db.buttonBarEnabled then
@@ -956,6 +1033,9 @@ function Maps:CollectMinimapButtons()
         button:SetPoint("CENTER", self.buttonBar, "CENTER", x, y)
         button:SetFrameStrata("MEDIUM")
         button:SetFrameLevel(self.buttonBar:GetFrameLevel() + 10)
+        
+        -- Skin the button to look like a square frame
+        self:SkinMinimapButton(button)
         
         -- Force button to be visible and interactable
         button:Show()
