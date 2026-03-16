@@ -682,6 +682,10 @@ end
 function Maps:SkinMinimapButton(button)
     if not button then return end
     
+    -- Only skin once
+    if button._abstractSkinned then return end
+    button._abstractSkinned = true
+    
     -- Find the button's icon texture
     local icon = nil
     
@@ -696,7 +700,6 @@ function Maps:SkinMinimapButton(button)
             local region = select(i, button:GetRegions())
             if region and region:GetObjectType() == "Texture" then
                 local texture = region:GetTexture()
-                -- Skip background/overlay textures, look for actual icon
                 -- GetTexture() returns a number (texture ID) or string (path)
                 if texture and type(texture) == "string" and not (texture:find("Border") or texture:find("Background") or texture:find("Highlight")) then
                     icon = region
@@ -714,13 +717,24 @@ function Maps:SkinMinimapButton(button)
     -- Apply square cropping to the icon
     if icon and icon.SetTexCoord then
         icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        
+        -- Reposition the icon with border insets
+        local borderThickness = 2
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
     end
     
-    -- Hide any circular borders/backgrounds
-    if button.Border then button.Border:Hide() end
-    if button.Background then button.Background:Hide() end
+    -- Hide all circular/overlay textures except the icon
+    for i = 1, button:GetNumRegions() do
+        local region = select(i, button:GetRegions())
+        if region and region:GetObjectType() == "Texture" and region ~= icon then
+            -- Hide borders, backgrounds, overlays, and highlights
+            region:Hide()
+        end
+    end
     
-    -- Add custom border if it doesn't exist
+    -- Add custom border
     if not button._abstractBorder then
         button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
         button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
@@ -735,29 +749,14 @@ function Maps:SkinMinimapButton(button)
         end
     end
     
-    -- Add custom background if it doesn't exist
+    -- Add custom background
     if not button._abstractBackground then
         button._abstractBackground = button:CreateTexture(nil, "BACKGROUND")
         button._abstractBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
         local borderThickness = 2
         button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
-        
-        local ColorPalette = _G.AbstractUI_ColorPalette
-        if ColorPalette then
-            local r, g, b = ColorPalette:GetColor('panel-bg')
-            button._abstractBackground:SetVertexColor(r, g, b, 1)
-        else
-            button._abstractBackground:SetVertexColor(0, 0, 0, 0.8)  -- Fallback dark background
-        end
-    end
-    
-    -- Reposition the icon if we found it
-    if icon then
-        local borderThickness = 2
-        icon:ClearAllPoints()
-        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
-        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+        button._abstractBackground:SetVertexColor(0, 0, 0, 1)  -- Black background
     end
 end
 
@@ -1000,20 +999,23 @@ function Maps:CollectMinimapButtons()
             end
         end
         
-        -- Reparent and resize to square
+        -- Reparent and scale to desired size
         button:SetParent(self.buttonBar)
         button:ClearAllPoints()
         button:EnableMouse(true)
         button:SetMovable(false)
         
-        -- Force button to be square at the desired size
-        button:SetSize(buttonSize, buttonSize)
-        button:SetScale(1.0)  -- Reset scale to 1.0 since we're using SetSize
+        -- Apply uniform scale to maintain aspect ratio
+        button:SetScale(iconScale)
+        
+        -- Skin the button BEFORE positioning to ensure proper sizing
+        self:SkinMinimapButton(button)
         
         -- Calculate position based on growth direction
         local row = math.floor((i - 1) / buttonsPerRow)
         local col = (i - 1) % buttonsPerRow
-        local effectiveSize = buttonSize
+        local originalWidth, originalHeight = button:GetSize()
+        local effectiveSize = math.max(originalWidth, originalHeight) * iconScale
         local x, y
         local barWidth, barHeight = 5, 30
         
@@ -1036,10 +1038,7 @@ function Maps:CollectMinimapButtons()
         end
         
         button:SetPoint("CENTER", self.buttonBar, "CENTER", x, y)
-        button:SetFrameStrata("MEDIUM")
-        button:SetFrameLevel(self.buttonBar:GetFrameLevel() + 10)
-        
-        -- Skin the button to look like a square frame
+        butSkin the button to look like a square frame
         self:SkinMinimapButton(button)
         
         -- Force button to be visible and interactable
@@ -1082,7 +1081,9 @@ function Maps:CollectMinimapButtons()
         local effectiveSize = buttonSize
         self.buttonBar.expandedWidth = cols * (effectiveSize + spacing) + spacing
         self.buttonBar.expandedHeight = rows * (effectiveSize + spacing) + spacing
-    else
+    elsefirstButton = buttons[1]
+        local buttonWidth, buttonHeight = firstButton:GetSize()
+        local effectiveSize = math.max(buttonWidth, buttonHeight) * iconScal
         self.buttonBar.expandedWidth = 100
         self.buttonBar.expandedHeight = 100
     end
