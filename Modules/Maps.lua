@@ -689,13 +689,30 @@ function Maps:SkinMinimapButton(button)
     -- Find the button's icon texture - LibDBIcon buttons use .icon
     local icon = button.icon or button.Icon
     
-    -- Hide ONLY specific known overlay/border textures, preserve everything else
-    if button.border then button.border:Hide() end
-    if button.Border then button.Border:Hide() end
-    if button.background then button.background:Hide() end
-    if button.Background then button.Background:Hide() end
-    if button.overlay then button.overlay:Hide() end
-    if button.Overlay then button.Overlay:Hide() end
+    -- Search for and hide the circular overlay/border
+    for i = 1, button:GetNumRegions() do
+        local region = select(i, button:GetRegions())
+        if region and region:GetObjectType() == "Texture" then
+            local texture = region:GetTexture()
+            -- LibDBIcon uses Interface\Minimap\MiniMap-TrackingBorder for the gold circle
+            -- Also check for common circular border textures
+            if texture and type(texture) == "string" then
+                if texture:find("TrackingBorder") or 
+                   texture:find("Border") or 
+                   texture:find("Circle") or
+                   texture:find("Ring") then
+                    region:Hide()
+                    region:SetAlpha(0)
+                end
+            end
+        end
+    end
+    
+    -- Also hide the known border property on LibDBIcon buttons
+    if button.border then 
+        button.border:Hide()
+        button.border:SetAlpha(0)
+    end
     
     -- Add custom background
     if not button._abstractBackground then
