@@ -766,14 +766,8 @@ function Maps:SkinMinimapButton(button)
         button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
         button._abstractBorder:SetAllPoints(button)
         button._abstractBorder:SetDrawLayer("OVERLAY", 7)
-        
-        local ColorPalette = _G.AbstractUI_ColorPalette
-        if ColorPalette then
-            local r, g, b = ColorPalette:GetColor('accent-primary')
-            button._abstractBorder:SetVertexColor(r, g, b, 1)
-        else
-            button._abstractBorder:SetVertexColor(1, 0.8, 0, 1)  -- Fallback gold
-        end
+        -- Use black border to match CooldownManager icons
+        button._abstractBorder:SetVertexColor(0, 0, 0, 1)
     end
 end
 
