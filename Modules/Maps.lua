@@ -1000,21 +1000,20 @@ function Maps:CollectMinimapButtons()
             end
         end
         
-        -- Reparent - don't resize yet
+        -- Reparent and resize to square
         button:SetParent(self.buttonBar)
         button:ClearAllPoints()
         button:EnableMouse(true)
         button:SetMovable(false)
         
-        -- Use scale instead of SetSize to preserve button structure
-        local originalWidth, originalHeight = button:GetSize()
-        local scale = buttonSize / math.max(originalWidth, originalHeight)
-        button:SetScale(iconScale)
+        -- Force button to be square at the desired size
+        button:SetSize(buttonSize, buttonSize)
+        button:SetScale(1.0)  -- Reset scale to 1.0 since we're using SetSize
         
         -- Calculate position based on growth direction
         local row = math.floor((i - 1) / buttonsPerRow)
         local col = (i - 1) % buttonsPerRow
-        local effectiveSize = math.max(originalWidth, originalHeight) * iconScale
+        local effectiveSize = buttonSize
         local x, y
         local barWidth, barHeight = 5, 30
         
