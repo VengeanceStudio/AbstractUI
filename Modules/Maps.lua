@@ -697,9 +697,15 @@ function Maps:SkinMinimapButton(button)
             if region and region:GetObjectType() == "Texture" then
                 local texture = region:GetTexture()
                 -- Skip background/overlay textures, look for actual icon
-                if texture and not (texture:find("Border") or texture:find("Background") or texture:find("Highlight")) then
+                -- GetTexture() returns a number (texture ID) or string (path)
+                if texture and type(texture) == "string" and not (texture:find("Border") or texture:find("Background") or texture:find("Highlight")) then
                     icon = region
                     break
+                elseif texture and type(texture) == "number" then
+                    -- Texture ID - assume it's an icon if no better match found
+                    if not icon then
+                        icon = region
+                    end
                 end
             end
         end
