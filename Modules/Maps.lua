@@ -686,52 +686,18 @@ function Maps:SkinMinimapButton(button)
     if button._abstractSkinned then return end
     button._abstractSkinned = true
     
-    -- Find the button's icon texture - check all common names first
-    local icon = nil
-    local iconCandidates = {}
+    -- Find the button's icon texture - LibDBIcon buttons use .icon
+    local icon = button.icon or button.Icon
     
-    -- Try common icon property names
-    if button.Icon then
-        icon = button.Icon
-    elseif button.icon then
-        icon = button.icon
-    end
+    -- Hide ONLY specific known overlay/border textures, preserve everything else
+    if button.border then button.border:Hide() end
+    if button.Border then button.Border:Hide() end
+    if button.background then button.background:Hide() end
+    if button.Background then button.Background:Hide() end
+    if button.overlay then button.overlay:Hide() end
+    if button.Overlay then button.Overlay:Hide() end
     
-    -- If not found, search through all textures
-    if not icon then
-        for i = 1, button:GetNumRegions() do
-            local region = select(i, button:GetRegions())
-            if region and region:GetObjectType() == "Texture" then
-                local texture = region:GetTexture()
-                if texture then
-                    table.insert(iconCandidates, region)
-                end
-            end
-        end
-        -- Use the first texture we found as the icon
-        if #iconCandidates > 0 then
-            icon = iconCandidates[1]
-        end
-    end
-    
-    -- Hide all textures EXCEPT the icon
-    for i = 1, button:GetNumRegions() do
-        local region = select(i, button:GetRegions())
-        if region and region:GetObjectType() == "Texture" and region ~= icon then
-            region:Hide()
-            region:SetAlpha(0)
-        end
-    end
-    
-    -- Also hide common LibDBIcon border/overlay properties
-    if button.border and button.border ~= icon then button.border:Hide() end
-    if button.Border and button.Border ~= icon then button.Border:Hide() end
-    if button.background and button.background ~= icon then button.background:Hide() end
-    if button.Background and button.Background ~= icon then button.Background:Hide() end
-    if button.overlay and button.overlay ~= icon then button.overlay:Hide() end
-    if button.Overlay and button.Overlay ~= icon then button.Overlay:Hide() end
-    
-    -- Add custom background FIRST
+    -- Add custom background
     if not button._abstractBackground then
         button._abstractBackground = button:CreateTexture(nil, "BACKGROUND")
         button._abstractBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
@@ -742,7 +708,7 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
-    -- Style and show the icon
+    -- Style the icon if we found it
     if icon then
         icon:Show()
         icon:SetAlpha(1)
