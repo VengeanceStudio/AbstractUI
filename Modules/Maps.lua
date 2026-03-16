@@ -686,53 +686,52 @@ function Maps:SkinMinimapButton(button)
     if button._abstractSkinned then return end
     button._abstractSkinned = true
     
-    -- Find the button's icon texture
+    -- Find the button's icon texture - check all common names first
     local icon = nil
+    local iconCandidates = {}
     
-    -- Try common icon names
+    -- Try common icon property names
     if button.Icon then
         icon = button.Icon
     elseif button.icon then
         icon = button.icon
-    else
-        -- Search for a texture that looks like an icon
+    end
+    
+    -- If not found, search through all textures
+    if not icon then
         for i = 1, button:GetNumRegions() do
             local region = select(i, button:GetRegions())
             if region and region:GetObjectType() == "Texture" then
                 local texture = region:GetTexture()
-                -- GetTexture() returns a number (texture ID) or string (path)
-                if texture and type(texture) == "string" and not (texture:find("Border") or texture:find("Background") or texture:find("Highlight")) then
-                    icon = region
-                    break
-                elseif texture and type(texture) == "number" then
-                    -- Texture ID - assume it's an icon if no better match found
-                    if not icon then
-                        icon = region
-                    end
+                if texture then
+                    table.insert(iconCandidates, region)
                 end
             end
         end
+        -- Use the first texture we found as the icon
+        if #iconCandidates > 0 then
+            icon = iconCandidates[1]
+        end
     end
     
-    -- Hide all circular/overlay textures except the icon
+    -- Hide all textures EXCEPT the icon
     for i = 1, button:GetNumRegions() do
         local region = select(i, button:GetRegions())
         if region and region:GetObjectType() == "Texture" and region ~= icon then
-            -- Hide borders, backgrounds, overlays, and highlights
             region:Hide()
             region:SetAlpha(0)
         end
     end
     
-    -- Also hide common LibDBIcon properties
-    if button.border then button.border:Hide() end
-    if button.Border then button.Border:Hide() end
-    if button.background then button.background:Hide() end
-    if button.Background then button.Background:Hide() end
-    if button.overlay then button.overlay:Hide() end
-    if button.Overlay then button.Overlay:Hide() end
+    -- Also hide common LibDBIcon border/overlay properties
+    if button.border and button.border ~= icon then button.border:Hide() end
+    if button.Border and button.Border ~= icon then button.Border:Hide() end
+    if button.background and button.background ~= icon then button.background:Hide() end
+    if button.Background and button.Background ~= icon then button.Background:Hide() end
+    if button.overlay and button.overlay ~= icon then button.overlay:Hide() end
+    if button.Overlay and button.Overlay ~= icon then button.Overlay:Hide() end
     
-    -- Add custom background
+    -- Add custom background FIRST
     if not button._abstractBackground then
         button._abstractBackground = button:CreateTexture(nil, "BACKGROUND")
         button._abstractBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
@@ -740,13 +739,19 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
         button._abstractBackground:SetVertexColor(0, 0, 0, 1)  -- Black background
-        button._abstractBackground:SetDrawLayer("BACKGROUND", 0)
+        button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
-    -- Apply square cropping to the icon and bring it to the front
-    if icon and icon.SetTexCoord then
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        icon:SetDrawLayer("ARTWORK", 5)
+    -- Style and show the icon
+    if icon then
+        icon:Show()
+        icon:SetAlpha(1)
+        icon:SetDrawLayer("ARTWORK", 0)
+        
+        -- Apply square cropping
+        if icon.SetTexCoord then
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        end
         
         -- Reposition the icon with border insets
         local borderThickness = 2
