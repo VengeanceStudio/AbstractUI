@@ -714,40 +714,23 @@ function Maps:SkinMinimapButton(button)
         end
     end
     
-    -- Apply square cropping to the icon
-    if icon and icon.SetTexCoord then
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        
-        -- Reposition the icon with border insets
-        local borderThickness = 2
-        icon:ClearAllPoints()
-        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
-        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
-    end
-    
     -- Hide all circular/overlay textures except the icon
     for i = 1, button:GetNumRegions() do
         local region = select(i, button:GetRegions())
         if region and region:GetObjectType() == "Texture" and region ~= icon then
             -- Hide borders, backgrounds, overlays, and highlights
             region:Hide()
+            region:SetAlpha(0)
         end
     end
     
-    -- Add custom border
-    if not button._abstractBorder then
-        button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
-        button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
-        button._abstractBorder:SetAllPoints(button)
-        
-        local ColorPalette = _G.AbstractUI_ColorPalette
-        if ColorPalette then
-            local r, g, b = ColorPalette:GetColor('accent-primary')
-            button._abstractBorder:SetVertexColor(r, g, b, 1)
-        else
-            button._abstractBorder:SetVertexColor(1, 0.8, 0, 1)  -- Fallback gold
-        end
-    end
+    -- Also hide common LibDBIcon properties
+    if button.border then button.border:Hide() end
+    if button.Border then button.Border:Hide() end
+    if button.background then button.background:Hide() end
+    if button.Background then button.Background:Hide() end
+    if button.overlay then button.overlay:Hide() end
+    if button.Overlay then button.Overlay:Hide() end
     
     -- Add custom background
     if not button._abstractBackground then
@@ -757,6 +740,35 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
         button._abstractBackground:SetVertexColor(0, 0, 0, 1)  -- Black background
+        button._abstractBackground:SetDrawLayer("BACKGROUND", 0)
+    end
+    
+    -- Apply square cropping to the icon and bring it to the front
+    if icon and icon.SetTexCoord then
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        icon:SetDrawLayer("ARTWORK", 5)
+        
+        -- Reposition the icon with border insets
+        local borderThickness = 2
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+    end
+    
+    -- Add custom border on top
+    if not button._abstractBorder then
+        button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
+        button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+        button._abstractBorder:SetAllPoints(button)
+        button._abstractBorder:SetDrawLayer("OVERLAY", 7)
+        
+        local ColorPalette = _G.AbstractUI_ColorPalette
+        if ColorPalette then
+            local r, g, b = ColorPalette:GetColor('accent-primary')
+            button._abstractBorder:SetVertexColor(r, g, b, 1)
+        else
+            button._abstractBorder:SetVertexColor(1, 0.8, 0, 1)  -- Fallback gold
+        end
     end
 end
 
