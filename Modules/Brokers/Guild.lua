@@ -107,6 +107,15 @@ end
 
 local function UpdateGuildList()
     if not gScrollChild then return end
+    
+    -- Don't call protected functions in combat
+    if InCombatLockdown() then
+        if guildMotD then
+            guildMotD:SetText("|cffff0000Cannot update guild list during combat|r")
+        end
+        return
+    end
+    
     for _, child in ipairs({gScrollChild:GetChildren()}) do 
         child:Hide() 
     end
@@ -164,7 +173,12 @@ guildObj = LDB:NewDataObject("AbstractGuild", {
     type = "data source", text = "0", icon = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
     OnClick = function() ToggleGuildFrame() end,
     OnEnter = function(self) 
-        if IsInGuild() then 
+        if IsInGuild() then
+            -- Don't open guild frame during combat
+            if InCombatLockdown() then
+                return
+            end
+            
             C_GuildInfo.GuildRoster()
             if not guildFrame then 
                 CreateGuildFrame() 

@@ -122,7 +122,7 @@ function Tooltips:Initialize()
         self:SecureHook("GameTooltip_SetDefaultAnchor")
     end
     
-    -- Hook GameTooltip to handle quest reward positioning
+    -- Hook GameTooltip to handle quest reward positioning (with world map protection)
     if not self:IsHooked(GameTooltip, "OnShow") then
         self:HookScript(GameTooltip, "OnShow", "OnGameTooltipShow")
     end
@@ -525,6 +525,12 @@ function Tooltips:OnGameTooltipShow(tooltip)
         return
     end
     
+    -- CRITICAL: Immediately bail if world map is open to prevent taint
+    -- Must check this BEFORE any tooltip modifications
+    if WorldMapFrame and WorldMapFrame:IsShown() then
+        return
+    end
+    
     -- Skip if in protected context to avoid tainting money/trade calculations
     if self:IsProtectedTooltipContext(tooltip) then return end
     
@@ -536,19 +542,31 @@ function Tooltips:OnGameTooltipShow(tooltip)
     end)
     if not owner then return end
     
+    -- Quick check: if owner name contains WorldMap or TaskPOI, bail immediately
+    local ownerName = owner:GetName()
+    if ownerName and (ownerName:find("WorldMap") or ownerName:find("TaskPOI") or ownerName:find("Pin")) then
+        return
+    end
+    
     -- Detect if the owner is part of the quest frame hierarchy
     local isQuestTooltip = false
     local frame = owner
-    while frame do
+    local depth = 0
+    while frame and depth < 10 do
         local frameName = frame:GetName()
         if frameName then
+            -- Bail if we hit world map elements
+            if frameName:find("WorldMap") or frameName:find("TaskPOI") then
+                return
+            end
             -- Check for QuestFrame, QuestInfo, or Gossip frame parents
-            if frameName:find("Quest") or frameName:find("Gossip") then
+            if frameName:find("QuestFrame") or frameName:find("QuestInfo") or frameName:find("GossipFrame") then
                 isQuestTooltip = true
                 break
             end
         end
         frame = frame:GetParent()
+        depth = depth + 1
     end
     
     if not isQuestTooltip then return end
@@ -603,6 +621,9 @@ function Tooltips:IsProtectedTooltipContext(tooltip)
     
     -- Don't modify tooltips during combat to avoid taint
     if InCombatLockdown() then return true end
+    
+    -- Don't modify tooltips when world map is open - world quest tooltips cause taint
+    if WorldMapFrame and WorldMapFrame:IsShown() then return true end
     
     -- Check if tooltip owner is from a protected frame
     local success, owner = pcall(function()
