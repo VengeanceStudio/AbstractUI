@@ -1038,8 +1038,8 @@ function Maps:CollectMinimapButtons()
         end
         
         button:SetPoint("CENTER", self.buttonBar, "CENTER", x, y)
-        butSkin the button to look like a square frame
-        self:SkinMinimapButton(button)
+        button:SetFrameStrata("MEDIUM")
+        button:SetFrameLevel(self.buttonBar:GetFrameLevel() + 10)
         
         -- Force button to be visible and interactable
         button:Show()
