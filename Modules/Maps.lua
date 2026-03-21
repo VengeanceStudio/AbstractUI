@@ -743,7 +743,7 @@ function Maps:SkinMinimapButton(button)
         local borderThickness = 2
         button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
-        button._abstractBackground:SetVertexColor(0, 0, 0, 0.75)  -- Semi-transparent black background
+        button._abstractBackground:SetVertexColor(1, 0, 0, 0.75)  -- Red background for testing visibility
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
