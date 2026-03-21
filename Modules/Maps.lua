@@ -752,8 +752,8 @@ function Maps:SkinMinimapButton(button)
         button._abstractBorder = button:CreateTexture(nil, "BORDER")
         button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
         button._abstractBorder:SetAllPoints(button)
-        -- Use black border to match CooldownManager icons
-        button._abstractBorder:SetVertexColor(0, 0, 0, 1)
+        -- Make border semi-transparent to see background
+        button._abstractBorder:SetVertexColor(0, 0, 0, 0.5)
     end
 end
 
