@@ -240,7 +240,7 @@ function GroupManager:ReskinBlizzardManager()
             edgeSize = 2,
             insets = { left = 2, right = 2, top = 2, bottom = 2 }
         })
-        blizzardManager:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.95)
+        blizzardManager:SetBackdropColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.75)
         blizzardManager:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
     end
     
@@ -287,7 +287,7 @@ function GroupManager:ReskinBlizzardManager()
                 edgeSize = 1,
                 insets = { left = 1, right = 1, top = 1, bottom = 1 }
             })
-            displayFrame:SetBackdropColor(bgTertiary.r, bgTertiary.g, bgTertiary.b, bgTertiary.a or 0.9)
+            displayFrame:SetBackdropColor(bgTertiary.r, bgTertiary.g, bgTertiary.b, bgTertiary.a or 0.75)
             displayFrame:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         end
     end
