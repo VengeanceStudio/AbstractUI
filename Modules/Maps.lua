@@ -721,7 +721,7 @@ function Maps:SkinMinimapButton(button)
                     region:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
                     
                     -- Apply square cropping (1% crop on each side)
-                    region:SetTexCoord(0.02, 0.98, 0.02, 0.98)
+                    region:SetTexCoord(0.03, 0.97, 0.03, 0.97)
                     
                     -- Prevent the region from being moved
                     region.SetPoint = function() return end
