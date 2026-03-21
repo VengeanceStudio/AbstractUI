@@ -704,25 +704,11 @@ function Maps:SkinMinimapButton(button)
         end
     end
     
-    -- Debug: print all regions for troubleshooting
-    local buttonName = button:GetName() or "unnamed"
-    if buttonName:find("Zygor") or buttonName:find("LibDBIcon") then
-        print("Button:", buttonName, "Total regions:", button:GetNumRegions())
-        for i = 1, button:GetNumRegions() do
-            local region = select(i, button:GetRegions())
-            if region and region:GetObjectType() == "Texture" then
-                local texture = region:GetTexture()
-                local isIcon = (region == icon)
-                local shown = region:IsShown()
-                print("  Region", i, "texture:", texture, "isIcon:", isIcon, "shown:", shown)
-            end
-        end
-    end
-    
     -- Hide all textures except the icon (specifically hide circular borders)
     for i = 1, button:GetNumRegions() do
         local region = select(i, button:GetRegions())
         if region and region:GetObjectType() == "Texture" and region ~= icon then
+            region:SetTexture(nil)  -- Clear the texture completely
             region:Hide()
             region:SetAlpha(0)
         end
@@ -749,6 +735,7 @@ function Maps:SkinMinimapButton(button)
     if icon then
         icon:Show()
         icon:SetAlpha(1)
+        icon:SetDrawLayer("OVERLAY", 0)  -- Ensure icon is above any other textures
         
         -- Apply square cropping
         if icon.SetTexCoord then
