@@ -712,6 +712,12 @@ function Maps:SkinMinimapButton(button)
     
     print("  Final icon:", icon and "FOUND" or "NIL")
     
+    -- Debug: what layer is the icon on?
+    if icon then
+        local layer, sublayer = icon:GetDrawLayer()
+        print("  Icon original layer:", layer, sublayer or 0)
+    end
+    
     -- DON'T hide anything yet - just add our layers to see what happens
     -- for i = 1, button:GetNumRegions() do
     --     local region = select(i, button:GetRegions())
@@ -740,20 +746,22 @@ function Maps:SkinMinimapButton(button)
     
     -- Style the icon if we found it (middle layer)
     if icon then
-        icon:Show()
-        icon:SetAlpha(1)
-        icon:SetDrawLayer("ARTWORK", 5)  -- Raise it to ensure it's above background
+        -- DON'T modify the icon at all - just leave it as-is
+        print("  Leaving icon unmodified")
+        -- icon:Show()
+        -- icon:SetAlpha(1)
+        -- icon:SetDrawLayer("ARTWORK", 5)  -- Raise it to ensure it's above background
         
-        -- Apply square cropping
-        if icon.SetTexCoord then
-            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        end
+        -- -- Apply square cropping
+        -- if icon.SetTexCoord then
+        --     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        -- end
         
-        -- Reposition the icon with border insets
-        local borderThickness = 2
-        icon:ClearAllPoints()
-        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
-        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+        -- -- Reposition the icon with border insets
+        -- local borderThickness = 2
+        -- icon:ClearAllPoints()
+        -- icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        -- icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
     else
         -- Debug: if no icon found, show a red square so we know there's a problem
         if not button._debugIcon then
