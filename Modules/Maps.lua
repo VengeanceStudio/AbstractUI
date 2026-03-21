@@ -686,35 +686,40 @@ function Maps:SkinMinimapButton(button)
     if button._abstractSkinned then return end
     button._abstractSkinned = true
     
-    -- Find the button's icon texture - LibDBIcon buttons use .icon
+    -- Find the button's icon texture - LibDBIcon buttons use .icon (lowercase)
     local icon = button.icon or button.Icon
     
-    -- Search for and hide the circular overlay/border
-    for i = 1, button:GetNumRegions() do
-        local region = select(i, button:GetRegions())
-        if region and region:GetObjectType() == "Texture" then
-            local texture = region:GetTexture()
-            -- LibDBIcon uses Interface\Minimap\MiniMap-TrackingBorder for the gold circle
-            -- Also check for common circular border textures
-            if texture and type(texture) == "string" then
-                if texture:find("TrackingBorder") or 
-                   texture:find("Border") or 
-                   texture:find("Circle") or
-                   texture:find("Ring") then
-                    region:Hide()
-                    region:SetAlpha(0)
+    -- If we didn't find it via properties, search for it
+    if not icon then
+        for i = 1, button:GetNumRegions() do
+            local region = select(i, button:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                local texture = region:GetTexture()
+                if texture then
+                    -- Found a texture, assume it's the icon
+                    icon = region
+                    break
                 end
             end
         end
     end
     
-    -- Also hide the known border property on LibDBIcon buttons
-    if button.border then 
+    -- Now hide everything EXCEPT the icon
+    for i = 1, button:GetNumRegions() do
+        local region = select(i, button:GetRegions())
+        if region and region:GetObjectType() == "Texture" and region ~= icon then
+            region:Hide()
+            region:SetAlpha(0)
+        end
+    end
+    
+    -- Also hide specific LibDBIcon border properties
+    if button.border and button.border ~= icon then 
         button.border:Hide()
         button.border:SetAlpha(0)
     end
     
-    -- Add custom background
+    -- Add custom background FIRST (lowest layer)
     if not button._abstractBackground then
         button._abstractBackground = button:CreateTexture(nil, "BACKGROUND")
         button._abstractBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
@@ -725,11 +730,11 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
-    -- Style the icon if we found it
+    -- Style the icon if we found it (middle layer)
     if icon then
         icon:Show()
         icon:SetAlpha(1)
-        icon:SetDrawLayer("ARTWORK", 0)
+        icon:SetDrawLayer("ARTWORK", 5)  -- Raise it to ensure it's above background
         
         -- Apply square cropping
         if icon.SetTexCoord then
@@ -741,9 +746,17 @@ function Maps:SkinMinimapButton(button)
         icon:ClearAllPoints()
         icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+    else
+        -- Debug: if no icon found, show a red square so we know there's a problem
+        if not button._debugIcon then
+            button._debugIcon = button:CreateTexture(nil, "ARTWORK")
+            button._debugIcon:SetAllPoints()
+            button._debugIcon:SetColorTexture(1, 0, 0, 0.5)
+            button._debugIcon:SetDrawLayer("ARTWORK", 5)
+        end
     end
     
-    -- Add custom border on top
+    -- Add custom border on top (highest layer)
     if not button._abstractBorder then
         button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
         button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
