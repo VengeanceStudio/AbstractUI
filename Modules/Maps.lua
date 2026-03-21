@@ -720,7 +720,7 @@ function Maps:SkinMinimapButton(button)
                     region:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
                     region:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
                     
-                    -- Apply square cropping (1% crop on each side)
+                    -- Apply square cropping (5% crop on each side)
                     region:SetTexCoord(0.05, 0.95, 0.05, 0.95)
                     
                     -- Prevent the region from being moved
@@ -743,7 +743,7 @@ function Maps:SkinMinimapButton(button)
         local borderThickness = 2
         button._abstractBackground:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
-        button._abstractBackground:SetVertexColor(0, 0, 0, 1)  -- Black background
+        button._abstractBackground:SetVertexColor(0, 0, 0, 0.75)  -- Semi-transparent black background
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
