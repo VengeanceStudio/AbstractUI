@@ -1077,7 +1077,7 @@ function Tweaks:GetOptions()
                 end,
             },
             oneKeyFishing = {
-                name = "One-Key Fishing",
+                name = "One-Key Fishing (Set keybind in Options > Keybindings > AbstractUI)",
                 desc = "Enables a single keybind for both casting and hooking fish using Soft Targeting accessibility.\n\n" ..
                        "Instructions:\n" ..
                        "1. Set a keybind in Interface > Keybindings > AbstractUI > One-Key Fishing\n" ..
