@@ -686,37 +686,53 @@ function Maps:SkinMinimapButton(button)
     if button._abstractSkinned then return end
     button._abstractSkinned = true
     
-    -- Find the button's icon texture - LibDBIcon buttons use .icon (lowercase)
-    local icon = button.icon or button.Icon
+    -- Texture IDs to remove (circular borders from LibDBIcon)
+    local RemoveTextureID = {
+        ['136430'] = true,  -- LibDBIcon border pieces
+        ['136467'] = true,
+        ['136477'] = true,
+        ['136468'] = true,
+        ['130924'] = true,
+        ['982840'] = true
+    }
     
-    -- If we didn't find it via properties, search for it
-    if not icon then
-        for i = 1, button:GetNumRegions() do
-            local region = select(i, button:GetRegions())
-            if region and region:GetObjectType() == "Texture" then
-                local texture = region:GetTexture()
-                if texture then
-                    -- Found a texture, assume it's the icon
+    local icon = nil
+    
+    -- Process button AND all its children (like ProjectAzilroka does)
+    for _, frame in pairs({ button, button:GetChildren() }) do
+        for _, region in pairs({ frame:GetRegions() }) do
+            if region:IsObjectType('Texture') then
+                local texture = region.GetTextureFileID and region:GetTextureFileID() or region.GetTexture and region:GetTexture()
+                local textureStr = tostring(texture)
+                
+                if texture and RemoveTextureID[textureStr] then
+                    -- Remove circular border textures completely
+                    region:SetTexture()
+                    region:SetAlpha(0)
+                elseif texture then
+                    -- This is the icon - style it
                     icon = region
-                    break
+                    region:ClearAllPoints()
+                    region:SetDrawLayer('ARTWORK')
+                    
+                    -- Apply border insets
+                    local borderThickness = 2
+                    region:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+                    region:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
+                    
+                    -- Apply square cropping
+                    region:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                    
+                    -- Prevent the region from being moved
+                    region.SetPoint = function() return end
                 end
             end
         end
     end
     
-    -- Hide all textures except the icon (specifically hide circular borders)
-    for i = 1, button:GetNumRegions() do
-        local region = select(i, button:GetRegions())
-        if region and region:GetObjectType() == "Texture" and region ~= icon then
-            region:SetTexture(nil)  -- Clear the texture completely
-            region:Hide()
-            region:SetAlpha(0)
-        end
-    end
-    
-    -- Also hide specific LibDBIcon border properties
-    if button.border and button.border ~= icon then 
-        button.border:Hide()
+    -- Also hide specific LibDBIcon border property
+    if button.border then 
+        button.border:SetTexture()
         button.border:SetAlpha(0)
     end
     
@@ -729,24 +745,6 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
         button._abstractBackground:SetVertexColor(0, 0, 0, 1)  -- Black background
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
-    end
-    
-    -- Style the icon if we found it
-    if icon then
-        icon:Show()
-        icon:SetAlpha(1)
-        icon:SetDrawLayer("OVERLAY", 0)  -- Ensure icon is above any other textures
-        
-        -- Apply square cropping
-        if icon.SetTexCoord then
-            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        end
-        
-        -- Reposition the icon with border insets
-        local borderThickness = 2
-        icon:ClearAllPoints()
-        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
-        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
     end
     
     -- Add custom border (on BORDER layer - below ARTWORK where icons are)
