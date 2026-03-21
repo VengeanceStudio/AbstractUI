@@ -686,21 +686,15 @@ function Maps:SkinMinimapButton(button)
     if button._abstractSkinned then return end
     button._abstractSkinned = true
     
-    print("Skinning button:", button:GetName() or "unnamed")
-    
     -- Find the button's icon texture - LibDBIcon buttons use .icon (lowercase)
     local icon = button.icon or button.Icon
     
-    print("  Icon from property:", icon and "FOUND" or "NOT FOUND")
-    
     -- If we didn't find it via properties, search for it
     if not icon then
-        print("  Searching regions...")
         for i = 1, button:GetNumRegions() do
             local region = select(i, button:GetRegions())
             if region and region:GetObjectType() == "Texture" then
                 local texture = region:GetTexture()
-                print("    Region", i, "texture:", texture)
                 if texture then
                     -- Found a texture, assume it's the icon
                     icon = region
@@ -710,28 +704,20 @@ function Maps:SkinMinimapButton(button)
         end
     end
     
-    print("  Final icon:", icon and "FOUND" or "NIL")
-    
-    -- Debug: what layer is the icon on?
-    if icon then
-        local layer, sublayer = icon:GetDrawLayer()
-        print("  Icon original layer:", layer, sublayer or 0)
+    -- Hide all textures except the icon (specifically hide circular borders)
+    for i = 1, button:GetNumRegions() do
+        local region = select(i, button:GetRegions())
+        if region and region:GetObjectType() == "Texture" and region ~= icon then
+            region:Hide()
+            region:SetAlpha(0)
+        end
     end
     
-    -- DON'T hide anything yet - just add our layers to see what happens
-    -- for i = 1, button:GetNumRegions() do
-    --     local region = select(i, button:GetRegions())
-    --     if region and region:GetObjectType() == "Texture" and region ~= icon then
-    --         region:Hide()
-    --         region:SetAlpha(0)
-    --     end
-    -- end
-    
-    -- -- Also hide specific LibDBIcon border properties
-    -- if button.border and button.border ~= icon then 
-    --     button.border:Hide()
-    --     button.border:SetAlpha(0)
-    -- end
+    -- Also hide specific LibDBIcon border properties
+    if button.border and button.border ~= icon then 
+        button.border:Hide()
+        button.border:SetAlpha(0)
+    end
     
     -- Add custom background FIRST (lowest layer)
     if not button._abstractBackground then
@@ -744,40 +730,28 @@ function Maps:SkinMinimapButton(button)
         button._abstractBackground:SetDrawLayer("BACKGROUND", -8)
     end
     
-    -- Style the icon if we found it (middle layer)
+    -- Style the icon if we found it
     if icon then
-        -- DON'T modify the icon at all - just leave it as-is
-        print("  Leaving icon unmodified")
-        -- icon:Show()
-        -- icon:SetAlpha(1)
-        -- icon:SetDrawLayer("ARTWORK", 5)  -- Raise it to ensure it's above background
+        icon:Show()
+        icon:SetAlpha(1)
         
-        -- -- Apply square cropping
-        -- if icon.SetTexCoord then
-        --     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        -- end
-        
-        -- -- Reposition the icon with border insets
-        -- local borderThickness = 2
-        -- icon:ClearAllPoints()
-        -- icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
-        -- icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
-    else
-        -- Debug: if no icon found, show a red square so we know there's a problem
-        if not button._debugIcon then
-            button._debugIcon = button:CreateTexture(nil, "ARTWORK")
-            button._debugIcon:SetAllPoints()
-            button._debugIcon:SetColorTexture(1, 0, 0, 0.5)
-            button._debugIcon:SetDrawLayer("ARTWORK", 5)
+        -- Apply square cropping
+        if icon.SetTexCoord then
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         end
+        
+        -- Reposition the icon with border insets
+        local borderThickness = 2
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", button, "TOPLEFT", borderThickness, -borderThickness)
+        icon:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -borderThickness, borderThickness)
     end
     
-    -- Add custom border on top (highest layer)
+    -- Add custom border (on BORDER layer - below ARTWORK where icons are)
     if not button._abstractBorder then
-        button._abstractBorder = button:CreateTexture(nil, "OVERLAY")
+        button._abstractBorder = button:CreateTexture(nil, "BORDER")
         button._abstractBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
         button._abstractBorder:SetAllPoints(button)
-        button._abstractBorder:SetDrawLayer("OVERLAY", 7)
         -- Use black border to match CooldownManager icons
         button._abstractBorder:SetVertexColor(0, 0, 0, 1)
     end
