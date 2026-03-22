@@ -73,6 +73,18 @@ local function UpdateBrokerText()
     end
 end
 
+-- Debug: Print all currencies with "Dawncrest" in the name to find correct IDs
+C_Timer.After(2, function()
+    print("=== AbstractUI: Scanning for Dawncrest currency IDs ===")
+    for i = 1, 5000 do
+        local info = C_CurrencyInfo.GetCurrencyInfo(i)
+        if info and info.name and info.name:find("Dawncrest") then
+            print(string.format("ID %d: %s (Quantity: %d)", i, info.name, info.quantity or 0))
+        end
+    end
+    print("=== End of scan ===")
+end)
+
 -- Register the broker
 crestsObj = LDB:NewDataObject("AbstractCrests", {
     type = "data source",
