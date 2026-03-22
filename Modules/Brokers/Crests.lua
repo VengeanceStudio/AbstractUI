@@ -9,8 +9,8 @@ local CREST_IDS = {
     {id = 3383, name = "Adventurer", color = {r=0.0, g=1.0, b=0.0}},    -- Green quality
     {id = 3341, name = "Veteran", color = {r=0.0, g=0.44, b=0.87}},       -- Blue quality
     {id = 3343, name = "Champion", color = {r=0.64, g=0.21, b=0.93}},     -- Purple quality
-    {id = 3346, name = "Hero", color = {r=1.0, g=0.5, b=0.0}},            -- Orange quality
-    {id = 3348, name = "Myth", color = {r=1.0, g=0.82, b=0.0}},           -- Legendary quality
+    {id = 3345, name = "Hero", color = {r=1.0, g=0.5, b=0.0}},            -- Orange quality (was 3346)
+    {id = 3347, name = "Myth", color = {r=1.0, g=0.82, b=0.0}},           -- Legendary quality (was 3348)
 }
 
 -- Format number with thousands separator
@@ -72,18 +72,6 @@ local function UpdateBrokerText()
         crestsObj.icon = displayIcon
     end
 end
-
--- Debug: Print all currencies with "Dawncrest" in the name to find correct IDs
-C_Timer.After(2, function()
-    print("=== AbstractUI: Scanning for Dawncrest currency IDs ===")
-    for i = 1, 5000 do
-        local info = C_CurrencyInfo.GetCurrencyInfo(i)
-        if info and info.name and info.name:find("Dawncrest") then
-            print(string.format("ID %d: %s (Quantity: %d)", i, info.name, info.quantity or 0))
-        end
-    end
-    print("=== End of scan ===")
-end)
 
 -- Register the broker
 crestsObj = LDB:NewDataObject("AbstractCrests", {
