@@ -47,13 +47,16 @@ local function UpdateBrokerText()
     local displayIcon = nil
     local highestTierWithCrests = nil
     
-    -- Add all 5 crest counts (TEST: no colors)
+    -- Add all 5 crest counts with colors
     for i, crest in ipairs(CREST_IDS) do
         local count = GetCurrencyCount(crest.id)
-        table.insert(parts, tostring(count))
+        local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
+        local coloredCount = "|cff" .. hexColor .. count .. "|r"
+        table.insert(parts, coloredCount)
     end
     
-    crestsObj.text = table.concat(parts, "/")
+    -- Add a space after to ensure color codes don't get truncated
+    crestsObj.text = table.concat(parts, "/") .. " "
     
     -- Set icon to highest tier crest that player owns
     if highestTierWithCrests then
