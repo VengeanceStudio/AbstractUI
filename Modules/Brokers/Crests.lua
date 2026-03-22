@@ -47,15 +47,23 @@ local function UpdateBrokerText()
     local displayIcon = nil
     local highestTierWithCrests = nil
     
-    -- Add all 5 crest counts with colors and spaced separators
+    -- Build colored string manually to avoid truncation
+    local counts = {}
     for i, crest in ipairs(CREST_IDS) do
-        local count = GetCurrencyCount(crest.id)
-        local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
-        local coloredCount = "|cff" .. hexColor .. count .. "|r"
-        table.insert(parts, coloredCount)
+        counts[i] = GetCurrencyCount(crest.id)
     end
     
-    crestsObj.text = table.concat(parts, " / ")
+    -- Manually construct the colored display string
+    local c1 = RGBToHex(CREST_IDS[1].color.r, CREST_IDS[1].color.g, CREST_IDS[1].color.b)
+    local c2 = RGBToHex(CREST_IDS[2].color.r, CREST_IDS[2].color.g, CREST_IDS[2].color.b)
+    local c3 = RGBToHex(CREST_IDS[3].color.r, CREST_IDS[3].color.g, CREST_IDS[3].color.b)
+    local c4 = RGBToHex(CREST_IDS[4].color.r, CREST_IDS[4].color.g, CREST_IDS[4].color.b)
+    local c5 = RGBToHex(CREST_IDS[5].color.r, CREST_IDS[5].color.g, CREST_IDS[5].color.b)
+    
+    crestsObj.text = string.format(
+        "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r",
+        c1, counts[1], c2, counts[2], c3, counts[3], c4, counts[4], c5, counts[5]
+    )
     
     -- Set icon to highest tier crest that player owns
     if highestTierWithCrests then
