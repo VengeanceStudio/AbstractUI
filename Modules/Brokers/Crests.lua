@@ -33,41 +33,48 @@ local function GetCurrencyCount(currencyID)
     return 0
 end
 
+-- Convert RGB (0-1) to hex color code
+local function RGBToHex(r, g, b)
+    return string.format("%02x%02x%02x", r * 255, g * 255, b * 255)
+end
+
 -- Update the broker text display
 local function UpdateBrokerText()
     if not crestsObj then return end
     
-    -- Get the highest tier crest that player has
-    local displayText = ""
+    -- Build colored string showing all crest counts: 215/10/0/20/0
+    local parts = {}
     local displayIcon = nil
-    local hasAny = false
+    local highestTierWithCrests = nil
     
-    -- Check from highest to lowest
-    for i = #CREST_IDS, 1, -1 do
-        local crest = CREST_IDS[i]
+    for i, crest in ipairs(CREST_IDS) do
         local count = GetCurrencyCount(crest.id)
-        if count > 0 then
-            displayText = FormatNumber(count)
-            -- Get the icon from currency info
-            local info = C_CurrencyInfo.GetCurrencyInfo(crest.id)
-            if info and info.iconFileID then
-                displayIcon = info.iconFileID
-            end
-            hasAny = true
-            break
+        local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
+        local coloredCount = "|cff" .. hexColor .. count .. "|r"
+        table.insert(parts, coloredCount)
+        
+        -- Track highest tier with crests for icon
+        if count > 0 and not highestTierWithCrests then
+            highestTierWithCrests = i
         end
     end
     
-    if not hasAny then
-        displayText = "0"
-        -- Use default icon for lowest tier crest when player has none
+    crestsObj.text = table.concat(parts, "/")
+    
+    -- Set icon to highest tier crest that player owns
+    if highestTierWithCrests then
+        local info = C_CurrencyInfo.GetCurrencyInfo(CREST_IDS[highestTierWithCrests].id)
+        if info and info.iconFileID then
+            displayIcon = info.iconFileID
+        end
+    else
+        -- Use default icon for lowest tier when player has none
         local info = C_CurrencyInfo.GetCurrencyInfo(CREST_IDS[1].id)
         if info and info.iconFileID then
             displayIcon = info.iconFileID
         end
     end
     
-    crestsObj.text = displayText
     if displayIcon then
         crestsObj.icon = displayIcon
     end
