@@ -53,7 +53,10 @@ local function UpdateBrokerText()
         local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
         local coloredCount = "|cff" .. hexColor .. count .. "|r"
         table.insert(parts, coloredCount)
+        print("Crest", i, crest.name, "Count:", count, "Parts now:", #parts)
     end
+    
+    print("Total parts:", #parts, "Display:", table.concat(parts, "/"))
     
     -- Find highest tier with crests (iterate backwards: Myth->Adventurer)
     for i = #CREST_IDS, 1, -1 do
