@@ -47,15 +47,20 @@ local function UpdateBrokerText()
     local displayIcon = nil
     local highestTierWithCrests = nil
     
+    -- Add all 5 crest counts
     for i, crest in ipairs(CREST_IDS) do
         local count = GetCurrencyCount(crest.id)
         local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
         local coloredCount = "|cff" .. hexColor .. count .. "|r"
         table.insert(parts, coloredCount)
-        
-        -- Track highest tier with crests for icon
-        if count > 0 and not highestTierWithCrests then
+    end
+    
+    -- Find highest tier with crests (iterate backwards: Myth->Adventurer)
+    for i = #CREST_IDS, 1, -1 do
+        local count = GetCurrencyCount(CREST_IDS[i].id)
+        if count > 0 then
             highestTierWithCrests = i
+            break
         end
     end
     
