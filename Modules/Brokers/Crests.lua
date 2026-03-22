@@ -55,8 +55,8 @@ local function UpdateBrokerText()
         table.insert(parts, coloredCount)
     end
     
-    -- Add a space after to ensure color codes don't get truncated
-    crestsObj.text = table.concat(parts, "/") .. " "
+    -- Join with slashes, then add a trailing dot to prevent color code truncation
+    crestsObj.text = table.concat(parts, "/") .. "."
     
     -- Set icon to highest tier crest that player owns
     if highestTierWithCrests then
