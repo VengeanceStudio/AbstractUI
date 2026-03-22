@@ -53,21 +53,9 @@ local function UpdateBrokerText()
         local hexColor = RGBToHex(crest.color.r, crest.color.g, crest.color.b)
         local coloredCount = "|cff" .. hexColor .. count .. "|r"
         table.insert(parts, coloredCount)
-        print("Crest", i, crest.name, "Count:", count, "Parts now:", #parts)
     end
     
-    print("Total parts:", #parts, "Display:", table.concat(parts, "/"))
-    
-    -- Find highest tier with crests (iterate backwards: Myth->Adventurer)
-    for i = #CREST_IDS, 1, -1 do
-        local count = GetCurrencyCount(CREST_IDS[i].id)
-        if count > 0 then
-            highestTierWithCrests = i
-            break
-        end
-    end
-    
-    crestsObj.text = table.concat(parts, "/")
+    crestsObj.text = table.concat(parts, "/") .. "X"  -- Added X to test if trailing content is being stripped
     
     -- Set icon to highest tier crest that player owns
     if highestTierWithCrests then
