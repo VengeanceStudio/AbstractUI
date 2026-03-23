@@ -368,10 +368,12 @@ function MinimapButtons:CollectMinimapButtons()
     -- Check for actual interaction scripts rather than just mouse-enabled status
     local buttons = {}
     
+    print("=== MinimapButtons: Starting Collection ===")
+    
     -- Helper function to check if frame has interaction scripts
     local function HasInteractionScript(frame)
         if not frame.HasScript then
-            return false
+            return false, "no HasScript method"
         end
         
         -- Check for click/mouse interaction scripts (actual scripts, not just capability)
@@ -379,47 +381,82 @@ function MinimapButtons:CollectMinimapButtons()
         local hasMouseUp = frame:HasScript("OnMouseUp") and frame:GetScript("OnMouseUp") ~= nil
         local hasMouseDown = frame:HasScript("OnMouseDown") and frame:GetScript("OnMouseDown") ~= nil
         
-        return hasClick or hasMouseUp or hasMouseDown
+        if hasClick then
+            return true, "has OnClick"
+        elseif hasMouseUp then
+            return true, "has OnMouseUp"
+        elseif hasMouseDown then
+            return true, "has OnMouseDown"
+        else
+            return false, "no interaction scripts"
+        end
     end
     
     -- Collect children from both Minimap and MinimapBackdrop
     local children = {Minimap:GetChildren()}
+    print(string.format("Found %d Minimap children", #children))
+    
     if MinimapBackdrop then
         local additional = {MinimapBackdrop:GetChildren()}
+        print(string.format("Found %d MinimapBackdrop children", #additional))
         for _, child in ipairs(additional) do
             table.insert(children, child)
         end
     end
     
+    print(string.format("Total frames to process: %d", #children))
+    print("")
+    
     -- Process each child frame
+    local frameNum = 0
     for _, child in ipairs(children) do
+        frameNum = frameNum + 1
         local name = child:GetName()
+        local objType = child:GetObjectType()
         
-        if name then
-            -- Skip if in ignore list
-            if ignoreList[name] then
-                -- Ignore this frame
-            else
-                local frameToCollect = child
-                
-                -- Smart parent/child handling: If this frame doesn't have OnClick but a child does, use the child
-                if not HasInteractionScript(frameToCollect) then
-                    local subchildren = {frameToCollect:GetChildren()}
-                    for _, subchild in ipairs(subchildren) do
-                        if HasInteractionScript(subchild) then
+        print(string.format("[%d] %s | Type: %s", frameNum, name or "unnamed", objType))
+        
+        if not name then
+            print("  -> SKIPPED (no name)")
+        elseif ignoreList[name] then
+            print("  -> IGNORED (in ignore list)")
+        else
+            local frameToCollect = child
+            local hasScript, reason = HasInteractionScript(frameToCollect)
+            
+            print(string.format("  Parent frame: %s", reason))
+            
+            -- Smart parent/child handling: If this frame doesn't have OnClick but a child does, use the child
+            if not hasScript then
+                local subchildren = {frameToCollect:GetChildren()}
+                if #subchildren > 0 then
+                    print(string.format("  Checking %d subchildren...", #subchildren))
+                    for i, subchild in ipairs(subchildren) do
+                        local subHasScript, subReason = HasInteractionScript(subchild)
+                        local subName = subchild:GetName() or "unnamed"
+                        print(string.format("    [%d] %s: %s", i, subName, subReason))
+                        if subHasScript then
                             frameToCollect = subchild
+                            hasScript = true
+                            print(string.format("  Using subchild: %s", subName))
                             break
                         end
                     end
                 end
-                
-                -- Collect if it has interaction scripts
-                if HasInteractionScript(frameToCollect) then
-                    table.insert(buttons, frameToCollect)
-                end
+            end
+            
+            -- Collect if it has interaction scripts
+            if hasScript then
+                table.insert(buttons, frameToCollect)
+                print("  -> COLLECTED")
+            else
+                print("  -> SKIPPED (no interaction scripts)")
             end
         end
+        print("")
     end
+    
+    print(string.format("=== Collection Complete: %d buttons collected ===", #buttons))
     
     -- Arrange buttons
     for i, button in ipairs(buttons) do
