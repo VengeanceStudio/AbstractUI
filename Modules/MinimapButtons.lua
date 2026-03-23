@@ -708,6 +708,31 @@ function MinimapButtons:CollapseButtonBar()
 end
 
 -- -----------------------------------------------------------------------------
+-- COLOR UPDATE
+-- -----------------------------------------------------------------------------
+function MinimapButtons:UpdateButtonBarColor()
+    if not self.buttonBarTab or not self.buttonBarTab.bar then return end
+    
+    local db = self.db.profile
+    local r, g, b, a
+    
+    if db.useClassColor then
+        local _, class = UnitClass("player")
+        local classColor = RAID_CLASS_COLORS[class]
+        if classColor then
+            r, g, b, a = classColor.r, classColor.g, classColor.b, 1
+        else
+            r, g, b, a = 0.5, 0.5, 0.5, 1
+        end
+    else
+        local c = db.color or { r = 0.5, g = 0.5, b = 0.5, a = 1 }
+        r, g, b, a = c.r, c.g, c.b, c.a
+    end
+    
+    self.buttonBarTab.bar:SetVertexColor(r, g, b, a)
+end
+
+-- -----------------------------------------------------------------------------
 -- OPTIONS
 -- -----------------------------------------------------------------------------
 function MinimapButtons:GetOptions()
