@@ -787,7 +787,7 @@ function BrokerBar:UpdateBarLayout(barID)
                 local rawText = tostring(obj.text or "")
                 
                 local textValue = rawText
-                if name ~= "AbstractLocation" then
+                if name ~= "AbstractLocation" and name ~= "AbstractCrests" then
                     textValue = ShortenValue(rawText)
                 end
                 
@@ -839,7 +839,10 @@ function BrokerBar:UpdateBarLayout(barID)
                 end
                 -- No ShortenValue() call for location, showing full zone name
             else
-                textValue = ShortenValue(rawText)
+                -- Skip ShortenValue for Crests to allow full colored display
+                if name ~= "AbstractCrests" then
+                    textValue = ShortenValue(rawText)
+                end
             end
             
             local displayString = (labelPart ~= "" and labelPart .. ": " or "") .. (bCfg.showText and textValue or "")

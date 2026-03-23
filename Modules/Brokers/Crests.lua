@@ -47,13 +47,13 @@ local function UpdateBrokerText()
     local displayIcon = nil
     local highestTierWithCrests = nil
     
-    -- TEST: Show all 5 in REVERSE order to test 5-color-code limit
+    -- Build colored string showing ALL 5 tiers (bypasses ShortenValue in BrokerBar)
     local counts = {}
     for i, crest in ipairs(CREST_IDS) do
         counts[i] = GetCurrencyCount(crest.id)
     end
     
-    -- Reverse order: Myth, Hero, Champion, Veteran, Adventurer
+    -- Show all 5 colored tiers: Adventurer, Veteran, Champion, Hero, Myth
     local c1 = RGBToHex(CREST_IDS[1].color.r, CREST_IDS[1].color.g, CREST_IDS[1].color.b)
     local c2 = RGBToHex(CREST_IDS[2].color.r, CREST_IDS[2].color.g, CREST_IDS[2].color.b)
     local c3 = RGBToHex(CREST_IDS[3].color.r, CREST_IDS[3].color.g, CREST_IDS[3].color.b)
@@ -62,7 +62,7 @@ local function UpdateBrokerText()
     
     crestsObj.text = string.format(
         "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r",
-        c5, counts[5], c4, counts[4], c3, counts[3], c2, counts[2], c1, counts[1]
+        c1, counts[1], c2, counts[2], c3, counts[3], c4, counts[4], c5, counts[5]
     )
     
     -- Set icon to highest tier crest that player owns
