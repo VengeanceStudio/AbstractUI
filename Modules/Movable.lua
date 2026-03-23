@@ -299,9 +299,9 @@ function Movable:OnMoveModeChanged(event, enabled)
             -- Restore buttonBar color when move mode disabled
             if frame:GetName() == "AbstractUI_MinimapButtonBar" and frame.buttonBarTab and frame.buttonBarTab.bar then
                 -- Restore to user's selected color
-                local Maps = AbstractUI:GetModule("Maps", true)
-                if Maps then
-                    Maps:UpdateButtonBarColor()
+                local MinimapButtons = AbstractUI:GetModule("MinimapButtons", true)
+                if MinimapButtons then
+                    MinimapButtons:UpdateButtonBarColor()
                 end
             end
             -- Hide buttonBar backdrop when move mode disabled

@@ -185,6 +185,9 @@ function MinimapButtons:SetupButtonBar()
         -- Set initial color
         self:UpdateButtonBarColor()
         
+        -- Show the tab
+        self.buttonBarTab:Show()
+        
         -- Create collapse timer
         self.buttonBar.collapseTimer = nil
         
@@ -516,7 +519,10 @@ function MinimapButtons:CollapseButtonBar()
     self.buttonBar:SetBackdropColor(0, 0, 0, 0)
     self.buttonBar:SetBackdropBorderColor(0.3, 0.3, 0.3, 0)
     
-    -- Tab is always shown, move mode controls backdrop visibility
+    -- Ensure tab is visible when collapsed
+    if self.buttonBarTab then
+        self.buttonBarTab:Show()
+    end
     
     -- Hide all buttons when collapsed
     for button, data in pairs(self.buttonBar.buttons) do
