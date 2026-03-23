@@ -1,6 +1,6 @@
 ## Interface: 120005, 120001
 ## Title: Abstract UI
-## Version: 12.0.1.62
+## Version: 12.0.1.63
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
@@ -96,6 +96,7 @@ Modules\Tweaks.lua
 Modules\TileExtractor.lua
 Modules\CursorAnimate.lua
 Modules\Maps.lua
+Modules\MinimapButtons.lua
 Modules\ActionBars.lua
 Modules\UnitFrames.lua
 Modules\Frames\Player.lua
