@@ -392,7 +392,7 @@ function MinimapButtons:CollectMinimapButtons()
         end
     end
     
-    -- Collect children from both Minimap and MinimapBackdrop
+    -- Collect children from Minimap, MinimapBackdrop, and MinimapCluster
     local children = {Minimap:GetChildren()}
     print(string.format("Found %d Minimap children", #children))
     
@@ -404,7 +404,41 @@ function MinimapButtons:CollectMinimapButtons()
         end
     end
     
+    if MinimapCluster then
+        local clusterChildren = {MinimapCluster:GetChildren()}
+        print(string.format("Found %d MinimapCluster children", #clusterChildren))
+        for _, child in ipairs(clusterChildren) do
+            -- Avoid duplicates
+            local isDuplicate = false
+            for _, existing in ipairs(children) do
+                if existing == child then
+                    isDuplicate = true
+                    break
+                end
+            end
+            if not isDuplicate then
+                table.insert(children, child)
+            end
+        end
+    end
+    
     print(string.format("Total frames to process: %d", #children))
+    
+    -- Global search for Danders Frames button
+    print("")
+    print("=== Searching globally for Danders Frames ===")
+    for name, frame in pairs(_G) do
+        if type(frame) == "table" and frame.GetObjectType then
+            if string.find(name, "Danders") or string.find(name, "danders") then
+                pcall(function()
+                    local objType = frame:GetObjectType()
+                    local parent = frame:GetParent()
+                    local parentName = parent and parent:GetName() or "no parent"
+                    print(string.format("Found: %s | Type: %s | Parent: %s", name, objType, parentName))
+                end)
+            end
+        end
+    end
     print("")
     
     -- Process each child frame
