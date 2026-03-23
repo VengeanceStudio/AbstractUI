@@ -423,22 +423,6 @@ function MinimapButtons:CollectMinimapButtons()
     end
     
     print(string.format("Total frames to process: %d", #children))
-    
-    -- Global search for Danders Frames button
-    print("")
-    print("=== Searching globally for Danders Frames ===")
-    for name, frame in pairs(_G) do
-        if type(frame) == "table" and frame.GetObjectType then
-            if string.find(name, "Danders") or string.find(name, "danders") then
-                pcall(function()
-                    local objType = frame:GetObjectType()
-                    local parent = frame:GetParent()
-                    local parentName = parent and parent:GetName() or "no parent"
-                    print(string.format("Found: %s | Type: %s | Parent: %s", name, objType, parentName))
-                end)
-            end
-        end
-    end
     print("")
     
     -- Process each child frame
@@ -448,17 +432,35 @@ function MinimapButtons:CollectMinimapButtons()
         local name = child:GetName()
         local objType = child:GetObjectType()
         
-        print(string.format("[%d] %s | Type: %s", frameNum, name or "unnamed", objType))
+        -- Count textures to help identify buttons
+        local textureCount = 0
+        local textureInfo = ""
+        pcall(function()
+            for j = 1, child:GetNumRegions() do
+                local region = select(j, child:GetRegions())
+                if region and region:GetObjectType() == "Texture" then
+                    textureCount = textureCount + 1
+                    local texture = region:GetTexture()
+                    if texture and textureInfo == "" then
+                        textureInfo = " (tex: " .. tostring(texture) .. ")"
+                    end
+                end
+            end
+        end)
         
-        if not name then
-            print("  -> SKIPPED (no name)")
-        elseif ignoreList[name] then
+        print(string.format("[%d] %s | Type: %s | Textures: %d%s", frameNum, name or "unnamed", objType, textureCount, textureInfo))
+        
+        if name and ignoreList[name] then
             print("  -> IGNORED (in ignore list)")
         else
             local frameToCollect = child
             local hasScript, reason = HasInteractionScript(frameToCollect)
             
-            print(string.format("  Parent frame: %s", reason))
+            if name then
+                print(string.format("  Parent frame: %s", reason))
+            else
+                print(string.format("  Unnamed frame: %s", reason))
+            end
             
             -- Smart parent/child handling: If this frame doesn't have OnClick but a child does, use the child
             if not hasScript then
@@ -479,7 +481,7 @@ function MinimapButtons:CollectMinimapButtons()
                 end
             end
             
-            -- Collect if it has interaction scripts
+            -- Collect if it has interaction scripts (allow unnamed if they have scripts)
             if hasScript then
                 table.insert(buttons, frameToCollect)
                 print("  -> COLLECTED")
