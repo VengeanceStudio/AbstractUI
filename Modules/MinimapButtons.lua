@@ -327,12 +327,8 @@ function MinimapButtons:SetupButtonBar()
         end
     end
     
-    -- Collect minimap buttons
-    self:CollectMinimapButtons()
-    
-    -- Delayed re-collection to catch late-loading addon buttons (like Danders Frames)
-    -- Danders Frames creates its button 1 second after PLAYER_LOGIN, so we wait 2 seconds
-    -- after PLAYER_ENTERING_WORLD to ensure all addon buttons are created
+    -- Don't collect immediately - wait for all addons to load their buttons
+    -- Register for PLAYER_ENTERING_WORLD and collect after delay
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     
     -- Start collapsed
@@ -341,14 +337,14 @@ function MinimapButtons:SetupButtonBar()
 end
 
 function MinimapButtons:PLAYER_ENTERING_WORLD()
-    print("MinimapButtons: PLAYER_ENTERING_WORLD fired, scheduling re-collection...")
+    print("MinimapButtons: PLAYER_ENTERING_WORLD fired, scheduling collection in 5 seconds...")
     self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-    C_Timer.After(2, function()
+    C_Timer.After(5, function()
         if self.buttonBar then
-            print("=== MinimapButtons: Re-collecting for late-loading addons ===")
+            print("=== MinimapButtons: Initial Collection (all addons should be loaded) ===")
             self:CollectMinimapButtons()
         else
-            print("MinimapButtons: buttonBar is nil, cannot re-collect")
+            print("MinimapButtons: buttonBar is nil, cannot collect")
         end
     end)
 end
