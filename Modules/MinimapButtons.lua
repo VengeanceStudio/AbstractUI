@@ -41,10 +41,14 @@ function MinimapButtons:OnDBReady()
     end
     
     self.db = AbstractUI.db:RegisterNamespace("MinimapButtons", defaults)
+    
+    -- Setup button bar after DB is ready
+    self:SetupButtonBar()
 end
 
 function MinimapButtons:OnEnable()
-    self:SetupButtonBar()
+    -- OnEnable is called before DB is ready, so we do nothing here
+    -- SetupButtonBar is called from OnDBReady instead
 end
 
 function MinimapButtons:OnDisable()
