@@ -328,25 +328,21 @@ function MinimapButtons:SetupButtonBar()
     end
     
     -- Don't collect immediately - wait for all addons to load their buttons
-    -- Register for PLAYER_ENTERING_WORLD and collect after delay
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    
-    -- Start collapsed
-    self:CollapseButtonBar()
-    self.buttonBar:Show()
-end
-
-function MinimapButtons:PLAYER_ENTERING_WORLD()
-    print("MinimapButtons: PLAYER_ENTERING_WORLD fired, scheduling collection in 5 seconds...")
-    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    -- Use PLAYER_STARTED_MOVING which fires after player has full control
+    -- This ensures all late-loading addon buttons are created
+    print("MinimapButtons: Button bar setup complete, scheduling delayed collection...")
     C_Timer.After(5, function()
         if self.buttonBar then
-            print("=== MinimapButtons: Initial Collection (all addons should be loaded) ===")
+            print("=== MinimapButtons: Initial Collection (5 seconds after setup) ===")
             self:CollectMinimapButtons()
         else
             print("MinimapButtons: buttonBar is nil, cannot collect")
         end
     end)
+    
+    -- Start collapsed
+    self:CollapseButtonBar()
+    self.buttonBar:Show()
 end
 
 -- -----------------------------------------------------------------------------
