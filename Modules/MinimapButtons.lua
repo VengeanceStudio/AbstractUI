@@ -26,6 +26,18 @@ local defaults = {
 -- -----------------------------------------------------------------------------
 function MinimapButtons:OnInitialize()
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
+    
+    -- Register slash command for manual collection
+    SLASH_MINIMAPBUTTONS1 = "/collectbuttons"
+    SLASH_MINIMAPBUTTONS2 = "/mbb"
+    SlashCmdList["MINIMAPBUTTONS"] = function(msg)
+        if MinimapButtons.buttonBar then
+            print("=== MinimapButtons: Manual Collection Triggered ===")
+            MinimapButtons:CollectMinimapButtons()
+        else
+            print("MinimapButtons: Button bar not initialized yet")
+        end
+    end
 end
 
 function MinimapButtons:OnDBReady()
