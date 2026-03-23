@@ -387,8 +387,17 @@ function MinimapButtons:CollectMinimapButtons()
         button:EnableMouse(true)
         button:SetMovable(false)
         
+        -- Disable any scripts that might reposition the button
+        button:SetScript("OnUpdate", nil)
+        button:SetScript("OnDragStart", nil)
+        button:SetScript("OnDragStop", nil)
+        
         -- Apply uniform scale to maintain aspect ratio
         button:SetScale(iconScale)
+        
+        -- Force consistent size (some addons like Zygor use non-standard sizes)
+        local standardSize = db.buttonSize or 32
+        button:SetSize(standardSize, standardSize)
         
         -- Skin the button BEFORE positioning to ensure proper sizing
         self:SkinMinimapButton(button)
@@ -422,6 +431,74 @@ function MinimapButtons:CollectMinimapButtons()
         button:SetPoint("CENTER", self.buttonBar, "CENTER", x, y)
         button:SetFrameStrata("MEDIUM")
         button:SetFrameLevel(self.buttonBar:GetFrameLevel() + 10)
+        
+        -- Store intended position and size for enforcement
+        button._abstractIntendedPosition = {x = x, y = y}
+        button._abstractIntendedSize = {width = standardSize, height = standardSize}
+        
+        -- AGGRESSIVE POSITION LOCKING - prevent any repositioning
+        if not button._abstractPositionLocked then
+            -- Save original functions before overriding
+            button._abstractOriginalSetPoint = button.SetPoint
+            button._abstractOriginalClearAllPoints = button.ClearAllPoints
+            button._abstractOriginalSetAllPoints = button.SetAllPoints
+            button._abstractOriginalSetSize = button.SetSize
+            button._abstractOriginalSetWidth = button.SetWidth
+            button._abstractOriginalSetHeight = button.SetHeight
+            
+            -- Override SetPoint to ONLY allow our exact positioning
+            button.SetPoint = function(self, ...)
+                local point, relativeTo, relativePoint, xOfs, yOfs = ...
+                -- Only allow CENTER point to our buttonBar with exact offsets
+                if relativeTo == MinimapButtons.buttonBar and point == "CENTER" and 
+                   button._abstractIntendedPosition and
+                   math.abs((xOfs or 0) - button._abstractIntendedPosition.x) < 0.5 and
+                   math.abs((yOfs or 0) - button._abstractIntendedPosition.y) < 0.5 then
+                    button._abstractOriginalSetPoint(self, ...)
+                end
+                -- Silently ignore all other SetPoint attempts
+            end
+            
+            -- Override ClearAllPoints to immediately restore position
+            button.ClearAllPoints = function(self)
+                button._abstractOriginalClearAllPoints(self)
+                if button._abstractIntendedPosition then
+                    button._abstractOriginalSetPoint(self, "CENTER", MinimapButtons.buttonBar, "CENTER", 
+                        button._abstractIntendedPosition.x, button._abstractIntendedPosition.y)
+                end
+            end
+            
+            -- Override SetAllPoints to prevent full-frame anchoring
+            button.SetAllPoints = function(self, ...)
+                -- Completely ignore SetAllPoints - buttons shouldn't fill anything
+            end
+            
+            -- Override size functions to enforce our size
+            button.SetSize = function(self, w, h)
+                if button._abstractIntendedSize then
+                    button._abstractOriginalSetSize(self, button._abstractIntendedSize.width, button._abstractIntendedSize.height)
+                end
+            end
+            
+            button.SetWidth = function(self, w)
+                if button._abstractIntendedSize then
+                    button._abstractOriginalSetWidth(self, button._abstractIntendedSize.width)
+                end
+            end
+            
+            button.SetHeight = function(self, h)
+                if button._abstractIntendedSize then
+                    button._abstractOriginalSetHeight(self, button._abstractIntendedSize.height)
+                end
+            end
+            
+            -- Disable movability completely
+            button.SetMovable = function() end
+            button.StartMoving = function() end
+            button.StopMovingOrSizing = function() end
+            
+            button._abstractPositionLocked = true
+        end
         
         -- Force button to be visible and interactable
         button:Show()
