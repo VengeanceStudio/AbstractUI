@@ -328,12 +328,12 @@ function MinimapButtons:SetupButtonBar()
     end
     
     -- Don't collect immediately - wait for all addons to load their buttons
-    -- Use PLAYER_STARTED_MOVING which fires after player has full control
-    -- This ensures all late-loading addon buttons are created
+    -- Danders Frames creates its button 1 second after PLAYER_LOGIN
+    -- So we wait 2 seconds after setup to catch late-loading addon buttons
     print("MinimapButtons: Button bar setup complete, scheduling delayed collection...")
-    C_Timer.After(5, function()
+    C_Timer.After(2, function()
         if self.buttonBar then
-            print("=== MinimapButtons: Initial Collection (5 seconds after setup) ===")
+            print("=== MinimapButtons: Initial Collection (2 seconds after setup) ===")
             self:CollectMinimapButtons()
         else
             print("MinimapButtons: buttonBar is nil, cannot collect")
