@@ -318,9 +318,24 @@ function MinimapButtons:SetupButtonBar()
     -- Collect minimap buttons
     self:CollectMinimapButtons()
     
+    -- Delayed re-collection to catch late-loading addon buttons (like Danders Frames)
+    -- Danders Frames creates its button 1 second after PLAYER_LOGIN, so we wait 2 seconds
+    -- after PLAYER_ENTERING_WORLD to ensure all addon buttons are created
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    
     -- Start collapsed
     self:CollapseButtonBar()
     self.buttonBar:Show()
+end
+
+function MinimapButtons:PLAYER_ENTERING_WORLD()
+    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    C_Timer.After(2, function()
+        if self.buttonBar then
+            print("=== MinimapButtons: Re-collecting for late-loading addons ===")
+            self:CollectMinimapButtons()
+        end
+    end)
 end
 
 -- -----------------------------------------------------------------------------
@@ -468,23 +483,34 @@ function MinimapButtons:CollectMinimapButtons()
                 if #subchildren > 0 then
                     print(string.format("  Checking %d subchildren...", #subchildren))
                     for i, subchild in ipairs(subchildren) do
-                        local subHasScript, subReason = HasInteractionScript(subchild)
-                        local subName = subchild:GetName() or "unnamed"
-                        print(string.format("    [%d] %s: %s", i, subName, subReason))
-                        if subHasScript then
-                            frameToCollect = subchild
-                            hasScript = true
-                            print(string.format("  Using subchild: %s", subName))
-                            break
+                        local subName = subchild:GetName()
+                        
+                        -- Don't use subchildren that are in the ignore list!
+                        if subName and ignoreList[subName] then
+                            print(string.format("    [%d] %s: IGNORED", i, subName))
+                        else
+                            local subHasScript, subReason = HasInteractionScript(subchild)
+                            print(string.format("    [%d] %s: %s", i, subName or "unnamed", subReason))
+                            if subHasScript then
+                                frameToCollect = subchild
+                                hasScript = true
+                                print(string.format("  Using subchild: %s", subName or "unnamed"))
+                                break
+                            end
                         end
                     end
                 end
             end
             
-            -- Collect if it has interaction scripts (allow unnamed if they have scripts)
+            -- Only collect frames with a name (or LibDBIcon pattern)
+            -- Unnamed frames are usually Blizzard UI elements we don't want
             if hasScript then
-                table.insert(buttons, frameToCollect)
-                print("  -> COLLECTED")
+                if not name then
+                    print("  -> SKIPPED (unnamed - likely Blizzard UI)")
+                else
+                    table.insert(buttons, frameToCollect)
+                    print("  -> COLLECTED")
+                end
             else
                 print("  -> SKIPPED (no interaction scripts)")
             end
