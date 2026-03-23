@@ -7,7 +7,6 @@ local MinimapButtons = AbstractUI:NewModule("MinimapButtons", "AceEvent-3.0")
 local defaults = {
     profile = {
         -- Button Bar
-        enabled = true,
         anchor = "CENTER",
         x = 0,
         y = 0,
@@ -143,10 +142,6 @@ end
 -- -----------------------------------------------------------------------------
 function MinimapButtons:SetupButtonBar()
     local db = self.db.profile
-    if not db.enabled then
-        if self.buttonBar then self.buttonBar:Hide() end
-        return
-    end
     
     -- Create button bar frame if it doesn't exist
     if not self.buttonBar then
@@ -570,14 +565,6 @@ function MinimapButtons:GetOptions()
         end,
         args = {
             header = { type = "header", name = "Minimap Button Bar", order = 1},
-            enabled = {
-                name = "Enable Button Bar",
-                desc = "Collect addon minimap buttons into an expandable bar",
-                type = "toggle",
-                order = 2,
-                get = function() return self.db.profile.enabled end,
-                set = function(_, v) self.db.profile.enabled = v; self:SetupButtonBar() end,
-            },
             
             headerPosition = { type = "header", name = "Position", order = 10},
             positionNote = {

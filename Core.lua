@@ -2178,6 +2178,8 @@ function AbstractUI:GetOptions()
             dbKey = "bar"
         elseif name == "Maps" then
             dbKey = "maps"
+        elseif name == "MinimapButtons" then
+            dbKey = "minimapButtons"
         elseif name == "ActionBars" then
             dbKey = "actionbars"
         elseif name == "UnitFrames" then
@@ -2215,6 +2217,8 @@ function AbstractUI:GetOptions()
                 displayName = "Skinning"
             elseif name == "BrokerBar" then 
                 displayName = "Data Brokers"
+            elseif name == "MinimapButtons" then
+                displayName = "Minimap Button Bar"
             elseif name == "CooldownManager" then
                 displayName = "Cooldown Manager"
             elseif name == "ActionBars" then
@@ -2243,6 +2247,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 6
             elseif name == "Maps" then
                 moduleOrder = 7
+            elseif name == "MinimapButtons" then
+                moduleOrder = 7.5
             elseif name == "Tooltips" then
                 moduleOrder = 8
             elseif name == "BrokerBar" then
