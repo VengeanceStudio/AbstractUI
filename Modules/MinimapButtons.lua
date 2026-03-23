@@ -329,11 +329,14 @@ function MinimapButtons:SetupButtonBar()
 end
 
 function MinimapButtons:PLAYER_ENTERING_WORLD()
+    print("MinimapButtons: PLAYER_ENTERING_WORLD fired, scheduling re-collection...")
     self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     C_Timer.After(2, function()
         if self.buttonBar then
             print("=== MinimapButtons: Re-collecting for late-loading addons ===")
             self:CollectMinimapButtons()
+        else
+            print("MinimapButtons: buttonBar is nil, cannot re-collect")
         end
     end)
 end
@@ -439,6 +442,31 @@ function MinimapButtons:CollectMinimapButtons()
     
     print(string.format("Total frames to process: %d", #children))
     print("")
+    
+    -- Direct check for Danders Frames button
+    local dandersButton = _G["LibDBIcon10_DandersFrames"]
+    if dandersButton then
+        local parent = dandersButton:GetParent()
+        local parentName = parent and parent:GetName() or "no parent"
+        local isShown = dandersButton:IsShown()
+        local width, height = dandersButton:GetWidth(), dandersButton:GetHeight()
+        print(string.format("DIRECT CHECK: Found LibDBIcon10_DandersFrames | Parent: %s | Shown: %s | Size: %.1fx%.1f", 
+            parentName, tostring(isShown), width, height))
+        
+        -- Check if it's in our children list
+        local inList = false
+        for _, child in ipairs(children) do
+            if child == dandersButton then
+                inList = true
+                break
+            end
+        end
+        print(string.format("  Is in children list: %s", tostring(inList)))
+        print("")
+    else
+        print("DIRECT CHECK: LibDBIcon10_DandersFrames not found in _G")
+        print("")
+    end
     
     -- Process each child frame
     local frameNum = 0
