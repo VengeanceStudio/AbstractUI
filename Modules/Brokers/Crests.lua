@@ -53,6 +53,9 @@ local function UpdateBrokerText()
         counts[i] = GetCurrencyCount(crest.id)
     end
     
+    -- TEST: Hardcode Myth to 5 to see if zeros are the problem
+    counts[5] = 5
+    
     -- Manually construct the colored display string
     local c1 = RGBToHex(CREST_IDS[1].color.r, CREST_IDS[1].color.g, CREST_IDS[1].color.b)
     local c2 = RGBToHex(CREST_IDS[2].color.r, CREST_IDS[2].color.g, CREST_IDS[2].color.b)
