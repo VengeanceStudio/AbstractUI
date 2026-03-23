@@ -351,19 +351,117 @@ function MinimapButtons:CollectMinimapButtons()
         ["GarrisonLandingPageMinimapButton"] = true,
         ["AbstractUI_MinimapButtonBar"] = true,
         ["AbstractUI_MinimapDragOverlay"] = true,
+        ["MinimapBorder"] = true,
+        ["MinimapBorderTop"] = true,
+        ["MinimapToggleButton"] = true,
     }
+    
+    print("=== MinimapButtons: Starting Collection ===")
+    
+    -- Helper function to check if a frame looks like a minimap button
+    local function IsLikelyMinimapButton(frame)
+        -- Must have reasonable dimensions
+        local width, height = frame:GetWidth(), frame:GetHeight()
+        if not width or not height or width < 10 or height < 10 or width > 100 or height > 100 then
+            return false, string.format("size out of range (%.1fx%.1f)", width or 0, height or 0)
+        end
+        
+        -- Check if it has textures (most addon buttons have icons)
+        local hasTextures = false
+        for i = 1, frame:GetNumRegions() do
+            local region = select(i, frame:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                hasTextures = true
+                break
+            end
+        end
+        
+        -- Must have textures - addon buttons always have icon textures
+        if not hasTextures then
+            return false, "no textures"
+        end
+        
+        -- Check if mouse-enabled (buttons should be interactive)
+        if not frame:IsMouseEnabled() then
+            return false, "not mouse-enabled"
+        end
+        
+        return true, "passed"
+    end
+    
+    -- Helper function to scan children of a parent frame
+    local function ScanChildren(parent, parentName)
+        local found = {}
+        local numChildren = parent:GetNumChildren()
+        print(string.format("Scanning %s children: %d", parentName, numChildren))
+        
+        for i = 1, numChildren do
+            local child = select(i, parent:GetChildren())
+            if child then
+                local name = child:GetName() or "unnamed"
+                local objType = child:GetObjectType()
+                local width, height = child:GetWidth(), child:GetHeight()
+                local mouseEnabled = child:IsMouseEnabled()
+                
+                -- Count textures
+                local textureCount = 0
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region and region:GetObjectType() == "Texture" then
+                        textureCount = textureCount + 1
+                    end
+                end
+                
+                print(string.format("[%d] %s | Type: %s | Size: %.1fx%.1f | Mouse: %s | Textures: %d", 
+                    i, name, objType, width or 0, height or 0, tostring(mouseEnabled), textureCount))
+                
+                -- Skip if it's in our ignore list
+                if child:GetName() and ignoreList[child:GetName()] then
+                    print("  -> IGNORED (in ignore list)")
+                else
+                    local passed, reason = IsLikelyMinimapButton(child)
+                    if passed then
+                        table.insert(found, child)
+                        print("  -> COLLECTED")
+                    else
+                        print(string.format("  -> SKIPPED (%s)", reason))
+                    end
+                end
+            end
+        end
+        
+        return found
+    end
     
     -- Collect all frames parented to Minimap
     local buttons = {}
-    for i = 1, Minimap:GetNumChildren() do
-        local child = select(i, Minimap:GetChildren())
-        if child and child:GetName() and not ignoreList[child:GetName()] then
-            -- Check if it looks like a minimap button (don't require it to be a Button object type)
-            if (child:IsShown() or child:GetWidth() > 0) and child:GetObjectType() ~= "Frame" then
-                table.insert(buttons, child)
+    
+    -- Scan Minimap children
+    local minimapButtons = ScanChildren(Minimap, "Minimap")
+    for _, btn in ipairs(minimapButtons) do
+        table.insert(buttons, btn)
+    end
+    
+    -- Also scan MinimapCluster children (some addons parent there)
+    if MinimapCluster then
+        print("")
+        local clusterButtons = ScanChildren(MinimapCluster, "MinimapCluster")
+        for _, btn in ipairs(clusterButtons) do
+            -- Avoid duplicates
+            local isDuplicate = false
+            for _, existing in ipairs(buttons) do
+                if existing == btn then
+                    isDuplicate = true
+                    break
+                end
+            end
+            if not isDuplicate then
+                table.insert(buttons, btn)
             end
         end
     end
+    
+    print(string.format("=== Collection Complete: %d buttons collected ===", #buttons))
     
     -- Arrange buttons
     for i, button in ipairs(buttons) do
