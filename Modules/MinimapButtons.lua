@@ -555,9 +555,14 @@ function MinimapButtons:CollectMinimapButtons()
     end
     
     print(string.format("=== Collection Complete: %d buttons collected ===", #buttons))
+    print("")
+    print("=== Arranging Buttons ===")
     
     -- Arrange buttons
     for i, button in ipairs(buttons) do
+        local buttonName = button:GetName() or "unnamed"
+        print(string.format("Arranging [%d]: %s", i, buttonName))
+        
         -- Store original parent and settings
         if not self.buttonBar.buttons[button] then
             self.buttonBar.buttons[button] = {
@@ -720,7 +725,15 @@ function MinimapButtons:CollectMinimapButtons()
             end)
             button._AbstractUIButtonBarHooked = true
         end
+        
+        -- Final position check
+        local isShown = button:IsShown()
+        local x, y = button:GetCenter()
+        print(string.format("  Final state: Shown=%s, Center=(%.1f, %.1f)", tostring(isShown), x or 0, y or 0))
     end
+    
+    print(string.format("=== Arrangement Complete: %d buttons arranged ===", #buttons))
+    print("")
     
     -- Calculate bar size when expanded (use effectiveSize for calculations)
     local numButtons = #buttons
