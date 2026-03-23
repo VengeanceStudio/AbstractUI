@@ -47,22 +47,22 @@ local function UpdateBrokerText()
     local displayIcon = nil
     local highestTierWithCrests = nil
     
-    -- Build colored string for top 4 tiers (WoW limits color codes in broker text)
+    -- TEST: Show all 5 in REVERSE order to test 5-color-code limit
     local counts = {}
     for i, crest in ipairs(CREST_IDS) do
         counts[i] = GetCurrencyCount(crest.id)
     end
     
-    -- Show top 4 colored tiers: Veteran, Champion, Hero, Myth (skip Adventurer)
+    -- Reverse order: Myth, Hero, Champion, Veteran, Adventurer
+    local c1 = RGBToHex(CREST_IDS[1].color.r, CREST_IDS[1].color.g, CREST_IDS[1].color.b)
     local c2 = RGBToHex(CREST_IDS[2].color.r, CREST_IDS[2].color.g, CREST_IDS[2].color.b)
     local c3 = RGBToHex(CREST_IDS[3].color.r, CREST_IDS[3].color.g, CREST_IDS[3].color.b)
     local c4 = RGBToHex(CREST_IDS[4].color.r, CREST_IDS[4].color.g, CREST_IDS[4].color.b)
     local c5 = RGBToHex(CREST_IDS[5].color.r, CREST_IDS[5].color.g, CREST_IDS[5].color.b)
     
-    -- Note: Adventurer crests shown in tooltip. WoW broker text has 4 color code limit.
     crestsObj.text = string.format(
-        "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r",
-        c2, counts[2], c3, counts[3], c4, counts[4], c5, counts[5]
+        "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r",
+        c5, counts[5], c4, counts[4], c3, counts[3], c2, counts[2], c1, counts[1]
     )
     
     -- Set icon to highest tier crest that player owns
