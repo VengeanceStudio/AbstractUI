@@ -730,8 +730,8 @@ function Maps:SkinMinimapButton(button)
         end
     end
     
-    -- Also hide specific LibDBIcon border property
-    if button.border then 
+    -- Also hide specific LibDBIcon border property (check if it's an actual texture object)
+    if button.border and type(button.border) == "table" and button.border.SetTexture then 
         button.border:SetTexture()
         button.border:SetAlpha(0)
     end

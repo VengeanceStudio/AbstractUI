@@ -60,8 +60,9 @@ local function UpdateBrokerText()
     local c4 = RGBToHex(CREST_IDS[4].color.r, CREST_IDS[4].color.g, CREST_IDS[4].color.b)
     local c5 = RGBToHex(CREST_IDS[5].color.r, CREST_IDS[5].color.g, CREST_IDS[5].color.b)
     
+    -- Add invisible white character at end to prevent truncation of final |r
     crestsObj.text = string.format(
-        "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r",
+        "|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r/|cff%s%d|r|cffffffff |r",
         c1, counts[1], c2, counts[2], c3, counts[3], c4, counts[4], c5, counts[5]
     )
     
