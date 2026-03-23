@@ -383,12 +383,8 @@ function MinimapButtons:CollectMinimapButtons()
     -- Check for actual interaction scripts rather than just mouse-enabled status
     local buttons = {}
     
-    print("=== MinimapButtons: Starting Collection ===")
-    
     -- Helper function to check if frame has interaction scripts
     local function HasInteractionScript(frame)
-        end
-        
         -- Check for click/mouse interaction scripts (actual scripts, not just capability)
         local hasClick = frame:HasScript("OnClick") and frame:GetScript("OnClick") ~= nil
         local hasMouseUp = frame:HasScript("OnMouseUp") and frame:GetScript("OnMouseUp") ~= nil
@@ -407,8 +403,6 @@ function MinimapButtons:CollectMinimapButtons()
     
     -- Collect children from Minimap, MinimapBackdrop, and MinimapCluster
     local children = {Minimap:GetChildren()}
-    print(string.format("Found %d Minimap children", #children))
-    
     
     if MinimapBackdrop then
         local additional = {MinimapBackdrop:GetChildren()}
@@ -432,38 +426,9 @@ function MinimapButtons:CollectMinimapButtons()
                 table.insert(children, child)
             end
         end
+    end
+    
     -- Process each child frame
-    local frameNum = 0
-    for _, child in ipairs(children) do
-        frameNum = frameNum + 1
-        local name = child:GetName()
-        local objType = child:GetObjectType()
-        
-        -- Count textures to help identify buttons
-        local textureCount = 0
-        local textureInfo = ""
-        pcall(function()
-            for j = 1, child:GetNumRegions() do
-                local region = select(j, child:GetRegions())
-                if region and region:GetObjectType() == "Texture" then
-                    textureCount = textureCount + 1
-                    local texture = region:GetTexture()
-                    if texture and textureInfo == "" then
-                        textureInfo = " (tex: " .. tostring(texture) .. ")"
-                    end
-                end
-            end
-        end)
-        
-        print(string.format("[%d] %s | Type: %s | Textures: %d%s", frameNum, name or "unnamed", objType, textureCount, textureInfo))
-        
-        if name and ignoreList[name] then
-            print("  -> IGNORED (in ignore list)")
-        else
-            local frameToCollect = child
-            local hasScript, reason = HasInteractionScript(frameToCollect)
-            
-            if name then
     for _, child in ipairs(children) do
         local name = child:GetName()
         
@@ -500,6 +465,24 @@ function MinimapButtons:CollectMinimapButtons()
             end
         end
     end
+    
+    -- Arrange buttons
+    for i, button in ipairs(buttons) do
+        -- Store original parent and settings
+        self.buttonBar.buttons[button] = {
+            originalParent = button:GetParent(),
+            originalPoints = {},
+            originalSize = { button:GetSize() },
+        }
+        
+        -- Reparent to button bar
+        button:SetParent(self.buttonBar)
+        button:ClearAllPoints()
+        
+        -- Disable any LibDBIcon repositioning scripts
+        button:SetScript("OnDragStart", nil)
+        button:SetScript("OnDragStop", nil)
+        
         -- Apply uniform scale to maintain aspect ratio
         button:SetScale(iconScale)
         
@@ -634,15 +617,7 @@ function MinimapButtons:CollectMinimapButtons()
             end)
             button._AbstractUIButtonBarHooked = true
         end
-        
-        -- Final position check
-        local isShown = button:IsShown()
-        local x, y = button:GetCenter()
-        print(string.format("  Final state: Shown=%s, Center=(%.1f, %.1f)", tostring(isShown), x or 0, y or 0))
     end
-    
-    print(string.format("=== Arrangement Complete: %d buttons arranged ===", #buttons))
-    print("")
     
     -- Calculate bar size when expanded (use effectiveSize for calculations)
     local numButtons = #buttons
