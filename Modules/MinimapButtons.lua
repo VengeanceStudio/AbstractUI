@@ -342,126 +342,84 @@ function MinimapButtons:CollectMinimapButtons()
         ["Minimap"] = true,
         ["MinimapBackdrop"] = true,
         ["GameTimeFrame"] = true,
+        ["TimeManagerClockButton"] = true,
         ["MinimapZoomIn"] = true,
         ["MinimapZoomOut"] = true,
         ["MiniMapTracking"] = true,
+        ["MiniMapTrackingFrame"] = true,
         ["MiniMapMailFrame"] = true,
+        ["MiniMapBattlefieldFrame"] = true,
+        ["MiniMapWorldMapButton"] = true,
         ["QueueStatusMinimapButton"] = true,
         ["ExpansionLandingPageMinimapButton"] = true,
         ["GarrisonLandingPageMinimapButton"] = true,
+        ["MiniMapInstanceDifficulty"] = true,
+        ["GuildInstanceDifficulty"] = true,
+        ["MiniMapChallengeMode"] = true,
         ["AbstractUI_MinimapButtonBar"] = true,
         ["AbstractUI_MinimapDragOverlay"] = true,
         ["MinimapBorder"] = true,
         ["MinimapBorderTop"] = true,
         ["MinimapToggleButton"] = true,
+        ["MinimapZoneTextButton"] = true,
     }
     
-    print("=== MinimapButtons: Starting Collection ===")
-    
-    -- Helper function to check if a frame looks like a minimap button
-    local function IsLikelyMinimapButton(frame)
-        -- Must have reasonable dimensions
-        local width, height = frame:GetWidth(), frame:GetHeight()
-        if not width or not height or width < 10 or height < 10 or width > 100 or height > 100 then
-            return false, string.format("size out of range (%.1fx%.1f)", width or 0, height or 0)
-        end
-        
-        -- Check if it has textures (most addon buttons have icons)
-        local hasTextures = false
-        for i = 1, frame:GetNumRegions() do
-            local region = select(i, frame:GetRegions())
-            if region and region:GetObjectType() == "Texture" then
-                hasTextures = true
-                break
-            end
-        end
-        
-        -- Must have textures - addon buttons always have icon textures
-        if not hasTextures then
-            return false, "no textures"
-        end
-        
-        -- Check if mouse-enabled (buttons should be interactive)
-        if not frame:IsMouseEnabled() then
-            return false, "not mouse-enabled"
-        end
-        
-        return true, "passed"
-    end
-    
-    -- Helper function to scan children of a parent frame
-    local function ScanChildren(parent, parentName)
-        local found = {}
-        local numChildren = parent:GetNumChildren()
-        print(string.format("Scanning %s children: %d", parentName, numChildren))
-        
-        for i = 1, numChildren do
-            local child = select(i, parent:GetChildren())
-            if child then
-                local name = child:GetName() or "unnamed"
-                local objType = child:GetObjectType()
-                local width, height = child:GetWidth(), child:GetHeight()
-                local mouseEnabled = child:IsMouseEnabled()
-                
-                -- Count textures
-                local textureCount = 0
-                for j = 1, child:GetNumRegions() do
-                    local region = select(j, child:GetRegions())
-                    if region and region:GetObjectType() == "Texture" then
-                        textureCount = textureCount + 1
-                    end
-                end
-                
-                print(string.format("[%d] %s | Type: %s | Size: %.1fx%.1f | Mouse: %s | Textures: %d", 
-                    i, name, objType, width or 0, height or 0, tostring(mouseEnabled), textureCount))
-                
-                -- Skip if it's in our ignore list
-                if child:GetName() and ignoreList[child:GetName()] then
-                    print("  -> IGNORED (in ignore list)")
-                else
-                    local passed, reason = IsLikelyMinimapButton(child)
-                    if passed then
-                        table.insert(found, child)
-                        print("  -> COLLECTED")
-                    else
-                        print(string.format("  -> SKIPPED (%s)", reason))
-                    end
-                end
-            end
-        end
-        
-        return found
-    end
-    
-    -- Collect all frames parented to Minimap
+    -- Collect minimap buttons using proven MBB approach
+    -- Check for actual interaction scripts rather than just mouse-enabled status
     local buttons = {}
     
-    -- Scan Minimap children
-    local minimapButtons = ScanChildren(Minimap, "Minimap")
-    for _, btn in ipairs(minimapButtons) do
-        table.insert(buttons, btn)
+    -- Helper function to check if frame has interaction scripts
+    local function HasInteractionScript(frame)
+        if not frame.HasScript then
+            return false
+        end
+        
+        -- Check for click/mouse interaction scripts (actual scripts, not just capability)
+        local hasClick = frame:HasScript("OnClick") and frame:GetScript("OnClick") ~= nil
+        local hasMouseUp = frame:HasScript("OnMouseUp") and frame:GetScript("OnMouseUp") ~= nil
+        local hasMouseDown = frame:HasScript("OnMouseDown") and frame:GetScript("OnMouseDown") ~= nil
+        
+        return hasClick or hasMouseUp or hasMouseDown
     end
     
-    -- Also scan MinimapCluster children (some addons parent there)
-    if MinimapCluster then
-        print("")
-        local clusterButtons = ScanChildren(MinimapCluster, "MinimapCluster")
-        for _, btn in ipairs(clusterButtons) do
-            -- Avoid duplicates
-            local isDuplicate = false
-            for _, existing in ipairs(buttons) do
-                if existing == btn then
-                    isDuplicate = true
-                    break
-                end
-            end
-            if not isDuplicate then
-                table.insert(buttons, btn)
-            end
+    -- Collect children from both Minimap and MinimapBackdrop
+    local children = {Minimap:GetChildren()}
+    if MinimapBackdrop then
+        local additional = {MinimapBackdrop:GetChildren()}
+        for _, child in ipairs(additional) do
+            table.insert(children, child)
         end
     end
     
-    print(string.format("=== Collection Complete: %d buttons collected ===", #buttons))
+    -- Process each child frame
+    for _, child in ipairs(children) do
+        local name = child:GetName()
+        
+        if name then
+            -- Skip if in ignore list
+            if ignoreList[name] then
+                -- Ignore this frame
+            else
+                local frameToCollect = child
+                
+                -- Smart parent/child handling: If this frame doesn't have OnClick but a child does, use the child
+                if not HasInteractionScript(frameToCollect) then
+                    local subchildren = {frameToCollect:GetChildren()}
+                    for _, subchild in ipairs(subchildren) do
+                        if HasInteractionScript(subchild) then
+                            frameToCollect = subchild
+                            break
+                        end
+                    end
+                end
+                
+                -- Collect if it has interaction scripts
+                if HasInteractionScript(frameToCollect) then
+                    table.insert(buttons, frameToCollect)
+                end
+            end
+        end
+    end
     
     -- Arrange buttons
     for i, button in ipairs(buttons) do
