@@ -32,10 +32,7 @@ function MinimapButtons:OnInitialize()
     SLASH_MINIMAPBUTTONS2 = "/mbb"
     SlashCmdList["MINIMAPBUTTONS"] = function(msg)
         if MinimapButtons.buttonBar then
-            print("=== MinimapButtons: Manual Collection Triggered ===")
             MinimapButtons:CollectMinimapButtons()
-        else
-            print("MinimapButtons: Button bar not initialized yet")
         end
     end
 end
@@ -330,13 +327,9 @@ function MinimapButtons:SetupButtonBar()
     -- Don't collect immediately - wait for all addons to load their buttons
     -- Danders Frames creates its button 1 second after PLAYER_LOGIN
     -- So we wait 2 seconds after setup to catch late-loading addon buttons
-    print("MinimapButtons: Button bar setup complete, scheduling delayed collection...")
     C_Timer.After(2, function()
         if self.buttonBar then
-            print("=== MinimapButtons: Initial Collection (2 seconds after setup) ===")
             self:CollectMinimapButtons()
-        else
-            print("MinimapButtons: buttonBar is nil, cannot collect")
         end
     end)
     
@@ -394,8 +387,6 @@ function MinimapButtons:CollectMinimapButtons()
     
     -- Helper function to check if frame has interaction scripts
     local function HasInteractionScript(frame)
-        if not frame.HasScript then
-            return false, "no HasScript method"
         end
         
         -- Check for click/mouse interaction scripts (actual scripts, not just capability)
@@ -418,9 +409,9 @@ function MinimapButtons:CollectMinimapButtons()
     local children = {Minimap:GetChildren()}
     print(string.format("Found %d Minimap children", #children))
     
+    
     if MinimapBackdrop then
         local additional = {MinimapBackdrop:GetChildren()}
-        print(string.format("Found %d MinimapBackdrop children", #additional))
         for _, child in ipairs(additional) do
             table.insert(children, child)
         end
@@ -428,7 +419,6 @@ function MinimapButtons:CollectMinimapButtons()
     
     if MinimapCluster then
         local clusterChildren = {MinimapCluster:GetChildren()}
-        print(string.format("Found %d MinimapCluster children", #clusterChildren))
         for _, child in ipairs(clusterChildren) do
             -- Avoid duplicates
             local isDuplicate = false
@@ -442,36 +432,6 @@ function MinimapButtons:CollectMinimapButtons()
                 table.insert(children, child)
             end
         end
-    end
-    
-    print(string.format("Total frames to process: %d", #children))
-    print("")
-    
-    -- Direct check for Danders Frames button
-    local dandersButton = _G["LibDBIcon10_DandersFrames"]
-    if dandersButton then
-        local parent = dandersButton:GetParent()
-        local parentName = parent and parent:GetName() or "no parent"
-        local isShown = dandersButton:IsShown()
-        local width, height = dandersButton:GetWidth(), dandersButton:GetHeight()
-        print(string.format("DIRECT CHECK: Found LibDBIcon10_DandersFrames | Parent: %s | Shown: %s | Size: %.1fx%.1f", 
-            parentName, tostring(isShown), width, height))
-        
-        -- Check if it's in our children list
-        local inList = false
-        for _, child in ipairs(children) do
-            if child == dandersButton then
-                inList = true
-                break
-            end
-        end
-        print(string.format("  Is in children list: %s", tostring(inList)))
-        print("")
-    else
-        print("DIRECT CHECK: LibDBIcon10_DandersFrames not found in _G")
-        print("")
-    end
-    
     -- Process each child frame
     local frameNum = 0
     for _, child in ipairs(children) do
@@ -504,29 +464,28 @@ function MinimapButtons:CollectMinimapButtons()
             local hasScript, reason = HasInteractionScript(frameToCollect)
             
             if name then
-                print(string.format("  Parent frame: %s", reason))
-            else
-                print(string.format("  Unnamed frame: %s", reason))
-            end
+    for _, child in ipairs(children) do
+        local name = child:GetName()
+        
+        if name and ignoreList[name] then
+            -- Ignore this frame
+        else
+            local frameToCollect = child
+            local hasScript, reason = HasInteractionScript(frameToCollect)
             
             -- Smart parent/child handling: If this frame doesn't have OnClick but a child does, use the child
             if not hasScript then
                 local subchildren = {frameToCollect:GetChildren()}
                 if #subchildren > 0 then
-                    print(string.format("  Checking %d subchildren...", #subchildren))
                     for i, subchild in ipairs(subchildren) do
                         local subName = subchild:GetName()
                         
                         -- Don't use subchildren that are in the ignore list!
-                        if subName and ignoreList[subName] then
-                            print(string.format("    [%d] %s: IGNORED", i, subName))
-                        else
+                        if not (subName and ignoreList[subName]) then
                             local subHasScript, subReason = HasInteractionScript(subchild)
-                            print(string.format("    [%d] %s: %s", i, subName or "unnamed", subReason))
                             if subHasScript then
                                 frameToCollect = subchild
                                 hasScript = true
-                                print(string.format("  Using subchild: %s", subName or "unnamed"))
                                 break
                             end
                         end
@@ -536,54 +495,11 @@ function MinimapButtons:CollectMinimapButtons()
             
             -- Only collect frames with a name (or LibDBIcon pattern)
             -- Unnamed frames are usually Blizzard UI elements we don't want
-            if hasScript then
-                if not name then
-                    print("  -> SKIPPED (unnamed - likely Blizzard UI)")
-                else
-                    table.insert(buttons, frameToCollect)
-                    print("  -> COLLECTED")
-                end
-            else
-                print("  -> SKIPPED (no interaction scripts)")
+            if hasScript and name then
+                table.insert(buttons, frameToCollect)
             end
         end
-        print("")
     end
-    
-    print(string.format("=== Collection Complete: %d buttons collected ===", #buttons))
-    print("")
-    print("=== Arranging Buttons ===")
-    
-    -- Arrange buttons
-    for i, button in ipairs(buttons) do
-        local buttonName = button:GetName() or "unnamed"
-        print(string.format("Arranging [%d]: %s", i, buttonName))
-        
-        -- Store original parent and settings
-        if not self.buttonBar.buttons[button] then
-            self.buttonBar.buttons[button] = {
-                originalParent = button:GetParent(),
-                originalSize = {button:GetSize()},
-                originalPoints = {},
-            }
-            -- Save original anchor points
-            for j = 1, button:GetNumPoints() do
-                local point, relativeTo, relativePoint, xOfs, yOfs = button:GetPoint(j)
-                table.insert(self.buttonBar.buttons[button].originalPoints, {point, relativeTo, relativePoint, xOfs, yOfs})
-            end
-        end
-        
-        -- Reparent and scale to desired size
-        button:SetParent(self.buttonBar)
-        button:ClearAllPoints()
-        button:EnableMouse(true)
-        button:SetMovable(false)
-        
-        -- Disable any scripts that might reposition the button
-        button:SetScript("OnUpdate", nil)
-        button:SetScript("OnDragStart", nil)
-        button:SetScript("OnDragStop", nil)
-        
         -- Apply uniform scale to maintain aspect ratio
         button:SetScale(iconScale)
         
@@ -631,9 +547,6 @@ function MinimapButtons:CollectMinimapButtons()
         -- AGGRESSIVE POSITION LOCKING - prevent any repositioning
         if not button._abstractPositionLocked then
             -- Save original functions before overriding
-            button._abstractOriginalSetPoint = button.SetPoint
-            button._abstractOriginalClearAllPoints = button.ClearAllPoints
-            button._abstractOriginalSetAllPoints = button.SetAllPoints
             button._abstractOriginalSetSize = button.SetSize
             button._abstractOriginalSetWidth = button.SetWidth
             button._abstractOriginalSetHeight = button.SetHeight
@@ -800,14 +713,6 @@ function MinimapButtons:CollapseButtonBar()
     for button, data in pairs(self.buttonBar.buttons) do
         if button then button:Hide() end
     end
-end
-
--- -----------------------------------------------------------------------------
--- COLOR MANAGEMENT
--- -----------------------------------------------------------------------------
-function MinimapButtons:UpdateButtonBarColor()
-    if not self.buttonBarTab or not self.buttonBarTab.bar then return end
-    
     local db = self.db.profile
     local r, g, b, a
     
