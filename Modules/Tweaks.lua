@@ -27,6 +27,7 @@ local defaults = {
         questFrameCustomPosition = false,
         recolorDelvePins = true,
         delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
+        bountifulDelvePinColor = { r = 1.0, g = 0.84, b = 0.0, a = 1.0 },
         oneKeyFishing = false,
         oneKeyFishingFirstTime = true,
         customWhisperSound = false,
@@ -102,6 +103,25 @@ function Tweaks:OnDBReady()
         end
         if type(self.db.profile.delvePinColor.a) ~= "number" then
             self.db.profile.delvePinColor.a = 1.0
+        end
+    end
+    
+    -- Ensure bountiful delve pin color is properly initialized
+    if not self.db.profile.bountifulDelvePinColor or type(self.db.profile.bountifulDelvePinColor) ~= "table" then
+        self.db.profile.bountifulDelvePinColor = { r = 1.0, g = 0.84, b = 0.0, a = 1.0 }
+    else
+        -- Ensure all color values are numbers
+        if type(self.db.profile.bountifulDelvePinColor.r) ~= "number" then
+            self.db.profile.bountifulDelvePinColor.r = 1.0
+        end
+        if type(self.db.profile.bountifulDelvePinColor.g) ~= "number" then
+            self.db.profile.bountifulDelvePinColor.g = 0.84
+        end
+        if type(self.db.profile.bountifulDelvePinColor.b) ~= "number" then
+            self.db.profile.bountifulDelvePinColor.b = 0.0
+        end
+        if type(self.db.profile.bountifulDelvePinColor.a) ~= "number" then
+            self.db.profile.bountifulDelvePinColor.a = 1.0
         end
     end
     
@@ -1076,6 +1096,41 @@ function Tweaks:GetOptions()
                     self:RefreshWorldMap()
                 end,
             },
+            bountifulDelvePinColor = {
+                name = "Bountiful Delve Pin Color",
+                desc = "Color to use for Bountiful Delve entrance pins on the world map (delves with a weekly bonus reward)",
+                type = "color",
+                order = 19.5,
+                hasAlpha = false,
+                disabled = function() return not self.db.profile.recolorDelvePins end,
+                get = function()
+                    local c = self.db.profile.bountifulDelvePinColor
+                    if type(c) ~= "table" then
+                        return 1.0, 0.84, 0.0
+                    end
+                    local r = type(c.r) == "number" and c.r or 1.0
+                    local g = type(c.g) == "number" and c.g or 0.84
+                    local b = type(c.b) == "number" and c.b or 0.0
+                    return r, g, b
+                end,
+                set = function(_, r, g, b)
+                    -- Ensure we have a valid color table
+                    if type(self.db.profile.bountifulDelvePinColor) ~= "table" then
+                        self.db.profile.bountifulDelvePinColor = {}
+                    end
+                    -- Only save if we got numbers
+                    if type(r) == "number" then
+                        self.db.profile.bountifulDelvePinColor.r = r
+                    end
+                    if type(g) == "number" then
+                        self.db.profile.bountifulDelvePinColor.g = g
+                    end
+                    if type(b) == "number" then
+                        self.db.profile.bountifulDelvePinColor.b = b
+                    end
+                    self:RefreshWorldMap()
+                end,
+            },
             oneKeyFishing = {
                 name = "One-Key Fishing (Set keybind in Options > Keybindings > AbstractUI)",
                 desc = "Enables a single keybind for both casting and hooking fish using Soft Targeting accessibility.\n\n" ..
@@ -1671,13 +1726,20 @@ function Tweaks:ColorDelvePins()
     if not WorldMapFrame:IsShown() then return end
     if not self.db or not self.db.profile.recolorDelvePins then return end
     
-    local colorTable = self.db.profile.delvePinColor
-    local r, g, b = colorTable.r, colorTable.g, colorTable.b
+    local normalColor = self.db.profile.delvePinColor
+    local bountifulColor = self.db.profile.bountifulDelvePinColor
+    local r, g, b = normalColor.r, normalColor.g, normalColor.b
+    local br, bg, bb = bountifulColor.r, bountifulColor.g, bountifulColor.b
     
-    -- Validate color values are numbers
+    -- Validate normal color values are numbers
     if type(r) ~= "number" then r = 0.2 end
     if type(g) ~= "number" then g = 1.0 end
     if type(b) ~= "number" then b = 0.8 end
+    
+    -- Validate bountiful color values are numbers
+    if type(br) ~= "number" then br = 1.0 end
+    if type(bg) ~= "number" then bg = 0.84 end
+    if type(bb) ~= "number" then bb = 0.0 end
     
     -- Get all children from the map scroll container
     local pins = {WorldMapFrame.ScrollContainer.Child:GetChildren()}
@@ -1697,7 +1759,36 @@ function Tweaks:ColorDelvePins()
             
             -- Apply color to delve pins
             if isDelve then
-                pin.Texture:SetVertexColor(r, g, b)
+                -- Check if this is a bountiful delve
+                -- Bountiful delves have widget data (widgetSetID) or specific texture indicators
+                local isBountiful = false
+                
+                -- Method 1: Check for widget data (most reliable)
+                if pin.poiInfo.widgetSetID and pin.poiInfo.widgetSetID > 0 then
+                    isBountiful = true
+                end
+                
+                -- Method 2: Check for tooltip text containing "Bountiful"
+                if not isBountiful and pin.poiInfo.description then
+                    if string.find(string.lower(pin.poiInfo.description), "bountiful") then
+                        isBountiful = true
+                    end
+                end
+                
+                -- Method 3: Check for specific atlas variations
+                if not isBountiful and atlasName then
+                    if string.find(string.lower(atlasName), "bountiful") or 
+                       string.find(string.lower(atlasName), "delves%-portal%-icon%-available") then
+                        isBountiful = true
+                    end
+                end
+                
+                -- Apply appropriate color
+                if isBountiful then
+                    pin.Texture:SetVertexColor(br, bg, bb)
+                else
+                    pin.Texture:SetVertexColor(r, g, b)
+                end
                 pin.Texture:SetDesaturated(false)
             end
         end
@@ -1724,13 +1815,20 @@ function Tweaks:ColorMinimapDelvePins()
     if not Minimap then return end
     if not self.db or not self.db.profile.recolorDelvePins then return end
     
-    local colorTable = self.db.profile.delvePinColor
-    local r, g, b = colorTable.r, colorTable.g, colorTable.b
+    local normalColor = self.db.profile.delvePinColor
+    local bountifulColor = self.db.profile.bountifulDelvePinColor
+    local r, g, b = normalColor.r, normalColor.g, normalColor.b
+    local br, bg, bb = bountifulColor.r, bountifulColor.g, bountifulColor.b
     
-    -- Validate color values are numbers
+    -- Validate normal color values are numbers
     if type(r) ~= "number" then r = 0.2 end
     if type(g) ~= "number" then g = 1.0 end
     if type(b) ~= "number" then b = 0.8 end
+    
+    -- Validate bountiful color values are numbers
+    if type(br) ~= "number" then br = 1.0 end
+    if type(bg) ~= "number" then bg = 0.84 end
+    if type(bb) ~= "number" then bb = 0.0 end
     
     -- Get current map for player
     local mapID = C_Map.GetBestMapForUnit("player")
@@ -1739,8 +1837,9 @@ function Tweaks:ColorMinimapDelvePins()
     local poiInfos = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
     if not poiInfos then return end
     
-    -- Build list of delve POI IDs
+    -- Build list of delve POI IDs with bountiful status
     local delvePOIs = {}
+    local bountifulPOIs = {}
     for _, poiID in ipairs(poiInfos) do
         local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
         if poiInfo then
@@ -1749,6 +1848,16 @@ function Tweaks:ColorMinimapDelvePins()
             
             if string.find(string.lower(atlasName), "delve") or string.find(string.lower(name), "delve") then
                 delvePOIs[poiID] = true
+                
+                -- Check if this is a bountiful delve
+                if poiInfo.widgetSetID and poiInfo.widgetSetID > 0 then
+                    bountifulPOIs[poiID] = true
+                elseif poiInfo.description and string.find(string.lower(poiInfo.description), "bountiful") then
+                    bountifulPOIs[poiID] = true
+                elseif atlasName and (string.find(string.lower(atlasName), "bountiful") or 
+                       string.find(string.lower(atlasName), "delves%-portal%-icon%-available")) then
+                    bountifulPOIs[poiID] = true
+                end
             end
         end
     end
@@ -1758,10 +1867,16 @@ function Tweaks:ColorMinimapDelvePins()
         local child = select(i, Minimap:GetChildren())
         if child then
             local shouldColor = false
+            local isBountiful = false
+            local poiID = nil
             
             -- Method 1: Check areaPoiID
             if child.areaPoiID and delvePOIs[child.areaPoiID] then
                 shouldColor = true
+                poiID = child.areaPoiID
+                if bountifulPOIs[poiID] then
+                    isBountiful = true
+                end
             end
             
             -- Method 2: Check texture atlas
@@ -1772,6 +1887,11 @@ function Tweaks:ColorMinimapDelvePins()
                         local atlas = region:GetAtlas()
                         if atlas and string.find(string.lower(atlas), "delve") then
                             shouldColor = true
+                            -- Check if atlas indicates bountiful
+                            if string.find(string.lower(atlas), "bountiful") or 
+                               string.find(string.lower(atlas), "available") then
+                                isBountiful = true
+                            end
                             break
                         end
                     end
@@ -1784,23 +1904,37 @@ function Tweaks:ColorMinimapDelvePins()
                 local name = child.poiInfo.name or ""
                 if string.find(string.lower(atlasName), "delve") or string.find(string.lower(name), "delve") then
                     shouldColor = true
+                    -- Check for bountiful indicators
+                    if child.poiInfo.widgetSetID and child.poiInfo.widgetSetID > 0 then
+                        isBountiful = true
+                    elseif child.poiInfo.description and string.find(string.lower(child.poiInfo.description), "bountiful") then
+                        isBountiful = true
+                    elseif string.find(string.lower(atlasName), "bountiful") or 
+                           string.find(string.lower(atlasName), "available") then
+                        isBountiful = true
+                    end
                 end
             end
             
             -- Apply color if this is a delve pin
             if shouldColor then
+                local finalR, finalG, finalB = r, g, b
+                if isBountiful then
+                    finalR, finalG, finalB = br, bg, bb
+                end
+                
                 -- Color all texture regions
                 for j = 1, child:GetNumRegions() do
                     local region = select(j, child:GetRegions())
                     if region and region:GetObjectType() == "Texture" then
-                        region:SetVertexColor(r, g, b)
+                        region:SetVertexColor(finalR, finalG, finalB)
                         region:SetDesaturated(false)
                     end
                 end
                 
                 -- Also try specific Texture property
                 if child.Texture then
-                    child.Texture:SetVertexColor(r, g, b)
+                    child.Texture:SetVertexColor(finalR, finalG, finalB)
                     child.Texture:SetDesaturated(false)
                 end
             end
