@@ -533,6 +533,8 @@ function MinimapButtons:CollectMinimapButtons()
             button._abstractOriginalSetSize = button.SetSize
             button._abstractOriginalSetWidth = button.SetWidth
             button._abstractOriginalSetHeight = button.SetHeight
+            button._abstractOriginalSetPoint = button.SetPoint
+            button._abstractOriginalClearAllPoints = button.ClearAllPoints
             
             -- Override SetPoint to ONLY allow our exact positioning
             button.SetPoint = function(self, ...)
