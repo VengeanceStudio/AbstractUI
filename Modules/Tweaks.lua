@@ -1069,29 +1069,34 @@ function Tweaks:GetOptions()
                 hasAlpha = false,
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
+                    if not self.db or not self.db.profile then
+                        return {0.2, 1.0, 0.8, 1.0}
+                    end
                     local c = self.db.profile.delvePinColor
                     if type(c) ~= "table" then
-                        return 0.2, 1.0, 0.8
+                        return {0.2, 1.0, 0.8, 1.0}
                     end
                     local r = type(c.r) == "number" and c.r or 0.2
                     local g = type(c.g) == "number" and c.g or 1.0
                     local b = type(c.b) == "number" and c.b or 0.8
-                    return r, g, b
+                    return {r, g, b, 1.0}
                 end,
-                set = function(_, r, g, b)
+                set = function(_, colorTable)
                     -- Ensure we have a valid color table
                     if type(self.db.profile.delvePinColor) ~= "table" then
                         self.db.profile.delvePinColor = {}
                     end
-                    -- Only save if we got numbers
-                    if type(r) == "number" then
-                        self.db.profile.delvePinColor.r = r
-                    end
-                    if type(g) == "number" then
-                        self.db.profile.delvePinColor.g = g
-                    end
-                    if type(b) == "number" then
-                        self.db.profile.delvePinColor.b = b
+                    -- colorTable is {r, g, b, a}
+                    if type(colorTable) == "table" then
+                        if type(colorTable[1]) == "number" then
+                            self.db.profile.delvePinColor.r = colorTable[1]
+                        end
+                        if type(colorTable[2]) == "number" then
+                            self.db.profile.delvePinColor.g = colorTable[2]
+                        end
+                        if type(colorTable[3]) == "number" then
+                            self.db.profile.delvePinColor.b = colorTable[3]
+                        end
                     end
                     self:RefreshWorldMap()
                 end,
@@ -1104,29 +1109,34 @@ function Tweaks:GetOptions()
                 hasAlpha = false,
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
+                    if not self.db or not self.db.profile then
+                        return {1.0, 0.84, 0.0, 1.0}
+                    end
                     local c = self.db.profile.bountifulDelvePinColor
                     if type(c) ~= "table" then
-                        return 1.0, 0.84, 0.0
+                        return {1.0, 0.84, 0.0, 1.0}
                     end
                     local r = type(c.r) == "number" and c.r or 1.0
                     local g = type(c.g) == "number" and c.g or 0.84
                     local b = type(c.b) == "number" and c.b or 0.0
-                    return r, g, b
+                    return {r, g, b, 1.0}
                 end,
-                set = function(_, r, g, b)
+                set = function(_, colorTable)
                     -- Ensure we have a valid color table
                     if type(self.db.profile.bountifulDelvePinColor) ~= "table" then
                         self.db.profile.bountifulDelvePinColor = {}
                     end
-                    -- Only save if we got numbers
-                    if type(r) == "number" then
-                        self.db.profile.bountifulDelvePinColor.r = r
-                    end
-                    if type(g) == "number" then
-                        self.db.profile.bountifulDelvePinColor.g = g
-                    end
-                    if type(b) == "number" then
-                        self.db.profile.bountifulDelvePinColor.b = b
+                    -- colorTable is {r, g, b, a}
+                    if type(colorTable) == "table" then
+                        if type(colorTable[1]) == "number" then
+                            self.db.profile.bountifulDelvePinColor.r = colorTable[1]
+                        end
+                        if type(colorTable[2]) == "number" then
+                            self.db.profile.bountifulDelvePinColor.g = colorTable[2]
+                        end
+                        if type(colorTable[3]) == "number" then
+                            self.db.profile.bountifulDelvePinColor.b = colorTable[3]
+                        end
                     end
                     self:RefreshWorldMap()
                 end,
