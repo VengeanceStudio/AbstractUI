@@ -406,7 +406,8 @@ function SmartAnchor(tooltip, owner)
     tooltip:SetPoint(vP, owner, rP, 0, yO)
     
     local tW = tonumber(tooltip:GetWidth()) or 200
-    local oC = tonumber(owner:GetCenter()) or sW/2
+    local oCx = owner:GetCenter()
+    local oC = tonumber(oCx) or sW/2
     
     if (oC + tW/2) > sW then 
         tooltip:SetPoint(vP.."RIGHT", owner, rP.."RIGHT", 0, yO)
