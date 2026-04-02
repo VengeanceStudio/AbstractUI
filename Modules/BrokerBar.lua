@@ -57,7 +57,8 @@ local LABEL_MAP_FULL = {
     AbstractClock = "Clock", AbstractBags = "Bags", AbstractFriends = "Friends", 
     AbstractGold = "Gold", AbstractGuild = "Guild", AbstractLocation = "Location", 
     AbstractSystem = "System", AbstractToken = "Token", AbstractILvl = "Item Level",
-    AbstractTimePlayed = "Abstract Time Played", AbstractCrests = "Crests"
+    AbstractTimePlayed = "Abstract Time Played", AbstractCrests = "Crests",
+    AbstractCatalyst = "Catalyst"
 }
 
 local LABEL_MAP_SHORT = { 
@@ -65,7 +66,8 @@ local LABEL_MAP_SHORT = {
     AbstractClock = "Time", AbstractBags = "Bags", AbstractFriends = "Frnd", 
     AbstractGold = "Gold", AbstractGuild = "Gld", AbstractLocation = "Loc", 
     AbstractSystem = "Sys", AbstractToken = "Tok", AbstractILvl = "iLvL",
-    AbstractTimePlayed = "Played", AbstractCrests = "Crsts" 
+    AbstractTimePlayed = "Played", AbstractCrests = "Crsts",
+    AbstractCatalyst = "Cat"
 }
 
 local SHORTEN_REPLACEMENTS = {
