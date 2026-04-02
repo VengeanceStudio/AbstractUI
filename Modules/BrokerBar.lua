@@ -1325,7 +1325,8 @@ function BrokerBar:GetPluginOptions()
         AbstractVolume = "Abstract Volume", 
         AbstractILvl = "Abstract Item Level",
         AbstractTimePlayed = "Abstract Time Played",
-        AbstractCrests = "Abstract Crests" 
+        AbstractCrests = "Abstract Crests",
+        AbstractCatalyst = "Abstract Catalyst"
     }
 
     for name in pairs(widgets) do
