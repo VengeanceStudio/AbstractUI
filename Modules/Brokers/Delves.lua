@@ -4,8 +4,9 @@
 local LDB = LibStub("LibDataBroker-1.1")
 local delvesObj
 
--- Valeera Sanguinar Faction ID (Delves companion)
-local VALEERA_FACTION_ID = 2641
+-- Valeera Sanguinar Perk Program ID (Delves companion)
+local VALEERA_PERK_PROGRAM_ID = 1  -- Brann Bronzebeard uses ID 1, Valeera likely uses a different constant
+local VALEERA_TRAIT_CONFIG_ID = nil  -- Will be discovered dynamically
 
 -- Format number with thousands separator
 local function FormatNumber(num)
@@ -18,18 +19,66 @@ local function FormatNumber(num)
     return formatted
 end
 
--- Get Valeera's current data
-local function GetValeeraData()
-    if not C_MajorFactions then return nil end
+-- Find Valeera's trait config ID dynamically
+local function FindValeeraTraitConfig()
+    if not C_Traits or not C_Traits.GetConfigIDsByType then return nil end
     
-    local factionData = C_MajorFactions.GetMajorFactionData(VALEERA_FACTION_ID)
-    if not factionData then return nil end
+    -- Type 3 is for delve companions (Brann/Valeera)
+    local configIDs = C_Traits.GetConfigIDsByType(3)
+    if not configIDs or #configIDs == 0 then return nil end
+    
+    -- Find the active config (Valeera)
+    for _, configID in ipairs(configIDs) do
+        local configInfo = C_Traits.GetConfigInfo(configID)
+        if configInfo and configInfo.type == 3 then
+            -- Check if this config has nodes (is active/available)
+            local treeInfo = C_Traits.GetTreeInfo(configID)
+            if treeInfo then
+                return configID
+            end
+        end
+    end
+    
+    return configIDs[1]  -- Fallback to first config
+end
+
+-- Get Valeera's current data using Traits/Perks system
+local function GetValeeraData()
+    if not C_Traits then return nil end
+    
+    if not VALEERA_TRAIT_CONFIG_ID then
+        VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
+        if not VALEERA_TRAIT_CONFIG_ID then return nil end
+    end
+    
+    local configInfo = C_Traits.GetConfigInfo(VALEERA_TRAIT_CONFIG_ID)
+    if not configInfo then return nil end
+    
+    local treeInfo = C_Traits.GetTreeInfo(VALEERA_TRAIT_CONFIG_ID)
+    if not treeInfo then return nil end
+    
+    -- Get trait currency info for XP
+    local traitCurrencyID = C_Traits.GetTraitCurrencyForTreeID(VALEERA_TRAIT_CONFIG_ID)
+    local currencyInfo = nil
+    if traitCurrencyID then
+        currencyInfo = C_CurrencyInfo.GetCurrencyInfo(traitCurrencyID)
+    end
+    
+    local currentXP = 0
+    local maxXP = 1
+    
+    if currencyInfo then
+        currentXP = currencyInfo.quantity or 0
+        maxXP = currencyInfo.maxQuantity or 1
+        if maxXP <= 0 then maxXP = 1 end
+    end
     
     return {
-        level = factionData.renownLevel or 0,
-        currentXP = factionData.renownReputationEarned or 0,
-        maxXP = factionData.renownLevelThreshold or 1,
-        isMaxLevel = factionData.renownLevel >= (C_MajorFactions.GetMaximumRenownLevel(VALEERA_FACTION_ID) or 999)
+        level = configInfo.activeConfigID and (treeInfo.spentAmountRequired or 0) or 0,
+        currentXP = currentXP,
+        maxXP = maxXP,
+        isMaxLevel = false,  -- Will refine based on actual max
+        name = configInfo.name or "Valeera Sanguinar"
     }
 end
 
@@ -126,29 +175,34 @@ end
 delvesObj = LDB:NewDataObject("AbstractDelves", {
     type = "data source",
     text = "...",
-    icon = 5926728,  -- Delves/Valeera icon (will be updated)
+    icon = "Interface\\Icons\\INV_Misc_Head_Dragon_Bronze",  -- Delves icon placeholder
     OnEnter = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_NONE")
         SmartAnchor(GameTooltip, self)
         local r, g, b = GetColor()
-        GameTooltip:AddLine("Valeera Sanguinar", r, g, b)
-        GameTooltip:AddLine(" ")
         
         local data = GetValeeraData()
+        local title = (data and data.name) or "Valeera Sanguinar"
+        GameTooltip:AddLine(title, r, g, b)
+        GameTooltip:AddLine(" ")
+        
         if not data then
             GameTooltip:AddLine("Companion data not available", 0.8, 0.8, 0.8)
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Complete the Delves intro quest", 0.6, 0.6, 0.6)
+            GameTooltip:AddLine("or visit the Delves hub to unlock", 0.6, 0.6, 0.6)
         else
             -- Current status
             GameTooltip:AddDoubleLine("Level:", tostring(data.level), 1, 1, 1, 1, 1, 1)
             
-            if not data.isMaxLevel then
+            if not data.isMaxLevel and data.maxXP > 0 then
                 local xpText = string.format("%s / %s (%d%%)", 
                     FormatNumber(data.currentXP), 
                     FormatNumber(data.maxXP),
                     math.floor((data.currentXP / data.maxXP) * 100))
                 GameTooltip:AddDoubleLine("Experience:", xpText, 1, 1, 1, 1, 1, 1)
-            else
-                GameTooltip:AddDoubleLine("Experience:", "MAX LEVEL", 1, 1, 1, 0, 1, 0)
+            elseif data.currentXP > 0 then
+                GameTooltip:AddDoubleLine("Experience:", FormatNumber(data.currentXP), 1, 1, 1, 1, 1, 1)
             end
             
             -- Hourly gains
@@ -177,27 +231,15 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
 
 -- Initialize
 local function Initialize()
-    -- Set proper icon if available
-    if C_MajorFactions then
-        local factionData = C_MajorFactions.GetMajorFactionData(VALEERA_FACTION_ID)
-        if factionData and factionData.textureKit then
-            -- Use the faction's icon if available
-            local atlasName = "MajorFactions_Icons_" .. factionData.textureKit .. "64"
-            if C_Texture and C_Texture.GetAtlasID then
-                local atlasID = C_Texture.GetAtlasID(atlasName)
-                if atlasID then
-                    delvesObj.icon = atlasID
-                end
-            end
-        end
-    end
+    -- Try to find Valeera's config
+    VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
     
     UpdateBrokerText()
     UpdateHistory()
 end
 
--- Update on load (delayed to ensure BrokerBar DB is ready)
-C_Timer.After(2, Initialize)
+-- Update on load (delayed to ensure BrokerBar DB is ready and player data loaded)
+C_Timer.After(3, Initialize)
 
 -- Update every 30 seconds (delve companion XP changes slowly)
 C_Timer.NewTicker(30, function()
@@ -205,12 +247,21 @@ C_Timer.NewTicker(30, function()
     UpdateHistory()
 end)
 
--- Listen for major faction renown changes
+-- Listen for trait system changes
 local frame = CreateFrame("Frame")
-frame:RegisterEvent("MAJOR_FACTION_RENOWN_LEVEL_CHANGED")
-frame:RegisterEvent("MAJOR_FACTION_UNLOCKED")
-frame:SetScript("OnEvent", function(self, event, factionID)
-    if factionID == VALEERA_FACTION_ID or not factionID then
+frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+frame:RegisterEvent("TRAIT_CONFIG_CREATED")
+frame:RegisterEvent("TRAIT_NODE_CHANGED")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:SetScript("OnEvent", function(self, event, ...)
+    -- Re-find config on world enter (handles zone changes, reloads)
+    if event == "PLAYER_ENTERING_WORLD" then
+        C_Timer.After(2, function()
+            VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
+            UpdateBrokerText()
+            UpdateHistory()
+        end)
+    else
         UpdateBrokerText()
         UpdateHistory()
     end
