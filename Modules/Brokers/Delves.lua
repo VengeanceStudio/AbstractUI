@@ -157,12 +157,12 @@ local function UpdateBrokerText()
     end
     
     if data.isMaxLevel then
-        delvesObj.text = string.format("Lvl %d (Max)", data.level)
+        delvesObj.text = string.format("Level %d (Max)", data.level)
     elseif data.maxXP > 0 then
         local xpPercent = math.floor((data.currentXP / data.maxXP) * 100)
-        delvesObj.text = string.format("Lvl %d (%d%%)", data.level, xpPercent)
+        delvesObj.text = string.format("Level %d (%d%%)", data.level, xpPercent)
     else
-        delvesObj.text = string.format("Lvl %d", data.level)
+        delvesObj.text = string.format("Level %d", data.level)
     end
 end
 
@@ -170,7 +170,7 @@ end
 delvesObj = LDB:NewDataObject("AbstractDelves", {
     type = "data source",
     text = "...",
-    icon = "Interface\\Icons\\INV_Misc_Head_Dragon_Bronze",  -- Delves icon placeholder
+    icon = 6025441,  -- UI-Delves icon
     OnEnter = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_NONE")
         SmartAnchor(GameTooltip, self)
