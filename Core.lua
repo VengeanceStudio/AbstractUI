@@ -2343,9 +2343,27 @@ function AbstractUI:ExportProfile()
         return
     end
     
+    -- Create a clean copy of the profile without character-specific data
+    local cleanProfile = {}
+    
+    -- Exclude character-specific data keys
+    local excludeKeys = {
+        goldData = true,
+        tokenHistory = true,
+        valeeraHistory = true,
+        goldDeleteSelection = true,
+    }
+    
+    -- Copy profile data, excluding character-specific keys
+    for key, value in pairs(self.db.profile) do
+        if not excludeKeys[key] then
+            cleanProfile[key] = value
+        end
+    end
+    
     -- Get the entire database including all namespaces
     local exportData = {
-        main = self.db.profile,
+        main = cleanProfile,  -- Use cleaned profile instead of raw profile
         namespaces = {}
     }
     
@@ -2365,6 +2383,8 @@ function AbstractUI:ExportProfile()
     else
         print("|cffff8800AbstractUI Warning:|r No namespace objects found to export")
     end
+    
+    print("|cff00ff00AbstractUI:|r Character-specific data excluded from export")
     
     -- Serialize the data
     local serialized = AceSerializer:Serialize(exportData)
