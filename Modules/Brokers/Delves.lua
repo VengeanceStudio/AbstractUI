@@ -17,73 +17,62 @@ end
 
 -- Get active delve companion data (Brann or Valeera)
 local function GetCompanionData()
-    -- Try C_TraitConfig first (most likely API for companion talents)
-    if C_TraitConfig then
-        local configID = C_TraitConfig.GetActiveConfigID()
-        
-        if not configID and C_TraitConfig.GetConfigsByType then
-            local configs = C_TraitConfig.GetConfigsByType(3) -- Type 3 = delve companions
-            if configs and #configs > 0 then
-                configID = configs[1].ID
-            end
+    if not C_DelvesUI or not C_GossipInfo then return nil end
+    
+    -- Try to get active companion ID from DelvesUI
+    local companionID = nil
+    
+    -- Check if we can get it from the Delves frame if it's open
+    if EncounterJournal and EncounterJournal.encounter then
+        local progressFrame = EncounterJournal.encounter.overviewScroll.child.loreDescription:GetParent():GetParent()
+        if progressFrame and progressFrame.majorFactionData and progressFrame.majorFactionData.playerCompanionID then
+            companionID = progressFrame.majorFactionData.playerCompanionID
         end
-        
-        if configID then
-            local configInfo = C_TraitConfig.GetConfigInfo(configID)
-            
-            if configInfo and C_TraitConfig.GetTreeIDs then
-                local treeIDs = C_TraitConfig.GetTreeIDs(configID)
-                
-                if treeIDs and #treeIDs > 0 then
-                    local treeID = treeIDs[1]
-                    
-                    if C_Traits and C_Traits.GetTreeInfo then
-                        local treeInfo = C_Traits.GetTreeInfo(configID, treeID)
-                        
-                        if treeInfo then
-                            -- Try to get currency info
-                            local currentXP = 0
-                            local maxXP = 1
-                            
-                            if treeInfo.currency and #treeInfo.currency > 0 then
-                                local currencyID = treeInfo.currency[1].traitCurrencyID
-                                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyID)
-                                if currencyInfo then
-                                    currentXP = currencyInfo.quantity or 0
-                                    maxXP = currencyInfo.maxQuantity or 1
-                                    if maxXP <= 0 then maxXP = 1 end
-                                end
-                            end
-                            
-                            -- Calculate level from active nodes
-                            local level = 0
-                            if C_Traits.GetTreeNodes then
-                                local nodes = C_Traits.GetTreeNodes(configID, treeID)
-                                if nodes then
-                                    for _, nodeID in ipairs(nodes) do
-                                        local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
-                                        if nodeInfo and nodeInfo.currentRank then
-                                            level = level + nodeInfo.currentRank
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            return {
-                                level = level,
-                                currentXP = currentXP,
-                                maxXP = maxXP,
-                                isMaxLevel = false,
-                                name = configInfo.name or "Delve Companion"
-                            }
-                        end
-                    end
+    end
+    
+    -- If we don't have companion ID from the frame, try hardcoded values
+    -- Companion IDs: Brann = 1, Valeera = 2 (these are the known delve companions)
+    if not companionID then
+        -- Try Valeera first (ID 2), then Brann (ID 1)
+        for _, testID in ipairs({2, 1}) do
+            local factionID = C_DelvesUI.GetFactionForCompanion(testID)
+            if factionID and factionID > 0 then
+                local repInfo = C_GossipInfo.GetFriendshipReputation(factionID)
+                if repInfo and repInfo.friendshipFactionID and repInfo.friendshipFactionID > 0 then
+                    companionID = testID
+                    break
                 end
             end
         end
     end
     
-    return nil
+    if not companionID then return nil end
+    
+    -- Get faction ID for the companion
+    local factionID = C_DelvesUI.GetFactionForCompanion(companionID)
+    if not factionID or factionID == 0 then return nil end
+    
+    -- Get friendship reputation data
+    local rankInfo = C_GossipInfo.GetFriendshipReputationRanks(factionID)
+    local repInfo = C_GossipInfo.GetFriendshipReputation(factionID)
+    
+    if not rankInfo or not repInfo then return nil end
+    
+    -- Calculate current XP progress on this level
+    local currentXP = repInfo.standing - repInfo.reactionThreshold
+    local maxXP = repInfo.nextThreshold - repInfo.reactionThreshold
+    
+    if maxXP <= 0 then maxXP = 1 end
+    if currentXP < 0 then currentXP = 0 end
+    
+    return {
+        level = rankInfo.currentLevel or 0,
+        currentXP = currentXP,
+        maxXP = maxXP,
+        isMaxLevel = (rankInfo.currentLevel >= rankInfo.maxLevel),
+        name = repInfo.name or "Delve Companion",
+        companionID = companionID
+    }
 end
 
 -- Calculate gains over the past hour
@@ -169,9 +158,11 @@ local function UpdateBrokerText()
     
     if data.isMaxLevel then
         delvesObj.text = string.format("Lvl %d (Max)", data.level)
-    else
+    elseif data.maxXP > 0 then
         local xpPercent = math.floor((data.currentXP / data.maxXP) * 100)
         delvesObj.text = string.format("Lvl %d (%d%%)", data.level, xpPercent)
+    else
+        delvesObj.text = string.format("Lvl %d", data.level)
     end
 end
 
@@ -199,14 +190,14 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
             -- Current status
             GameTooltip:AddDoubleLine("Level:", tostring(data.level), 1, 1, 1, 1, 1, 1)
             
-            if not data.isMaxLevel and data.maxXP > 0 then
+            if data.isMaxLevel then
+                GameTooltip:AddDoubleLine("Experience:", "MAX LEVEL", 1, 1, 1, 0, 1, 0)
+            elseif data.maxXP > 0 then
                 local xpText = string.format("%s / %s (%d%%)", 
                     FormatNumber(data.currentXP), 
                     FormatNumber(data.maxXP),
                     math.floor((data.currentXP / data.maxXP) * 100))
                 GameTooltip:AddDoubleLine("Experience:", xpText, 1, 1, 1, 1, 1, 1)
-            elseif data.currentXP > 0 then
-                GameTooltip:AddDoubleLine("Experience:", FormatNumber(data.currentXP), 1, 1, 1, 1, 1, 1)
             end
             
             -- Hourly gains
@@ -248,12 +239,10 @@ C_Timer.NewTicker(30, function()
     UpdateHistory()
 end)
 
--- Listen for trait system changes
+-- Listen for reputation/friendship changes
 local frame = CreateFrame("Frame")
-frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
-frame:RegisterEvent("TRAIT_CONFIG_CREATED")
-frame:RegisterEvent("TRAIT_NODE_CHANGED")
-frame:RegisterEvent("TRAIT_NODE_ENTRY_UPDATED")
+frame:RegisterEvent("UPDATE_FACTION")
+frame:RegisterEvent("QUEST_LOG_UPDATE")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event, ...)
     -- Re-check data on world enter (handles zone changes, reloads)
