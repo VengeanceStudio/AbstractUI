@@ -4,10 +4,6 @@
 local LDB = LibStub("LibDataBroker-1.1")
 local delvesObj
 
--- Valeera Sanguinar Perk Program ID (Delves companion)
-local VALEERA_PERK_PROGRAM_ID = 1  -- Brann Bronzebeard uses ID 1, Valeera likely uses a different constant
-local VALEERA_TRAIT_CONFIG_ID = nil  -- Will be discovered dynamically
-
 -- Format number with thousands separator
 local function FormatNumber(num)
     if not num then return "0" end
@@ -19,67 +15,75 @@ local function FormatNumber(num)
     return formatted
 end
 
--- Find Valeera's trait config ID dynamically
-local function FindValeeraTraitConfig()
-    if not C_Traits or not C_Traits.GetConfigIDsByType then return nil end
-    
-    -- Type 3 is for delve companions (Brann/Valeera)
-    local configIDs = C_Traits.GetConfigIDsByType(3)
-    if not configIDs or #configIDs == 0 then return nil end
-    
-    -- Find the active config (Valeera)
-    for _, configID in ipairs(configIDs) do
-        local configInfo = C_Traits.GetConfigInfo(configID)
-        if configInfo and configInfo.type == 3 then
-            -- Check if this config has nodes (is active/available)
-            local treeInfo = C_Traits.GetTreeInfo(configID)
-            if treeInfo then
-                return configID
+-- Get active delve companion data (Brann or Valeera)
+local function GetCompanionData()
+    -- Try C_TraitConfig first (most likely API for companion talents)
+    if C_TraitConfig then
+        local configID = C_TraitConfig.GetActiveConfigID()
+        
+        if not configID and C_TraitConfig.GetConfigsByType then
+            local configs = C_TraitConfig.GetConfigsByType(3) -- Type 3 = delve companions
+            if configs and #configs > 0 then
+                configID = configs[1].ID
+            end
+        end
+        
+        if configID then
+            local configInfo = C_TraitConfig.GetConfigInfo(configID)
+            
+            if configInfo and C_TraitConfig.GetTreeIDs then
+                local treeIDs = C_TraitConfig.GetTreeIDs(configID)
+                
+                if treeIDs and #treeIDs > 0 then
+                    local treeID = treeIDs[1]
+                    
+                    if C_Traits and C_Traits.GetTreeInfo then
+                        local treeInfo = C_Traits.GetTreeInfo(configID, treeID)
+                        
+                        if treeInfo then
+                            -- Try to get currency info
+                            local currentXP = 0
+                            local maxXP = 1
+                            
+                            if treeInfo.currency and #treeInfo.currency > 0 then
+                                local currencyID = treeInfo.currency[1].traitCurrencyID
+                                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyID)
+                                if currencyInfo then
+                                    currentXP = currencyInfo.quantity or 0
+                                    maxXP = currencyInfo.maxQuantity or 1
+                                    if maxXP <= 0 then maxXP = 1 end
+                                end
+                            end
+                            
+                            -- Calculate level from active nodes
+                            local level = 0
+                            if C_Traits.GetTreeNodes then
+                                local nodes = C_Traits.GetTreeNodes(configID, treeID)
+                                if nodes then
+                                    for _, nodeID in ipairs(nodes) do
+                                        local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
+                                        if nodeInfo and nodeInfo.currentRank then
+                                            level = level + nodeInfo.currentRank
+                                        end
+                                    end
+                                end
+                            end
+                            
+                            return {
+                                level = level,
+                                currentXP = currentXP,
+                                maxXP = maxXP,
+                                isMaxLevel = false,
+                                name = configInfo.name or "Delve Companion"
+                            }
+                        end
+                    end
+                end
             end
         end
     end
     
-    return configIDs[1]  -- Fallback to first config
-end
-
--- Get Valeera's current data using Traits/Perks system
-local function GetValeeraData()
-    if not C_Traits then return nil end
-    
-    if not VALEERA_TRAIT_CONFIG_ID then
-        VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
-        if not VALEERA_TRAIT_CONFIG_ID then return nil end
-    end
-    
-    local configInfo = C_Traits.GetConfigInfo(VALEERA_TRAIT_CONFIG_ID)
-    if not configInfo then return nil end
-    
-    local treeInfo = C_Traits.GetTreeInfo(VALEERA_TRAIT_CONFIG_ID)
-    if not treeInfo then return nil end
-    
-    -- Get trait currency info for XP
-    local traitCurrencyID = C_Traits.GetTraitCurrencyForTreeID(VALEERA_TRAIT_CONFIG_ID)
-    local currencyInfo = nil
-    if traitCurrencyID then
-        currencyInfo = C_CurrencyInfo.GetCurrencyInfo(traitCurrencyID)
-    end
-    
-    local currentXP = 0
-    local maxXP = 1
-    
-    if currencyInfo then
-        currentXP = currencyInfo.quantity or 0
-        maxXP = currencyInfo.maxQuantity or 1
-        if maxXP <= 0 then maxXP = 1 end
-    end
-    
-    return {
-        level = configInfo.activeConfigID and (treeInfo.spentAmountRequired or 0) or 0,
-        currentXP = currentXP,
-        maxXP = maxXP,
-        isMaxLevel = false,  -- Will refine based on actual max
-        name = configInfo.name or "Valeera Sanguinar"
-    }
+    return nil
 end
 
 -- Calculate gains over the past hour
@@ -103,7 +107,7 @@ local function GetHourlyGains()
     
     -- Get oldest entry from past hour
     local oldestEntry = cleaned[1]
-    local current = GetValeeraData()
+    local current = GetCompanionData()
     
     if not current then
         return 0, 0
@@ -128,7 +132,7 @@ end
 local function UpdateHistory()
     if not BrokerBar or not BrokerBar.db then return end
     
-    local current = GetValeeraData()
+    local current = GetCompanionData()
     if not current then return end
     
     local history = BrokerBar.db.profile.valeeraHistory or {}
@@ -157,7 +161,7 @@ end
 local function UpdateBrokerText()
     if not delvesObj then return end
     
-    local data = GetValeeraData()
+    local data = GetCompanionData()
     if not data then
         delvesObj.text = "N/A"
         return
@@ -181,8 +185,8 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
         SmartAnchor(GameTooltip, self)
         local r, g, b = GetColor()
         
-        local data = GetValeeraData()
-        local title = (data and data.name) or "Valeera Sanguinar"
+        local data = GetCompanionData()
+        local title = (data and data.name) or "Delve Companion"
         GameTooltip:AddLine(title, r, g, b)
         GameTooltip:AddLine(" ")
         
@@ -190,7 +194,7 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
             GameTooltip:AddLine("Companion data not available", 0.8, 0.8, 0.8)
             GameTooltip:AddLine(" ")
             GameTooltip:AddLine("Complete the Delves intro quest", 0.6, 0.6, 0.6)
-            GameTooltip:AddLine("or visit the Delves hub to unlock", 0.6, 0.6, 0.6)
+            GameTooltip:AddLine("to unlock your companion", 0.6, 0.6, 0.6)
         else
             -- Current status
             GameTooltip:AddDoubleLine("Level:", tostring(data.level), 1, 1, 1, 1, 1, 1)
@@ -231,9 +235,6 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
 
 -- Initialize
 local function Initialize()
-    -- Try to find Valeera's config
-    VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
-    
     UpdateBrokerText()
     UpdateHistory()
 end
@@ -252,12 +253,12 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 frame:RegisterEvent("TRAIT_CONFIG_CREATED")
 frame:RegisterEvent("TRAIT_NODE_CHANGED")
+frame:RegisterEvent("TRAIT_NODE_ENTRY_UPDATED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event, ...)
-    -- Re-find config on world enter (handles zone changes, reloads)
+    -- Re-check data on world enter (handles zone changes, reloads)
     if event == "PLAYER_ENTERING_WORLD" then
         C_Timer.After(2, function()
-            VALEERA_TRAIT_CONFIG_ID = FindValeeraTraitConfig()
             UpdateBrokerText()
             UpdateHistory()
         end)
