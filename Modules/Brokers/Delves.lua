@@ -19,29 +19,16 @@ end
 local function GetCompanionData()
     if not C_DelvesUI or not C_GossipInfo then return nil end
     
-    -- Try to get active companion ID from DelvesUI
+    -- Try both known companion IDs: Valeera (2) and Brann (1)
     local companionID = nil
     
-    -- Check if we can get it from the Delves frame if it's open
-    if EncounterJournal and EncounterJournal.encounter then
-        local progressFrame = EncounterJournal.encounter.overviewScroll.child.loreDescription:GetParent():GetParent()
-        if progressFrame and progressFrame.majorFactionData and progressFrame.majorFactionData.playerCompanionID then
-            companionID = progressFrame.majorFactionData.playerCompanionID
-        end
-    end
-    
-    -- If we don't have companion ID from the frame, try hardcoded values
-    -- Companion IDs: Brann = 1, Valeera = 2 (these are the known delve companions)
-    if not companionID then
-        -- Try Valeera first (ID 2), then Brann (ID 1)
-        for _, testID in ipairs({2, 1}) do
-            local factionID = C_DelvesUI.GetFactionForCompanion(testID)
-            if factionID and factionID > 0 then
-                local repInfo = C_GossipInfo.GetFriendshipReputation(factionID)
-                if repInfo and repInfo.friendshipFactionID and repInfo.friendshipFactionID > 0 then
-                    companionID = testID
-                    break
-                end
+    for _, testID in ipairs({2, 1}) do
+        local factionID = C_DelvesUI.GetFactionForCompanion(testID)
+        if factionID and factionID > 0 then
+            local repInfo = C_GossipInfo.GetFriendshipReputation(factionID)
+            if repInfo and repInfo.friendshipFactionID and repInfo.friendshipFactionID > 0 then
+                companionID = testID
+                break
             end
         end
     end
@@ -121,6 +108,12 @@ end
 local function UpdateHistory()
     if not BrokerBar or not BrokerBar.db then return end
     
+    -- Don't update in dungeons or raids
+    local inInstance, instanceType = IsInInstance()
+    if inInstance and (instanceType == "party" or instanceType == "raid") then
+        return
+    end
+    
     local current = GetCompanionData()
     if not current then return end
     
@@ -149,6 +142,12 @@ end
 -- Update the broker text display
 local function UpdateBrokerText()
     if not delvesObj then return end
+    
+    -- Don't update in dungeons or raids
+    local inInstance, instanceType = IsInInstance()
+    if inInstance and (instanceType == "party" or instanceType == "raid") then
+        return
+    end
     
     local data = GetCompanionData()
     if not data then
