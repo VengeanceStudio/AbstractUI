@@ -4,6 +4,9 @@
 local LDB = LibStub("LibDataBroker-1.1")
 local delvesObj
 
+-- Track instance state to avoid repeated IsInInstance() calls (which can cause taint)
+local isInDungeonOrRaid = false
+
 -- Format number with thousands separator
 local function FormatNumber(num)
     if not num then return "0" end
@@ -108,9 +111,8 @@ end
 local function UpdateHistory()
     if not BrokerBar or not BrokerBar.db then return end
     
-    -- Don't update in dungeons or raids
-    local inInstance, instanceType = IsInInstance()
-    if inInstance and (instanceType == "party" or instanceType == "raid") then
+    -- Don't update in dungeons or raids (use cached flag to avoid taint)
+    if isInDungeonOrRaid then
         return
     end
     
@@ -143,9 +145,8 @@ end
 local function UpdateBrokerText()
     if not delvesObj then return end
     
-    -- Don't update in dungeons or raids
-    local inInstance, instanceType = IsInInstance()
-    if inInstance and (instanceType == "party" or instanceType == "raid") then
+    -- Don't update in dungeons or raids (use cached flag to avoid taint)
+    if isInDungeonOrRaid then
         return
     end
     
@@ -229,6 +230,10 @@ local function Initialize()
     UpdateHistory()
 end
 
+-- Set initial instance state immediately on addon load
+local inInstance, instanceType = IsInInstance()
+isInDungeonOrRaid = (inInstance and (instanceType == "party" or instanceType == "raid"))
+
 -- Update on load (delayed to ensure BrokerBar DB is ready and player data loaded)
 C_Timer.After(3, Initialize)
 
@@ -244,8 +249,13 @@ frame:RegisterEvent("UPDATE_FACTION")
 frame:RegisterEvent("QUEST_LOG_UPDATE")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event, ...)
-    -- Re-check data on world enter (handles zone changes, reloads)
+    -- Update instance state flag on world enter (handles zone changes, reloads)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- Check once and cache the result to avoid repeated taint-prone calls
+        local inInstance, instanceType = IsInInstance()
+        isInDungeonOrRaid = (inInstance and (instanceType == "party" or instanceType == "raid"))
+        
+        -- Re-check data after entering world
         C_Timer.After(2, function()
             UpdateBrokerText()
             UpdateHistory()
