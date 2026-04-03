@@ -1,6 +1,6 @@
 ## Interface: 120005, 120001
 ## Title: Abstract UI
-## Version: 12.0.1.20
+## Version: 12.0.1.21
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
@@ -87,6 +87,7 @@ Modules\Brokers\ItemLevel.lua
 Modules\Brokers\Clock.lua
 Modules\Brokers\Crests.lua
 Modules\Brokers\Catalyst.lua
+Modules\Brokers\Delves.lua
 Modules\BrokerBar.lua
 Modules\TimePlayed.lua
 Modules\UIButtons.lua
