@@ -407,13 +407,25 @@ function SmartAnchor(tooltip, owner)
     
     tooltip:SetPoint(vP, owner, rP, 0, yO)
     
-    local tW = tonumber(tooltip:GetWidth()) or 200
-    local oCx = owner:GetCenter()
-    local oC = tonumber(oCx) or sW/2
+    -- Safely get tooltip width and owner center, avoiding taint issues
+    local tW = 200
+    local oC = sW/2
     
-    if (oC + tW/2) > sW then 
+    local success, width = pcall(function() return tooltip:GetWidth() end)
+    if success and width then
+        tW = tonumber(width) or 200
+    end
+    
+    local oCx = owner:GetCenter()
+    if oCx then
+        oC = tonumber(oCx) or sW/2
+    end
+    
+    -- Safely perform arithmetic to avoid taint errors
+    local halfWidth = tW / 2
+    if (oC + halfWidth) > sW then 
         tooltip:SetPoint(vP.."RIGHT", owner, rP.."RIGHT", 0, yO)
-    elseif (oC - tW/2) < 0 then 
+    elseif (oC - halfWidth) < 0 then 
         tooltip:SetPoint(vP.."LEFT", owner, rP.."LEFT", 0, yO) 
     end
 end
