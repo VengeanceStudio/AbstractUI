@@ -9,6 +9,7 @@ local popupRows = {}
 local charPanel = nil
 local charPanelClass = nil
 local broker = nil  -- Store broker reference for updates
+local hasRequestedOnLogin = false  -- Track if we've requested time played on this login
 
 -- Database defaults
 local defaults = {
@@ -93,13 +94,20 @@ end
 -- -----------------------------------------------------------------------------
 
 function TimePlayed:PLAYER_ENTERING_WORLD()
-    -- Request time played immediately
-    self:SafeRequestTimePlayed()
-    
-    -- Retry after 5 seconds if WoW didn't respond quickly
-    C_Timer.After(5, function()
+    -- Only request on initial login, not on every zone change
+    if not hasRequestedOnLogin then
+        hasRequestedOnLogin = true
+        print("AbstractUI: Initial login detected, requesting time played data")
+        
+        -- Request time played immediately
         self:SafeRequestTimePlayed()
-    end)
+        
+        -- Retry after 11 seconds in case WoW didn't respond (respects 10s throttle)
+        C_Timer.After(11, function()
+            print("AbstractUI: Retrying time played request after 11s delay")
+            self:SafeRequestTimePlayed()
+        end)
+    end
 end
 
 function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
@@ -121,6 +129,9 @@ function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
         local total = self:GetAccountTotal()
         broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
     end
+    
+    -- Debug output
+    print("AbstractUI: Time Played data received - Total: " .. (totalTimePlayed or 0) .. "s")
 end
 
 -- -----------------------------------------------------------------------------
@@ -149,7 +160,10 @@ function TimePlayed:SafeRequestTimePlayed()
     if now - lastPlayedRequest >= 10 then
         RequestTimePlayed()
         lastPlayedRequest = now
+        print("AbstractUI: Requested time played data from server")
         return true
+    else
+        print("AbstractUI: Time played request throttled (waited " .. string.format("%.1f", now - lastPlayedRequest) .. "s, need 10s)")
     end
     return false
 end
