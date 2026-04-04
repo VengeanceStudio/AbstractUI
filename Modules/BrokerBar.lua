@@ -396,8 +396,9 @@ end
 function SmartAnchor(tooltip, owner)
     tooltip:ClearAllPoints()
     local bottom = owner:GetBottom()
-    local sH, sW = GetScreenHeight(), GetScreenWidth()
+    local sH = GetScreenHeight()
     
+    -- Vertical positioning (above or below based on screen position)
     local vP, rP, yO
     if bottom and bottom > sH/2 then
         vP, rP, yO = "TOP", "BOTTOM", -2
@@ -405,28 +406,19 @@ function SmartAnchor(tooltip, owner)
         vP, rP, yO = "BOTTOM", "TOP", 2
     end
     
-    tooltip:SetPoint(vP, owner, rP, 0, yO)
+    -- Horizontal positioning based on broker's section alignment
+    -- This avoids taint from tooltip:GetWidth() calls
+    local align = owner.brokerAlign or "CENTER"
     
-    -- Safely get tooltip width and owner center, avoiding taint issues
-    local tW = 200
-    local oC = sW/2
-    
-    local success, width = pcall(function() return tooltip:GetWidth() end)
-    if success and width then
-        tW = tonumber(width) or 200
-    end
-    
-    local oCx = owner:GetCenter()
-    if oCx then
-        oC = tonumber(oCx) or sW/2
-    end
-    
-    -- Safely perform arithmetic to avoid taint errors
-    local halfWidth = tW / 2
-    if (oC + halfWidth) > sW then 
+    if align == "LEFT" then
+        -- Broker on left side - tooltip expands to the right
+        tooltip:SetPoint(vP.."LEFT", owner, rP.."LEFT", 0, yO)
+    elseif align == "RIGHT" then
+        -- Broker on right side - tooltip expands to the left
         tooltip:SetPoint(vP.."RIGHT", owner, rP.."RIGHT", 0, yO)
-    elseif (oC - halfWidth) < 0 then 
-        tooltip:SetPoint(vP.."LEFT", owner, rP.."LEFT", 0, yO) 
+    else
+        -- Center brokers - tooltip centers on button
+        tooltip:SetPoint(vP, owner, rP, 0, yO)
     end
 end
 
@@ -880,6 +872,9 @@ function BrokerBar:UpdateBarLayout(barID)
             
             local contentWidth = w.text:GetStringWidth() + (bCfg.showIcon and (iconSize + 4) or 4)
             w:SetSize(contentWidth, db.height)
+            
+            -- Store alignment on button for SmartAnchor to use
+            w.brokerAlign = align
             
             if align == "LEFT" then 
                 w:SetPoint("LEFT", lastWidget or bar, lastWidget and "RIGHT" or "LEFT", lastWidget and self.db.profile.spacing or 10, 0)
