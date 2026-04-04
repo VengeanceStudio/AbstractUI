@@ -2346,7 +2346,7 @@ function AbstractUI:ExportProfile()
     -- Create a clean copy of the profile without character-specific data
     local cleanProfile = {}
     
-    -- Exclude character-specific data keys
+    -- Exclude character-specific data keys from main profile
     local excludeKeys = {
         goldData = true,
         tokenHistory = true,
@@ -2361,20 +2361,37 @@ function AbstractUI:ExportProfile()
         end
     end
     
+    -- Define character-specific keys for each namespace
+    local namespaceExclusions = {
+        TimePlayed = {
+            timePlayedData = true,  -- Contains all characters' play time
+        },
+        -- Add more namespaces here as needed
+    }
+    
     -- Get the entire database including all namespaces
     local exportData = {
         main = cleanProfile,  -- Use cleaned profile instead of raw profile
         namespaces = {}
     }
     
-    -- Export all registered namespaces
-    -- Use the children table which contains the actual namespace objects
+    -- Export all registered namespaces, filtering character data
     if self.db.children then
         local namespaceCount = 0
         
         for namespaceName, namespaceDB in pairs(self.db.children) do
             if namespaceDB and namespaceDB.profile then
-                exportData.namespaces[namespaceName] = namespaceDB.profile
+                local cleanNamespaceProfile = {}
+                local exclusions = namespaceExclusions[namespaceName] or {}
+                
+                -- Copy namespace profile, excluding character-specific keys
+                for key, value in pairs(namespaceDB.profile) do
+                    if not exclusions[key] then
+                        cleanNamespaceProfile[key] = value
+                    end
+                end
+                
+                exportData.namespaces[namespaceName] = cleanNamespaceProfile
                 namespaceCount = namespaceCount + 1
                 print("|cff00ff00AbstractUI:|r   - Exporting: " .. namespaceName)
             end
