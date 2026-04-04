@@ -8,6 +8,7 @@ local popupFrame = nil
 local popupRows = {}
 local charPanel = nil
 local charPanelClass = nil
+local broker = nil  -- Store broker reference for updates
 
 -- Database defaults
 local defaults = {
@@ -77,7 +78,7 @@ function TimePlayed:OnDBReady()
     end
     
     -- Always register events for data collection (even if broker is disabled)
-    self:RegisterEvent("PLAYER_LOGIN")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("TIME_PLAYED_MSG")
     
     -- Only register broker and commands if module is enabled
@@ -91,8 +92,14 @@ end
 -- Events
 -- -----------------------------------------------------------------------------
 
-function TimePlayed:PLAYER_LOGIN()
+function TimePlayed:PLAYER_ENTERING_WORLD()
+    -- Request time played immediately
     self:SafeRequestTimePlayed()
+    
+    -- Retry after 5 seconds if WoW didn't respond quickly
+    C_Timer.After(5, function()
+        self:SafeRequestTimePlayed()
+    end)
 end
 
 function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
@@ -107,6 +114,12 @@ function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
             time = totalTimePlayed,
             class = classFile,
         }
+    end
+    
+    -- Update broker display immediately when data is received
+    if broker then
+        local total = self:GetAccountTotal()
+        broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
     end
 end
 
@@ -993,7 +1006,7 @@ end
 -- -----------------------------------------------------------------------------
 
 function TimePlayed:RegisterBroker()
-    local broker = LDB:NewDataObject("AbstractTimePlayed", {
+    broker = LDB:NewDataObject("AbstractTimePlayed", {
         type = "data source",
         text = "0h",
         icon = 237538,
@@ -1012,7 +1025,7 @@ function TimePlayed:RegisterBroker()
         end,
     })
     
-    -- Update text
+    -- Update text every 60 seconds
     C_Timer.NewTicker(60, function()
         local total = TimePlayed:GetAccountTotal()
         broker.text = TimePlayed:FormatTimeSmart(total, TimePlayed.db.profile.popupSettings.useYears)

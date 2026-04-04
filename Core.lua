@@ -2363,8 +2363,14 @@ function AbstractUI:ExportProfile()
     
     -- Define character-specific keys for each namespace
     local namespaceExclusions = {
+        Bar = {
+            goldData = true,            -- Character gold amounts
+            tokenHistory = true,        -- WoW Token price history
+            valeeraHistory = true,      -- Delve companion XP history
+            goldDeleteSelection = true, -- Gold UI state
+        },
         TimePlayed = {
-            timePlayedData = true,  -- Contains all characters' play time
+            timePlayedData = true,      -- All characters' play time
         },
         -- Add more namespaces here as needed
     }
