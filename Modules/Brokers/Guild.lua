@@ -146,8 +146,8 @@ local function UpdateGuildList()
         -- Use RAID_CLASS_COLORS instead of C_ClassColor
         local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[m.class] or {r=1,g=1,b=1}
         AddTxt(m.name:gsub("%-.+", ""), gW.name, gX.name, color, 12); AddTxt(m.level, gW.lvl, gX.lvl, {r=1,g=1,b=1})
-        AddTxt(m.zone, gW.zone, gX.zone, {r=1,g=0.82,b=0}); AddTxt(m.rank, gW.rank, gX.rank, {r=1,g=1,b=1})
-        AddTxt(m.note, gW.note, gX.note, {r=0.8,g=0.8,b=0.8})
+        AddTxt(m.zone, gW.zone, gX.zone, {r=1,g=0.82,b=0}, 16); AddTxt(m.rank, gW.rank, gX.rank, {r=1,g=1,b=1})
+        AddTxt(m.note, gW.note, gX.note, {r=0.8,g=0.8,b=0.8}, 30)
         btn:SetScript("OnClick", function() 
             if IsControlKeyDown() then 
                 C_PartyInfo.InviteUnit(m.name) 
