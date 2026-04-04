@@ -70,8 +70,6 @@ function TimePlayed:OnDBReady()
         return
     end
     
-    print("AbstractUI: TimePlayed module initializing...")
-    
     self.db = AbstractUI.db:RegisterNamespace("TimePlayed", defaults)
     
     -- Validate database
@@ -86,20 +84,15 @@ function TimePlayed:OnDBReady()
     
     -- Only register broker and commands if module is enabled
     if AbstractUI.db.profile.modules.timePlayed then 
-        print("AbstractUI: TimePlayed module is enabled, registering broker")
         self:RegisterBroker()
         self:RegisterCommands()
-    else
-        print("AbstractUI: TimePlayed module is disabled in settings")
     end
     
     -- If we're already in world when module loads (e.g., /reload), trigger immediately
     if IsLoggedIn() then
-        print("AbstractUI: TimePlayed module loaded while logged in, requesting data")
         self:SafeRequestTimePlayed()
         
         C_Timer.After(11, function()
-            print("AbstractUI: TimePlayed retry after 11s")
             self:SafeRequestTimePlayed()
         end)
     end
@@ -113,14 +106,12 @@ function TimePlayed:PLAYER_ENTERING_WORLD()
     -- Only request on initial login, not on every zone change
     if not hasRequestedOnLogin then
         hasRequestedOnLogin = true
-        print("AbstractUI: Initial login detected, requesting time played data")
         
         -- Request time played immediately
         self:SafeRequestTimePlayed()
         
         -- Retry after 11 seconds in case WoW didn't respond (respects 10s throttle)
         C_Timer.After(11, function()
-            print("AbstractUI: Retrying time played request after 11s delay")
             self:SafeRequestTimePlayed()
         end)
     end
@@ -145,9 +136,6 @@ function TimePlayed:TIME_PLAYED_MSG(event, totalTimePlayed)
         local total = self:GetAccountTotal()
         broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
     end
-    
-    -- Debug output
-    print("AbstractUI: Time Played data received - Total: " .. (totalTimePlayed or 0) .. "s")
 end
 
 -- -----------------------------------------------------------------------------
@@ -176,10 +164,7 @@ function TimePlayed:SafeRequestTimePlayed()
     if now - lastPlayedRequest >= 10 then
         RequestTimePlayed()
         lastPlayedRequest = now
-        print("AbstractUI: Requested time played data from server")
         return true
-    else
-        print("AbstractUI: Time played request throttled (waited " .. string.format("%.1f", now - lastPlayedRequest) .. "s, need 10s)")
     end
     return false
 end
@@ -1055,8 +1040,6 @@ function TimePlayed:RegisterBroker()
         end,
     })
     
-    print("AbstractUI: Broker registered, broker object = " .. tostring(broker))
-    
     -- Update text every 60 seconds
     C_Timer.NewTicker(60, function()
         local total = TimePlayed:GetAccountTotal()
@@ -1066,7 +1049,6 @@ function TimePlayed:RegisterBroker()
     -- Initial update
     local total = self:GetAccountTotal()
     broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
-    print("AbstractUI: Broker text set to: " .. tostring(broker.text))
 end
 
 -- -----------------------------------------------------------------------------
