@@ -70,6 +70,8 @@ function TimePlayed:OnDBReady()
         return
     end
     
+    print("AbstractUI: TimePlayed module initializing...")
+    
     self.db = AbstractUI.db:RegisterNamespace("TimePlayed", defaults)
     
     -- Validate database
@@ -84,8 +86,22 @@ function TimePlayed:OnDBReady()
     
     -- Only register broker and commands if module is enabled
     if AbstractUI.db.profile.modules.timePlayed then 
+        print("AbstractUI: TimePlayed module is enabled, registering broker")
         self:RegisterBroker()
         self:RegisterCommands()
+    else
+        print("AbstractUI: TimePlayed module is disabled in settings")
+    end
+    
+    -- If we're already in world when module loads (e.g., /reload), trigger immediately
+    if IsLoggedIn() then
+        print("AbstractUI: TimePlayed module loaded while logged in, requesting data")
+        self:SafeRequestTimePlayed()
+        
+        C_Timer.After(11, function()
+            print("AbstractUI: TimePlayed retry after 11s")
+            self:SafeRequestTimePlayed()
+        end)
     end
 end
 
@@ -1039,6 +1055,8 @@ function TimePlayed:RegisterBroker()
         end,
     })
     
+    print("AbstractUI: Broker registered, broker object = " .. tostring(broker))
+    
     -- Update text every 60 seconds
     C_Timer.NewTicker(60, function()
         local total = TimePlayed:GetAccountTotal()
@@ -1048,6 +1066,7 @@ function TimePlayed:RegisterBroker()
     -- Initial update
     local total = self:GetAccountTotal()
     broker.text = self:FormatTimeSmart(total, self.db.profile.popupSettings.useYears)
+    print("AbstractUI: Broker text set to: " .. tostring(broker.text))
 end
 
 -- -----------------------------------------------------------------------------
