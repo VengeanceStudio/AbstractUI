@@ -720,8 +720,8 @@ local function SkinCharacterFrameBackdrop()
     -- Create custom themed close button
     if not CharacterFrame.AbstractCloseButton then
         local closeBtn = CreateFrame("Button", nil, CharacterFrame, "BackdropTemplate")
-        closeBtn:SetSize(20, 20)
-        closeBtn:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -5, -5)
+        closeBtn:SetSize(18, 18)
+        closeBtn:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -8, -8)
         
         -- Backdrop
         closeBtn:SetBackdrop({
@@ -768,31 +768,31 @@ local function SkinCharacterFrameBackdrop()
     -- Create custom titlebar layout: Name | Item Level | Level/Spec/Class
     if not CharacterFrame.AbstractTitleBar then
         local titleFrame = CreateFrame("Frame", nil, CharacterFrame)
-        titleFrame:SetPoint("TOP", CharacterFrame, "TOP", 0, -8)
-        titleFrame:SetSize(640, 24)
+        titleFrame:SetPoint("TOP", CharacterFrame, "TOP", 0, -10)
+        titleFrame:SetSize(640, 20)
         
         -- Character Name (left-aligned)
         local nameText = titleFrame:CreateFontString(nil, "OVERLAY")
-        nameText:SetPoint("LEFT", titleFrame, "LEFT", 10, 0)
-        nameText:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
+        nameText:SetPoint("LEFT", titleFrame, "LEFT", 15, 0)
+        nameText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
         nameText:SetTextColor(pr, pg, pb, 1)
         nameText:SetShadowOffset(1, -1)
         nameText:SetShadowColor(0, 0, 0, 1)
         titleFrame.nameText = nameText
         
-        -- Item Level (center-left)
+        -- Item Level (after name)
         local ilvlText = titleFrame:CreateFontString(nil, "OVERLAY")
-        ilvlText:SetPoint("LEFT", nameText, "RIGHT", 15, 0)
-        ilvlText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+        ilvlText:SetPoint("LEFT", nameText, "RIGHT", 20, 0)
+        ilvlText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
         ilvlText:SetTextColor(0.9, 0.9, 0.9, 1)
         ilvlText:SetShadowOffset(1, -1)
         ilvlText:SetShadowColor(0, 0, 0, 1)
         titleFrame.ilvlText = ilvlText
         
-        -- Level/Spec/Class (center)
+        -- Level/Spec/Class (after ilvl)
         local infoText = titleFrame:CreateFontString(nil, "OVERLAY")
-        infoText:SetPoint("CENTER", titleFrame, "CENTER", 0, 0)
-        infoText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+        infoText:SetPoint("LEFT", ilvlText, "RIGHT", 20, 0)
+        infoText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
         infoText:SetTextColor(0.9, 0.9, 0.9, 1)
         infoText:SetShadowOffset(1, -1)
         infoText:SetShadowColor(0, 0, 0, 1)
