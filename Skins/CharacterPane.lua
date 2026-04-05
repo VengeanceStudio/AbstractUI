@@ -733,18 +733,13 @@ end
 local customCharacterFrame = nil
 
 local function HideBlizzardCharacterFrame()
-    -- Simply hide the entire PaperDollFrame and show our custom one instead
-    if PaperDollFrame then
-        PaperDollFrame:HookScript("OnShow", function()
+    -- Hook CharacterFrame itself (the main container) and completely hide it
+    if CharacterFrame then
+        CharacterFrame:HookScript("OnShow", function()
             if customCharacterFrame and IsEnabled() then
-                PaperDollFrame:Hide()
+                CharacterFrame:Hide()
                 customCharacterFrame:Show()
-            end
-        end)
-        
-        PaperDollFrame:HookScript("OnHide", function()
-            if customCharacterFrame then
-                customCharacterFrame:Hide()
+                CharacterPane:UpdateAll()
             end
         end)
     end
@@ -774,11 +769,22 @@ local function CreateCustomCharacterFrame()
     frame:SetBackdropColor(bgr, bgg, bgb, bga)
     frame:SetBackdropBorderColor(pr, pg, pb, pa)
     
+    -- Title text
+    local title = frame:CreateFontString(nil, "OVERLAY")
+    title:SetPoint("TOP", frame, "TOP", 0, -10)
+    if FontKit then
+        title:SetFont(FontKit.Fonts.Title, 16, "OUTLINE")
+    else
+        title:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
+    end
+    title:SetText(UnitName("player"))
+    title:SetTextColor(pr, pg, pb)
+    
     -- Close button
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", -3, -3)
     closeBtn:SetScript("OnClick", function()
-        ToggleCharacter("PaperDollFrame")
+        frame:Hide()
     end)
     
     -- Character model
