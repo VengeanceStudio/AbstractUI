@@ -367,19 +367,38 @@ function Tweaks:RevealMap()
     
     if not WorldMapFrame then return end
     
+    -- Validate that the map canvas is properly initialized
+    local mapCanvas = WorldMapFrame.ScrollContainer
+    if not mapCanvas then return end
+    
+    -- Check if the map has zoom level data (prevents the ipairs error)
+    if not mapCanvas.zoomLevels or type(mapCanvas.zoomLevels) ~= "table" then
+        return
+    end
+    
     -- Find the exploration pin (the system that manages fog of war)
     for pin in WorldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate") do
         if pin and pin.RefreshOverlays then
-            -- Force a refresh which will trigger our hooked function
-            pin:RefreshOverlays(true)
+            -- Use pcall to safely refresh overlays
+            local success, err = pcall(function()
+                pin:RefreshOverlays(true)
+            end)
+            if not success then
+                -- Silently fail, map might not be fully initialized yet
+            end
         end
     end
     
     -- Also handle Battlefield Map if it exists
     if BattlefieldMapFrame then
-        for pin in BattlefieldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate") do
-            if pin and pin.RefreshOverlays then
-                pin:RefreshOverlays(true)
+        local battleCanvas = BattlefieldMapFrame.ScrollContainer
+        if battleCanvas and battleCanvas.zoomLevels and type(battleCanvas.zoomLevels) == "table" then
+            for pin in BattlefieldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate") do
+                if pin and pin.RefreshOverlays then
+                    local success, err = pcall(function()
+                        pin:RefreshOverlays(true)
+                    end)
+                end
             end
         end
     end

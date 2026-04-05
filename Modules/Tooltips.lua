@@ -1,6 +1,9 @@
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local Tooltips = AbstractUI:NewModule("Tooltips", "AceEvent-3.0", "AceHook-3.0")
 
+-- Track instance state to avoid repeated IsInInstance() calls (which can cause taint)
+local isInInstance = false
+
 -- ============================================================================
 -- Module Initialization
 -- ============================================================================
@@ -163,6 +166,12 @@ function Tooltips:Initialize()
     
     -- Listen for inspect data
     self:RegisterEvent("INSPECT_READY")
+    
+    -- Track instance state for mount lookup
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    
+    -- Set initial instance state
+    isInInstance = IsInInstance()
     
     -- Listen for theme changes
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
@@ -1007,22 +1016,25 @@ function Tooltips:OnTooltipSetUnit(tooltip)
 end
 
 function Tooltips:GetUnitMountID(unit)
+    -- Skip mount lookup in instances/dungeons to avoid API restrictions
+    if isInInstance then
+        return nil
+    end
+    
     -- Check if unit has a mount buff using modern API
-    if not C_UnitAuras then return nil end
+    if not C_UnitAuras or not C_MountJournal or not C_MountJournal.GetMountFromSpell then 
+        return nil 
+    end
     
     for i = 1, 40 do
         local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
         if not auraData then break end
         
-        -- Check if this buff is a mount (WoW 12.0: protect against secret spellId)
-        if auraData.spellId and C_MountJournal then
-            for _, mountID in ipairs(C_MountJournal.GetMountIDs()) do
-                local mountName, mountSpellID = C_MountJournal.GetMountInfoByID(mountID)
-                -- Use pcall to safely compare secret spell IDs
-                local ok, matches = pcall(function() return mountSpellID == auraData.spellId end)
-                if ok and matches then
-                    return mountID
-                end
+        -- Use GetMountFromSpell to directly check if this spell is a mount
+        if auraData.spellId then
+            local mountID = C_MountJournal.GetMountFromSpell(auraData.spellId)
+            if mountID then
+                return mountID
             end
         end
     end
@@ -1085,6 +1097,12 @@ function Tooltips:PLAYER_TARGET_CHANGED()
     self.lastInspectTime = currentTime
     self.lastInspectGUID = guid
     NotifyInspect(unit)
+end
+
+function Tooltips:PLAYER_ENTERING_WORLD()
+    -- Update instance state flag on world enter (handles zone changes, reloads)
+    -- Check once and cache the result to avoid repeated taint-prone calls
+    isInInstance = IsInInstance()
 end
 
 function Tooltips:GetUnitFromGUID(guid)
