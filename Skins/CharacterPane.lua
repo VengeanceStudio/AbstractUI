@@ -43,7 +43,7 @@ function CharacterPane:OnDBReady()
     })
     
     -- Wait for Blizzard_CharacterFrame to load
-    if IsAddOnLoaded("Blizzard_CharacterFrame") then
+    if C_AddOns.IsAddOnLoaded("Blizzard_CharacterFrame") then
         self:SetupCharacterFrameSkinning()
     else
         self:RegisterEvent("ADDON_LOADED")
