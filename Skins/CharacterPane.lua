@@ -3,121 +3,430 @@ local CharacterPane = AbstractUI:NewModule("CharacterPane", "AceEvent-3.0", "Ace
 local LSM = LibStub("LibSharedMedia-3.0")
 
 ---------------------------------------------------------------------------
--- CHARACTER FRAME SKINNING
--- Skins CharacterFrame including Character, Reputation, and Currency tabs
+-- CHARACTER PANEL CUSTOMIZATION
+-- Equipment overlays (ilvl, enchants, gems) and custom stats panel
 ---------------------------------------------------------------------------
 
--- Configuration constants
-local CONFIG = {
-    PANEL_WIDTH_EXTENSION = 55,   -- Extra width for stats panel
-    PANEL_HEIGHT_EXTENSION = 50,  -- Extra height for stats panel
+-- Equipment slot configuration
+local EQUIPMENT_SLOTS = {
+    { name = "Head", id = INVSLOT_HEAD, side = "left" },
+    { name = "Neck", id = INVSLOT_NECK, side = "left" },
+    { name = "Shoulder", id = INVSLOT_SHOULDER, side = "left" },
+    { name = "Back", id = INVSLOT_BACK, side = "left" },
+    { name = "Chest", id = INVSLOT_CHEST, side = "left" },
+    { name = "Wrist", id = INVSLOT_WRIST, side = "left" },
+    { name = "Hands", id = INVSLOT_HAND, side = "right" },
+    { name = "Waist", id = INVSLOT_WAIST, side = "right" },
+    { name = "Legs", id = INVSLOT_LEGS, side = "right" },
+    { name = "Feet", id = INVSLOT_FEET, side = "right" },
+    { name = "Finger0", id = INVSLOT_FINGER1, side = "right" },
+    { name = "Finger1", id = INVSLOT_FINGER2, side = "right" },
+    { name = "Trinket0", id = INVSLOT_TRINKET1, side = "right" },
+    { name = "Trinket1", id = INVSLOT_TRINKET2, side = "right" },
+    { name = "MainHand", id = INVSLOT_MAINHAND, side = "bottom" },
+    { name = "SecondaryHand", id = INVSLOT_OFFHAND, side = "bottom" },
 }
 
 -- Module state
-local customBg = nil
 local ColorPalette = nil
 local FontKit = nil
+local customBg = nil
+local slotOverlays = {}
+local statsPanel = nil
+local updatePending = false
 
 -- ============================================================================
 -- INITIALIZATION
 -- ============================================================================
 
 function CharacterPane:OnInitialize()
-    AbstractUI:Print("CharacterPane OnInitialize called")
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
 function CharacterPane:OnDBReady()
-    -- Get framework references
     ColorPalette = _G.AbstractUI_ColorPalette
     FontKit = _G.AbstractUI_FontKit
     
     if not ColorPalette or not FontKit then
-        AbstractUI:Print("CharacterPane: ColorPalette or FontKit not available")
         return
     end
-    
-    AbstractUI:Print("CharacterPane module initializing...")
     
     self.db = AbstractUI.db:RegisterNamespace("CharacterPane", {
         profile = {
             enabled = true,
+            showItemLevel = true,
+            showEnchants = true,
+            showGems = true,
+            showStatsPanel = true,
+            overlayTextSize = 11,
         }
     })
     
-    -- Blizzard_CharacterFrame is usually already loaded, but CharacterFrame might not exist yet
-    -- Register event to catch when it loads, and also check immediately
     self:RegisterEvent("ADDON_LOADED")
     
-    -- Try immediate setup in case it's already available
     if CharacterFrame then
-        AbstractUI:Print("CharacterFrame found immediately, applying skinning...")
-        self:SetupCharacterFrameSkinning()
-    else
-        AbstractUI:Print("CharacterFrame not yet available, waiting for ADDON_LOADED...")
+        self:Setup()
     end
 end
 
 function CharacterPane:ADDON_LOADED(event, addon)
-    AbstractUI:Print("ADDON_LOADED fired for: " .. tostring(addon))
-    
     if addon == "Blizzard_CharacterFrame" or (addon == "AbstractUI" and CharacterFrame) then
-        AbstractUI:Print("CharacterFrame should be available now...")
         C_Timer.After(0.1, function()
             if CharacterFrame then
-                AbstractUI:Print("CharacterFrame confirmed, applying skinning")
-                self:SetupCharacterFrameSkinning()
+                self:Setup()
                 self:UnregisterEvent("ADDON_LOADED")
-            else
-                AbstractUI:Print("CharacterFrame still not available!")
             end
         end)
     end
 end
 
 ---------------------------------------------------------------------------
--- Helper: Get theme colors
+-- HELPER FUNCTIONS
 ---------------------------------------------------------------------------
+
 local function GetThemeColors()
     if not ColorPalette then
-        return 0.2, 1.0, 0.6, 1, 0.05, 0.05, 0.05, 0.95  -- Fallback
+        return 0.55, 0.60, 0.70, 1, 0.05, 0.05, 0.05, 0.65
     end
-    
-    local sr, sg, sb, sa = ColorPalette:GetColor('primary')
+    local pr, pg, pb, pa = ColorPalette:GetColor('primary')
     local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
-    
-    return sr, sg, sb, sa, bgr, bgg, bgb, bga
+    return pr, pg, pb, pa, bgr, bgg, bgb, bga
 end
 
----------------------------------------------------------------------------
--- Helper: Get font path from settings
----------------------------------------------------------------------------
-local function GetFontPath()
+local function GetFont()
     if FontKit then
         return FontKit:GetFont('body')
     end
-    local db = AbstractUI.db and AbstractUI.db.profile
-    return (db and LSM:Fetch("font", db.theme.font)) or STANDARD_TEXT_FONT
+    return STANDARD_TEXT_FONT
+end
+
+local function IsEnabled()
+    return CharacterPane.db and CharacterPane.db.profile.enabled
+end
+
+-- Get item level from tooltip (most accurate)
+local function GetItemLevel(slotId)
+    if not C_TooltipInfo then return nil end
+    
+    local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotId)
+    if not tooltipData or not tooltipData.lines then return nil end
+    
+    local pattern = ITEM_LEVEL and ITEM_LEVEL:gsub("%%d", "(%%d+)") or "Item Level (%d+)"
+    for _, line in ipairs(tooltipData.lines) do
+        local text = line.leftText or ""
+        local ilvl = text:match(pattern)
+        if ilvl then
+            return tonumber(ilvl)
+        end
+    end
+    
+    return nil
+end
+
+-- Get enchant information
+local function GetEnchantInfo(slotId)
+    local enchantableSlots = {
+        [INVSLOT_CHEST] = true, [INVSLOT_BACK] = true, [INVSLOT_WRIST] = true,
+        [INVSLOT_LEGS] = true, [INVSLOT_FEET] = true, [INVSLOT_FINGER1] = true,
+        [INVSLOT_FINGER2] = true, [INVSLOT_MAINHAND] = true, [INVSLOT_OFFHAND] = true,
+    }
+    
+    if not enchantableSlots[slotId] then
+        return nil, false
+    end
+    
+    if not C_TooltipInfo then return nil, true end
+    
+    local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotId)
+    if not tooltipData or not tooltipData.lines then return nil, true end
+    
+    for _, line in ipairs(tooltipData.lines) do
+        local text = line.leftText or ""
+        local enchant = text:match("Enchanted:%s*(.+)")
+        if enchant then
+            enchant = enchant:gsub("|c%x+", ""):gsub("|r", ""):gsub("Enchant%s+%w+%s*%-?%s*", "")
+            return enchant:match("^%s*(.-)%s*$"), true
+        end
+    end
+    
+    return nil, true
+end
+
+-- Get gem information
+local function GetGemInfo(slotId)
+    local itemLink = GetInventoryItemLink("player", slotId)
+    if not itemLink then return {} end
+    
+    local gems = {}
+    for i = 1, 3 do
+        local _, gemLink = GetItemGem(itemLink, i)
+        if gemLink then
+            local itemID = GetItemInfoInstant(gemLink)
+            local icon = itemID and C_Item.GetItemIconByID(itemID)
+            if icon then
+                table.insert(gems, icon)
+            end
+        end
+    end
+    
+    return gems
 end
 
 ---------------------------------------------------------------------------
--- Helper: Check if skinning is enabled
+-- SLOT OVERLAY CREATION
 ---------------------------------------------------------------------------
-local function IsSkinningEnabled()
-    if not CharacterPane.db then return false end
-    return CharacterPane.db.profile.enabled
+
+local function CreateSlotOverlay(slotButton, slotInfo)
+    if not slotButton then return nil end
+    
+    local overlay = CreateFrame("Frame", nil, slotButton)
+    overlay:SetAllPoints()
+    overlay:SetFrameLevel(slotButton:GetFrameLevel() + 5)
+    
+    local font = GetFont()
+    local textSize = CharacterPane.db.profile.overlayTextSize
+    
+    -- Item level text
+    overlay.ilvl = overlay:CreateFontString(nil, "OVERLAY")
+    overlay.ilvl:SetFont(font, textSize, "OUTLINE")
+    overlay.ilvl:SetTextColor(1, 1, 1)
+    
+    -- Enchant text
+    overlay.enchant = overlay:CreateFontString(nil, "OVERLAY")
+    overlay.enchant:SetFont(font, textSize - 2, "OUTLINE")
+    
+    -- Gem icons
+    overlay.gems = {}
+    for i = 1, 3 do
+        local gem = overlay:CreateTexture(nil, "OVERLAY")
+        gem:SetSize(12, 12)
+        gem:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        gem:Hide()
+        overlay.gems[i] = gem
+    end
+    
+    -- Position elements based on slot side
+    if slotInfo.side == "left" then
+        overlay.ilvl:SetPoint("LEFT", overlay, "RIGHT", 4, 6)
+        overlay.enchant:SetPoint("LEFT", overlay, "RIGHT", 4, -6)
+        for i, gem in ipairs(overlay.gems) do
+            gem:SetPoint("TOPRIGHT", overlay, "TOPLEFT", -2, -(i-1)*14)
+        end
+    elseif slotInfo.side == "right" then
+        overlay.ilvl:SetPoint("RIGHT", overlay, "LEFT", -4, 6)
+        overlay.enchant:SetPoint("RIGHT", overlay, "LEFT", -4, -6)
+        for i, gem in ipairs(overlay.gems) do
+            gem:SetPoint("TOPLEFT", overlay, "TOPRIGHT", 2, -(i-1)*14)
+        end
+    else -- bottom (weapons)
+        overlay.ilvl:SetPoint("BOTTOM", overlay, "TOP", 0, 2)
+        overlay.enchant:SetPoint("TOP", overlay, "BOTTOM", 0, -2)
+        for i, gem in ipairs(overlay.gems) do
+            gem:SetPoint("LEFT", overlay, "RIGHT", 2 + (i-1)*14, 0)
+        end
+    end
+    
+    overlay.slotInfo = slotInfo
+    return overlay
 end
 
 ---------------------------------------------------------------------------
--- Create/update the custom background frame
+-- SLOT OVERLAY UPDATE
 ---------------------------------------------------------------------------
-local function CreateOrUpdateBackground()
+
+local function UpdateSlotOverlay(overlay)
+    if not overlay or not overlay.slotInfo then return end
+    if not IsEnabled() then
+        overlay:Hide()
+        return
+    end
+    
+    local settings = CharacterPane.db.profile
+    local slotId = overlay.slotInfo.id
+    local itemLink = GetInventoryItemLink("player", slotId)
+    
+    if not itemLink then
+        overlay:Hide()
+        return
+    end
+    
+    overlay:Show()
+    
+    -- Update item level
+    if settings.showItemLevel then
+        local ilvl = GetItemLevel(slotId)
+        if ilvl then
+            overlay.ilvl:SetText(tostring(ilvl))
+            overlay.ilvl:Show()
+        else
+            overlay.ilvl:Hide()
+        end
+    else
+        overlay.ilvl:Hide()
+    end
+    
+    -- Update enchant
+    if settings.showEnchants then
+        local enchant, isEnchantable = GetEnchantInfo(slotId)
+        if isEnchantable then
+            if enchant then
+                overlay.enchant:SetText(enchant)
+                local pr, pg, pb = GetThemeColors()
+                overlay.enchant:SetTextColor(pr, pg, pb)
+            else
+                overlay.enchant:SetText("No Enchant")
+                overlay.enchant:SetTextColor(0.7, 0.7, 0.7)
+            end
+            overlay.enchant:Show()
+        else
+            overlay.enchant:Hide()
+        end
+    else
+        overlay.enchant:Hide()
+    end
+    
+    -- Update gems
+    if settings.showGems then
+        local gems = GetGemInfo(slotId)
+        for i, gemTex in ipairs(overlay.gems) do
+            if gems[i] then
+                gemTex:SetTexture(gems[i])
+                gemTex:Show()
+            else
+                gemTex:Hide()
+            end
+        end
+    else
+        for _, gem in ipairs(overlay.gems) do
+            gem:Hide()
+        end
+    end
+end
+
+---------------------------------------------------------------------------
+-- STATS PANEL
+---------------------------------------------------------------------------
+
+local function CreateStatsPanel()
+    if statsPanel then return statsPanel end
+    if not CharacterFrame then return nil end
+    
+    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    local font = GetFont()
+    
+    local panel = CreateFrame("Frame", "AbstractUI_StatsPanel", CharacterFrame, "BackdropTemplate")
+    panel:SetSize(200, 380)
+    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -50, -60)
+    panel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    panel:SetBackdropColor(bgr, bgg, bgb, bga)
+    panel:SetBackdropBorderColor(pr, pg, pb, pa)
+    panel:SetFrameStrata("HIGH")
+    
+    -- Title
+    panel.title = panel:CreateFontString(nil, "OVERLAY")
+    panel.title:SetFont(font, 14, "OUTLINE")
+    panel.title:SetPoint("TOP", 0, -10)
+    panel.title:SetText("Character Stats")
+    panel.title:SetTextColor(pr, pg, pb)
+    
+    -- Create stat rows
+    local yOffset = -35
+    local function CreateRow()
+        local row = panel:CreateFontString(nil, "OVERLAY")
+        row:SetFont(font, 11, "OUTLINE")
+        row:SetPoint("TOPLEFT", 8, yOffset)
+        row:SetPoint("TOPRIGHT", -8, yOffset)
+        row:SetJustifyH("LEFT")
+        row:SetTextColor(0.9, 0.9, 0.9)
+        yOffset = yOffset - 18
+        return row
+    end
+    
+    panel.health = CreateRow()
+    panel.power = CreateRow()
+    panel.ilvl = CreateRow()
+    yOffset = yOffset - 8
+    panel.str = CreateRow()
+    panel.agi = CreateRow()
+    panel.int = CreateRow()
+    panel.sta = CreateRow()
+    yOffset = yOffset - 8
+    panel.crit = CreateRow()
+    panel.haste = CreateRow()
+    panel.mastery = CreateRow()
+    panel.vers = CreateRow()
+    
+    statsPanel = panel
+    return panel
+end
+
+local function UpdateStatsPanel()
+    if not statsPanel or not IsEnabled() then
+        if statsPanel then statsPanel:Hide() end
+        return
+    end
+    
+    if not CharacterPane.db.profile.showStatsPanel then
+        statsPanel:Hide()
+        return
+    end
+    
+    statsPanel:Show()
+    
+    -- Basic stats
+    local health = UnitHealthMax("player")
+    local power = UnitPowerMax("player")
+    statsPanel.health:SetText("Health: " .. BreakUpLargeNumbers(health))
+    statsPanel.power:SetText("Power: " .. BreakUpLargeNumbers(power))
+    
+    -- Item level
+    local _, avgEquipped = GetAverageItemLevel()
+    if avgEquipped then
+        statsPanel.ilvl:SetText("Item Level: " .. math.floor(avgEquipped))
+    end
+    
+    -- Primary stats
+    local str = UnitStat("player", 1)
+    local agi = UnitStat("player", 2)
+    local int = UnitStat("player", 4)
+    local sta = UnitStat("player", 3)
+    statsPanel.str:SetText("Strength: " .. str)
+    statsPanel.agi:SetText("Agility: " .. agi)
+    statsPanel.int:SetText("Intellect: " .. int)
+    statsPanel.sta:SetText("Stamina: " .. sta)
+    
+    -- Secondary stats
+    local crit = GetCritChance()
+    local haste = GetHaste()
+    local mastery = GetMasteryEffect()
+    local vers = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+    statsPanel.crit:SetText(string.format("Crit: %.2f%%", crit))
+    statsPanel.haste:SetText(string.format("Haste: %.2f%%", haste))
+    statsPanel.mastery:SetText(string.format("Mastery: %.2f%%", mastery))
+    statsPanel.vers:SetText(string.format("Versatility: %.2f%%", vers))
+end
+
+---------------------------------------------------------------------------
+-- BACKGROUND AND DECORATION
+---------------------------------------------------------------------------
+
+local function HideBlizzardElements()
+    if CharacterFramePortrait then CharacterFramePortrait:Hide() end
+    if CharacterFrame.Background then CharacterFrame.Background:Hide() end
+    if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
+end
+
+local function CreateBackground()
     if not CharacterFrame then return end
-
-    local sr, sg, sb, sa, bgr, bgg, bgb, bga = GetThemeColors()
-
+    
+    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    
     if not customBg then
-        customBg = CreateFrame("Frame", "AbstractUI_CharacterFrameBg", CharacterFrame, "BackdropTemplate")
+        customBg = CreateFrame("Frame", "AbstractUI_CharBg", CharacterFrame, "BackdropTemplate")
         customBg:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -127,434 +436,103 @@ local function CreateOrUpdateBackground()
         customBg:SetFrameStrata("BACKGROUND")
         customBg:SetFrameLevel(0)
         customBg:EnableMouse(false)
-    end
-
-    customBg:SetBackdropColor(bgr, bgg, bgb, bga)
-    customBg:SetBackdropBorderColor(sr, sg, sb, sa)
-
-    return customBg
-end
-
----------------------------------------------------------------------------
--- Hide Blizzard decorative elements on CharacterFrame
----------------------------------------------------------------------------
-local function HideBlizzardDecorations()
-    if CharacterFramePortrait then CharacterFramePortrait:Hide() end
-    if CharacterFrame.Background then CharacterFrame.Background:Hide() end
-    if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
-    if CharacterFrameBg then CharacterFrameBg:Hide() end
-    if CharacterStatsPane then CharacterStatsPane:Hide() end
-end
-
----------------------------------------------------------------------------
--- Set background to normal or extended mode
----------------------------------------------------------------------------
-local function SetCharacterFrameBgExtended(extended)
-    if not customBg then
-        CreateOrUpdateBackground()
-    end
-    if not customBg then return end
-
-    customBg:ClearAllPoints()
-
-    if extended then
-        customBg:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 0, 0)
-        customBg:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT",
-            CONFIG.PANEL_WIDTH_EXTENSION, -CONFIG.PANEL_HEIGHT_EXTENSION)
-    else
         customBg:SetAllPoints(CharacterFrame)
     end
-
-    customBg:Show()
-    HideBlizzardDecorations()
-end
-
----------------------------------------------------------------------------
--- Skin individual reputation entry/header
----------------------------------------------------------------------------
-local function SkinReputationEntry(child)
-    if child.abstractSkinned then return end
-
-    local sr, sg, sb, sa = GetThemeColors()
-    local fontPath = GetFontPath()
-
-    -- Skin top-level headers (expansion names)
-    if child.Right then
-        if child.Name then
-            child.Name:SetFont(fontPath, 13, "")
-            child.Name:SetTextColor(sr, sg, sb, 1)
-        end
-
-        -- Replace collapse icons
-        local function UpdateCollapseIcon(texture, atlas)
-            if not atlas or atlas == "Options_ListExpand_Right" or atlas == "Options_ListExpand_Right_Expanded" then
-                if child.IsCollapsed and child:IsCollapsed() then
-                    texture:SetAtlas("Soulbinds_Collection_CategoryHeader_Expand", true)
-                else
-                    texture:SetAtlas("Soulbinds_Collection_CategoryHeader_Collapse", true)
-                end
-            end
-        end
-
-        UpdateCollapseIcon(child.Right)
-        UpdateCollapseIcon(child.HighlightRight)
-        hooksecurefunc(child.Right, "SetAtlas", UpdateCollapseIcon)
-        hooksecurefunc(child.HighlightRight, "SetAtlas", UpdateCollapseIcon)
-    end
-
-    -- Skin reputation bar
-    local ReputationBar = child.Content and child.Content.ReputationBar
-    if ReputationBar then
-        ReputationBar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-
-        if ReputationBar.BarText then
-            ReputationBar.BarText:SetFont(fontPath, 10, "")
-            ReputationBar.BarText:SetTextColor(0.9, 0.9, 0.9, 1)
-        end
-
-        -- Create backdrop for rep bar
-        if not ReputationBar.abstractBackdrop then
-            local backdrop = CreateFrame("Frame", nil, ReputationBar:GetParent(), "BackdropTemplate")
-            backdrop:SetFrameLevel(ReputationBar:GetFrameLevel())
-            backdrop:SetPoint("TOPLEFT", ReputationBar, "TOPLEFT", -2, 2)
-            backdrop:SetPoint("BOTTOMRIGHT", ReputationBar, "BOTTOMRIGHT", 2, -2)
-            backdrop:SetBackdrop({
-                bgFile = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8x8",
-                edgeSize = 2,
-            })
-            backdrop:SetBackdropColor(0, 0, 0, 0.9)
-            backdrop:SetBackdropBorderColor(sr, sg, sb, 1)
-            backdrop:Show()
-            ReputationBar.abstractBackdrop = backdrop
-        end
-
-        if child.Content.Name then
-            child.Content.Name:SetFont(fontPath, 11, "")
-        end
-    end
-
-    -- Skin collapse button
-    local ToggleCollapseButton = child.ToggleCollapseButton
-    if ToggleCollapseButton and ToggleCollapseButton.RefreshIcon then
-        local function UpdateToggleButton(button)
-            local header = button.GetHeader and button:GetHeader()
-            if not header then return end
-            if header:IsCollapsed() then
-                button:GetNormalTexture():SetAtlas("Gamepad_Expand", true)
-                button:GetPushedTexture():SetAtlas("Gamepad_Expand", true)
-            else
-                button:GetNormalTexture():SetAtlas("Gamepad_Collapse", true)
-                button:GetPushedTexture():SetAtlas("Gamepad_Collapse", true)
-            end
-        end
-        hooksecurefunc(ToggleCollapseButton, "RefreshIcon", UpdateToggleButton)
-        UpdateToggleButton(ToggleCollapseButton)
-    end
-
-    child.abstractSkinned = true
-end
-
----------------------------------------------------------------------------
--- Skin individual currency entry/header
----------------------------------------------------------------------------
-local function SkinCurrencyEntry(child)
-    if child.abstractSkinned then return end
-
-    local sr, sg, sb, sa = GetThemeColors()
-    local fontPath = GetFontPath()
-
-    -- Skin top-level headers
-    if child.Right then
-        if child.Name then
-            child.Name:SetFont(fontPath, 13, "")
-            child.Name:SetTextColor(sr, sg, sb, 1)
-        end
-
-        -- Replace collapse icons
-        local function UpdateCollapseIcon(texture, atlas)
-            if not atlas or atlas == "Options_ListExpand_Right" or atlas == "Options_ListExpand_Right_Expanded" then
-                if child.IsCollapsed and child:IsCollapsed() then
-                    texture:SetAtlas("Soulbinds_Collection_CategoryHeader_Expand", true)
-                else
-                    texture:SetAtlas("Soulbinds_Collection_CategoryHeader_Collapse", true)
-                end
-            end
-        end
-
-        UpdateCollapseIcon(child.Right)
-        UpdateCollapseIcon(child.HighlightRight)
-        hooksecurefunc(child.Right, "SetAtlas", UpdateCollapseIcon)
-        hooksecurefunc(child.HighlightRight, "SetAtlas", UpdateCollapseIcon)
-    end
-
-    -- Style currency icon
-    local CurrencyIcon = child.Content and child.Content.CurrencyIcon
-    if CurrencyIcon then
-        CurrencyIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-
-        if not CurrencyIcon.abstractBorder then
-            local border = CreateFrame("Frame", nil, CurrencyIcon:GetParent(), "BackdropTemplate")
-            local drawLayer = CurrencyIcon.GetDrawLayer and CurrencyIcon:GetDrawLayer()
-            border:SetFrameLevel((drawLayer == "OVERLAY") and child:GetFrameLevel() + 2 or child:GetFrameLevel() + 1)
-            border:SetPoint("TOPLEFT", CurrencyIcon, "TOPLEFT", -1, 1)
-            border:SetPoint("BOTTOMRIGHT", CurrencyIcon, "BOTTOMRIGHT", 1, -1)
-            border:SetBackdrop({
-                edgeFile = "Interface\\Buttons\\WHITE8x8",
-                edgeSize = 1,
-            })
-            border:SetBackdropBorderColor(sr, sg, sb, 1)
-            CurrencyIcon.abstractBorder = border
-        end
-    end
-
-    -- Style name and count
-    if child.Content then
-        if child.Content.Name then
-            child.Content.Name:SetFont(fontPath, 11, "")
-        end
-        if child.Content.Count then
-            child.Content.Count:SetFont(fontPath, 11, "")
-        end
-    end
-
-    -- Skin collapse button
-    local ToggleCollapseButton = child.ToggleCollapseButton
-    if ToggleCollapseButton and ToggleCollapseButton.RefreshIcon then
-        local function UpdateToggleButton(button)
-            local header = button.GetHeader and button:GetHeader()
-            if not header then return end
-            if header:IsCollapsed() then
-                button:GetNormalTexture():SetAtlas("Gamepad_Expand", true)
-                button:GetPushedTexture():SetAtlas("Gamepad_Expand", true)
-            else
-                button:GetNormalTexture():SetAtlas("Gamepad_Collapse", true)
-                button:GetPushedTexture():SetAtlas("Gamepad_Collapse", true)
-            end
-        end
-        hooksecurefunc(ToggleCollapseButton, "RefreshIcon", UpdateToggleButton)
-        UpdateToggleButton(ToggleCollapseButton)
-    end
-
-    child.abstractSkinned = true
-end
-
----------------------------------------------------------------------------
--- Skin individual title entry button
----------------------------------------------------------------------------
-local function SkinTitleEntry(button)
-    if button.abstractSkinned then return end
-
-    local sr, sg, sb, sa = GetThemeColors()
-    local fontPath = GetFontPath()
-
-    -- Style title text
-    if button.text then
-        button.text:SetFont(fontPath, 12, "")
-        button.text:SetTextColor(0.9, 0.9, 0.9, 1)
-    end
-
-    -- Style check mark with theme color
-    if button.Check then
-        button.Check:SetVertexColor(sr, sg, sb, 1)
-    end
-
-    -- Style selection bar with theme color
-    if button.SelectedBar then
-        button.SelectedBar:SetColorTexture(sr, sg, sb, 0.3)
-    end
-
-    -- Hide Blizzard background textures
-    if button.BgTop then button.BgTop:Hide() end
-    if button.BgMiddle then button.BgMiddle:Hide() end
-    if button.BgBottom then button.BgBottom:Hide() end
-
-    -- Add subtle hover highlight
-    if button.Highlight then
-        button.Highlight:SetColorTexture(sr, sg, sb, 0.15)
-    elseif not button.abstractHighlight then
-        local highlight = button:CreateTexture(nil, "HIGHLIGHT")
-        highlight:SetAllPoints()
-        highlight:SetColorTexture(sr, sg, sb, 0.15)
-        button.abstractHighlight = highlight
-    end
-
-    button.abstractSkinned = true
-end
-
----------------------------------------------------------------------------
--- Main skinning setup
----------------------------------------------------------------------------
-function CharacterPane:SetupCharacterFrameSkinning()
-    if not IsSkinningEnabled() then 
-        AbstractUI:Print("CharacterPane skinning is DISABLED in settings")
-        return 
-    end
-    if not CharacterFrame then 
-        AbstractUI:Print("ERROR: CharacterFrame not found!")
-        return 
-    end
-
-    -- Create initial background
-    CreateOrUpdateBackground()
     
-    if customBg then
-        AbstractUI:Print("CharacterPane background created successfully!")
-    else
-        AbstractUI:Print("ERROR: Failed to create CharacterPane background!")
-        return
-    end
+    customBg:SetBackdropColor(bgr, bgg, bgb, bga)
+    customBg:SetBackdropBorderColor(pr, pg, pb, pa)
+    customBg:Show()
+    
+    HideBlizzardElements()
+end
 
-    -- Hook ScrollBox updates for reputation
-    if ReputationFrame and ReputationFrame.ScrollBox then
-        hooksecurefunc(ReputationFrame.ScrollBox, "Update", function(frame)
-            if IsSkinningEnabled() then
-                frame:ForEachFrame(SkinReputationEntry)
-            end
-        end)
-    end
+---------------------------------------------------------------------------
+-- MAIN SETUP
+---------------------------------------------------------------------------
 
-    -- Hook ScrollBox updates for currency
-    if TokenFrame and TokenFrame.ScrollBox then
-        hooksecurefunc(TokenFrame.ScrollBox, "Update", function(frame)
-            if IsSkinningEnabled() then
-                frame:ForEachFrame(SkinCurrencyEntry)
+function CharacterPane:Setup()
+    if not IsEnabled() then return end
+    if not CharacterFrame then return end
+    
+    CreateBackground()
+    
+    -- Create overlays for equipment slots
+    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+        if slotButton and not slotOverlays[slotInfo.id] then
+            local overlay = CreateSlotOverlay(slotButton, slotInfo)
+            if overlay then
+                slotOverlays[slotInfo.id] = overlay
             end
-        end)
-    end
-
-    -- Hook title pane if it exists
-    if PaperDollFrame and PaperDollFrame.TitleManagerPane then
-        local titlePane = PaperDollFrame.TitleManagerPane
-        
-        -- Hide pane background
-        if titlePane.Bg then titlePane.Bg:Hide() end
-        
-        -- Hook ScrollBox for titles
-        if titlePane.ScrollBox then
-            hooksecurefunc(titlePane.ScrollBox, "Update", function(scrollBox)
-                if IsSkinningEnabled() then
-                    scrollBox:ForEachFrame(SkinTitleEntry)
-                end
-            end)
-        end
-        
-        -- Show on title pane open
-        titlePane:HookScript("OnShow", function()
-            if IsSkinningEnabled() and titlePane.ScrollBox then
-                titlePane.ScrollBox:ForEachFrame(SkinTitleEntry)
-            end
-        end)
-    end
-
-    -- Handle tab switching - show background and hide decorations
-    if ReputationFrame then
-        ReputationFrame:HookScript("OnShow", function()
-            if IsSkinningEnabled() then
-                SetCharacterFrameBgExtended(false)
-            end
-        end)
-        if ReputationFrame:IsShown() then
-            SetCharacterFrameBgExtended(false)
         end
     end
-
-    if TokenFrame then
-        TokenFrame:HookScript("OnShow", function()
-            if IsSkinningEnabled() then
-                SetCharacterFrameBgExtended(false)
-            end
-        end)
-        if TokenFrame:IsShown() then
-            SetCharacterFrameBgExtended(false)
-        end
-    end
-
-    -- Handle Character tab (PaperDollFrame)
-    if PaperDollFrame then
-        PaperDollFrame:HookScript("OnShow", function()
-            if IsSkinningEnabled() then
-                SetCharacterFrameBgExtended(false)
-            end
-        end)
-        if PaperDollFrame:IsShown() then
-            SetCharacterFrameBgExtended(false)
-        end
-    end
-
-    -- Handle CharacterFrame open when PaperDoll not shown
+    
+    -- Create stats panel
+    CreateStatsPanel()
+    
+    -- Hook frame events
     CharacterFrame:HookScript("OnShow", function()
-        C_Timer.After(0.01, function()
-            if IsSkinningEnabled() and not (PaperDollFrame and PaperDollFrame:IsShown()) then
-                SetCharacterFrameBgExtended(false)
-            end
-        end)
+        if IsEnabled() then
+            CreateBackground()
+            self:UpdateAll()
+        end
     end)
     
-    -- Apply skinning immediately if CharacterFrame is currently shown
-    if CharacterFrame:IsShown() then
-        SetCharacterFrameBgExtended(false)
+    PaperDollFrame:HookScript("OnShow", function()
+        if IsEnabled() then
+            self:UpdateAll()
+        end
+    end)
+    
+    -- Register update events
+    self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", "ScheduleUpdate")
+    self:RegisterEvent("PLAYER_AVG_ITEM_LEVEL_UPDATE", "ScheduleUpdate")
+    self:RegisterEvent("UNIT_STATS", "ScheduleUpdate")
+    
+    -- Initial update
+    if CharacterFrame:IsShown() and PaperDollFrame:IsShown() then
+        self:UpdateAll()
     end
     
-    -- Listen for theme changes
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
 end
 
----------------------------------------------------------------------------
--- Refresh colors on theme change
----------------------------------------------------------------------------
+function CharacterPane:ScheduleUpdate()
+    if updatePending then return end
+    updatePending = true
+    C_Timer.After(0.1, function()
+        updatePending = false
+        self:UpdateAll()
+    end)
+end
+
+function CharacterPane:UpdateAll()
+    if not IsEnabled() then return end
+    
+    for _, overlay in pairs(slotOverlays) do
+        UpdateSlotOverlay(overlay)
+    end
+    
+    UpdateStatsPanel()
+end
+
 function CharacterPane:OnThemeChanged()
-    if not IsSkinningEnabled() then return end
-
-    local sr, sg, sb, sa, bgr, bgg, bgb, bga = GetThemeColors()
-
-    -- Update main background
+    if not IsEnabled() then return end
+    
+    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    
     if customBg then
         customBg:SetBackdropColor(bgr, bgg, bgb, bga)
-        customBg:SetBackdropBorderColor(sr, sg, sb, sa)
+        customBg:SetBackdropBorderColor(pr, pg, pb, pa)
     end
-
-    -- Update reputation entries
-    if ReputationFrame and ReputationFrame.ScrollBox then
-        ReputationFrame.ScrollBox:ForEachFrame(function(child)
-            if not child.abstractSkinned then return end
-            if child.Right and child.Name then
-                child.Name:SetTextColor(sr, sg, sb, 1)
-            end
-            local ReputationBar = child.Content and child.Content.ReputationBar
-            if ReputationBar and ReputationBar.abstractBackdrop then
-                ReputationBar.abstractBackdrop:SetBackdropBorderColor(sr, sg, sb, 1)
-            end
-        end)
+    
+    if statsPanel then
+        statsPanel:SetBackdropColor(bgr, bgg, bgb, bga)
+        statsPanel:SetBackdropBorderColor(pr, pg, pb, pa)
+        if statsPanel.title then
+            statsPanel.title:SetTextColor(pr, pg, pb)
+        end
     end
-
-    -- Update currency entries
-    if TokenFrame and TokenFrame.ScrollBox then
-        TokenFrame.ScrollBox:ForEachFrame(function(child)
-            if not child.abstractSkinned then return end
-            if child.Right and child.Name then
-                child.Name:SetTextColor(sr, sg, sb, 1)
-            end
-            local CurrencyIcon = child.Content and child.Content.CurrencyIcon
-            if CurrencyIcon and CurrencyIcon.abstractBorder then
-                CurrencyIcon.abstractBorder:SetBackdropBorderColor(sr, sg, sb, 1)
-            end
-        end)
-    end
-
-    -- Update title entries
-    if PaperDollFrame and PaperDollFrame.TitleManagerPane and PaperDollFrame.TitleManagerPane.ScrollBox then
-        PaperDollFrame.TitleManagerPane.ScrollBox:ForEachFrame(function(button)
-            if not button.abstractSkinned then return end
-            if button.Check then
-                button.Check:SetVertexColor(sr, sg, sb, 1)
-            end
-            if button.SelectedBar then
-                button.SelectedBar:SetColorTexture(sr, sg, sb, 0.3)
-            end
-            if button.abstractHighlight then
-                button.abstractHighlight:SetColorTexture(sr, sg, sb, 0.15)
-            end
-        end)
-    end
+    
+    self:UpdateAll()
 end
