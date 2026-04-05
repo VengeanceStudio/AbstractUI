@@ -525,20 +525,18 @@ local function SkinCharacterTabs()
     for i = 1, 3 do
         local tab = _G["CharacterFrameTab" .. i]
         if tab and not tab._abstractSkinned then
-            -- Remove default textures
+            -- Aggressively remove ALL default textures
             tab:SetNormalTexture("")
             tab:SetPushedTexture("")
             tab:SetDisabledTexture("")
             
-            -- Remove highlight
-            local regions = {tab:GetRegions()}
-            for _, region in ipairs(regions) do
-                if region:GetObjectType() == "Texture" then
-                    local tex = region:GetTexture()
-                    -- GetTexture can return a number (texture ID) or string (file path)
-                    if tex and type(tex) == "string" and (tex:find("UI%-Panel%-Button") or tex:find("TabBar")) then
-                        region:SetTexture("")
-                    end
+            -- Hide ALL texture regions from the tab
+            for j = 1, tab:GetNumRegions() do
+                local region = select(j, tab:GetRegions())
+                if region and region:GetObjectType() == "Texture" then
+                    region:SetTexture("")
+                    region:SetAlpha(0)
+                    region:Hide()
                 end
             end
             
@@ -553,41 +551,62 @@ local function SkinCharacterTabs()
                     edgeSize = 1,
                     insets = { left = 1, right = 1, top = 1, bottom = 1 }
                 })
-                backdrop:SetBackdropColor(bgr, bgg, bgb, 0.5)
-                backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.5)
+                backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
+                backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
                 tab.backdrop = backdrop
             end
             
             -- Style text
             local text = tab:GetFontString()
             if text then
-                text:SetTextColor(0.9, 0.9, 0.9)
+                text:SetTextColor(pr, pg, pb, 1)
+                text:SetShadowOffset(1, -1)
+                text:SetShadowColor(0, 0, 0, 1)
             end
             
             -- Highlight
             local highlight = tab:GetHighlightTexture()
             if highlight then
-                highlight:SetColorTexture(pr, pg, pb, 0.15)
+                highlight:SetColorTexture(pr, pg, pb, 0.2)
                 highlight:ClearAllPoints()
                 highlight:SetPoint("TOPLEFT", 1, -1)
                 highlight:SetPoint("BOTTOMRIGHT", -1, 1)
             end
             
-            -- Selected state
+            -- Selected state - update on click
             tab:HookScript("OnClick", function(self)
                 for j = 1, 3 do
                     local t = _G["CharacterFrameTab" .. j]
                     if t and t.backdrop then
+                        local text = t:GetFontString()
                         if j == i then
-                            t.backdrop:SetBackdropColor(bgr * 2, bgg * 2, bgb * 2, 0.8)
-                            t.backdrop:SetBackdropBorderColor(pr, pg, pb, 0.8)
+                            -- Selected tab
+                            t.backdrop:SetBackdropColor(bgr * 1.5, bgg * 1.5, bgb * 1.5, 0.9)
+                            t.backdrop:SetBackdropBorderColor(pr, pg, pb, 1)
+                            if text then
+                                text:SetTextColor(1, 1, 1, 1)
+                            end
                         else
-                            t.backdrop:SetBackdropColor(bgr, bgg, bgb, 0.5)
-                            t.backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.5)
+                            -- Unselected tabs
+                            t.backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
+                            t.backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+                            if text then
+                                text:SetTextColor(pr * 0.8, pg * 0.8, pb * 0.8, 1)
+                            end
                         end
                     end
                 end
             end)
+            
+            -- Set initial selected state
+            if PanelTemplates_GetSelectedTab(CharacterFrame) == i then
+                tab.backdrop:SetBackdropColor(bgr * 1.5, bgg * 1.5, bgb * 1.5, 0.9)
+                tab.backdrop:SetBackdropBorderColor(pr, pg, pb, 1)
+                local text = tab:GetFontString()
+                if text then
+                    text:SetTextColor(1, 1, 1, 1)
+                end
+            end
             
             tab._abstractSkinned = true
         end
