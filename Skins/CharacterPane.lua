@@ -381,6 +381,15 @@ local function SkinItemSlot(button)
             child:Hide()
             child:SetAlpha(0)
             
+            -- Hook to prevent them from being shown again
+            if child.Show and not child._abstractHidden then
+                hooksecurefunc(child, "Show", function(self)
+                    self:Hide()
+                    self:SetAlpha(0)
+                end)
+                child._abstractHidden = true
+            end
+            
             -- Hide child's regions
             if child.GetNumRegions then
                 for i = 1, child:GetNumRegions() do
@@ -392,6 +401,31 @@ local function SkinItemSlot(button)
                 end
             end
         end
+    end
+    
+    -- Hook to continuously hide unnamed children (they might be created later)
+    if not button._abstractHooked then
+        button:HookScript("OnShow", function(self)
+            -- Re-hide unnamed children every time the button shows
+            local children = {self:GetChildren()}
+            for _, child in ipairs(children) do
+                local childName = child:GetName()
+                if not childName or childName == "" then
+                    child:Hide()
+                    child:SetAlpha(0)
+                    
+                    -- Hook new children too
+                    if child.Show and not child._abstractHidden then
+                        hooksecurefunc(child, "Show", function(c)
+                            c:Hide()
+                            c:SetAlpha(0)
+                        end)
+                        child._abstractHidden = true
+                    end
+                end
+            end
+        end)
+        button._abstractHooked = true
     end
     
     -- Remove default textures
