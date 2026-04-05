@@ -111,17 +111,39 @@ local function StripBlizzardTextures()
         "PaperDollInnerBorderBottom",
         "PaperDollInnerBorderBottom2",
         
-        -- Weapon slot backgrounds/bars
-        "CharacterHandsSlotFrame",
-        "CharacterMainHandSlotFrame", 
-        "CharacterSecondaryHandSlotFrame",
-    }
+        }
     
     for _, name in ipairs(texturesToHide) do
         local tex = _G[name]
         if tex then
             tex:Hide()
             tex:SetAlpha(0)
+        end
+    end
+    
+    -- Weapon slot backgrounds/bars - hide them and all their regions
+    local weaponFrames = {
+        "CharacterHandsSlotFrame",
+        "CharacterMainHandSlotFrame", 
+        "CharacterSecondaryHandSlotFrame",
+    }
+    
+    for _, name in ipairs(weaponFrames) do
+        local frame = _G[name]
+        if frame then
+            frame:Hide()
+            frame:SetAlpha(0)
+            
+            -- Hide all texture regions within the frame
+            if frame.GetNumRegions then
+                for i = 1, frame:GetNumRegions() do
+                    local region = select(i, frame:GetRegions())
+                    if region and region:GetObjectType() == "Texture" then
+                        region:SetAlpha(0)
+                        region:Hide()
+                    end
+                end
+            end
         end
     end
     
@@ -510,10 +532,52 @@ local function SkinCharacterFrameBackdrop()
         CharacterFramePortrait:SetAlpha(0)
     end
     
-    -- Hide the close button completely
+    -- Hide Blizzard's close button and create our own
     if CharacterFrame.CloseButton then
         CharacterFrame.CloseButton:Hide()
         CharacterFrame.CloseButton:SetAlpha(0)
+    end
+    
+    -- Create custom themed close button
+    if not CharacterFrame.AbstractCloseButton then
+        local closeBtn = CreateFrame("Button", nil, CharacterFrame, "BackdropTemplate")
+        closeBtn:SetSize(20, 20)
+        closeBtn:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -5, -5)
+        
+        -- Backdrop
+        closeBtn:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        closeBtn:SetBackdropColor(bgr, bgg, bgb, 0.5)
+        closeBtn:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+        
+        -- X text
+        local xText = closeBtn:CreateFontString(nil, "OVERLAY")
+        xText:SetPoint("CENTER", 0, 0)
+        xText:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
+        xText:SetText("X")
+        xText:SetTextColor(pr, pg, pb, 1)
+        
+        -- Hover effect
+        closeBtn:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(pr * 0.8, pg * 0.8, pb * 0.8, 0.8)
+            xText:SetTextColor(1, 1, 1, 1)
+        end)
+        
+        closeBtn:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(bgr, bgg, bgb, 0.5)
+            xText:SetTextColor(pr, pg, pb, 1)
+        end)
+        
+        -- Click to close
+        closeBtn:SetScript("OnClick", function()
+            HideUIPanel(CharacterFrame)
+        end)
+        
+        CharacterFrame.AbstractCloseButton = closeBtn
     end
     
     -- Style title text
