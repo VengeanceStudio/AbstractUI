@@ -79,6 +79,18 @@ local function StripBlizzardTextures()
         CharacterFrame.Bg:Hide()
     end
     
+    print("=== CharacterFrame Debug ===")
+    print("Children:")
+    local children = {CharacterFrame:GetChildren()}
+    for i, child in ipairs(children) do
+        local childName = child:GetName() or "unnamed"
+        local objType = child:GetObjectType()
+        local shown = child:IsShown() and "SHOWN" or "hidden"
+        local alpha = child:GetAlpha()
+        print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
+    end
+    print("=== End CharacterFrame Debug ===")
+    
     -- Strip ALL texture regions directly from CharacterFrame
     for i = 1, CharacterFrame:GetNumRegions() do
         local region = select(i, CharacterFrame:GetRegions())
@@ -266,18 +278,38 @@ local function StripBlizzardTextures()
     
     -- Hide PaperDollFrame background completely
     if PaperDollFrame then
+        print("=== PaperDollFrame Debug ===")
+        
         if PaperDollFrame.Bg then
             PaperDollFrame.Bg:SetAlpha(0)
             PaperDollFrame.Bg:Hide()
         end
         
+        print("Regions:")
         for i = 1, PaperDollFrame:GetNumRegions() do
             local region = select(i, PaperDollFrame:GetRegions())
-            if region and region:GetObjectType() == "Texture" then
+            if region then
+                local objType = region:GetObjectType()
+                local name = region:GetName() or "unnamed"
+                local shown = region:IsShown() and "SHOWN" or "hidden"
+                local alpha = region:GetAlpha()
+                print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, name, objType, shown, alpha))
                 region:SetAlpha(0)
                 region:Hide()
             end
         end
+        
+        print("Children:")
+        local children = {PaperDollFrame:GetChildren()}
+        for i, child in ipairs(children) do
+            local childName = child:GetName() or "unnamed"
+            local objType = child:GetObjectType()
+            local shown = child:IsShown() and "SHOWN" or "hidden"
+            local alpha = child:GetAlpha()
+            print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
+        end
+        
+        print("=== End PaperDollFrame Debug ===")
     end
     
     -- Strip textures from inset frames completely
