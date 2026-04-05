@@ -102,11 +102,12 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Strip ALL textures from CharacterFrame's NineSlice except Center
+    -- Strip ALL textures from CharacterFrame's NineSlice including Center
     if CharacterFrame.NineSlice then
         local nineSlicePieces = {
             "TopEdge", "BottomEdge", "LeftEdge", "RightEdge",
-            "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner"
+            "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner",
+            "Center"
         }
         
         for _, piece in ipairs(nineSlicePieces) do
@@ -123,50 +124,61 @@ local function StripBlizzardTextures()
         CharacterFramePortrait:Hide()
     end
     
+    -- Hide PaperDollFrame background completely
+    if PaperDollFrame then
+        for i = 1, PaperDollFrame:GetNumRegions() do
+            local region = select(i, PaperDollFrame:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
+    end
+    
     -- Strip textures from inset frames completely
     if CharacterFrame.Inset then
         CharacterFrame.Inset:SetAlpha(0)
+        CharacterFrame.Inset:Hide()
         if CharacterFrame.Inset.Bg then
             CharacterFrame.Inset.Bg:SetAlpha(0)
+            CharacterFrame.Inset.Bg:Hide()
         end
         if CharacterFrame.Inset.NineSlice then
             CharacterFrame.Inset.NineSlice:SetAlpha(0)
-        end
-        -- Hide all regions
-        for i = 1, CharacterFrame.Inset:GetNumRegions() do
-            local region = select(i, CharacterFrame.Inset:GetRegions())
-            if region and region.SetAlpha then
-                region:SetAlpha(0)
-            end
+            CharacterFrame.Inset.NineSlice:Hide()
         end
     end
     
     if CharacterFrame.InsetRight then
         CharacterFrame.InsetRight:SetAlpha(0)
+        CharacterFrame.InsetRight:Hide()
         if CharacterFrame.InsetRight.Bg then
             CharacterFrame.InsetRight.Bg:SetAlpha(0)
+            CharacterFrame.InsetRight.Bg:Hide()
         end
         if CharacterFrame.InsetRight.NineSlice then
             CharacterFrame.InsetRight.NineSlice:SetAlpha(0)
-        end
-        -- Hide all regions
-        for i = 1, CharacterFrame.InsetRight:GetNumRegions() do
-            local region = select(i, CharacterFrame.InsetRight:GetRegions())
-            if region and region.SetAlpha then
-                region:SetAlpha(0)
-            end
+            CharacterFrame.InsetRight.NineSlice:Hide()
         end
     end
     
-    -- Make model scene completely transparent background
+    -- Make model scene completely transparent background - hide ALL textures
     if CharacterModelScene then
-        CharacterModelScene:SetAlpha(1)
-        -- Strip all textures from model scene
+        CharacterModelScene:SetAlpha(1) -- Keep model visible
+        
+        -- Hide all texture regions
         for i = 1, CharacterModelScene:GetNumRegions() do
             local region = select(i, CharacterModelScene:GetRegions())
             if region and region:GetObjectType() == "Texture" then
                 region:SetAlpha(0)
+                region:Hide()
             end
+        end
+        
+        -- Hide backdrop if it exists
+        if CharacterModelScene.backdrop then
+            CharacterModelScene.backdrop:SetAlpha(0)
+            CharacterModelScene.backdrop:Hide()
         end
     end
     
@@ -174,16 +186,29 @@ local function StripBlizzardTextures()
     if PaperDollSidebarTabs then
         if PaperDollSidebarTabs.DecorLeft then
             PaperDollSidebarTabs.DecorLeft:Hide()
+            PaperDollSidebarTabs.DecorLeft:SetAlpha(0)
         end
         if PaperDollSidebarTabs.DecorRight then
             PaperDollSidebarTabs.DecorRight:Hide()
+            PaperDollSidebarTabs.DecorRight:SetAlpha(0)
         end
     end
     
-    -- Strip textures from stats pane inset if it exists
-    if CharacterStatsPane and CharacterStatsPane.ClassBackground then
-        -- Make class background very subtle or remove it
-        CharacterStatsPane.ClassBackground:SetAlpha(0)
+    -- Strip textures from stats pane completely
+    if CharacterStatsPane then
+        if CharacterStatsPane.ClassBackground then
+            CharacterStatsPane.ClassBackground:SetAlpha(0)
+            CharacterStatsPane.ClassBackground:Hide()
+        end
+        
+        -- Hide all texture regions in stats pane
+        for i = 1, CharacterStatsPane:GetNumRegions() do
+            local region = select(i, CharacterStatsPane:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
     end
 
 end
