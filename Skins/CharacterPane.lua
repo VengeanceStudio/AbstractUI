@@ -279,6 +279,12 @@ local function StripBlizzardTextures()
             PaperDollFrame.Bg:Hide()
         end
         
+        -- Hide the level text (we create our own in titlebar)
+        if CharacterLevelText then
+            CharacterLevelText:Hide()
+            CharacterLevelText:SetAlpha(0)
+        end
+        
         for i = 1, PaperDollFrame:GetNumRegions() do
             local region = select(i, PaperDollFrame:GetRegions())
             if region and region:GetObjectType() == "Texture" then
@@ -753,12 +759,83 @@ local function SkinCharacterFrameBackdrop()
         CharacterFrame.AbstractCloseButton = closeBtn
     end
     
-    -- Style title text
+    -- Hide Blizzard's level text (we'll create our own)
+    if CharacterLevelText then
+        CharacterLevelText:Hide()
+        CharacterLevelText:SetAlpha(0)
+    end
+    
+    -- Create custom titlebar layout: Name | Item Level | Level/Spec/Class
+    if not CharacterFrame.AbstractTitleBar then
+        local titleFrame = CreateFrame("Frame", nil, CharacterFrame)
+        titleFrame:SetPoint("TOP", CharacterFrame, "TOP", 0, -8)
+        titleFrame:SetSize(640, 24)
+        
+        -- Character Name (left-aligned)
+        local nameText = titleFrame:CreateFontString(nil, "OVERLAY")
+        nameText:SetPoint("LEFT", titleFrame, "LEFT", 10, 0)
+        nameText:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
+        nameText:SetTextColor(pr, pg, pb, 1)
+        nameText:SetShadowOffset(1, -1)
+        nameText:SetShadowColor(0, 0, 0, 1)
+        titleFrame.nameText = nameText
+        
+        -- Item Level (center-left)
+        local ilvlText = titleFrame:CreateFontString(nil, "OVERLAY")
+        ilvlText:SetPoint("LEFT", nameText, "RIGHT", 15, 0)
+        ilvlText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+        ilvlText:SetTextColor(0.9, 0.9, 0.9, 1)
+        ilvlText:SetShadowOffset(1, -1)
+        ilvlText:SetShadowColor(0, 0, 0, 1)
+        titleFrame.ilvlText = ilvlText
+        
+        -- Level/Spec/Class (center)
+        local infoText = titleFrame:CreateFontString(nil, "OVERLAY")
+        infoText:SetPoint("CENTER", titleFrame, "CENTER", 0, 0)
+        infoText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+        infoText:SetTextColor(0.9, 0.9, 0.9, 1)
+        infoText:SetShadowOffset(1, -1)
+        infoText:SetShadowColor(0, 0, 0, 1)
+        titleFrame.infoText = infoText
+        
+        -- Update function
+        titleFrame.Update = function(self)
+            -- Character name
+            local name = UnitName("player")
+            self.nameText:SetText(name or "")
+            
+            -- Item level
+            local avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel()
+            self.ilvlText:SetText(string.format("Item Level |cff%02x%02x%02x%.1f|r", pr*255, pg*255, pb*255, avgItemLevelEquipped))
+            
+            -- Level, Spec, Class
+            local level = UnitLevel("player")
+            local specIndex = GetSpecialization()
+            local specName = specIndex and select(2, GetSpecializationInfo(specIndex)) or "No Spec"
+            local className = UnitClass("player")
+            self.infoText:SetText(string.format("Level %d %s %s", level, specName, className))
+        end
+        
+        -- Initial update
+        titleFrame:Update()
+        
+        -- Update on events
+        titleFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+        titleFrame:RegisterEvent("PLAYER_AVG_ITEM_LEVEL_UPDATE")
+        titleFrame:RegisterEvent("PLAYER_LEVEL_UP")
+        titleFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+        titleFrame:SetScript("OnEvent", function(self)
+            self:Update()
+        end)
+        
+        CharacterFrame.AbstractTitleBar = titleFrame
+    end
+    
+    -- Style title text (hide Blizzard's default title)
     if CharacterFrame.TitleContainer and CharacterFrame.TitleContainer.TitleText then
         local title = CharacterFrame.TitleContainer.TitleText
-        title:SetTextColor(pr, pg, pb, 1)
-        title:SetShadowOffset(1, -1)
-        title:SetShadowColor(0, 0, 0, 1)
+        title:Hide()
+        title:SetAlpha(0)
     end
 end
 
