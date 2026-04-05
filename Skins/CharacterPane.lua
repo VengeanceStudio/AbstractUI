@@ -7,31 +7,31 @@ local LSM = LibStub("LibSharedMedia-3.0")
 -- Equipment overlays (ilvl, enchants, gems) and custom stats panel
 ---------------------------------------------------------------------------
 
--- Equipment slot configuration (in order for left-side display)
+-- Equipment slot configuration (with positioning)
 local EQUIPMENT_SLOTS = {
-    { name = "Head", id = INVSLOT_HEAD, label = "Head" },
-    { name = "Neck", id = INVSLOT_NECK, label = "Neck" },
-    { name = "Shoulder", id = INVSLOT_SHOULDER, label = "Shoulder" },
-    { name = "Back", id = INVSLOT_BACK, label = "Back" },
-    { name = "Chest", id = INVSLOT_CHEST, label = "Chest" },
-    { name = "Wrist", id = INVSLOT_WRIST, label = "Wrist" },
-    { name = "Hands", id = INVSLOT_HAND, label = "Hands" },
-    { name = "Waist", id = INVSLOT_WAIST, label = "Waist" },
-    { name = "Legs", id = INVSLOT_LEGS, label = "Legs" },
-    { name = "Feet", id = INVSLOT_FEET, label = "Feet" },
-    { name = "Finger0", id = INVSLOT_FINGER1, label = "Ring 1" },
-    { name = "Finger1", id = INVSLOT_FINGER2, label = "Ring 2" },
-    { name = "Trinket0", id = INVSLOT_TRINKET1, label = "Trinket 1" },
-    { name = "Trinket1", id = INVSLOT_TRINKET2, label = "Trinket 2" },
-    { name = "MainHand", id = INVSLOT_MAINHAND, label = "Main Hand" },
-    { name = "SecondaryHand", id = INVSLOT_OFFHAND, label = "Off Hand" },
+    { name = "Head", id = INVSLOT_HEAD, side = "left" },
+    { name = "Neck", id = INVSLOT_NECK, side = "left" },
+    { name = "Shoulder", id = INVSLOT_SHOULDER, side = "left" },
+    { name = "Back", id = INVSLOT_BACK, side = "left" },
+    { name = "Chest", id = INVSLOT_CHEST, side = "left" },
+    { name = "Wrist", id = INVSLOT_WRIST, side = "left" },
+    { name = "Hands", id = INVSLOT_HAND, side = "right" },
+    { name = "Waist", id = INVSLOT_WAIST, side = "right" },
+    { name = "Legs", id = INVSLOT_LEGS, side = "right" },
+    { name = "Feet", id = INVSLOT_FEET, side = "right" },
+    { name = "Finger0", id = INVSLOT_FINGER1, side = "right" },
+    { name = "Finger1", id = INVSLOT_FINGER2, side = "right" },
+    { name = "Trinket0", id = INVSLOT_TRINKET1, side = "right" },
+    { name = "Trinket1", id = INVSLOT_TRINKET2, side = "right" },
+    { name = "MainHand", id = INVSLOT_MAINHAND, side = "bottom" },
+    { name = "SecondaryHand", id = INVSLOT_OFFHAND, side = "bottom" },
 }
 
 -- Module state
 local ColorPalette = nil
 local FontKit = nil
 local customBg = nil
-local equipmentLabels = {}
+local slotOverlays = {}
 local ilvlDisplay = nil
 local statsPanel = nil
 local settingsPanel = nil
@@ -182,65 +182,76 @@ local function GetQualityColor(quality)
 end
 
 ---------------------------------------------------------------------------
--- EQUIPMENT LABELS (LEFT SIDE)
+-- EQUIPMENT SLOT OVERLAYS
 ---------------------------------------------------------------------------
 
-local function CreateEquipmentLabel(parent, slotInfo, index)
+local function CreateSlotOverlay(slotButton, slotInfo)
+    if not slotButton then return nil end
+    
     local pr, pg, pb = GetThemeColors()
     local font = GetFont()
     
-    local label = CreateFrame("Frame", nil, parent)
-    label:SetSize(280, 24)
-    label:SetPoint("TOPLEFT", 10, -30 - (index * 26))
+    local overlay = CreateFrame("Frame", nil, slotButton)
+    overlay:SetAllPoints(slotButton)
+    overlay:SetFrameLevel(slotButton:GetFrameLevel() + 5)
     
-    -- Item icon
-    label.icon = label:CreateTexture(nil, "ARTWORK")
-    label.icon:SetSize(22, 22)
-    label.icon:SetPoint("LEFT", 2, 0)
-    label.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    -- Item name text
+    overlay.itemName = overlay:CreateFontString(nil, "OVERLAY")
+    overlay.itemName:SetFont(font, 11, "OUTLINE")
+    overlay.itemName:SetWordWrap(false)
     
-    -- Item name
-    label.itemName = label:CreateFontString(nil, "OVERLAY")
-    label.itemName:SetFont(font, 10, "OUTLINE")
-    label.itemName:SetPoint("LEFT", label.icon, "RIGHT", 4, 0)
-    label.itemName:SetPoint("RIGHT", -90, 0)
-    label.itemName:SetJustifyH("LEFT")
-    label.itemName:SetWordWrap(false)
+    -- Item level and track text
+    overlay.ilvlTrack = overlay:CreateFontString(nil, "OVERLAY")
+    overlay.ilvlTrack:SetFont(font, 10, "OUTLINE")
+    overlay.ilvlTrack:SetTextColor(1, 0.82, 0) -- Gold
     
-    -- Item level
-    label.ilvl = label:CreateFontString(nil, "OVERLAY")
-    label.ilvl:SetFont(font, 10, "OUTLINE")
-    label.ilvl:SetPoint("RIGHT", -40, 0)
-    label.ilvl:SetTextColor(1, 0.82, 0) -- Gold color
+    -- Enchant/gem status text
+    overlay.status = overlay:CreateFontString(nil, "OVERLAY")
+    overlay.status:SetFont(font, 10, "OUTLINE")
     
-    -- Enchant/gem status
-    label.status = label:CreateFontString(nil, "OVERLAY")
-    label.status:SetFont(font, 9, "OUTLINE")
-    label.status:SetPoint("RIGHT", -2, 0)
+    -- Position based on slot side
+    if slotInfo.side == "left" then
+        overlay.itemName:SetPoint("LEFT", overlay, "RIGHT", 6, 8)
+        overlay.itemName:SetJustifyH("LEFT")
+        overlay.ilvlTrack:SetPoint("LEFT", overlay, "RIGHT", 6, -8)
+        overlay.ilvlTrack:SetJustifyH("LEFT")
+        overlay.status:SetPoint("LEFT", overlay.ilvlTrack, "RIGHT", 4, 0)
+    elseif slotInfo.side == "right" then
+        overlay.itemName:SetPoint("RIGHT", overlay, "LEFT", -6, 8)
+        overlay.itemName:SetJustifyH("RIGHT")
+        overlay.ilvlTrack:SetPoint("RIGHT", overlay, "LEFT", -6, -8)
+        overlay.ilvlTrack:SetJustifyH("RIGHT")
+        overlay.status:SetPoint("RIGHT", overlay.ilvlTrack, "LEFT", -4, 0)
+    else -- bottom (weapons)
+        overlay.itemName:SetPoint("LEFT", overlay, "RIGHT", 6, 10)
+        overlay.itemName:SetJustifyH("LEFT")
+        overlay.ilvlTrack:SetPoint("LEFT", overlay, "RIGHT", 6, -6)
+        overlay.ilvlTrack:SetJustifyH("LEFT")
+        overlay.status:SetPoint("LEFT", overlay.ilvlTrack, "RIGHT", 4, 0)
+    end
     
-    label.slotInfo = slotInfo
-    return label
+    overlay.slotInfo = slotInfo
+    return overlay
 end
 
-local function UpdateEquipmentLabel(label)
-    if not label or not label.slotInfo then return end
-    
-    local settings = CharacterPane.db.profile
-    local slotId = label.slotInfo.id
-    local itemLink = GetInventoryItemLink("player", slotId)
-    
-    if not itemLink then
-        label.icon:SetTexture(nil)
-        label.itemName:SetText("")
-        label.ilvl:SetText("")
-        label.status:SetText("")
+local function UpdateSlotOverlay(overlay)
+    if not overlay or not overlay.slotInfo then return end
+    if not IsEnabled() then
+        overlay.itemName:SetText("")
+        overlay.ilvlTrack:SetText("")
+        overlay.status:SetText("")
         return
     end
     
-    -- Icon
-    local icon = C_Item.GetItemIconByID(itemLink)
-    if icon then
-        label.icon:SetTexture(icon)
+    local settings = CharacterPane.db.profile
+    local slotId = overlay.slotInfo.id
+    local itemLink = GetInventoryItemLink("player", slotId)
+    
+    if not itemLink then
+        overlay.itemName:SetText("")
+        overlay.ilvlTrack:SetText("")
+        overlay.status:SetText("")
+        return
     end
     
     -- Item name with quality color
@@ -248,28 +259,54 @@ local function UpdateEquipmentLabel(label)
         local itemName, _, quality = C_Item.GetItemInfo(itemLink)
         if itemName then
             local r, g, b = GetQualityColor(quality)
-            label.itemName:SetText(itemName)
-            label.itemName:SetTextColor(r, g, b)
+            overlay.itemName:SetText(itemName)
+            overlay.itemName:SetTextColor(r, g, b)
         end
+    else
+        overlay.itemName:SetText("")
     end
     
-    -- Item level
+    -- Item level and upgrade track
     if settings.showItemLevel then
         local ilvl = GetItemLevel(slotId)
         if ilvl then
-            label.ilvl:SetText(tostring(ilvl))
+            -- Try to get upgrade track info
+            local upgradeInfo = C_Item.GetItemLevelIncrement(itemLink)
+            local trackText = ""
+            
+            -- Get item quality to determine track display
+            local _, _, quality = C_Item.GetItemInfo(itemLink)
+            if quality and quality >= 3 then -- Rare or better
+                -- Try to extract track info from tooltip or item stats
+                local stats = C_Item.GetItemStats(itemLink)
+                if stats then
+                    -- Format: "ilvl (Track x/y)" like "246 (Champion 1/6)"
+                    trackText = string.format("%d", ilvl)
+                end
+            else
+                trackText = tostring(ilvl)
+            end
+            
+            overlay.ilvlTrack:SetText(trackText)
         else
-            label.ilvl:SetText("")
+            overlay.ilvlTrack:SetText("")
         end
+    else
+        overlay.ilvlTrack:SetText("")
     end
     
-    -- Enchant/gem status
+    -- Enchant status or gem count
     local statusText = ""
+    local statusColor = {r=1, g=1, b=1}
+    
     if settings.showEnchantStatus then
         local enchant, isEnchantable = GetEnchantInfo(slotId)
         if isEnchantable and not enchant then
             statusText = "No Enchant"
-            label.status:SetTextColor(1, 0, 0) -- Red
+            statusColor = {r=1, g=0, b=0} -- Red
+        elseif isEnchantable and enchant then
+            statusText = enchant
+            statusColor = {r=0, g=1, b=0} -- Green
         end
     end
     
@@ -277,11 +314,12 @@ local function UpdateEquipmentLabel(label)
         local gemCount = GetGemCount(slotId)
         if gemCount > 0 then
             statusText = "◆" .. gemCount
-            label.status:SetTextColor(0.8, 0.5, 1) -- Purple
+            statusColor = {r=0.8, g=0.5, b=1} -- Purple
         end
     end
     
-    label.status:SetText(statusText)
+    overlay.status:SetText(statusText)
+    overlay.status:SetTextColor(statusColor.r, statusColor.g, statusColor.b)
 end
 
 ---------------------------------------------------------------------------
@@ -630,22 +668,14 @@ end
 ---------------------------------------------------------------------------
 
 local function HideBlizzardElements()
-    -- Hide default equipment slot buttons
-    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
-        if slotButton then
-            slotButton:Hide()
-        end
-    end
-    
-    -- Hide frame decorations
+    -- Hide frame decorations but KEEP equipment slots visible
     if CharacterFramePortrait then CharacterFramePortrait:Hide() end
     if CharacterFrame.Background then CharacterFrame.Background:Hide() end
     if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
     if CharacterLevelText then CharacterLevelText:Hide() end
     if CharacterFrameTitleText then CharacterFrameTitleText:SetText("") end
     
-    -- Keep model visible
+    -- Keep model and equipment slots visible
     if CharacterModelScene then CharacterModelScene:Show() end
 end
 
@@ -688,11 +718,14 @@ function CharacterPane:Setup()
     -- Create ilvl display at top
     CreateIlvlDisplay()
     
-    -- Create equipment labels on left side
-    for index, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-        if not equipmentLabels[slotInfo.id] then
-            local label = CreateEquipmentLabel(PaperDollFrame, slotInfo, index - 1)
-            equipmentLabels[slotInfo.id] = label
+    -- Create overlays for equipment slots
+    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+        if slotButton and not slotOverlays[slotInfo.id] then
+            local overlay = CreateSlotOverlay(slotButton, slotInfo)
+            if overlay then
+                slotOverlays[slotInfo.id] = overlay
+            end
         end
     end
     
@@ -743,8 +776,8 @@ function CharacterPane:UpdateAll()
     
     UpdateIlvlDisplay()
     
-    for slotId, label in pairs(equipmentLabels) do
-        UpdateEquipmentLabel(label)
+    for slotId, overlay in pairs(slotOverlays) do
+        UpdateSlotOverlay(overlay)
     end
     
     UpdateStatsPanel()
