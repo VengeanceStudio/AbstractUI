@@ -7,31 +7,31 @@ local LSM = LibStub("LibSharedMedia-3.0")
 -- Equipment overlays (ilvl, enchants, gems) and custom stats panel
 ---------------------------------------------------------------------------
 
--- Equipment slot configuration (with positioning)
+-- Equipment slot configuration
 local EQUIPMENT_SLOTS = {
-    { name = "Head", id = INVSLOT_HEAD, side = "left" },
-    { name = "Neck", id = INVSLOT_NECK, side = "left" },
-    { name = "Shoulder", id = INVSLOT_SHOULDER, side = "left" },
-    { name = "Back", id = INVSLOT_BACK, side = "left" },
-    { name = "Chest", id = INVSLOT_CHEST, side = "left" },
-    { name = "Wrist", id = INVSLOT_WRIST, side = "left" },
-    { name = "Hands", id = INVSLOT_HAND, side = "right" },
-    { name = "Waist", id = INVSLOT_WAIST, side = "right" },
-    { name = "Legs", id = INVSLOT_LEGS, side = "right" },
-    { name = "Feet", id = INVSLOT_FEET, side = "right" },
-    { name = "Finger0", id = INVSLOT_FINGER1, side = "right" },
-    { name = "Finger1", id = INVSLOT_FINGER2, side = "right" },
-    { name = "Trinket0", id = INVSLOT_TRINKET1, side = "right" },
-    { name = "Trinket1", id = INVSLOT_TRINKET2, side = "right" },
-    { name = "MainHand", id = INVSLOT_MAINHAND, side = "bottom" },
-    { name = "SecondaryHand", id = INVSLOT_OFFHAND, side = "bottom" },
+    { name = "Head", id = INVSLOT_HEAD, label = "Head" },
+    { name = "Neck", id = INVSLOT_NECK, label = "Neck" },
+    { name = "Shoulder", id = INVSLOT_SHOULDER, label = "Shoulder" },
+    { name = "Back", id = INVSLOT_BACK, label = "Back" },
+    { name = "Chest", id = INVSLOT_CHEST, label = "Chest" },
+    { name = "Wrist", id = INVSLOT_WRIST, label = "Wrist" },
+    { name = "Hands", id = INVSLOT_HAND, label = "Hands" },
+    { name = "Waist", id = INVSLOT_WAIST, label = "Waist" },
+    { name = "Legs", id = INVSLOT_LEGS, label = "Legs" },
+    { name = "Feet", id = INVSLOT_FEET, label = "Feet" },
+    { name = "Finger0", id = INVSLOT_FINGER1, label = "Ring 1" },
+    { name = "Finger1", id = INVSLOT_FINGER2, label = "Ring 2" },
+    { name = "Trinket0", id = INVSLOT_TRINKET1, label = "Trinket 1" },
+    { name = "Trinket1", id = INVSLOT_TRINKET2, label = "Trinket 2" },
+    { name = "MainHand", id = INVSLOT_MAINHAND, label = "Main Hand" },
+    { name = "SecondaryHand", id = INVSLOT_OFFHAND, label = "Off Hand" },
 }
 
 -- Module state
 local ColorPalette = nil
 local FontKit = nil
 local customBg = nil
-local slotOverlays = {}
+local equipmentRows = {}
 local ilvlDisplay = nil
 local statsPanel = nil
 local settingsPanel = nil
@@ -182,76 +182,121 @@ local function GetQualityColor(quality)
 end
 
 ---------------------------------------------------------------------------
--- EQUIPMENT SLOT OVERLAYS
+-- EQUIPMENT ROWS (LEFT AND RIGHT SIDES)
 ---------------------------------------------------------------------------
 
-local function CreateSlotOverlay(slotButton, slotInfo)
-    if not slotButton then return nil end
-    
+local function CreateEquipmentRow(parent, slotInfo, yOffset, side)
     local pr, pg, pb = GetThemeColors()
     local font = GetFont()
     
-    local overlay = CreateFrame("Frame", nil, slotButton)
-    overlay:SetAllPoints(slotButton)
-    overlay:SetFrameLevel(slotButton:GetFrameLevel() + 5)
+    local row = CreateFrame("Frame", nil, parent)
+    row:SetSize(280, 28)
     
-    -- Item name text
-    overlay.itemName = overlay:CreateFontString(nil, "OVERLAY")
-    overlay.itemName:SetFont(font, 11, "OUTLINE")
-    overlay.itemName:SetWordWrap(false)
-    
-    -- Item level and track text
-    overlay.ilvlTrack = overlay:CreateFontString(nil, "OVERLAY")
-    overlay.ilvlTrack:SetFont(font, 10, "OUTLINE")
-    overlay.ilvlTrack:SetTextColor(1, 0.82, 0) -- Gold
-    
-    -- Enchant/gem status text
-    overlay.status = overlay:CreateFontString(nil, "OVERLAY")
-    overlay.status:SetFont(font, 10, "OUTLINE")
-    
-    -- Position based on slot side
-    if slotInfo.side == "left" then
-        overlay.itemName:SetPoint("LEFT", overlay, "RIGHT", 6, 8)
-        overlay.itemName:SetJustifyH("LEFT")
-        overlay.ilvlTrack:SetPoint("LEFT", overlay, "RIGHT", 6, -8)
-        overlay.ilvlTrack:SetJustifyH("LEFT")
-        overlay.status:SetPoint("LEFT", overlay.ilvlTrack, "RIGHT", 4, 0)
-    elseif slotInfo.side == "right" then
-        overlay.itemName:SetPoint("RIGHT", overlay, "LEFT", -6, 8)
-        overlay.itemName:SetJustifyH("RIGHT")
-        overlay.ilvlTrack:SetPoint("RIGHT", overlay, "LEFT", -6, -8)
-        overlay.ilvlTrack:SetJustifyH("RIGHT")
-        overlay.status:SetPoint("RIGHT", overlay.ilvlTrack, "LEFT", -4, 0)
-    else -- bottom (weapons)
-        overlay.itemName:SetPoint("LEFT", overlay, "RIGHT", 6, 10)
-        overlay.itemName:SetJustifyH("LEFT")
-        overlay.ilvlTrack:SetPoint("LEFT", overlay, "RIGHT", 6, -6)
-        overlay.ilvlTrack:SetJustifyH("LEFT")
-        overlay.status:SetPoint("LEFT", overlay.ilvlTrack, "RIGHT", 4, 0)
+    if side == "left" then
+        row:SetPoint("TOPLEFT", 10, yOffset)
+    else
+        row:SetPoint("TOPRIGHT", -10, yOffset)
     end
     
-    overlay.slotInfo = slotInfo
-    return overlay
+    -- Item icon (clickable to match Blizzard behavior)
+    row.icon = CreateFrame("Button", nil, row)
+    row.icon:SetSize(26, 26)
+    
+    if side == "left" then
+        row.icon:SetPoint("LEFT", 0, 0)
+    else
+        row.icon:SetPoint("RIGHT", 0, 0)
+    end
+    
+    row.icon.texture = row.icon:CreateTexture(nil, "ARTWORK")
+    row.icon.texture:SetAllPoints()
+    row.icon.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    
+    -- Link icon to actual slot for clicks
+    local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+    if slotButton then
+        row.icon:SetScript("OnClick", function(self, button)
+            slotButton:Click(button)
+        end)
+        row.icon:SetScript("OnEnter", function(self)
+            slotButton:GetScript("OnEnter")(slotButton)
+        end)
+        row.icon:SetScript("OnLeave", function(self)
+            slotButton:GetScript("OnLeave")(slotButton)
+        end)
+    end
+    
+    -- Item name
+    row.itemName = row:CreateFontString(nil, "OVERLAY")
+    row.itemName:SetFont(font, 11, "OUTLINE")
+    row.itemName:SetWordWrap(false)
+    
+    if side == "left" then
+        row.itemName:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+        row.itemName:SetPoint("RIGHT", -80, 0)
+        row.itemName:SetJustifyH("LEFT")
+    else
+        row.itemName:SetPoint("RIGHT", row.icon, "LEFT", -6, 0)
+        row.itemName:SetPoint("LEFT", 80, 0)
+        row.itemName:SetJustifyH("RIGHT")
+    end
+    
+    -- Item level
+    row.ilvl = row:CreateFontString(nil, "OVERLAY")
+    row.ilvl:SetFont(font, 10, "OUTLINE")
+    row.ilvl:SetTextColor(1, 0.82, 0) -- Gold
+    
+    if side == "left" then
+        row.ilvl:SetPoint("RIGHT", -2, 0)
+        row.ilvl:SetJustifyH("RIGHT")
+    else
+        row.ilvl:SetPoint("LEFT", 2, 0)
+        row.ilvl:SetJustifyH("LEFT")
+    end
+    
+    -- Status (enchant/gem)
+    row.status = row:CreateFontString(nil, "OVERLAY")
+    row.status:SetFont(font, 10, "OUTLINE")
+    
+    if side == "left" then
+        row.status:SetPoint("BOTTOMLEFT", row.itemName, "BOTTOMLEFT", 0, -14)
+        row.status:SetJustifyH("LEFT")
+    else
+        row.status:SetPoint("BOTTOMRIGHT", row.itemName, "BOTTOMRIGHT", 0, -14)
+        row.status:SetJustifyH("RIGHT")
+    end
+    
+    row.slotInfo = slotInfo
+    row.side = side
+    return row
 end
 
-local function UpdateSlotOverlay(overlay)
-    if not overlay or not overlay.slotInfo then return end
+local function UpdateEquipmentRow(row)
+    if not row or not row.slotInfo then return end
     if not IsEnabled() then
-        overlay.itemName:SetText("")
-        overlay.ilvlTrack:SetText("")
-        overlay.status:SetText("")
+        row:Hide()
         return
     end
     
     local settings = CharacterPane.db.profile
-    local slotId = overlay.slotInfo.id
+    local slotId = row.slotInfo.id
     local itemLink = GetInventoryItemLink("player", slotId)
     
     if not itemLink then
-        overlay.itemName:SetText("")
-        overlay.ilvlTrack:SetText("")
-        overlay.status:SetText("")
+        row.icon.texture:SetTexture(nil)
+        row.itemName:SetText("")
+        row.ilvl:SetText("")
+        row.status:SetText("")
+        row:SetHeight(28)
         return
+    end
+    
+    row:Show()
+    
+    -- Item icon
+    local icon = C_Item.GetItemIconByID(itemLink)
+    if icon then
+        row.icon.texture:SetTexture(icon)
     end
     
     -- Item name with quality color
@@ -259,37 +304,65 @@ local function UpdateSlotOverlay(overlay)
         local itemName, _, quality = C_Item.GetItemInfo(itemLink)
         if itemName then
             local r, g, b = GetQualityColor(quality)
-            overlay.itemName:SetText(itemName)
-            overlay.itemName:SetTextColor(r, g, b)
+            row.itemName:SetText(itemName)
+            row.itemName:SetTextColor(r, g, b)
         end
     else
-        overlay.itemName:SetText("")
+        row.itemName:SetText("")
     end
     
-    -- Item level and upgrade track
+    -- Item level with upgrade track
     if settings.showItemLevel then
         local ilvl = GetItemLevel(slotId)
         if ilvl then
-            overlay.ilvlTrack:SetText(tostring(ilvl))
+            -- Try to get upgrade track info from tooltip
+            local trackText = tostring(ilvl)
+            
+            if C_TooltipInfo then
+                local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotId)
+                if tooltipData and tooltipData.lines then
+                    for _, line in ipairs(tooltipData.lines) do
+                        local text = line.leftText or ""
+                        -- Look for patterns like "Champion 1/6" or "Hero 1/6"
+                        local track, current, max = text:match("(Hero%s+)(%d+)/(%d+)")
+                        if not track then
+                            track, current, max = text:match("(Champion%s+)(%d+)/(%d+)")
+                        end
+                        if not track then
+                            track, current, max = text:match("(Adventurer%s+)(%d+)/(%d+)")
+                        end
+                        
+                        if track and current and max then
+                            trackText = string.format("%d (%s%s/%s)", ilvl, track, current, max)
+                            break
+                        end
+                    end
+                end
+            end
+            
+            row.ilvl:SetText(trackText)
         else
-            overlay.ilvlTrack:SetText("")
+            row.ilvl:SetText("")
         end
     else
-        overlay.ilvlTrack:SetText("")
+        row.ilvl:SetText("")
     end
     
     -- Enchant status or gem count
     local statusText = ""
     local statusColor = {r=1, g=1, b=1}
+    local hasStatus = false
     
     if settings.showEnchantStatus then
         local enchant, isEnchantable = GetEnchantInfo(slotId)
         if isEnchantable and not enchant then
             statusText = "No Enchant"
             statusColor = {r=1, g=0, b=0} -- Red
+            hasStatus = true
         elseif isEnchantable and enchant then
             statusText = enchant
             statusColor = {r=0, g=1, b=0} -- Green
+            hasStatus = true
         end
     end
     
@@ -298,11 +371,19 @@ local function UpdateSlotOverlay(overlay)
         if gemCount > 0 then
             statusText = "◆" .. gemCount
             statusColor = {r=0.8, g=0.5, b=1} -- Purple
+            hasStatus = true
         end
     end
     
-    overlay.status:SetText(statusText)
-    overlay.status:SetTextColor(statusColor.r, statusColor.g, statusColor.b)
+    row.status:SetText(statusText)
+    row.status:SetTextColor(statusColor.r, statusColor.g, statusColor.b)
+    
+    -- Adjust row height if we have status text
+    if hasStatus then
+        row:SetHeight(42)
+    else
+        row:SetHeight(28)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -347,7 +428,7 @@ local function CreateStatsPanel()
     
     local panel = CreateFrame("Frame", "AbstractUI_StatsPanel", PaperDollFrame, "BackdropTemplate")
     panel:SetSize(180, 520)
-    panel:SetPoint("TOPLEFT", PaperDollFrame, "TOPRIGHT", -30, -30)
+    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -30, -30)
     panel:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -553,9 +634,9 @@ local function CreateSettingsPanel()
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     local font = GetFont()
     
-    local panel = CreateFrame("Frame", "AbstractUI_CharSettingsPanel", PaperDollFrame, "BackdropTemplate")
+    local panel = CreateFrame("Frame", "AbstractUI_CharSettingsPanel", CharacterFrame, "BackdropTemplate")
     panel:SetSize(240, 520)
-    panel:SetPoint("TOPLEFT", PaperDollFrame, "TOPRIGHT", 152, -30)
+    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", 152, -30)
     panel:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -569,7 +650,7 @@ local function CreateSettingsPanel()
     local title = panel:CreateFontString(nil, "OVERLAY")
     title:SetFont(font, 11, "OUTLINE")
     title:SetPoint("TOP", 0, -8)
-    title:SetText("QUI Character Panel")
+    title:SetText("AbstractUI Character Panel")
     title:SetTextColor(pr, pg, pb)
     
     -- Subtitle
@@ -651,14 +732,22 @@ end
 ---------------------------------------------------------------------------
 
 local function HideBlizzardElements()
-    -- Hide frame decorations but KEEP equipment slots visible
+    -- Hide equipment slot buttons
+    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+        if slotButton then
+            slotButton:Hide()
+        end
+    end
+    
+    -- Hide frame decorations
     if CharacterFramePortrait then CharacterFramePortrait:Hide() end
     if CharacterFrame.Background then CharacterFrame.Background:Hide() end
     if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
     if CharacterLevelText then CharacterLevelText:Hide() end
     if CharacterFrameTitleText then CharacterFrameTitleText:SetText("") end
     
-    -- Keep model and equipment slots visible
+    -- Keep model visible
     if CharacterModelScene then CharacterModelScene:Show() end
 end
 
@@ -697,19 +786,62 @@ function CharacterPane:Setup()
     if not CharacterFrame then return end
     
     CreateBackground()
+    HideBlizzardElements()
     
     -- Create ilvl display at top
     CreateIlvlDisplay()
     
-    -- Create overlays for equipment slots
-    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
-        if slotButton and not slotOverlays[slotInfo.id] then
-            local overlay = CreateSlotOverlay(slotButton, slotInfo)
-            if overlay then
-                slotOverlays[slotInfo.id] = overlay
-            end
+    -- Define which slots go on which side
+    local leftSlots = {
+        {slot = EQUIPMENT_SLOTS[1], offset = -40},   -- Head
+        {slot = EQUIPMENT_SLOTS[2], offset = -70},   -- Neck
+        {slot = EQUIPMENT_SLOTS[3], offset = -115},  -- Shoulder
+        {slot = EQUIPMENT_SLOTS[4], offset = -145},  -- Back
+        {slot = EQUIPMENT_SLOTS[5], offset = -190},  -- Chest
+        {slot = EQUIPMENT_SLOTS[6], offset = -220},  -- Wrist
+    }
+    
+    local rightSlots = {
+        {slot = EQUIPMENT_SLOTS[7], offset = -40},   -- Hands
+        {slot = EQUIPMENT_SLOTS[8], offset = -70},   -- Waist
+        {slot = EQUIPMENT_SLOTS[9], offset = -115},  -- Legs
+        {slot = EQUIPMENT_SLOTS[10], offset = -145}, -- Feet
+        {slot = EQUIPMENT_SLOTS[11], offset = -190}, -- Ring 1
+        {slot = EQUIPMENT_SLOTS[12], offset = -220}, -- Ring 2
+        {slot = EQUIPMENT_SLOTS[13], offset = -265}, -- Trinket 1
+        {slot = EQUIPMENT_SLOTS[14], offset = -295}, -- Trinket 2
+    }
+    
+    local bottomSlots = {
+        {slot = EQUIPMENT_SLOTS[15], offset = -480}, -- Main Hand (left side)
+        {slot = EQUIPMENT_SLOTS[16], offset = -480}, -- Off Hand (right side)
+    }
+    
+    -- Create equipment rows on left side
+    for _, data in ipairs(leftSlots) do
+        if not equipmentRows[data.slot.id] then
+            local row = CreateEquipmentRow(PaperDollFrame, data.slot, data.offset, "left")
+            equipmentRows[data.slot.id] = row
         end
+    end
+    
+    -- Create equipment rows on right side
+    for _, data in ipairs(rightSlots) do
+        if not equipmentRows[data.slot.id] then
+            local row = CreateEquipmentRow(PaperDollFrame, data.slot, data.offset, "right")
+            equipmentRows[data.slot.id] = row
+        end
+    end
+    
+    -- Create bottom weapon rows
+    if not equipmentRows[INVSLOT_MAINHAND] then
+        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[15], -480, "left")
+        equipmentRows[INVSLOT_MAINHAND] = row
+    end
+    
+    if not equipmentRows[INVSLOT_OFFHAND] then
+        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[16], -510, "right")
+        equipmentRows[INVSLOT_OFFHAND] = row
     end
     
     -- Create stats panel on right
@@ -722,6 +854,7 @@ function CharacterPane:Setup()
     CharacterFrame:HookScript("OnShow", function()
         if IsEnabled() then
             CreateBackground()
+            HideBlizzardElements()
             self:UpdateAll()
         end
     end)
@@ -759,8 +892,8 @@ function CharacterPane:UpdateAll()
     
     UpdateIlvlDisplay()
     
-    for slotId, overlay in pairs(slotOverlays) do
-        UpdateSlotOverlay(overlay)
+    for slotId, row in pairs(equipmentRows) do
+        UpdateEquipmentRow(row)
     end
     
     UpdateStatsPanel()
