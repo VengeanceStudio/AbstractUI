@@ -23,6 +23,7 @@ local FontKit = nil
 -- ============================================================================
 
 function CharacterPane:OnInitialize()
+    AbstractUI:Print("CharacterPane OnInitialize called")
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
 end
 
@@ -36,26 +37,41 @@ function CharacterPane:OnDBReady()
         return
     end
     
+    AbstractUI:Print("CharacterPane module initializing...")
+    
     self.db = AbstractUI.db:RegisterNamespace("CharacterPane", {
         profile = {
             enabled = true,
         }
     })
     
-    -- Wait for Blizzard_CharacterFrame to load
-    if C_AddOns.IsAddOnLoaded("Blizzard_CharacterFrame") then
+    -- Blizzard_CharacterFrame is usually already loaded, but CharacterFrame might not exist yet
+    -- Register event to catch when it loads, and also check immediately
+    self:RegisterEvent("ADDON_LOADED")
+    
+    -- Try immediate setup in case it's already available
+    if CharacterFrame then
+        AbstractUI:Print("CharacterFrame found immediately, applying skinning...")
         self:SetupCharacterFrameSkinning()
     else
-        self:RegisterEvent("ADDON_LOADED")
+        AbstractUI:Print("CharacterFrame not yet available, waiting for ADDON_LOADED...")
     end
 end
 
 function CharacterPane:ADDON_LOADED(event, addon)
-    if addon == "Blizzard_CharacterFrame" then
+    AbstractUI:Print("ADDON_LOADED fired for: " .. tostring(addon))
+    
+    if addon == "Blizzard_CharacterFrame" or (addon == "AbstractUI" and CharacterFrame) then
+        AbstractUI:Print("CharacterFrame should be available now...")
         C_Timer.After(0.1, function()
-            self:SetupCharacterFrameSkinning()
+            if CharacterFrame then
+                AbstractUI:Print("CharacterFrame confirmed, applying skinning")
+                self:SetupCharacterFrameSkinning()
+                self:UnregisterEvent("ADDON_LOADED")
+            else
+                AbstractUI:Print("CharacterFrame still not available!")
+            end
         end)
-        self:UnregisterEvent("ADDON_LOADED")
     end
 end
 
@@ -371,18 +387,23 @@ end
 ---------------------------------------------------------------------------
 function CharacterPane:SetupCharacterFrameSkinning()
     if not IsSkinningEnabled() then 
-        AbstractUI:Print("CharacterPane skinning is disabled")
+        AbstractUI:Print("CharacterPane skinning is DISABLED in settings")
         return 
     end
     if not CharacterFrame then 
-        AbstractUI:Print("CharacterFrame not found")
+        AbstractUI:Print("ERROR: CharacterFrame not found!")
         return 
     end
 
-    AbstractUI:Print("Applying CharacterPane skinning...")
-
     -- Create initial background
     CreateOrUpdateBackground()
+    
+    if customBg then
+        AbstractUI:Print("CharacterPane background created successfully!")
+    else
+        AbstractUI:Print("ERROR: Failed to create CharacterPane background!")
+        return
+    end
 
     -- Hook ScrollBox updates for reputation
     if ReputationFrame and ReputationFrame.ScrollBox then
