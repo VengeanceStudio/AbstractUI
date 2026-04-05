@@ -261,12 +261,14 @@ local function SkinItemSlot(button)
         frame:Hide()
         frame:SetAlpha(0)
         
-        -- Also hide all its regions
-        for i = 1, frame:GetNumRegions() do
-            local region = select(i, frame:GetRegions())
-            if region then
-                region:SetAlpha(0)
-                region:Hide()
+        -- Also hide all its regions if it's a frame
+        if frame.GetNumRegions then
+            for i = 1, frame:GetNumRegions() do
+                local region = select(i, frame:GetRegions())
+                if region then
+                    region:SetAlpha(0)
+                    region:Hide()
+                end
             end
         end
     end
