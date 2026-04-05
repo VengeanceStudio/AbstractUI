@@ -259,7 +259,8 @@ local function SkinCharacterTabs()
             for _, region in ipairs(regions) do
                 if region:GetObjectType() == "Texture" then
                     local tex = region:GetTexture()
-                    if tex and (tex:find("UI%-Panel%-Button") or tex:find("TabBar")) then
+                    -- GetTexture can return a number (texture ID) or string (file path)
+                    if tex and type(tex) == "string" and (tex:find("UI%-Panel%-Button") or tex:find("TabBar")) then
                         region:SetTexture("")
                     end
                 end
