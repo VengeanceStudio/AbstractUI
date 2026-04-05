@@ -102,11 +102,42 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Strip textures from inset frames
+    -- Strip ALL textures from CharacterFrame's NineSlice except Center
+    if CharacterFrame.NineSlice then
+        local nineSlicePieces = {
+            "TopEdge", "BottomEdge", "LeftEdge", "RightEdge",
+            "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner"
+        }
+        
+        for _, piece in ipairs(nineSlicePieces) do
+            if CharacterFrame.NineSlice[piece] then
+                CharacterFrame.NineSlice[piece]:SetAlpha(0)
+                CharacterFrame.NineSlice[piece]:Hide()
+            end
+        end
+    end
+    
+    -- Strip portrait
+    if CharacterFramePortrait then
+        CharacterFramePortrait:SetAlpha(0)
+        CharacterFramePortrait:Hide()
+    end
+    
+    -- Strip textures from inset frames completely
     if CharacterFrame.Inset then
         CharacterFrame.Inset:SetAlpha(0)
         if CharacterFrame.Inset.Bg then
             CharacterFrame.Inset.Bg:SetAlpha(0)
+        end
+        if CharacterFrame.Inset.NineSlice then
+            CharacterFrame.Inset.NineSlice:SetAlpha(0)
+        end
+        -- Hide all regions
+        for i = 1, CharacterFrame.Inset:GetNumRegions() do
+            local region = select(i, CharacterFrame.Inset:GetRegions())
+            if region and region.SetAlpha then
+                region:SetAlpha(0)
+            end
         end
     end
     
@@ -115,11 +146,28 @@ local function StripBlizzardTextures()
         if CharacterFrame.InsetRight.Bg then
             CharacterFrame.InsetRight.Bg:SetAlpha(0)
         end
+        if CharacterFrame.InsetRight.NineSlice then
+            CharacterFrame.InsetRight.NineSlice:SetAlpha(0)
+        end
+        -- Hide all regions
+        for i = 1, CharacterFrame.InsetRight:GetNumRegions() do
+            local region = select(i, CharacterFrame.InsetRight:GetRegions())
+            if region and region.SetAlpha then
+                region:SetAlpha(0)
+            end
+        end
     end
     
-    -- Make model scene transparent
+    -- Make model scene completely transparent background
     if CharacterModelScene then
         CharacterModelScene:SetAlpha(1)
+        -- Strip all textures from model scene
+        for i = 1, CharacterModelScene:GetNumRegions() do
+            local region = select(i, CharacterModelScene:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                region:SetAlpha(0)
+            end
+        end
     end
     
     -- Hide sidebar tab decorations
@@ -131,6 +179,13 @@ local function StripBlizzardTextures()
             PaperDollSidebarTabs.DecorRight:Hide()
         end
     end
+    
+    -- Strip textures from stats pane inset if it exists
+    if CharacterStatsPane and CharacterStatsPane.ClassBackground then
+        -- Make class background very subtle or remove it
+        CharacterStatsPane.ClassBackground:SetAlpha(0)
+    end
+
 end
 
 ---------------------------------------------------------------------------
@@ -165,8 +220,8 @@ local function SkinItemSlot(button)
             edgeSize = 1,
             insets = { left = 1, right = 1, top = 1, bottom = 1 }
         })
-        backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
-        backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+        backdrop:SetBackdropColor(bgr, bgg, bgb, 0.3)
+        backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
         button.backdrop = backdrop
     end
     
@@ -189,9 +244,9 @@ local function SkinItemSlot(button)
         -- Hook to update border color based on quality
         hooksecurefunc(button.IconBorder, "SetVertexColor", function(self, r, g, b)
             if button.backdrop and r and g and b and (r > 0.1 or g > 0.1 or b > 0.1) then
-                button.backdrop:SetBackdropBorderColor(r, g, b, 1)
+                button.backdrop:SetBackdropBorderColor(r, g, b, 0.8)
             elseif button.backdrop then
-                button.backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+                button.backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
             end
         end)
     end
@@ -199,7 +254,7 @@ local function SkinItemSlot(button)
     -- Create highlight texture
     local highlight = button:GetHighlightTexture()
     if highlight then
-        highlight:SetColorTexture(1, 1, 1, 0.15)
+        highlight:SetColorTexture(1, 1, 1, 0.1)
         highlight:ClearAllPoints()
         highlight:SetPoint("TOPLEFT", 1, -1)
         highlight:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -277,8 +332,8 @@ local function SkinCharacterTabs()
                     edgeSize = 1,
                     insets = { left = 1, right = 1, top = 1, bottom = 1 }
                 })
-                backdrop:SetBackdropColor(bgr, bgg, bgb, 0.7)
-                backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+                backdrop:SetBackdropColor(bgr, bgg, bgb, 0.5)
+                backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.5)
                 tab.backdrop = backdrop
             end
             
@@ -291,7 +346,7 @@ local function SkinCharacterTabs()
             -- Highlight
             local highlight = tab:GetHighlightTexture()
             if highlight then
-                highlight:SetColorTexture(pr, pg, pb, 0.2)
+                highlight:SetColorTexture(pr, pg, pb, 0.15)
                 highlight:ClearAllPoints()
                 highlight:SetPoint("TOPLEFT", 1, -1)
                 highlight:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -303,11 +358,11 @@ local function SkinCharacterTabs()
                     local t = _G["CharacterFrameTab" .. j]
                     if t and t.backdrop then
                         if j == i then
-                            t.backdrop:SetBackdropColor(bgr * 1.5, bgg * 1.5, bgb * 1.5, 0.9)
-                            t.backdrop:SetBackdropBorderColor(pr, pg, pb, 1)
+                            t.backdrop:SetBackdropColor(bgr * 2, bgg * 2, bgb * 2, 0.8)
+                            t.backdrop:SetBackdropBorderColor(pr, pg, pb, 0.8)
                         else
-                            t.backdrop:SetBackdropColor(bgr, bgg, bgb, 0.7)
-                            t.backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+                            t.backdrop:SetBackdropColor(bgr, bgg, bgb, 0.5)
+                            t.backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.5)
                         end
                     end
                 end
@@ -340,8 +395,8 @@ local function SkinCharacterTabs()
                         edgeFile = "Interface\\Buttons\\WHITE8x8",
                         edgeSize = 1,
                     })
-                    backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
-                    backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+                    backdrop:SetBackdropColor(bgr, bgg, bgb, 0.4)
+                    backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
                     tab.backdrop = backdrop
                 end
                 
@@ -355,7 +410,7 @@ local function SkinCharacterTabs()
                 
                 -- Highlight
                 if tab.Highlight then
-                    tab.Highlight:SetColorTexture(pr, pg, pb, 0.3)
+                    tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
                     tab.Highlight:ClearAllPoints()
                     tab.Highlight:SetPoint("TOPLEFT", 1, -1)
                     tab.Highlight:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -376,21 +431,15 @@ local function SkinCharacterFrameBackdrop()
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    -- Make NineSlice transparent with our theme colors
+    -- Make NineSlice completely transparent (we already hid borders in StripBlizzardTextures)
     if CharacterFrame.NineSlice.Center then
-        CharacterFrame.NineSlice.Center:SetColorTexture(bgr, bgg, bgb, bga * 0.95)
+        CharacterFrame.NineSlice.Center:SetColorTexture(0, 0, 0, 0.85)
+        CharacterFrame.NineSlice.Center:SetVertexColor(bgr * 2, bgg * 2, bgb * 2)
     end
     
-    -- Tint borders with primary color
-    local borderPieces = {
-        "TopEdge", "BottomEdge", "LeftEdge", "RightEdge",
-        "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner"
-    }
-    
-    for _, piece in ipairs(borderPieces) do
-        if CharacterFrame.NineSlice[piece] then
-            CharacterFrame.NineSlice[piece]:SetVertexColor(pr * 0.7, pg * 0.7, pb * 0.7, 0.9)
-        end
+    -- Hide the portrait completely
+    if CharacterFramePortrait then
+        CharacterFramePortrait:SetAlpha(0)
     end
     
     -- Style close button
@@ -411,14 +460,14 @@ local function SkinCharacterFrameBackdrop()
                 closeBtn.text:SetPoint("CENTER", 1, 0)
                 closeBtn.text:SetText("×")
             end
-            closeBtn.text:SetTextColor(0.9, 0.9, 0.9)
+            closeBtn.text:SetTextColor(pr, pg, pb, 1)
             
             -- Hover effect
             closeBtn:HookScript("OnEnter", function(self)
                 self.text:SetTextColor(1, 0.3, 0.3)
             end)
             closeBtn:HookScript("OnLeave", function(self)
-                self.text:SetTextColor(0.9, 0.9, 0.9)
+                self.text:SetTextColor(pr, pg, pb, 1)
             end)
             
             closeBtn._abstractSkinned = true
@@ -443,28 +492,29 @@ local function SkinStatsPane()
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    -- Make stats pane background transparent
+    -- Completely hide class background
     if CharacterStatsPane.ClassBackground then
-        CharacterStatsPane.ClassBackground:SetAlpha(0.15)
-        CharacterStatsPane.ClassBackground:SetDesaturated(true)
+        CharacterStatsPane.ClassBackground:SetAlpha(0)
+        CharacterStatsPane.ClassBackground:Hide()
     end
     
-    -- Style item level display
+    -- Style item level display - remove background completely
     if CharacterStatsPane.ItemLevelFrame then
         local ilvlFrame = CharacterStatsPane.ItemLevelFrame
         
         if ilvlFrame.Background then
             ilvlFrame.Background:SetAlpha(0)
+            ilvlFrame.Background:Hide()
         end
         
         if ilvlFrame.Value then
-            ilvlFrame.Value:SetTextColor(1, 1, 1)
+            ilvlFrame.Value:SetTextColor(pr, pg, pb, 1)
             ilvlFrame.Value:SetShadowOffset(1, -1)
-            ilvlFrame.Value:SetShadowColor(0, 0, 0, 0.8)
+            ilvlFrame.Value:SetShadowColor(0, 0, 0, 1)
         end
     end
     
-    -- Style stat category headers
+    -- Completely remove backgrounds from stat category headers
     local categories = {
         "ItemLevelCategory",
         "AttributesCategory",
@@ -474,17 +524,21 @@ local function SkinStatsPane()
     for _, catName in ipairs(categories) do
         local category = CharacterStatsPane[catName]
         if category and category.Background then
-            category.Background:SetAlpha(0.3)
-            category.Background:SetVertexColor(pr * 0.5, pg * 0.5, pb * 0.5)
+            category.Background:SetAlpha(0)
+            category.Background:Hide()
+        end
+        if category and category.Title then
+            category.Title:SetTextColor(pr, pg, pb, 1)
         end
     end
     
-    -- Style individual stat frames (from the pool)
+    -- Remove backgrounds from individual stat frames
     if CharacterStatsPane.statsFramePool then
         hooksecurefunc(CharacterStatsPane.statsFramePool, "Acquire", function(pool)
             for frame in pool:EnumerateActive() do
                 if frame.Background and not frame._abstractSkinned then
-                    frame.Background:SetColorTexture(1, 1, 1, 0.1)
+                    frame.Background:SetAlpha(0)
+                    frame.Background:Hide()
                     frame._abstractSkinned = true
                 end
             end
