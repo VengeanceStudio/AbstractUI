@@ -190,17 +190,17 @@ local function CreateEquipmentRow(parent, slotInfo, yOffset, side)
     local font = GetFont()
     
     local row = CreateFrame("Frame", nil, parent)
-    row:SetSize(280, 28)
+    row:SetSize(300, 32)
     
     if side == "left" then
-        row:SetPoint("TOPLEFT", 10, yOffset)
+        row:SetPoint("TOPLEFT", 5, yOffset)
     else
-        row:SetPoint("TOPRIGHT", -10, yOffset)
+        row:SetPoint("TOPRIGHT", -5, yOffset)
     end
     
     -- Item icon (clickable to match Blizzard behavior)
     row.icon = CreateFrame("Button", nil, row)
-    row.icon:SetSize(26, 26)
+    row.icon:SetSize(32, 32)
     
     if side == "left" then
         row.icon:SetPoint("LEFT", 0, 0)
@@ -228,7 +228,7 @@ local function CreateEquipmentRow(parent, slotInfo, yOffset, side)
     
     -- Item name
     row.itemName = row:CreateFontString(nil, "OVERLAY")
-    row.itemName:SetFont(font, 11, "OUTLINE")
+    row.itemName:SetFont(font, 10, "OUTLINE")
     row.itemName:SetWordWrap(false)
     
     if side == "left" then
@@ -243,7 +243,7 @@ local function CreateEquipmentRow(parent, slotInfo, yOffset, side)
     
     -- Item level
     row.ilvl = row:CreateFontString(nil, "OVERLAY")
-    row.ilvl:SetFont(font, 10, "OUTLINE")
+    row.ilvl:SetFont(font, 9, "OUTLINE")
     row.ilvl:SetTextColor(1, 0.82, 0) -- Gold
     
     if side == "left" then
@@ -256,7 +256,7 @@ local function CreateEquipmentRow(parent, slotInfo, yOffset, side)
     
     -- Status (enchant/gem)
     row.status = row:CreateFontString(nil, "OVERLAY")
-    row.status:SetFont(font, 10, "OUTLINE")
+    row.status:SetFont(font, 9, "OUTLINE")
     
     if side == "left" then
         row.status:SetPoint("BOTTOMLEFT", row.itemName, "BOTTOMLEFT", 0, -14)
@@ -287,7 +287,7 @@ local function UpdateEquipmentRow(row)
         row.itemName:SetText("")
         row.ilvl:SetText("")
         row.status:SetText("")
-        row:SetHeight(28)
+        row:SetHeight(32)
         return
     end
     
@@ -380,9 +380,9 @@ local function UpdateEquipmentRow(row)
     
     -- Adjust row height if we have status text
     if hasStatus then
-        row:SetHeight(42)
+        row:SetHeight(46)
     else
-        row:SetHeight(28)
+        row:SetHeight(32)
     end
 end
 
@@ -793,28 +793,28 @@ function CharacterPane:Setup()
     
     -- Define which slots go on which side
     local leftSlots = {
-        {slot = EQUIPMENT_SLOTS[1], offset = -40},   -- Head
-        {slot = EQUIPMENT_SLOTS[2], offset = -70},   -- Neck
-        {slot = EQUIPMENT_SLOTS[3], offset = -115},  -- Shoulder
-        {slot = EQUIPMENT_SLOTS[4], offset = -145},  -- Back
-        {slot = EQUIPMENT_SLOTS[5], offset = -190},  -- Chest
-        {slot = EQUIPMENT_SLOTS[6], offset = -220},  -- Wrist
+        {slot = EQUIPMENT_SLOTS[1], offset = -50},   -- Head
+        {slot = EQUIPMENT_SLOTS[2], offset = -90},   -- Neck
+        {slot = EQUIPMENT_SLOTS[3], offset = -130},  -- Shoulder
+        {slot = EQUIPMENT_SLOTS[4], offset = -170},  -- Back
+        {slot = EQUIPMENT_SLOTS[5], offset = -210},  -- Chest
+        {slot = EQUIPMENT_SLOTS[6], offset = -250},  -- Wrist
     }
     
     local rightSlots = {
-        {slot = EQUIPMENT_SLOTS[7], offset = -40},   -- Hands
-        {slot = EQUIPMENT_SLOTS[8], offset = -70},   -- Waist
-        {slot = EQUIPMENT_SLOTS[9], offset = -115},  -- Legs
-        {slot = EQUIPMENT_SLOTS[10], offset = -145}, -- Feet
-        {slot = EQUIPMENT_SLOTS[11], offset = -190}, -- Ring 1
-        {slot = EQUIPMENT_SLOTS[12], offset = -220}, -- Ring 2
-        {slot = EQUIPMENT_SLOTS[13], offset = -265}, -- Trinket 1
-        {slot = EQUIPMENT_SLOTS[14], offset = -295}, -- Trinket 2
+        {slot = EQUIPMENT_SLOTS[7], offset = -50},   -- Hands
+        {slot = EQUIPMENT_SLOTS[8], offset = -90},   -- Waist
+        {slot = EQUIPMENT_SLOTS[9], offset = -130},  -- Legs
+        {slot = EQUIPMENT_SLOTS[10], offset = -170}, -- Feet
+        {slot = EQUIPMENT_SLOTS[11], offset = -210}, -- Ring 1
+        {slot = EQUIPMENT_SLOTS[12], offset = -250}, -- Ring 2
+        {slot = EQUIPMENT_SLOTS[13], offset = -290}, -- Trinket 1
+        {slot = EQUIPMENT_SLOTS[14], offset = -330}, -- Trinket 2
     }
     
     local bottomSlots = {
-        {slot = EQUIPMENT_SLOTS[15], offset = -480}, -- Main Hand (left side)
-        {slot = EQUIPMENT_SLOTS[16], offset = -480}, -- Off Hand (right side)
+        {slot = EQUIPMENT_SLOTS[15], offset = -410}, -- Main Hand (left side)
+        {slot = EQUIPMENT_SLOTS[16], offset = -410}, -- Off Hand (right side)
     }
     
     -- Create equipment rows on left side
@@ -835,12 +835,12 @@ function CharacterPane:Setup()
     
     -- Create bottom weapon rows
     if not equipmentRows[INVSLOT_MAINHAND] then
-        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[15], -480, "left")
+        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[15], -410, "left")
         equipmentRows[INVSLOT_MAINHAND] = row
     end
     
     if not equipmentRows[INVSLOT_OFFHAND] then
-        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[16], -510, "right")
+        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[16], -410, "right")
         equipmentRows[INVSLOT_OFFHAND] = row
     end
     
