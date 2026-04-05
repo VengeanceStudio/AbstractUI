@@ -121,7 +121,7 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Weapon slot backgrounds/bars - hide them and all their regions
+    -- Weapon slot backgrounds/bars - NUCLEAR hiding
     local weaponFrames = {
         "CharacterHandsSlotFrame",
         "CharacterMainHandSlotFrame", 
@@ -138,9 +138,29 @@ local function StripBlizzardTextures()
             if frame.GetNumRegions then
                 for i = 1, frame:GetNumRegions() do
                     local region = select(i, frame:GetRegions())
-                    if region and region:GetObjectType() == "Texture" then
+                    if region then
                         region:SetAlpha(0)
                         region:Hide()
+                    end
+                end
+            end
+            
+            -- Hide all children
+            if frame.GetChildren then
+                local children = {frame:GetChildren()}
+                for _, child in ipairs(children) do
+                    child:Hide()
+                    child:SetAlpha(0)
+                    
+                    -- Also hide child's regions
+                    if child.GetNumRegions then
+                        for i = 1, child:GetNumRegions() do
+                            local region = select(i, child:GetRegions())
+                            if region then
+                                region:SetAlpha(0)
+                                region:Hide()
+                            end
+                        end
                     end
                 end
             end
@@ -520,6 +540,29 @@ local function SkinCharacterFrameBackdrop()
     if not CharacterFrame or not CharacterFrame.NineSlice then return end
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    
+    -- Create custom backdrop with class-colored border and background
+    if not CharacterFrame.AbstractBackdrop then
+        local backdrop = CreateFrame("Frame", nil, CharacterFrame, "BackdropTemplate")
+        backdrop:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 0, 0)
+        backdrop:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", 0, 0)
+        backdrop:SetFrameLevel(CharacterFrame:GetFrameLevel() - 1)
+        
+        backdrop:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 2,
+            insets = { left = 2, right = 2, top = 2, bottom = 2 }
+        })
+        
+        -- Background with transparency
+        backdrop:SetBackdropColor(bgr, bgg, bgb, 0.85)
+        
+        -- Class-colored border
+        backdrop:SetBackdropBorderColor(pr, pg, pb, 1)
+        
+        CharacterFrame.AbstractBackdrop = backdrop
+    end
     
     -- Make NineSlice completely transparent so game world shows through
     if CharacterFrame.NineSlice.Center then
