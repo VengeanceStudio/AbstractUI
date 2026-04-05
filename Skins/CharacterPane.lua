@@ -270,24 +270,7 @@ local function UpdateSlotOverlay(overlay)
     if settings.showItemLevel then
         local ilvl = GetItemLevel(slotId)
         if ilvl then
-            -- Try to get upgrade track info
-            local upgradeInfo = C_Item.GetItemLevelIncrement(itemLink)
-            local trackText = ""
-            
-            -- Get item quality to determine track display
-            local _, _, quality = C_Item.GetItemInfo(itemLink)
-            if quality and quality >= 3 then -- Rare or better
-                -- Try to extract track info from tooltip or item stats
-                local stats = C_Item.GetItemStats(itemLink)
-                if stats then
-                    -- Format: "ilvl (Track x/y)" like "246 (Champion 1/6)"
-                    trackText = string.format("%d", ilvl)
-                end
-            else
-                trackText = tostring(ilvl)
-            end
-            
-            overlay.ilvlTrack:SetText(trackText)
+            overlay.ilvlTrack:SetText(tostring(ilvl))
         else
             overlay.ilvlTrack:SetText("")
         end
