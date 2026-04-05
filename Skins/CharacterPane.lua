@@ -431,10 +431,10 @@ local function SkinCharacterFrameBackdrop()
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    -- Make NineSlice completely transparent (we already hid borders in StripBlizzardTextures)
+    -- Make NineSlice completely transparent so game world shows through
     if CharacterFrame.NineSlice.Center then
-        CharacterFrame.NineSlice.Center:SetColorTexture(0, 0, 0, 0.85)
-        CharacterFrame.NineSlice.Center:SetVertexColor(bgr * 2, bgg * 2, bgb * 2)
+        CharacterFrame.NineSlice.Center:SetAlpha(0)
+        CharacterFrame.NineSlice.Center:Hide()
     end
     
     -- Hide the portrait completely
