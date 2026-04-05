@@ -88,6 +88,39 @@ local function StripBlizzardTextures()
         local shown = child:IsShown() and "SHOWN" or "hidden"
         local alpha = child:GetAlpha()
         print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
+        
+        -- Debug unnamed frames in detail
+        if childName == "unnamed" and shown == "SHOWN" then
+            print(string.format("    == Unnamed Frame %d Details ==", i))
+            
+            -- Check regions
+            if child.GetNumRegions then
+                print("    Regions:")
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region then
+                        local regType = region:GetObjectType()
+                        local regName = region:GetName() or "unnamed-region"
+                        local regShown = region:IsShown() and "SHOWN" or "hidden"
+                        print(string.format("      [%d] %s (%s) - %s", j, regName, regType, regShown))
+                    end
+                end
+            end
+            
+            -- Check children
+            if child.GetChildren then
+                local grandchildren = {child:GetChildren()}
+                if #grandchildren > 0 then
+                    print("    Children:")
+                    for j, grandchild in ipairs(grandchildren) do
+                        local gcName = grandchild:GetName() or "unnamed-child"
+                        local gcType = grandchild:GetObjectType()
+                        local gcShown = grandchild:IsShown() and "SHOWN" or "hidden"
+                        print(string.format("      [%d] %s (%s) - %s", j, gcName, gcType, gcShown))
+                    end
+                end
+            end
+        end
     end
     print("=== End CharacterFrame Debug ===")
     
