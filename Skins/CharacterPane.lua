@@ -73,6 +73,24 @@ end
 local function StripBlizzardTextures()
     if not CharacterFrame then return end
     
+    -- Hide CharacterFrame's own Bg if it exists
+    if CharacterFrame.Bg then
+        CharacterFrame.Bg:SetAlpha(0)
+        CharacterFrame.Bg:Hide()
+    end
+    
+    -- Strip ALL texture regions directly from CharacterFrame
+    for i = 1, CharacterFrame:GetNumRegions() do
+        local region = select(i, CharacterFrame:GetRegions())
+        if region and region:GetObjectType() == "Texture" then
+            -- Don't hide the portrait texture (we'll handle that separately)
+            if region ~= CharacterFramePortrait then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
+    end
+    
     -- Hide all the background/border textures from CharacterFrame
     local texturesToHide = {
         -- Character model background corners
@@ -104,6 +122,10 @@ local function StripBlizzardTextures()
     
     -- Strip ALL textures from CharacterFrame's NineSlice including Center
     if CharacterFrame.NineSlice then
+        -- Hide the entire NineSlice
+        CharacterFrame.NineSlice:SetAlpha(0)
+        CharacterFrame.NineSlice:Hide()
+        
         local nineSlicePieces = {
             "TopEdge", "BottomEdge", "LeftEdge", "RightEdge",
             "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner",
@@ -126,6 +148,11 @@ local function StripBlizzardTextures()
     
     -- Hide PaperDollFrame background completely
     if PaperDollFrame then
+        if PaperDollFrame.Bg then
+            PaperDollFrame.Bg:SetAlpha(0)
+            PaperDollFrame.Bg:Hide()
+        end
+        
         for i = 1, PaperDollFrame:GetNumRegions() do
             local region = select(i, PaperDollFrame:GetRegions())
             if region and region:GetObjectType() == "Texture" then
