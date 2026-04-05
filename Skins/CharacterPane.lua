@@ -68,7 +68,7 @@ local function GetThemeColors()
     end
     
     local sr, sg, sb, sa = ColorPalette:GetColor('primary')
-    local bgr, bgg, bgb, bga = ColorPalette:GetColor('background')
+    local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
     
     return sr, sg, sb, sa, bgr, bgg, bgb, bga
 end
@@ -370,8 +370,16 @@ end
 -- Main skinning setup
 ---------------------------------------------------------------------------
 function CharacterPane:SetupCharacterFrameSkinning()
-    if not IsSkinningEnabled() then return end
-    if not CharacterFrame then return end
+    if not IsSkinningEnabled() then 
+        AbstractUI:Print("CharacterPane skinning is disabled")
+        return 
+    end
+    if not CharacterFrame then 
+        AbstractUI:Print("CharacterFrame not found")
+        return 
+    end
+
+    AbstractUI:Print("Applying CharacterPane skinning...")
 
     -- Create initial background
     CreateOrUpdateBackground()
@@ -461,6 +469,11 @@ function CharacterPane:SetupCharacterFrameSkinning()
             end
         end)
     end)
+    
+    -- Apply skinning immediately if CharacterFrame is currently shown
+    if CharacterFrame:IsShown() then
+        SetCharacterFrameBgExtended(false)
+    end
     
     -- Listen for theme changes
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
