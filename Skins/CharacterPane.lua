@@ -154,8 +154,27 @@ local function StripBlizzardTextures()
     for _, name in ipairs(weaponFrames) do
         local frame = _G[name]
         if frame then
+            -- Nuclear approach - make them completely invisible
             frame:Hide()
             frame:SetAlpha(0)
+            frame:SetScale(0.001)
+            
+            -- Move them off-screen
+            frame:ClearAllPoints()
+            frame:SetPoint("TOPLEFT", UIParent, "BOTTOMRIGHT", 10000, 10000)
+            
+            -- Prevent them from being shown
+            if not frame._abstractHidden then
+                hooksecurefunc(frame, "Show", function(self)
+                    self:Hide()
+                end)
+                hooksecurefunc(frame, "SetAlpha", function(self, alpha)
+                    if alpha > 0 then
+                        self:SetAlpha(0)
+                    end
+                end)
+                frame._abstractHidden = true
+            end
             
             -- Hide all texture regions within the frame
             if frame.GetNumRegions then
@@ -164,6 +183,9 @@ local function StripBlizzardTextures()
                     if region then
                         region:SetAlpha(0)
                         region:Hide()
+                        if region.SetVertexColor then
+                            region:SetVertexColor(0, 0, 0, 0)
+                        end
                     end
                 end
             end
