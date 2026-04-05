@@ -751,13 +751,28 @@ local function HideBlizzardElements()
     if CharacterLevelText then CharacterLevelText:Hide() end
     if CharacterFrameTitleText then CharacterFrameTitleText:Hide() end
     
-    -- Hide PaperDoll sidebar items
+    -- Hide PaperDoll specific elements
     if PaperDollSidebarTabs then PaperDollSidebarTabs:Hide() end
     if PaperDollFrame.TitleBg then PaperDollFrame.TitleBg:Hide() end
+    
+    -- Hide the item level/stats display in the center
+    if PaperDollItemsFrame then PaperDollItemsFrame:Hide() end
+    if CharacterStatsPane then CharacterStatsPane:Hide() end
+    
+    -- Hide character name text
+    if CharacterNameText then CharacterNameText:Hide() end
+    
+    -- Hide all child frames of PaperDollFrame except model
+    for _, child in pairs({PaperDollFrame:GetChildren()}) do
+        if child ~= CharacterModelScene then
+            child:Hide()
+        end
+    end
     
     -- Keep only the character model and bottom tabs
     if CharacterModelScene then 
         CharacterModelScene:Show()
+        CharacterModelScene:ClearAllPoints()
         CharacterModelScene:SetPoint("CENTER", PaperDollFrame, "CENTER", 0, 20)
     end
     
