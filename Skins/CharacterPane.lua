@@ -110,6 +110,11 @@ local function StripBlizzardTextures()
         "PaperDollInnerBorderTop",
         "PaperDollInnerBorderBottom",
         "PaperDollInnerBorderBottom2",
+        
+        -- Weapon slot backgrounds/bars
+        "CharacterHandsSlotFrame",
+        "CharacterMainHandSlotFrame", 
+        "CharacterSecondaryHandSlotFrame",
     }
     
     for _, name in ipairs(texturesToHide) do
@@ -249,12 +254,21 @@ local function SkinItemSlot(button)
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    -- Hide Blizzard's background frame
+    -- Hide Blizzard's background frame aggressively
     local frameName = button:GetName() .. "Frame"
     local frame = _G[frameName]
     if frame then
         frame:Hide()
         frame:SetAlpha(0)
+        
+        -- Also hide all its regions
+        for i = 1, frame:GetNumRegions() do
+            local region = select(i, frame:GetRegions())
+            if region then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
     end
     
     -- Remove default textures
@@ -494,36 +508,10 @@ local function SkinCharacterFrameBackdrop()
         CharacterFramePortrait:SetAlpha(0)
     end
     
-    -- Style close button
+    -- Hide the close button completely
     if CharacterFrame.CloseButton then
-        local closeBtn = CharacterFrame.CloseButton
-        if not closeBtn._abstractSkinned then
-            closeBtn:SetSize(20, 20)
-            
-            -- Remove default textures
-            closeBtn:SetNormalTexture("")
-            closeBtn:SetPushedTexture("")
-            closeBtn:SetHighlightTexture("")
-            
-            -- Create X text
-            if not closeBtn.text then
-                closeBtn.text = closeBtn:CreateFontString(nil, "OVERLAY")
-                closeBtn.text:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
-                closeBtn.text:SetPoint("CENTER", 1, 0)
-                closeBtn.text:SetText("×")
-            end
-            closeBtn.text:SetTextColor(pr, pg, pb, 1)
-            
-            -- Hover effect
-            closeBtn:HookScript("OnEnter", function(self)
-                self.text:SetTextColor(1, 0.3, 0.3)
-            end)
-            closeBtn:HookScript("OnLeave", function(self)
-                self.text:SetTextColor(pr, pg, pb, 1)
-            end)
-            
-            closeBtn._abstractSkinned = true
-        end
+        CharacterFrame.CloseButton:Hide()
+        CharacterFrame.CloseButton:SetAlpha(0)
     end
     
     -- Style title text
