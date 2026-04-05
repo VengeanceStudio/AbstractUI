@@ -111,7 +111,9 @@ local function StripBlizzardTextures()
         "PaperDollInnerBorderBottom",
         "PaperDollInnerBorderBottom2",
         
-        }
+        -- Weapon slot decorative elements
+        "PaperDollItemsFrameItemFlyoutHighlight",
+    }
     
     for _, name in ipairs(texturesToHide) do
         local tex = _G[name]
@@ -160,6 +162,40 @@ local function StripBlizzardTextures()
                                 region:SetAlpha(0)
                                 region:Hide()
                             end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Hide PaperDollItemsFrame decorations (the bars next to weapon slots)
+    if PaperDollItemsFrame then
+        -- Hide all texture regions that aren't the actual equipment slots
+        for i = 1, PaperDollItemsFrame:GetNumRegions() do
+            local region = select(i, PaperDollItemsFrame:GetRegions())
+            if region and region:GetObjectType() == "Texture" then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
+        
+        -- Hide any child frames that aren't equipment slots
+        local children = {PaperDollItemsFrame:GetChildren()}
+        for _, child in ipairs(children) do
+            local childName = child:GetName()
+            -- Only hide if it's not an actual equipment slot button
+            if childName and not childName:find("Slot$") then
+                child:Hide()
+                child:SetAlpha(0)
+                
+                -- Hide the child's regions too
+                if child.GetNumRegions then
+                    for i = 1, child:GetNumRegions() do
+                        local region = select(i, child:GetRegions())
+                        if region then
+                            region:SetAlpha(0)
+                            region:Hide()
                         end
                     end
                 end
