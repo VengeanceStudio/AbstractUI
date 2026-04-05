@@ -372,60 +372,53 @@ local function SkinItemSlot(button)
         end
     end
     
-    -- Hide ALL children of the slot button (weapon slot bars are unnamed children)
+    -- Store references to unnamed children and aggressively hide them
     local children = {button:GetChildren()}
-    for _, child in ipairs(children) do
+    button._unnamedChildren = button._unnamedChildren or {}
+    
+    for i, child in ipairs(children) do
         local childName = child:GetName()
-        -- Hide unnamed children (these are the decorative bars)
+        -- Track unnamed children (these are the decorative bars)
         if not childName or childName == "" then
+            table.insert(button._unnamedChildren, child)
+            
+            -- Nuclear hiding approach
             child:Hide()
             child:SetAlpha(0)
+            child:SetScale(0.001)
             
-            -- Hook to prevent them from being shown again
-            if child.Show and not child._abstractHidden then
-                hooksecurefunc(child, "Show", function(self)
-                    self:Hide()
-                    self:SetAlpha(0)
-                end)
-                child._abstractHidden = true
+            if child.SetShown then
+                child:SetShown(false)
             end
             
-            -- Hide child's regions
+            -- Hide all regions
             if child.GetNumRegions then
-                for i = 1, child:GetNumRegions() do
-                    local region = select(i, child:GetRegions())
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
                     if region then
                         region:SetAlpha(0)
                         region:Hide()
+                        if region.SetVertexColor then
+                            region:SetVertexColor(0, 0, 0, 0)
+                        end
                     end
                 end
             end
         end
     end
     
-    -- Hook to continuously hide unnamed children (they might be created later)
-    if not button._abstractHooked then
-        button:HookScript("OnShow", function(self)
-            -- Re-hide unnamed children every time the button shows
-            local children = {self:GetChildren()}
-            for _, child in ipairs(children) do
-                local childName = child:GetName()
-                if not childName or childName == "" then
+    -- Create OnUpdate hook to continuously force them hidden
+    if not button._abstractUpdateFrame then
+        local updateFrame = CreateFrame("Frame")
+        updateFrame:SetScript("OnUpdate", function(self, elapsed)
+            for _, child in ipairs(button._unnamedChildren or {}) do
+                if child:IsShown() then
                     child:Hide()
                     child:SetAlpha(0)
-                    
-                    -- Hook new children too
-                    if child.Show and not child._abstractHidden then
-                        hooksecurefunc(child, "Show", function(c)
-                            c:Hide()
-                            c:SetAlpha(0)
-                        end)
-                        child._abstractHidden = true
-                    end
                 end
             end
         end)
-        button._abstractHooked = true
+        button._abstractUpdateFrame = updateFrame
     end
     
     -- Remove default textures
