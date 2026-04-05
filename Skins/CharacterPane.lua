@@ -630,9 +630,23 @@ end
 ---------------------------------------------------------------------------
 
 local function HideBlizzardElements()
+    -- Hide default equipment slot buttons
+    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+        if slotButton then
+            slotButton:Hide()
+        end
+    end
+    
+    -- Hide frame decorations
     if CharacterFramePortrait then CharacterFramePortrait:Hide() end
     if CharacterFrame.Background then CharacterFrame.Background:Hide() end
     if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
+    if CharacterLevelText then CharacterLevelText:Hide() end
+    if CharacterFrameTitleText then CharacterFrameTitleText:SetText("") end
+    
+    -- Keep model visible
+    if CharacterModelScene then CharacterModelScene:Show() end
 end
 
 local function CreateBackground()
