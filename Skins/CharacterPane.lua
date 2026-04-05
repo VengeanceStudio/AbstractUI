@@ -30,7 +30,6 @@ local EQUIPMENT_SLOTS = {
 -- Module state
 local ColorPalette = nil
 local FontKit = nil
-local customBg = nil
 local equipmentRows = {}
 local ilvlDisplay = nil
 local statsPanel = nil
@@ -392,14 +391,14 @@ end
 
 local function CreateIlvlDisplay()
     if ilvlDisplay then return ilvlDisplay end
-    if not PaperDollFrame then return nil end
+    if not customCharacterFrame then return nil end
     
     local pr, pg, pb = GetThemeColors()
     local font = GetFont()
     
-    local display = PaperDollFrame:CreateFontString(nil, "OVERLAY")
+    local display = customCharacterFrame:CreateFontString(nil, "OVERLAY")
     display:SetFont(font, 18, "OUTLINE")
-    display:SetPoint("TOP", PaperDollFrame, "TOP", 0, -8)
+    display:SetPoint("TOP", customCharacterFrame, "TOP", 0, -8)
     display:SetTextColor(1, 1, 1)
     
     ilvlDisplay = display
@@ -421,14 +420,14 @@ end
 
 local function CreateStatsPanel()
     if statsPanel then return statsPanel end
-    if not PaperDollFrame then return nil end
+    if not customCharacterFrame then return nil end
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     local font = GetFont()
     
-    local panel = CreateFrame("Frame", "AbstractUI_StatsPanel", PaperDollFrame, "BackdropTemplate")
+    local panel = CreateFrame("Frame", "AbstractUI_StatsPanel", customCharacterFrame, "BackdropTemplate")
     panel:SetSize(180, 520)
-    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -30, -30)
+    panel:SetPoint("TOPLEFT", customCharacterFrame, "TOPRIGHT", -30, -30)
     panel:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -629,14 +628,14 @@ end
 
 local function CreateSettingsPanel()
     if settingsPanel then return settingsPanel end
-    if not PaperDollFrame then return nil end
+    if not customCharacterFrame then return nil end
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     local font = GetFont()
     
-    local panel = CreateFrame("Frame", "AbstractUI_CharSettingsPanel", CharacterFrame, "BackdropTemplate")
+    local panel = CreateFrame("Frame", "AbstractUI_CharSettingsPanel", customCharacterFrame, "BackdropTemplate")
     panel:SetSize(240, 520)
-    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", 152, -30)
+    panel:SetPoint("TOPLEFT", customCharacterFrame, "TOPRIGHT", 152, -30)
     panel:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -728,139 +727,70 @@ local function CreateSettingsPanel()
 end
 
 ---------------------------------------------------------------------------
--- HIDE ALL BLIZZARD ELEMENTS
+-- HIDE BLIZZARD CHARACTER FRAME, CREATE OUR OWN
 ---------------------------------------------------------------------------
 
-local function HideBlizzardElements()
-    -- Hide ALL equipment slot buttons completely
-    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
-        if slotButton then
-            slotButton:Hide()
-            slotButton:SetAlpha(0)
-            slotButton:EnableMouse(false)
-            
-            -- Hide all textures and regions
-            for i = 1, slotButton:GetNumRegions() do
-                local region = select(i, slotButton:GetRegions())
-                if region and region.Hide then
-                    region:Hide()
-                end
+local customCharacterFrame = nil
+
+local function HideBlizzardCharacterFrame()
+    -- Simply hide the entire PaperDollFrame and show our custom one instead
+    if PaperDollFrame then
+        PaperDollFrame:HookScript("OnShow", function()
+            if customCharacterFrame and IsEnabled() then
+                PaperDollFrame:Hide()
+                customCharacterFrame:Show()
             end
-        end
-    end
-    
-    -- Hide all frame decorations and default UI
-    if CharacterFramePortrait then CharacterFramePortrait:Hide() end
-    if CharacterFrame.Background then CharacterFrame.Background:Hide() end
-    if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
-    if CharacterFrame.Inset then CharacterFrame.Inset:Hide() end
-    if CharacterFrame.InsetBg then CharacterFrame.InsetBg:Hide() end
-    if CharacterFrame.CloseButton then CharacterFrame.CloseButton:ClearAllPoints(); CharacterFrame.CloseButton:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -5, -5) end
-    if CharacterLevelText then CharacterLevelText:Hide() end
-    if CharacterFrameTitleText then CharacterFrameTitleText:Hide() end
-    
-    -- Hide PaperDoll specific elements
-    if PaperDollSidebarTabs then PaperDollSidebarTabs:Hide() end
-    if PaperDollFrame.TitleBg then PaperDollFrame.TitleBg:Hide() end
-    if PaperDollFrame.Bg then PaperDollFrame.Bg:Hide() end
-    
-    -- Hide the item level/stats display in the center
-    if PaperDollItemsFrame then PaperDollItemsFrame:Hide() end
-    if CharacterStatsPane then CharacterStatsPane:Hide() end
-    
-    -- Hide character name text
-    if CharacterNameText then CharacterNameText:Hide() end
-    
-    -- Hide equipment manager and flyout
-    if PaperDollEquipmentManagerPane then PaperDollEquipmentManagerPane:Hide() end
-    if EquipmentFlyoutFrame then EquipmentFlyoutFrame:Hide() end
-    
-    -- Hide any remaining background textures
-    for i = 1, PaperDollFrame:GetNumRegions() do
-        local region = select(i, PaperDollFrame:GetRegions())
-        if region and region:GetObjectType() == "Texture" then
-            region:Hide()
-        end
-    end
-    
-    -- Hide all child frames of PaperDollFrame except model and our custom elements
-    for _, child in pairs({PaperDollFrame:GetChildren()}) do
-        local childName = child:GetName()
-        if child ~= CharacterModelScene and (not childName or not childName:match("AbstractUI")) then
-            child:Hide()
-        end
-    end
-    
-    -- Keep only the character model and bottom tabs
-    if CharacterModelScene then 
-        CharacterModelScene:Show()
-        CharacterModelScene:ClearAllPoints()
-        CharacterModelScene:SetPoint("CENTER", PaperDollFrame, "CENTER", 0, 20)
-        CharacterModelScene:SetSize(300, 400)
+        end)
         
-        -- Hide model scene background
-        if CharacterModelScene.BackgroundOverlay then
-            CharacterModelScene.BackgroundOverlay:Hide()
-        end
+        PaperDollFrame:HookScript("OnHide", function()
+            if customCharacterFrame then
+                customCharacterFrame:Hide()
+            end
+        end)
     end
-    
-    -- Keep bottom tab buttons visible
-    if CharacterFrameTab1 then CharacterFrameTab1:Show() end
-    if CharacterFrameTab2 then CharacterFrameTab2:Show() end
-    if CharacterFrameTab3 then CharacterFrameTab3:Show() end
-    if CharacterFrameTab4 then CharacterFrameTab4:Show() end
 end
 
-local function CreateBackground()
-    if not CharacterFrame then return end
+local function CreateCustomCharacterFrame()
+    if customCharacterFrame then return customCharacterFrame end
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    if not customBg then
-        customBg = CreateFrame("Frame", "AbstractUI_CharBg", PaperDollFrame, "BackdropTemplate")
-        customBg:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 2,
-        })
-        customBg:SetFrameStrata("BACKGROUND")
-        customBg:SetFrameLevel(0)
-        customBg:EnableMouse(false)
-        customBg:SetAllPoints(PaperDollFrame)
-    end
+    -- Create our own standalone character frame
+    local frame = CreateFrame("Frame", "AbstractUI_CustomCharacterFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(810, 570)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    frame:SetFrameStrata("HIGH")
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     
-    customBg:SetBackdropColor(bgr, bgg, bgb, bga)
-    customBg:SetBackdropBorderColor(pr, pg, pb, pa)
-    customBg:Show()
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 2,
+    })
+    frame:SetBackdropColor(bgr, bgg, bgb, bga)
+    frame:SetBackdropBorderColor(pr, pg, pb, pa)
     
-    HideBlizzardElements()
-end
-
-local function CreateBackground()
-    if not CharacterFrame then return end
+    -- Close button
+    local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    closeBtn:SetPoint("TOPRIGHT", -3, -3)
+    closeBtn:SetScript("OnClick", function()
+        ToggleCharacter("PaperDollFrame")
+    end)
     
-    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    -- Character model
+    frame.model = CreateFrame("PlayerModel", nil, frame)
+    frame.model:SetSize(300, 400)
+    frame.model:SetPoint("CENTER", frame, "CENTER", 0, 20)
+    frame.model:SetUnit("player")
+    frame.model:SetRotation(0)
     
-    if not customBg then
-        customBg = CreateFrame("Frame", "AbstractUI_CharBg", CharacterFrame, "BackdropTemplate")
-        customBg:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-            insets = { left = 1, right = 1, top = 1, bottom = 1 }
-        })
-        customBg:SetFrameStrata("BACKGROUND")
-        customBg:SetFrameLevel(0)
-        customBg:EnableMouse(false)
-        customBg:SetAllPoints(CharacterFrame)
-    end
-    
-    customBg:SetBackdropColor(bgr, bgg, bgb, bga)
-    customBg:SetBackdropBorderColor(pr, pg, pb, pa)
-    customBg:Show()
-    
-    HideBlizzardElements()
+    frame:Hide()
+    customCharacterFrame = frame
+    return frame
 end
 
 ---------------------------------------------------------------------------
@@ -871,8 +801,11 @@ function CharacterPane:Setup()
     if not IsEnabled() then return end
     if not CharacterFrame then return end
     
-    CreateBackground()
-    HideBlizzardElements()
+    -- Create our custom character frame
+    CreateCustomCharacterFrame()
+    
+    -- Hook Blizzard's frame to show ours instead
+    HideBlizzardCharacterFrame()
     
     -- Create ilvl display at top
     CreateIlvlDisplay()
@@ -898,15 +831,10 @@ function CharacterPane:Setup()
         {slot = EQUIPMENT_SLOTS[14], offset = -330}, -- Trinket 2
     }
     
-    local bottomSlots = {
-        {slot = EQUIPMENT_SLOTS[15], offset = -410}, -- Main Hand (left side)
-        {slot = EQUIPMENT_SLOTS[16], offset = -410}, -- Off Hand (right side)
-    }
-    
     -- Create equipment rows on left side
     for _, data in ipairs(leftSlots) do
         if not equipmentRows[data.slot.id] then
-            local row = CreateEquipmentRow(PaperDollFrame, data.slot, data.offset, "left")
+            local row = CreateEquipmentRow(customCharacterFrame, data.slot, data.offset, "left")
             equipmentRows[data.slot.id] = row
         end
     end
@@ -914,19 +842,19 @@ function CharacterPane:Setup()
     -- Create equipment rows on right side
     for _, data in ipairs(rightSlots) do
         if not equipmentRows[data.slot.id] then
-            local row = CreateEquipmentRow(PaperDollFrame, data.slot, data.offset, "right")
+            local row = CreateEquipmentRow(customCharacterFrame, data.slot, data.offset, "right")
             equipmentRows[data.slot.id] = row
         end
     end
     
     -- Create bottom weapon rows
     if not equipmentRows[INVSLOT_MAINHAND] then
-        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[15], -410, "left")
+        local row = CreateEquipmentRow(customCharacterFrame, EQUIPMENT_SLOTS[15], -410, "left")
         equipmentRows[INVSLOT_MAINHAND] = row
     end
     
     if not equipmentRows[INVSLOT_OFFHAND] then
-        local row = CreateEquipmentRow(PaperDollFrame, EQUIPMENT_SLOTS[16], -410, "right")
+        local row = CreateEquipmentRow(customCharacterFrame, EQUIPMENT_SLOTS[16], -410, "right")
         equipmentRows[INVSLOT_OFFHAND] = row
     end
     
@@ -936,28 +864,13 @@ function CharacterPane:Setup()
     -- Create settings panel on far right
     CreateSettingsPanel()
     
-    -- Hook frame events
-    CharacterFrame:HookScript("OnShow", function()
-        if IsEnabled() then
-            CreateBackground()
-            HideBlizzardElements()
-            self:UpdateAll()
-        end
-    end)
-    
-    PaperDollFrame:HookScript("OnShow", function()
-        if IsEnabled() then
-            self:UpdateAll()
-        end
-    end)
-    
     -- Register update events
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", "ScheduleUpdate")
     self:RegisterEvent("PLAYER_AVG_ITEM_LEVEL_UPDATE", "ScheduleUpdate")
     self:RegisterEvent("UNIT_STATS", "ScheduleUpdate")
     
-    -- Initial update
-    if CharacterFrame:IsShown() and PaperDollFrame:IsShown() then
+    -- Initial update if frame is shown
+    if customCharacterFrame and customCharacterFrame:IsShown() then
         self:UpdateAll()
     end
     
@@ -990,9 +903,9 @@ function CharacterPane:OnThemeChanged()
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    if customBg then
-        customBg:SetBackdropColor(bgr, bgg, bgb, bga)
-        customBg:SetBackdropBorderColor(pr, pg, pb, pa)
+    if customCharacterFrame then
+        customCharacterFrame:SetBackdropColor(bgr, bgg, bgb, bga)
+        customCharacterFrame:SetBackdropBorderColor(pr, pg, pb, pa)
     end
     
     if statsPanel then
