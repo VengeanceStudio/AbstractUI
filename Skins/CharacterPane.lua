@@ -79,19 +79,11 @@ local function StripBlizzardTextures()
         CharacterFrame.Bg:Hide()
     end
     
-    print("=== CharacterFrame Debug ===")
-    print("Children:")
+    -- Hide all unnamed child frames (decorative borders/bars)
     local children = {CharacterFrame:GetChildren()}
     for i, child in ipairs(children) do
-        local childName = child:GetName() or "unnamed"
-        local objType = child:GetObjectType()
-        local shown = child:IsShown() and "SHOWN" or "hidden"
-        local alpha = child:GetAlpha()
-        print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
-        
-        -- Hide all unnamed frames (these are decorative borders/bars)
-        if childName == "unnamed" then
-            print(string.format("    HIDING unnamed frame %d", i))
+        local childName = child:GetName()
+        if not childName or childName == "" then
             child:Hide()
             child:SetAlpha(0)
             
@@ -107,7 +99,6 @@ local function StripBlizzardTextures()
             end
         end
     end
-    print("=== End CharacterFrame Debug ===")
     
     -- Strip ALL texture regions directly from CharacterFrame
     for i = 1, CharacterFrame:GetNumRegions() do
@@ -153,47 +144,34 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Weapon slot backgrounds/bars - NUCLEAR hiding
+    -- Weapon slot backgrounds/bars - hide frames and all contents
     local weaponFrames = {
         "CharacterHandsSlotFrame",
         "CharacterMainHandSlotFrame", 
         "CharacterSecondaryHandSlotFrame",
     }
     
-    print("=== Weapon Slot Frames Debug ===")
     for _, name in ipairs(weaponFrames) do
         local frame = _G[name]
         if frame then
-            print(string.format("Frame: %s", name))
             frame:Hide()
             frame:SetAlpha(0)
             
-            -- Debug and hide all texture regions within the frame
+            -- Hide all texture regions within the frame
             if frame.GetNumRegions then
-                print("  Regions:")
                 for i = 1, frame:GetNumRegions() do
                     local region = select(i, frame:GetRegions())
                     if region then
-                        local objType = region:GetObjectType()
-                        local regName = region:GetName() or "unnamed"
-                        local shown = region:IsShown() and "SHOWN" or "hidden"
-                        print(string.format("    [%d] %s (%s) - %s", i, regName, objType, shown))
                         region:SetAlpha(0)
                         region:Hide()
                     end
                 end
             end
             
-            -- Debug and hide all children
+            -- Hide all children
             if frame.GetChildren then
                 local children = {frame:GetChildren()}
-                print("  Children:")
                 for i, child in ipairs(children) do
-                    local childName = child:GetName() or "unnamed"
-                    local objType = child:GetObjectType()
-                    local shown = child:IsShown() and "SHOWN" or "hidden"
-                    print(string.format("    [%d] %s (%s) - %s", i, childName, objType, shown))
-                    
                     child:Hide()
                     child:SetAlpha(0)
                     
@@ -209,44 +187,24 @@ local function StripBlizzardTextures()
                     end
                 end
             end
-        else
-            print(string.format("Frame %s not found!", name))
         end
     end
-    print("=== End Weapon Frames Debug ===")
     
-    -- Hide PaperDollItemsFrame decorations (the bars next to weapon slots)
+    -- Hide PaperDollItemsFrame decorations
     if PaperDollItemsFrame then
-        print("=== PaperDollItemsFrame Debug ===")
-        
-        -- Debug: List all regions
-        print("Regions:")
+        -- Hide all texture regions
         for i = 1, PaperDollItemsFrame:GetNumRegions() do
             local region = select(i, PaperDollItemsFrame:GetRegions())
-            if region then
-                local objType = region:GetObjectType()
-                local name = region:GetName() or "unnamed"
-                local shown = region:IsShown() and "SHOWN" or "hidden"
-                local alpha = region:GetAlpha()
-                print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, name, objType, shown, alpha))
-                
-                if objType == "Texture" then
-                    region:SetAlpha(0)
-                    region:Hide()
-                end
+            if region and region:GetObjectType() == "Texture" then
+                region:SetAlpha(0)
+                region:Hide()
             end
         end
         
-        -- Debug: List all children
-        print("Children:")
+        -- Hide any child frames that aren't equipment slots
         local children = {PaperDollItemsFrame:GetChildren()}
-        for i, child in ipairs(children) do
-            local childName = child:GetName() or "unnamed"
-            local objType = child:GetObjectType()
-            local shown = child:IsShown() and "SHOWN" or "hidden"
-            local alpha = child:GetAlpha()
-            print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
-            
+        for _, child in ipairs(children) do
+            local childName = child:GetName()
             -- Only hide if it's not an actual equipment slot button
             if childName and not childName:find("Slot$") then
                 child:Hide()
@@ -254,8 +212,8 @@ local function StripBlizzardTextures()
                 
                 -- Hide the child's regions too
                 if child.GetNumRegions then
-                    for j = 1, child:GetNumRegions() do
-                        local region = select(j, child:GetRegions())
+                    for i = 1, child:GetNumRegions() do
+                        local region = select(i, child:GetRegions())
                         if region then
                             region:SetAlpha(0)
                             region:Hide()
@@ -264,8 +222,6 @@ local function StripBlizzardTextures()
                 end
             end
         end
-        
-        print("=== End Debug ===")
     end
     
     -- Strip ALL textures from CharacterFrame's NineSlice including Center
@@ -296,38 +252,18 @@ local function StripBlizzardTextures()
     
     -- Hide PaperDollFrame background completely
     if PaperDollFrame then
-        print("=== PaperDollFrame Debug ===")
-        
         if PaperDollFrame.Bg then
             PaperDollFrame.Bg:SetAlpha(0)
             PaperDollFrame.Bg:Hide()
         end
         
-        print("Regions:")
         for i = 1, PaperDollFrame:GetNumRegions() do
             local region = select(i, PaperDollFrame:GetRegions())
-            if region then
-                local objType = region:GetObjectType()
-                local name = region:GetName() or "unnamed"
-                local shown = region:IsShown() and "SHOWN" or "hidden"
-                local alpha = region:GetAlpha()
-                print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, name, objType, shown, alpha))
+            if region and region:GetObjectType() == "Texture" then
                 region:SetAlpha(0)
                 region:Hide()
             end
         end
-        
-        print("Children:")
-        local children = {PaperDollFrame:GetChildren()}
-        for i, child in ipairs(children) do
-            local childName = child:GetName() or "unnamed"
-            local objType = child:GetObjectType()
-            local shown = child:IsShown() and "SHOWN" or "hidden"
-            local alpha = child:GetAlpha()
-            print(string.format("  [%d] %s (%s) - %s, alpha=%.2f", i, childName, objType, shown, alpha))
-        end
-        
-        print("=== End PaperDollFrame Debug ===")
     end
     
     -- Strip textures from inset frames completely
@@ -417,37 +353,6 @@ local function SkinItemSlot(button)
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
-    local slotName = button:GetName()
-    
-    -- Debug weapon slots specifically
-    if slotName == "CharacterMainHandSlot" or slotName == "CharacterSecondaryHandSlot" then
-        print(string.format("=== Debugging %s ===", slotName))
-        
-        -- Check for Frame child
-        local children = {button:GetChildren()}
-        print(string.format("Button has %d children:", #children))
-        for i, child in ipairs(children) do
-            local childName = child:GetName() or "unnamed"
-            local objType = child:GetObjectType()
-            local shown = child:IsShown() and "SHOWN" or "hidden"
-            print(string.format("  [%d] %s (%s) - %s", i, childName, objType, shown))
-            
-            -- Check regions of this child
-            if child.GetNumRegions then
-                for j = 1, child:GetNumRegions() do
-                    local region = select(j, child:GetRegions())
-                    if region then
-                        local regType = region:GetObjectType()
-                        local regName = region:GetName() or "unnamed-region"
-                        local regShown = region:IsShown() and "SHOWN" or "hidden"
-                        print(string.format("    Region [%d] %s (%s) - %s", j, regName, regType, regShown))
-                    end
-                end
-            end
-        end
-        print("=== End Debug ===")
-    end
-    
     -- Hide Blizzard's background frame aggressively
     local frameName = button:GetName() .. "Frame"
     local frame = _G[frameName]
@@ -467,12 +372,12 @@ local function SkinItemSlot(button)
         end
     end
     
-    -- Hide ALL children of the slot button (weapon slot bars are children)
+    -- Hide ALL children of the slot button (weapon slot bars are unnamed children)
     local children = {button:GetChildren()}
     for _, child in ipairs(children) do
         local childName = child:GetName()
-        -- Hide any child that's not the icon or other essential elements
-        if childName and childName:find("Frame") then
+        -- Hide unnamed children (these are the decorative bars)
+        if not childName or childName == "" then
             child:Hide()
             child:SetAlpha(0)
             
