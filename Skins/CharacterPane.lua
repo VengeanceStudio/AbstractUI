@@ -772,8 +772,8 @@ local function CreateCustomCharacterFrame()
     -- Title text
     local title = frame:CreateFontString(nil, "OVERLAY")
     title:SetPoint("TOP", frame, "TOP", 0, -10)
-    if FontKit then
-        title:SetFont(FontKit.Fonts.Title, 16, "OUTLINE")
+    if FontKit and FontKit.fonts and FontKit.fonts.Title then
+        title:SetFont(FontKit.fonts.Title, 16, "OUTLINE")
     else
         title:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
     end
