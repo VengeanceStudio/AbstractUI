@@ -853,6 +853,9 @@ function CharacterPane:Setup()
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", "ScheduleUpdate")
     self:RegisterEvent("PLAYER_AVG_ITEM_LEVEL_UPDATE", "ScheduleUpdate")
     self:RegisterEvent("UNIT_STATS", "ScheduleUpdate")
+    self:RegisterEvent("UNIT_ATTACK_POWER", "ScheduleUpdate")
+    self:RegisterEvent("UNIT_SPELL_POWER", "ScheduleUpdate")
+    self:RegisterEvent("UNIT_ATTACK_SPEED", "ScheduleUpdate")
     
     -- Initial update
     if CharacterFrame:IsShown() and PaperDollFrame:IsShown() then
