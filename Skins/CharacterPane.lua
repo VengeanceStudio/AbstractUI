@@ -786,7 +786,8 @@ local function HideBlizzardElements()
     
     -- Hide all child frames of PaperDollFrame except model and our custom elements
     for _, child in pairs({PaperDollFrame:GetChildren()}) do
-        if child ~= CharacterModelScene and not child:GetName():match("AbstractUI") then
+        local childName = child:GetName()
+        if child ~= CharacterModelScene and (not childName or not childName:match("AbstractUI")) then
             child:Hide()
         end
     end
