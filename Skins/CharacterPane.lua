@@ -728,27 +728,74 @@ local function CreateSettingsPanel()
 end
 
 ---------------------------------------------------------------------------
--- BACKGROUND AND DECORATION
+-- HIDE ALL BLIZZARD ELEMENTS
 ---------------------------------------------------------------------------
 
 local function HideBlizzardElements()
-    -- Hide equipment slot buttons
-    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
-        if slotButton then
-            slotButton:Hide()
+    -- Hide ALL equipment slot buttons completely
+    for i = 1, 19 do
+        local slotName = GetInventorySlotInfo("slot" .. i)
+        if slotName then
+            for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+                local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+                if slotButton then
+                    slotButton:Hide()
+                    slotButton:SetAlpha(0)
+                    slotButton:EnableMouse(false)
+                end
+            end
         end
     end
     
-    -- Hide frame decorations
+    -- Hide all frame decorations and default UI
     if CharacterFramePortrait then CharacterFramePortrait:Hide() end
     if CharacterFrame.Background then CharacterFrame.Background:Hide() end
     if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
+    if CharacterFrame.Inset then CharacterFrame.Inset:Hide() end
+    if CharacterFrame.InsetBg then CharacterFrame.InsetBg:Hide() end
     if CharacterLevelText then CharacterLevelText:Hide() end
-    if CharacterFrameTitleText then CharacterFrameTitleText:SetText("") end
+    if CharacterFrameTitleText then CharacterFrameTitleText:Hide() end
     
-    -- Keep model visible
-    if CharacterModelScene then CharacterModelScene:Show() end
+    -- Hide PaperDoll sidebar items
+    if PaperDollSidebarTabs then PaperDollSidebarTabs:Hide() end
+    if PaperDollFrame.TitleBg then PaperDollFrame.TitleBg:Hide() end
+    
+    -- Keep only the character model and bottom tabs
+    if CharacterModelScene then 
+        CharacterModelScene:Show()
+        CharacterModelScene:SetPoint("CENTER", PaperDollFrame, "CENTER", 0, 20)
+    end
+    
+    -- Keep bottom tab buttons visible
+    if CharacterFrameTab1 then CharacterFrameTab1:Show() end
+    if CharacterFrameTab2 then CharacterFrameTab2:Show() end
+    if CharacterFrameTab3 then CharacterFrameTab3:Show() end
+    if CharacterFrameTab4 then CharacterFrameTab4:Show() end
+end
+
+local function CreateBackground()
+    if not CharacterFrame then return end
+    
+    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    
+    if not customBg then
+        customBg = CreateFrame("Frame", "AbstractUI_CharBg", PaperDollFrame, "BackdropTemplate")
+        customBg:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 2,
+        })
+        customBg:SetFrameStrata("BACKGROUND")
+        customBg:SetFrameLevel(0)
+        customBg:EnableMouse(false)
+        customBg:SetAllPoints(PaperDollFrame)
+    end
+    
+    customBg:SetBackdropColor(bgr, bgg, bgb, bga)
+    customBg:SetBackdropBorderColor(pr, pg, pb, pa)
+    customBg:Show()
+    
+    HideBlizzardElements()
 end
 
 local function CreateBackground()
