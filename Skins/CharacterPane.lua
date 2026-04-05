@@ -417,6 +417,37 @@ local function SkinItemSlot(button)
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
+    local slotName = button:GetName()
+    
+    -- Debug weapon slots specifically
+    if slotName == "CharacterMainHandSlot" or slotName == "CharacterSecondaryHandSlot" then
+        print(string.format("=== Debugging %s ===", slotName))
+        
+        -- Check for Frame child
+        local children = {button:GetChildren()}
+        print(string.format("Button has %d children:", #children))
+        for i, child in ipairs(children) do
+            local childName = child:GetName() or "unnamed"
+            local objType = child:GetObjectType()
+            local shown = child:IsShown() and "SHOWN" or "hidden"
+            print(string.format("  [%d] %s (%s) - %s", i, childName, objType, shown))
+            
+            -- Check regions of this child
+            if child.GetNumRegions then
+                for j = 1, child:GetNumRegions() do
+                    local region = select(j, child:GetRegions())
+                    if region then
+                        local regType = region:GetObjectType()
+                        local regName = region:GetName() or "unnamed-region"
+                        local regShown = region:IsShown() and "SHOWN" or "hidden"
+                        print(string.format("    Region [%d] %s (%s) - %s", j, regName, regType, regShown))
+                    end
+                end
+            end
+        end
+        print("=== End Debug ===")
+    end
+    
     -- Hide Blizzard's background frame aggressively
     local frameName = button:GetName() .. "Frame"
     local frame = _G[frameName]
@@ -431,6 +462,28 @@ local function SkinItemSlot(button)
                 if region then
                     region:SetAlpha(0)
                     region:Hide()
+                end
+            end
+        end
+    end
+    
+    -- Hide ALL children of the slot button (weapon slot bars are children)
+    local children = {button:GetChildren()}
+    for _, child in ipairs(children) do
+        local childName = child:GetName()
+        -- Hide any child that's not the icon or other essential elements
+        if childName and childName:find("Frame") then
+            child:Hide()
+            child:SetAlpha(0)
+            
+            -- Hide child's regions
+            if child.GetNumRegions then
+                for i = 1, child:GetNumRegions() do
+                    local region = select(i, child:GetRegions())
+                    if region then
+                        region:SetAlpha(0)
+                        region:Hide()
+                    end
                 end
             end
         end
