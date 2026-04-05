@@ -154,18 +154,21 @@ local function SkinItemSlot(button)
     button:SetNormalTexture("")
     button:SetPushedTexture("")
     
-    -- Create clean backdrop
+    -- Create backdrop frame (equipment slots don't have BackdropTemplate)
     if not button.backdrop then
-        button:SetBackdrop({
+        local backdrop = CreateFrame("Frame", nil, button, "BackdropTemplate")
+        backdrop:SetAllPoints()
+        backdrop:SetFrameLevel(button:GetFrameLevel() - 1)
+        backdrop:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
             edgeSize = 1,
             insets = { left = 1, right = 1, top = 1, bottom = 1 }
         })
+        backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
+        backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+        button.backdrop = backdrop
     end
-    
-    button:SetBackdropColor(bgr, bgg, bgb, 0.6)
-    button:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
     
     -- Style icon
     if button.icon then
@@ -185,10 +188,10 @@ local function SkinItemSlot(button)
         
         -- Hook to update border color based on quality
         hooksecurefunc(button.IconBorder, "SetVertexColor", function(self, r, g, b)
-            if r and g and b and (r > 0.1 or g > 0.1 or b > 0.1) then
-                button:SetBackdropBorderColor(r, g, b, 1)
-            else
-                button:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+            if button.backdrop and r and g and b and (r > 0.1 or g > 0.1 or b > 0.1) then
+                button.backdrop:SetBackdropBorderColor(r, g, b, 1)
+            elseif button.backdrop then
+                button.backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
             end
         end)
     end
@@ -262,18 +265,21 @@ local function SkinCharacterTabs()
                 end
             end
             
-            -- Create backdrop
+            -- Create backdrop frame
             if not tab.backdrop then
-                tab:SetBackdrop({
+                local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
+                backdrop:SetAllPoints()
+                backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
+                backdrop:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8x8",
                     edgeFile = "Interface\\Buttons\\WHITE8x8",
                     edgeSize = 1,
                     insets = { left = 1, right = 1, top = 1, bottom = 1 }
                 })
+                backdrop:SetBackdropColor(bgr, bgg, bgb, 0.7)
+                backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+                tab.backdrop = backdrop
             end
-            
-            tab:SetBackdropColor(bgr, bgg, bgb, 0.7)
-            tab:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
             
             -- Style text
             local text = tab:GetFontString()
@@ -296,11 +302,11 @@ local function SkinCharacterTabs()
                     local t = _G["CharacterFrameTab" .. j]
                     if t and t.backdrop then
                         if j == i then
-                            t:SetBackdropColor(bgr * 1.5, bgg * 1.5, bgb * 1.5, 0.9)
-                            t:SetBackdropBorderColor(pr, pg, pb, 1)
+                            t.backdrop:SetBackdropColor(bgr * 1.5, bgg * 1.5, bgb * 1.5, 0.9)
+                            t.backdrop:SetBackdropBorderColor(pr, pg, pb, 1)
                         else
-                            t:SetBackdropColor(bgr, bgg, bgb, 0.7)
-                            t:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+                            t.backdrop:SetBackdropColor(bgr, bgg, bgb, 0.7)
+                            t.backdrop:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
                         end
                     end
                 end
@@ -323,17 +329,20 @@ local function SkinCharacterTabs()
                     tab.Hider:SetTexture("")
                 end
                 
-                -- Create backdrop
+                -- Create backdrop frame
                 if not tab.backdrop then
-                    tab:SetBackdrop({
+                    local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
+                    backdrop:SetAllPoints()
+                    backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
+                    backdrop:SetBackdrop({
                         bgFile = "Interface\\Buttons\\WHITE8x8",
                         edgeFile = "Interface\\Buttons\\WHITE8x8",
                         edgeSize = 1,
                     })
+                    backdrop:SetBackdropColor(bgr, bgg, bgb, 0.6)
+                    backdrop:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
+                    tab.backdrop = backdrop
                 end
-                
-                tab:SetBackdropColor(bgr, bgg, bgb, 0.6)
-                tab:SetBackdropBorderColor(pr * 0.3, pg * 0.3, pb * 0.3, 0.8)
                 
                 -- Style icon
                 if tab.Icon then
