@@ -394,53 +394,36 @@ local function SkinItemSlot(button)
         end
     end
     
-    -- Store references to unnamed children and aggressively hide them
+    -- Store references to unnamed children and hide them once
     local children = {button:GetChildren()}
-    button._unnamedChildren = button._unnamedChildren or {}
     
     for i, child in ipairs(children) do
         local childName = child:GetName()
-        -- Track unnamed children (these are the decorative bars)
+        -- Hide unnamed children (these are the decorative bars)
         if not childName or childName == "" then
-            table.insert(button._unnamedChildren, child)
-            
-            -- Nuclear hiding approach
+            -- One-time hiding
             child:Hide()
             child:SetAlpha(0)
-            child:SetScale(0.001)
             
-            if child.SetShown then
-                child:SetShown(false)
+            -- Hook Show() to prevent re-showing (only triggers when Show() is called)
+            if not child._abstractHidden then
+                hooksecurefunc(child, "Show", function(self)
+                    self:Hide()
+                end)
+                child._abstractHidden = true
             end
             
-            -- Hide all regions
+            -- Hide all regions once
             if child.GetNumRegions then
                 for j = 1, child:GetNumRegions() do
                     local region = select(j, child:GetRegions())
                     if region then
                         region:SetAlpha(0)
                         region:Hide()
-                        if region.SetVertexColor then
-                            region:SetVertexColor(0, 0, 0, 0)
-                        end
                     end
                 end
             end
         end
-    end
-    
-    -- Create OnUpdate hook to continuously force them hidden
-    if not button._abstractUpdateFrame then
-        local updateFrame = CreateFrame("Frame")
-        updateFrame:SetScript("OnUpdate", function(self, elapsed)
-            for _, child in ipairs(button._unnamedChildren or {}) do
-                if child:IsShown() then
-                    child:Hide()
-                    child:SetAlpha(0)
-                end
-            end
-        end)
-        button._abstractUpdateFrame = updateFrame
     end
     
     -- Remove default textures
