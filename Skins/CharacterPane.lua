@@ -733,17 +733,12 @@ end
 
 local function HideBlizzardElements()
     -- Hide ALL equipment slot buttons completely
-    for i = 1, 19 do
-        local slotName = GetInventorySlotInfo("slot" .. i)
-        if slotName then
-            for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
-                local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
-                if slotButton then
-                    slotButton:Hide()
-                    slotButton:SetAlpha(0)
-                    slotButton:EnableMouse(false)
-                end
-            end
+    for _, slotInfo in ipairs(EQUIPMENT_SLOTS) do
+        local slotButton = _G["Character" .. slotInfo.name .. "Slot"]
+        if slotButton then
+            slotButton:Hide()
+            slotButton:SetAlpha(0)
+            slotButton:EnableMouse(false)
         end
     end
     
