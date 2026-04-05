@@ -739,6 +739,14 @@ local function HideBlizzardElements()
             slotButton:Hide()
             slotButton:SetAlpha(0)
             slotButton:EnableMouse(false)
+            
+            -- Hide all textures and regions
+            for i = 1, slotButton:GetNumRegions() do
+                local region = select(i, slotButton:GetRegions())
+                if region and region.Hide then
+                    region:Hide()
+                end
+            end
         end
     end
     
@@ -748,12 +756,14 @@ local function HideBlizzardElements()
     if CharacterFrame.NineSlice then CharacterFrame.NineSlice:Hide() end
     if CharacterFrame.Inset then CharacterFrame.Inset:Hide() end
     if CharacterFrame.InsetBg then CharacterFrame.InsetBg:Hide() end
+    if CharacterFrame.CloseButton then CharacterFrame.CloseButton:ClearAllPoints(); CharacterFrame.CloseButton:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", -5, -5) end
     if CharacterLevelText then CharacterLevelText:Hide() end
     if CharacterFrameTitleText then CharacterFrameTitleText:Hide() end
     
     -- Hide PaperDoll specific elements
     if PaperDollSidebarTabs then PaperDollSidebarTabs:Hide() end
     if PaperDollFrame.TitleBg then PaperDollFrame.TitleBg:Hide() end
+    if PaperDollFrame.Bg then PaperDollFrame.Bg:Hide() end
     
     -- Hide the item level/stats display in the center
     if PaperDollItemsFrame then PaperDollItemsFrame:Hide() end
@@ -762,9 +772,21 @@ local function HideBlizzardElements()
     -- Hide character name text
     if CharacterNameText then CharacterNameText:Hide() end
     
-    -- Hide all child frames of PaperDollFrame except model
+    -- Hide equipment manager and flyout
+    if PaperDollEquipmentManagerPane then PaperDollEquipmentManagerPane:Hide() end
+    if EquipmentFlyoutFrame then EquipmentFlyoutFrame:Hide() end
+    
+    -- Hide any remaining background textures
+    for i = 1, PaperDollFrame:GetNumRegions() do
+        local region = select(i, PaperDollFrame:GetRegions())
+        if region and region:GetObjectType() == "Texture" then
+            region:Hide()
+        end
+    end
+    
+    -- Hide all child frames of PaperDollFrame except model and our custom elements
     for _, child in pairs({PaperDollFrame:GetChildren()}) do
-        if child ~= CharacterModelScene then
+        if child ~= CharacterModelScene and not child:GetName():match("AbstractUI") then
             child:Hide()
         end
     end
@@ -774,6 +796,12 @@ local function HideBlizzardElements()
         CharacterModelScene:Show()
         CharacterModelScene:ClearAllPoints()
         CharacterModelScene:SetPoint("CENTER", PaperDollFrame, "CENTER", 0, 20)
+        CharacterModelScene:SetSize(300, 400)
+        
+        -- Hide model scene background
+        if CharacterModelScene.BackgroundOverlay then
+            CharacterModelScene.BackgroundOverlay:Hide()
+        end
     end
     
     -- Keep bottom tab buttons visible
