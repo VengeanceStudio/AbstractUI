@@ -586,20 +586,6 @@ local function UpdateEquipmentInfo(slotButton, slotID)
                 -- Look for upgrade level in the item (this is a simplified approach)
                 local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
                 if tooltipData and tooltipData.lines then
-                    -- Debug: print all tooltip lines for the head slot to see format
-                    if slotID == 1 then -- Head slot for debugging
-                        print("=== Tooltip lines for slot", slotID, "===")
-                        for i, line in ipairs(tooltipData.lines) do
-                            if line.leftText then
-                                print(i, "LEFT:", line.leftText)
-                            end
-                            if line.rightText then
-                                print(i, "RIGHT:", line.rightText)
-                            end
-                        end
-                        print("=== End tooltip ===")
-                    end
-                    
                     for _, line in ipairs(tooltipData.lines) do
                         if line.leftText then
                             local text = line.leftText
@@ -607,6 +593,8 @@ local function UpdateEquipmentInfo(slotButton, slotID)
                             -- The pattern is usually: TrackName Number/Number
                             local track, curr, maxUp = text:match("^(.-)%s+(%d+)/(%d+)$")
                             if track and curr and maxUp and tonumber(maxUp) > 0 then
+                                -- Strip "Upgrade Level: " prefix if present
+                                track = track:gsub("^Upgrade Level:%s*", "")
                                 levelText = levelText .. " (" .. track .. " " .. curr .. "/" .. maxUp .. ")"
                                 break
                             end
