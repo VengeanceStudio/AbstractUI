@@ -70,6 +70,60 @@ end
 -- STRIP BLIZZARD TEXTURES (AURORA-STYLE)
 ---------------------------------------------------------------------------
 
+local function DebugPrintFrameHierarchy()
+    print("===== CHARACTER FRAME HIERARCHY =====")
+    
+    if CharacterFrame then
+        print("CharacterFrame children:")
+        local children = {CharacterFrame:GetChildren()}
+        for i, child in ipairs(children) do
+            local name = child:GetName() or "UNNAMED"
+            local visible = child:IsShown() and "SHOWN" or "HIDDEN"
+            print(string.format("  [%d] %s (%s)", i, name, visible))
+        end
+    end
+    
+    if PaperDollFrame then
+        print("\nPaperDollFrame children:")
+        local children = {PaperDollFrame:GetChildren()}
+        for i, child in ipairs(children) do
+            local name = child:GetName() or "UNNAMED"
+            local visible = child:IsShown() and "SHOWN" or "HIDDEN"
+            print(string.format("  [%d] %s (%s)", i, name, visible))
+        end
+    end
+    
+    if PaperDollItemsFrame then
+        print("\nPaperDollItemsFrame children:")
+        local children = {PaperDollItemsFrame:GetChildren()}
+        for i, child in ipairs(children) do
+            local name = child:GetName() or "UNNAMED"
+            local visible = child:IsShown() and "SHOWN" or "HIDDEN"
+            print(string.format("  [%d] %s (%s)", i, name, visible))
+        end
+    end
+    
+    print("\nPaperDollSidebarTabs info:")
+    if PaperDollSidebarTabs then
+        print("  EXISTS: YES")
+        print("  Shown: " .. tostring(PaperDollSidebarTabs:IsShown()))
+        print("  Alpha: " .. tostring(PaperDollSidebarTabs:GetAlpha()))
+        print("  Parent: " .. (PaperDollSidebarTabs:GetParent() and PaperDollSidebarTabs:GetParent():GetName() or "NONE"))
+        
+        local children = {PaperDollSidebarTabs:GetChildren()}
+        print("  Children count: " .. #children)
+        for i, child in ipairs(children) do
+            local name = child:GetName() or "UNNAMED"
+            local visible = child:IsShown() and "SHOWN" or "HIDDEN"
+            print(string.format("    [%d] %s (%s)", i, name, visible))
+        end
+    else
+        print("  EXISTS: NO")
+    end
+    
+    print("=====================================")
+end
+
 local function StripBlizzardTextures()
     if not CharacterFrame then return end
     
@@ -972,6 +1026,11 @@ function CharacterPane:ApplySkin()
     SkinAllEquipmentSlots()
     SkinCharacterTabs()
     SkinStatsPane()
+    
+    -- Debug: Print frame hierarchy to help find sidebar tabs
+    C_Timer.After(0.5, function()
+        DebugPrintFrameHierarchy()
+    end)
     
     skinned = true
     
