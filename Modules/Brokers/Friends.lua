@@ -190,11 +190,13 @@ local function UpdateFriendList()
                     end
                 else 
                     -- Whisper
-                    if data.gameAccountID then
-                        -- For BNet friends, use BNSetWhisperTarget
+                    if data.bnetAccountID then
+                        -- For BNet friends, set up BNet whisper
                         local editBox = ChatEdit_ChooseBoxForSend()
-                        BNSetWhisperTarget(data.gameAccountID)
                         ChatEdit_ActivateChat(editBox)
+                        editBox:SetAttribute("chatType", "BN_WHISPER")
+                        editBox:SetAttribute("senderName", data.bnet)
+                        editBox:SetAttribute("presenceID", data.bnetAccountID)
                     else
                         -- Use character-realm for non-BNet friends
                         local t = data.name
