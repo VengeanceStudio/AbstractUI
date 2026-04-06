@@ -651,9 +651,17 @@ local function SkinCharacterTabs()
     
     -- Sidebar tabs (right side)
     if PaperDollSidebarTabs then
+        -- Make sure the tab container is visible
+        PaperDollSidebarTabs:Show()
+        PaperDollSidebarTabs:SetAlpha(1)
+        
         for i = 1, #PAPERDOLL_SIDEBARS do
             local tab = _G["PaperDollSidebarTab" .. i]
             if tab and not tab._abstractSkinned then
+                -- Make sure the tab itself is visible
+                tab:Show()
+                tab:SetAlpha(1)
+                
                 -- Hide default textures
                 if tab.TabBg then
                     tab.TabBg:SetAlpha(0)
