@@ -379,15 +379,15 @@ end
 local function RepositionEquipmentSlots()
     if not PaperDollItemsFrame then return end
     
-    -- Move equipment slots up by 30 pixels (weapon slots remain in original position)
-    local slots = {
-        "CharacterHeadSlot", "CharacterNeckSlot", "CharacterShoulderSlot", "CharacterBackSlot",
-        "CharacterChestSlot", "CharacterShirtSlot", "CharacterTabardSlot", "CharacterWristSlot",
-        "CharacterHandsSlot", "CharacterWaistSlot", "CharacterLegsSlot", "CharacterFeetSlot",
-        "CharacterFinger0Slot", "CharacterFinger1Slot", "CharacterTrinket0Slot", "CharacterTrinket1Slot",
+    -- Only move the top slot of each column - the rest are anchored relative to each other
+    -- Left column: Head slot (all other left slots anchor to it or each other)
+    -- Right column: Hands slot (all other right slots anchor to it or each other)
+    local topSlots = {
+        "CharacterHeadSlot",   -- Top of left column
+        "CharacterHandsSlot",  -- Top of right column
     }
     
-    for _, slotName in ipairs(slots) do
+    for _, slotName in ipairs(topSlots) do
         local slot = _G[slotName]
         if slot and not slot._abstractRepositioned then
             -- Get current position
