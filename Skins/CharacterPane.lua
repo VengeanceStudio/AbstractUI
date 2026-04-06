@@ -373,6 +373,90 @@ local function StripBlizzardTextures()
 end
 
 ---------------------------------------------------------------------------
+-- REPOSITION EQUIPMENT SLOTS
+---------------------------------------------------------------------------
+
+local function RepositionEquipmentSlots()
+    if not CharacterFrame then return end
+    
+    -- Position equipment slots near the title bar
+    -- Left column slots
+    local leftSlots = {
+        {"CharacterHeadSlot", 0},      -- Top
+        {"CharacterNeckSlot", 1},
+        {"CharacterShoulderSlot", 2},
+        {"CharacterBackSlot", 3},
+        {"CharacterChestSlot", 4},
+        {"CharacterShirtSlot", 5},
+        {"CharacterTabardSlot", 6},
+        {"CharacterWristSlot", 7},     -- Bottom
+    }
+    
+    -- Right column slots
+    local rightSlots = {
+        {"CharacterHandsSlot", 0},     -- Top
+        {"CharacterWaistSlot", 1},
+        {"CharacterLegsSlot", 2},
+        {"CharacterFeetSlot", 3},
+        {"CharacterFinger0Slot", 4},
+        {"CharacterFinger1Slot", 5},
+        {"CharacterTrinket0Slot", 6},
+        {"CharacterTrinket1Slot", 7},  -- Bottom
+    }
+    
+    -- Weapon slots (bottom center)
+    local weaponSlots = {
+        {"CharacterMainHandSlot", 0},
+        {"CharacterSecondaryHandSlot", 1},
+    }
+    
+    local slotSize = 40
+    local slotSpacing = 2
+    local startY = -40  -- Start below title bar
+    local leftX = 15    -- Left edge
+    local rightX = -15  -- Right edge (from right side)
+    
+    -- Position left column
+    for _, slotData in ipairs(leftSlots) do
+        local slotName, index = slotData[1], slotData[2]
+        local slot = _G[slotName]
+        if slot then
+            slot:ClearAllPoints()
+            slot:SetSize(slotSize, slotSize)
+            slot:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", leftX, startY - (index * (slotSize + slotSpacing)))
+        end
+    end
+    
+    -- Position right column
+    for _, slotData in ipairs(rightSlots) do
+        local slotName, index = slotData[1], slotData[2]
+        local slot = _G[slotName]
+        if slot then
+            slot:ClearAllPoints()
+            slot:SetSize(slotSize, slotSize)
+            slot:SetPoint("TOPRIGHT", CharacterFrame, "TOPRIGHT", rightX, startY - (index * (slotSize + slotSpacing)))
+        end
+    end
+    
+    -- Position weapon slots at bottom center
+    for _, slotData in ipairs(weaponSlots) do
+        local slotName, index = slotData[1], slotData[2]
+        local slot = _G[slotName]
+        if slot then
+            slot:ClearAllPoints()
+            slot:SetSize(slotSize, slotSize)
+            if index == 0 then
+                -- Main hand - bottom left of center
+                slot:SetPoint("BOTTOM", CharacterFrame, "BOTTOM", -(slotSize/2 + slotSpacing/2), 40)
+            else
+                -- Off hand - bottom right of center
+                slot:SetPoint("BOTTOM", CharacterFrame, "BOTTOM", (slotSize/2 + slotSpacing/2), 40)
+            end
+        end
+    end
+end
+
+---------------------------------------------------------------------------
 -- SKIN EQUIPMENT SLOT BUTTONS
 ---------------------------------------------------------------------------
 
@@ -913,6 +997,7 @@ function CharacterPane:ApplySkin()
     -- Apply all skins
     StripBlizzardTextures()
     SkinCharacterFrameBackdrop()
+    RepositionEquipmentSlots()
     SkinAllEquipmentSlots()
     SkinCharacterTabs()
     SkinStatsPane()
