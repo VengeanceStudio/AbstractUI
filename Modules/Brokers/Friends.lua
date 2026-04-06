@@ -189,13 +189,18 @@ local function UpdateFriendList()
                         C_PartyInfo.InviteUnit(t)
                     end
                 else 
-                    -- Whisper - build character-realm string and open chat
-                    local t = data.name
-                    if data.realm then 
-                        t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                    -- Whisper
+                    if data.bnetAccountID then
+                        -- Use BattleTag for BNet friends
+                        ChatFrame_OpenChat("/w " .. data.bnet .. " ", SELECTED_DOCK_FRAME)
+                    else
+                        -- Use character-realm for non-BNet friends
+                        local t = data.name
+                        if data.realm then 
+                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                        end
+                        ChatFrame_OpenChat("/w " .. t .. " ", SELECTED_DOCK_FRAME)
                     end
-                    -- Open chat with whisper command pre-filled
-                    ChatFrame_OpenChat("/w " .. t .. " ", SELECTED_DOCK_FRAME)
                 end
             end)
         end
