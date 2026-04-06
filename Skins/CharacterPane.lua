@@ -955,72 +955,234 @@ end
 -- SKIN STATS PANE
 ---------------------------------------------------------------------------
 
+---------------------------------------------------------------------------
+-- CUSTOM STATS PANEL
+---------------------------------------------------------------------------
+
+local statsOverlay = nil
+
+local function FormatStatValue(value)
+    if value >= 1000000 then
+        return string.format("%.1fM", value / 1000000)
+    elseif value >= 1000 then
+        return string.format("%.1fK", value / 1000)
+    else
+        return tostring(math.floor(value))
+    end
+end
+
+local function CreateStatsOverlay()
+    if not CharacterFrameInsetRight then return end
+    
+    -- Hide all Blizzard stats UI
+    if CharacterStatsPane then
+        CharacterStatsPane:Hide()
+        CharacterStatsPane:SetAlpha(0)
+    end
+    
+    -- Create our custom overlay frame
+    if not statsOverlay then
+        statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
+        statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -10)
+        statsOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -10, 10)
+        statsOverlay:SetWidth(200)
+        
+        -- Storage for all text elements
+        statsOverlay.texts = {}
+        
+        local function CreateText(name, isHeader)
+            local text = statsOverlay:CreateFontString(nil, "OVERLAY")
+            text:SetFont("Fonts\\FRIZQT__.TTF", isHeader and 13 or 12, "OUTLINE")
+            text:SetJustifyH("LEFT")
+            text:SetWidth(90)
+            return text
+        end
+        
+        local function CreateStatLine(label, valueKey, yOffset)
+            local labelText = CreateText(label .. "Label", false)
+            labelText:SetPoint("TOPLEFT", statsOverlay, "TOPLEFT", 0, yOffset)
+            labelText:SetText(label)
+            labelText:SetTextColor(1, 1, 1, 1)
+            
+            local valueText = CreateText(label .. "Value", false)
+            valueText:SetPoint("TOPRIGHT", statsOverlay, "TOPRIGHT", 0, yOffset)
+            valueText:SetJustifyH("RIGHT")
+            valueText:SetWidth(100)
+            valueText:SetTextColor(1, 1, 1, 1)
+            
+            statsOverlay.texts[valueKey] = { label = labelText, value = valueText }
+            return yOffset - 16
+        end
+        
+        local function CreateHeader(text, yOffset)
+            local header = CreateText(text .. "Header", true)
+            header:SetPoint("TOPLEFT", statsOverlay, "TOPLEFT", 0, yOffset)
+            local pr, pg, pb = GetThemeColors()
+            header:SetTextColor(pr, pg, pb, 1)
+            header:SetText(text)
+            return yOffset - 18
+        end
+        
+        -- Build the stats layout
+        local y = 0
+        
+        -- Health and Power
+        y = CreateStatLine("Health", "health", y)
+        y = CreateStatLine("Power", "power", y)
+        
+        -- Attributes section
+        y = y - 5
+        y = CreateHeader("Attributes", y)
+        y = CreateStatLine("Strength", "strength", y)
+        y = CreateStatLine("Agility", "agility", y)
+        y = CreateStatLine("Stamina", "stamina", y)
+        y = CreateStatLine("Intellect", "intellect", y)
+        
+        -- Secondary section
+        y = y - 5
+        y = CreateHeader("Secondary", y)
+        y = CreateStatLine("Crit", "crit", y)
+        y = CreateStatLine("Haste", "haste", y)
+        y = CreateStatLine("Mastery", "mastery", y)
+        y = CreateStatLine("Versatility", "versatility", y)
+        
+        -- Attack section
+        y = y - 5
+        y = CreateHeader("Attack", y)
+        y = CreateStatLine("Attack Power", "attackPower", y)
+        y = CreateStatLine("Spell Power", "spellPower", y)
+        y = CreateStatLine("Attack Speed", "attackSpeed", y)
+        
+        -- Defense section
+        y = y - 5
+        y = CreateHeader("Defense", y)
+        y = CreateStatLine("Armor", "armor", y)
+        y = CreateStatLine("Dodge", "dodge", y)
+        y = CreateStatLine("Parry", "parry", y)
+        y = CreateStatLine("Block", "block", y)
+        
+        -- General section
+        y = y - 5
+        y = CreateHeader("General", y)
+        y = CreateStatLine("Leech", "leech", y)
+        y = CreateStatLine("Speed", "speed", y)
+    end
+    
+    statsOverlay:Show()
+end
+
+local function UpdateStatsOverlay()
+    if not statsOverlay or not statsOverlay.texts then return end
+    
+    local texts = statsOverlay.texts
+    
+    -- Health
+    local health = UnitHealthMax("player")
+    if texts.health then texts.health.value:SetText(FormatStatValue(health)) end
+    
+    -- Power (mana/energy/rage/etc)
+    local powerType = UnitPowerType("player")
+    local power = UnitPowerMax("player", powerType)
+    if texts.power then 
+        local _, powerToken = UnitPowerType("player")
+        local powerColor = PowerBarColor[powerToken] or PowerBarColor["MANA"]
+        texts.power.label:SetTextColor(powerColor.r, powerColor.g, powerColor.b, 1)
+        texts.power.value:SetText(FormatStatValue(power))
+        texts.power.value:SetTextColor(powerColor.r, powerColor.g, powerColor.b, 1)
+    end
+    
+    -- Attributes
+    local str = UnitStat("player", 1)
+    local agi = UnitStat("player", 2)
+    local sta = UnitStat("player", 3)
+    local int = UnitStat("player", 4)
+    if texts.strength then texts.strength.value:SetText(FormatStatValue(str)) end
+    if texts.agility then texts.agility.value:SetText(FormatStatValue(agi)) end
+    if texts.stamina then texts.stamina.value:SetText(FormatStatValue(sta)) end
+    if texts.intellect then texts.intellect.value:SetText(FormatStatValue(int)) end
+    
+    -- Secondary stats
+    local crit = GetCritChance()
+    local critRating = GetCombatRating(CR_CRIT_MELEE)
+    if texts.crit then 
+        texts.crit.value:SetText(string.format("%s (%.1f%%)", FormatStatValue(critRating), crit))
+    end
+    
+    local hasteRating = GetCombatRating(CR_HASTE_MELEE)
+    local hastePercent = GetHaste()
+    if texts.haste then 
+        texts.haste.value:SetText(string.format("%s (%.1f%%)", FormatStatValue(hasteRating), hastePercent))
+    end
+    
+    local masteryRating = GetCombatRating(CR_MASTERY)
+    local masteryPercent = GetMasteryEffect()
+    if texts.mastery then 
+        texts.mastery.value:SetText(string.format("%s (%.1f%%)", FormatStatValue(masteryRating), masteryPercent))
+    end
+    
+    local versRating = GetCombatRating(CR_VERSATILITY_DAMAGE_DONE)
+    local versPercent = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+    if texts.versatility then 
+        texts.versatility.value:SetText(string.format("%s (%.1f%%)", FormatStatValue(versRating), versPercent))
+    end
+    
+    -- Attack
+    local base, posBuff, negBuff = UnitAttackPower("player")
+    local attackPower = base + posBuff + negBuff
+    if texts.attackPower then texts.attackPower.value:SetText(FormatStatValue(attackPower)) end
+    
+    local spellPower = GetSpellBonusDamage(2) -- 2 = Holy school, but returns max
+    if texts.spellPower then texts.spellPower.value:SetText(FormatStatValue(spellPower)) end
+    
+    local mainSpeed, offSpeed = UnitAttackSpeed("player")
+    if texts.attackSpeed then 
+        texts.attackSpeed.value:SetText(string.format("%.2fs", mainSpeed))
+    end
+    
+    -- Defense
+    local baseArmor, effectiveArmor, armor, posBuff, negBuff = UnitArmor("player")
+    if texts.armor then texts.armor.value:SetText(FormatStatValue(effectiveArmor)) end
+    
+    local dodge = GetDodgeChance()
+    if texts.dodge then texts.dodge.value:SetText(string.format("%.2f%%", dodge)) end
+    
+    local parry = GetParryChance()
+    if texts.parry then texts.parry.value:SetText(string.format("%.2f%%", parry)) end
+    
+    local block = GetBlockChance()
+    if texts.block then texts.block.value:SetText(string.format("%.2f%%", block)) end
+    
+    -- General
+    local leechRating = GetCombatRating(CR_LIFESTEAL)
+    local leechPercent = GetCombatRatingBonus(CR_LIFESTEAL)
+    if texts.leech then 
+        texts.leech.value:SetText(string.format("%.2f%%", leechPercent))
+    end
+    
+    local speedRating = GetCombatRating(CR_SPEED)
+    local speedPercent = GetCombatRatingBonus(CR_SPEED)
+    if texts.speed then 
+        texts.speed.value:SetText(string.format("%.2f%%", speedPercent))
+    end
+end
+
 local function SkinStatsPane()
     if not CharacterStatsPane then return end
     
-    -- Make sure the stats pane is visible
-    CharacterStatsPane:Show()
-    CharacterStatsPane:SetAlpha(1)
+    -- Hide Blizzard's stats pane completely
+    CharacterStatsPane:Hide()
+    CharacterStatsPane:SetAlpha(0)
     
-    -- Resize and reposition stats pane to be a narrow column on the right
-    CharacterStatsPane:ClearAllPoints()
-    CharacterStatsPane:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -5, -5)
-    CharacterStatsPane:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -5, 5)
-    CharacterStatsPane:SetWidth(180) -- Narrower width for compact column
+    -- Create and show our custom overlay
+    CreateStatsOverlay()
+    UpdateStatsOverlay()
     
-    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
-    
-    -- Completely hide class background
-    if CharacterStatsPane.ClassBackground then
-        CharacterStatsPane.ClassBackground:SetAlpha(0)
-        CharacterStatsPane.ClassBackground:Hide()
-    end
-    
-    -- Style item level display - remove background completely
-    if CharacterStatsPane.ItemLevelFrame then
-        local ilvlFrame = CharacterStatsPane.ItemLevelFrame
-        
-        if ilvlFrame.Background then
-            ilvlFrame.Background:SetAlpha(0)
-            ilvlFrame.Background:Hide()
-        end
-        
-        if ilvlFrame.Value then
-            ilvlFrame.Value:SetTextColor(pr, pg, pb, 1)
-            ilvlFrame.Value:SetShadowOffset(1, -1)
-            ilvlFrame.Value:SetShadowColor(0, 0, 0, 1)
-        end
-    end
-    
-    -- Completely remove backgrounds from stat category headers
-    local categories = {
-        "ItemLevelCategory",
-        "AttributesCategory",
-        "EnhancementsCategory",
-    }
-    
-    for _, catName in ipairs(categories) do
-        local category = CharacterStatsPane[catName]
-        if category and category.Background then
-            category.Background:SetAlpha(0)
-            category.Background:Hide()
-        end
-        if category and category.Title then
-            category.Title:SetTextColor(pr, pg, pb, 1)
-        end
-    end
-    
-    -- Remove backgrounds from individual stat frames
-    if CharacterStatsPane.statsFramePool then
-        hooksecurefunc(CharacterStatsPane.statsFramePool, "Acquire", function(pool)
-            for frame in pool:EnumerateActive() do
-                if frame.Background and not frame._abstractSkinned then
-                    frame.Background:SetAlpha(0)
-                    frame.Background:Hide()
-                    frame._abstractSkinned = true
-                end
-            end
+    -- Update when character frame is shown
+    if not CharacterFrame._statsUpdateHooked then
+        CharacterFrame:HookScript("OnShow", function()
+            C_Timer.After(0.1, UpdateStatsOverlay)
         end)
+        CharacterFrame._statsUpdateHooked = true
     end
 end
 
