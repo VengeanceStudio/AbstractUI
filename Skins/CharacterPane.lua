@@ -983,9 +983,10 @@ local function CreateStatsOverlay()
     -- Create our custom overlay frame
     if not statsOverlay then
         statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
-        -- Position below the sidebar tabs (which are at the top)
-        statsOverlay:SetPoint("TOP", CharacterFrameInsetRight, "TOP", 0, -80)
+        -- Position below the sidebar tabs - tabs are about 80px tall total
+        statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -85)
         statsOverlay:SetWidth(140)
+        statsOverlay:SetHeight(500)
         
         -- Storage for all text elements
         statsOverlay.texts = {}
