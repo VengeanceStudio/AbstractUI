@@ -543,10 +543,15 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         info.nameText:SetTextColor(r, g, b, 1)
     end
     
-    -- Get current item level (accounts for upgrades)
-    local actualItemLevel = C_Item.GetCurrentItemLevel(itemLink)
-    if actualItemLevel then
-        info.levelText:SetText(tostring(actualItemLevel))
+    -- Get current item level using ItemLocation
+    local itemLocation = ItemLocation:CreateFromEquipmentSlot(slotID)
+    if itemLocation and itemLocation:IsValid() then
+        local actualItemLevel = C_Item.GetCurrentItemLevel(itemLocation)
+        if actualItemLevel and actualItemLevel > 0 then
+            info.levelText:SetText(tostring(actualItemLevel))
+        elseif itemLevel then
+            info.levelText:SetText(tostring(itemLevel))
+        end
     elseif itemLevel then
         info.levelText:SetText(tostring(itemLevel))
     end
