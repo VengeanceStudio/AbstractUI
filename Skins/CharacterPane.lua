@@ -735,12 +735,14 @@ local function SkinCharacterTabs()
                 tab:SetAlpha(1)
                 
                 if not tab._abstractSkinned then
-                    -- Hide default textures
+                    -- Hide default textures but not completely
                     if tab.TabBg then
                         tab.TabBg:SetAlpha(0)
+                        tab.TabBg:Hide()
                     end
                     if tab.Hider then
                         tab.Hider:SetTexture("")
+                        tab.Hider:Hide()
                     end
                     
                     -- Create backdrop frame
@@ -758,20 +760,18 @@ local function SkinCharacterTabs()
                         tab.backdrop = backdrop
                     end
                     
-                    -- Style icon
+                    -- Style icon - make sure it's visible and properly cropped
                     if tab.Icon then
+                        tab.Icon:Show()
+                        tab.Icon:SetAlpha(1)
                         tab.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                        tab.Icon:ClearAllPoints()
-                        tab.Icon:SetPoint("TOPLEFT", 2, -2)
-                        tab.Icon:SetPoint("BOTTOMRIGHT", -2, 2)
+                        tab.Icon:SetDrawLayer("ARTWORK")
                     end
                     
                     -- Highlight
                     if tab.Highlight then
                         tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
-                        tab.Highlight:ClearAllPoints()
-                        tab.Highlight:SetPoint("TOPLEFT", 1, -1)
-                        tab.Highlight:SetPoint("BOTTOMRIGHT", -1, 1)
+                        tab.Highlight:SetDrawLayer("HIGHLIGHT")
                     end
                     
                     tab._abstractSkinned = true
