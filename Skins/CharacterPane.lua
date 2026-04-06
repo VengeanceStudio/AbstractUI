@@ -451,64 +451,97 @@ local equipmentInfo = {}
 
 -- Slot layout: position each slot in the center area
 local slotLayout = {
-    -- Left side (original left column moved right)
-    { slot = "CharacterHeadSlot", x = 85, y = -45 },
-    { slot = "CharacterNeckSlot", x = 85, y = -90 },
-    { slot = "CharacterShoulderSlot", x = 85, y = -135 },
-    { slot = "CharacterBackSlot", x = 85, y = -180 },
-    { slot = "CharacterChestSlot", x = 85, y = -225 },
-    { slot = "CharacterWristSlot", x = 85, y = -270 },
-    { slot = "CharacterHandsSlot", x = 85, y = -315 },
-    { slot = "CharacterWaistSlot", x = 85, y = -360 },
-    { slot = "CharacterLegsSlot", x = 85, y = -405 },
-    { slot = "CharacterFeetSlot", x = 85, y = -450 },
+    -- Left side
+    { slot = "CharacterHeadSlot", x = 15, y = -10, side = "left" },
+    { slot = "CharacterNeckSlot", x = 15, y = -55, side = "left" },
+    { slot = "CharacterShoulderSlot", x = 15, y = -100, side = "left" },
+    { slot = "CharacterBackSlot", x = 15, y = -145, side = "left" },
+    { slot = "CharacterChestSlot", x = 15, y = -190, side = "left" },
+    { slot = "CharacterShirtSlot", x = 15, y = -235, side = "left" },
+    { slot = "CharacterTabardSlot", x = 15, y = -280, side = "left" },
+    { slot = "CharacterWristSlot", x = 15, y = -325, side = "left" },
+    
+    -- Right side
+    { slot = "CharacterHandsSlot", x = 285, y = -10, side = "right" },
+    { slot = "CharacterWaistSlot", x = 285, y = -55, side = "right" },
+    { slot = "CharacterLegsSlot", x = 285, y = -100, side = "right" },
+    { slot = "CharacterFeetSlot", x = 285, y = -145, side = "right" },
+    { slot = "CharacterFinger0Slot", x = 285, y = -190, side = "right" },
+    { slot = "CharacterFinger1Slot", x = 285, y = -235, side = "right" },
+    { slot = "CharacterTrinket0Slot", x = 285, y = -280, side = "right" },
+    { slot = "CharacterTrinket1Slot", x = 285, y = -325, side = "right" },
     
     -- Bottom row (weapons)
-    { slot = "CharacterMainHandSlot", x = 190, y = -495 },
-    { slot = "CharacterSecondaryHandSlot", x = 255, y = -495 },
-    
-    -- Right side trinkets and rings (keep closer to the right)
-    { slot = "CharacterFinger0Slot", x = 320, y = -405 },
-    { slot = "CharacterFinger1Slot", x = 320, y = -450 },
-    { slot = "CharacterTrinket0Slot", x = 320, y = -315 },
-    { slot = "CharacterTrinket1Slot", x = 320, y = -360 },
+    { slot = "CharacterMainHandSlot", x = 100, y = -380, side = "left" },
+    { slot = "CharacterSecondaryHandSlot", x = 200, y = -380, side = "right" },
 }
 
-local function CreateEquipmentInfo(slotButton, slotName)
+local function CreateEquipmentInfo(slotButton, slotName, side)
     if not slotButton or slotButton._infoCreated then return end
     
     local info = {}
     
-    -- Create item name text
-    info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
-    info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
-    info.nameText:SetPoint("LEFT", slotButton, "RIGHT", 5, 10)
-    info.nameText:SetJustifyH("LEFT")
-    info.nameText:SetWidth(180)
-    
-    -- Create item level + upgrade text
-    info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
-    info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-    info.levelText:SetPoint("LEFT", slotButton, "RIGHT", 5, -5)
-    info.levelText:SetJustifyH("LEFT")
-    info.levelText:SetWidth(180)
-    info.levelText:SetTextColor(1, 0.82, 0, 1) -- Gold color
-    
-    -- Create enchant status text
-    info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
-    info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-    info.enchantText:SetPoint("LEFT", slotButton, "RIGHT", 5, -20)
-    info.enchantText:SetJustifyH("LEFT")
-    info.enchantText:SetWidth(180)
-    
-    -- Create gem indicators (up to 3 sockets)
-    info.gems = {}
-    for i = 1, 3 do
-        local gem = slotButton:CreateTexture(nil, "OVERLAY")
-        gem:SetSize(12, 12)
-        gem:SetPoint("LEFT", slotButton, "LEFT", -15, 15 - (i-1) * 15)
-        gem:Hide()
-        info.gems[i] = gem
+    -- Position text based on which side the slot is on
+    if side == "left" then
+        -- Left side: text goes to the RIGHT of icon
+        info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        info.nameText:SetPoint("LEFT", slotButton, "RIGHT", 5, 10)
+        info.nameText:SetJustifyH("LEFT")
+        info.nameText:SetWidth(180)
+        
+        info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        info.levelText:SetPoint("LEFT", slotButton, "RIGHT", 5, -5)
+        info.levelText:SetJustifyH("LEFT")
+        info.levelText:SetWidth(180)
+        info.levelText:SetTextColor(1, 0.82, 0, 1)
+        
+        info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        info.enchantText:SetPoint("LEFT", slotButton, "RIGHT", 5, -20)
+        info.enchantText:SetJustifyH("LEFT")
+        info.enchantText:SetWidth(180)
+        
+        -- Gems on the left of icon
+        info.gems = {}
+        for i = 1, 3 do
+            local gem = slotButton:CreateTexture(nil, "OVERLAY")
+            gem:SetSize(12, 12)
+            gem:SetPoint("RIGHT", slotButton, "LEFT", -3, 15 - (i-1) * 15)
+            gem:Hide()
+            info.gems[i] = gem
+        end
+    else
+        -- Right side: text goes to the LEFT of icon
+        info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        info.nameText:SetPoint("RIGHT", slotButton, "LEFT", -5, 10)
+        info.nameText:SetJustifyH("RIGHT")
+        info.nameText:SetWidth(180)
+        
+        info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        info.levelText:SetPoint("RIGHT", slotButton, "LEFT", -5, -5)
+        info.levelText:SetJustifyH("RIGHT")
+        info.levelText:SetWidth(180)
+        info.levelText:SetTextColor(1, 0.82, 0, 1)
+        
+        info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
+        info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        info.enchantText:SetPoint("RIGHT", slotButton, "LEFT", -5, -20)
+        info.enchantText:SetJustifyH("RIGHT")
+        info.enchantText:SetWidth(180)
+        
+        -- Gems on the right of icon
+        info.gems = {}
+        for i = 1, 3 do
+            local gem = slotButton:CreateTexture(nil, "OVERLAY")
+            gem:SetSize(12, 12)
+            gem:SetPoint("LEFT", slotButton, "RIGHT", 3, 15 - (i-1) * 15)
+            gem:Hide()
+            info.gems[i] = gem
+        end
     end
     
     equipmentInfo[slotName] = info
@@ -640,8 +673,8 @@ local function RepositionEquipmentSlots()
             slot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", data.x, data.y)
             slot._abstractRepositioned = true
             
-            -- Create info displays
-            CreateEquipmentInfo(slot, data.slot)
+            -- Create info displays with side information
+            CreateEquipmentInfo(slot, data.slot, data.side)
             
             -- Get slot ID for this slot
             local slotID = slot:GetID()
