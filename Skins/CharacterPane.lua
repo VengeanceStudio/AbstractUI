@@ -449,33 +449,6 @@ end
 -- Equipment slots data storage
 local equipmentInfo = {}
 
--- Slot layout: position each slot in the center area
-local slotLayout = {
-    -- Left side
-    { slot = "CharacterHeadSlot", x = 15, y = -10, side = "left" },
-    { slot = "CharacterNeckSlot", x = 15, y = -55, side = "left" },
-    { slot = "CharacterShoulderSlot", x = 15, y = -100, side = "left" },
-    { slot = "CharacterBackSlot", x = 15, y = -145, side = "left" },
-    { slot = "CharacterChestSlot", x = 15, y = -190, side = "left" },
-    { slot = "CharacterShirtSlot", x = 15, y = -235, side = "left" },
-    { slot = "CharacterTabardSlot", x = 15, y = -280, side = "left" },
-    { slot = "CharacterWristSlot", x = 15, y = -325, side = "left" },
-    
-    -- Right side
-    { slot = "CharacterHandsSlot", x = 285, y = -10, side = "right" },
-    { slot = "CharacterWaistSlot", x = 285, y = -55, side = "right" },
-    { slot = "CharacterLegsSlot", x = 285, y = -100, side = "right" },
-    { slot = "CharacterFeetSlot", x = 285, y = -145, side = "right" },
-    { slot = "CharacterFinger0Slot", x = 285, y = -190, side = "right" },
-    { slot = "CharacterFinger1Slot", x = 285, y = -235, side = "right" },
-    { slot = "CharacterTrinket0Slot", x = 285, y = -280, side = "right" },
-    { slot = "CharacterTrinket1Slot", x = 285, y = -325, side = "right" },
-    
-    -- Bottom row (weapons)
-    { slot = "CharacterMainHandSlot", x = 100, y = -380, side = "left" },
-    { slot = "CharacterSecondaryHandSlot", x = 200, y = -380, side = "right" },
-}
-
 local function CreateEquipmentInfo(slotButton, slotName, side)
     if not slotButton or slotButton._infoCreated then return end
     
@@ -665,33 +638,108 @@ end
 local function RepositionEquipmentSlots()
     if not PaperDollItemsFrame then return end
     
-    for _, data in ipairs(slotLayout) do
-        local slot = _G[data.slot]
-        if slot and not slot._abstractRepositioned then
-            -- Clear all points and set new position
+    local spacing = 40  -- Vertical spacing between items
+    
+    -- Position anchor slots first
+    local headSlot = _G["CharacterHeadSlot"]
+    local handsSlot = _G["CharacterHandsSlot"]
+    
+    if headSlot and not headSlot._abstractRepositioned then
+        headSlot:ClearAllPoints()
+        headSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 15, -10)
+        headSlot._abstractRepositioned = true
+        CreateEquipmentInfo(headSlot, "CharacterHeadSlot", "left")
+    end
+    
+    if handsSlot and not handsSlot._abstractRepositioned then
+        handsSlot:ClearAllPoints()
+        handsSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 285, -10)
+        handsSlot._abstractRepositioned = true
+        CreateEquipmentInfo(handsSlot, "CharacterHandsSlot", "right")
+    end
+    
+    -- Left column (relative to Head)
+    local leftSlots = {
+        { name = "CharacterNeckSlot", offset = 1 },
+        { name = "CharacterShoulderSlot", offset = 2 },
+        { name = "CharacterBackSlot", offset = 3 },
+        { name = "CharacterChestSlot", offset = 4 },
+        { name = "CharacterShirtSlot", offset = 5 },
+        { name = "CharacterTabardSlot", offset = 6 },
+        { name = "CharacterWristSlot", offset = 7 },
+    }
+    
+    for _, data in ipairs(leftSlots) do
+        local slot = _G[data.name]
+        if slot and headSlot and not slot._abstractRepositioned then
             slot:ClearAllPoints()
-            slot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", data.x, data.y)
+            slot:SetPoint("TOP", headSlot, "TOP", 0, -spacing * data.offset)
             slot._abstractRepositioned = true
-            
-            -- Create info displays with side information
-            CreateEquipmentInfo(slot, data.slot, data.side)
-            
-            -- Get slot ID for this slot
+            CreateEquipmentInfo(slot, data.name, "left")
+        end
+    end
+    
+    -- Right column (relative to Hands)
+    local rightSlots = {
+        { name = "CharacterWaistSlot", offset = 1 },
+        { name = "CharacterLegsSlot", offset = 2 },
+        { name = "CharacterFeetSlot", offset = 3 },
+        { name = "CharacterFinger0Slot", offset = 4 },
+        { name = "CharacterFinger1Slot", offset = 5 },
+        { name = "CharacterTrinket0Slot", offset = 6 },
+        { name = "CharacterTrinket1Slot", offset = 7 },
+    }
+    
+    for _, data in ipairs(rightSlots) do
+        local slot = _G[data.name]
+        if slot and handsSlot and not slot._abstractRepositioned then
+            slot:ClearAllPoints()
+            slot:SetPoint("TOP", handsSlot, "TOP", 0, -spacing * data.offset)
+            slot._abstractRepositioned = true
+            CreateEquipmentInfo(slot, data.name, "right")
+        end
+    end
+    
+    -- Weapon slots (bottom, positioned relative to frame)
+    local mainHandSlot = _G["CharacterMainHandSlot"]
+    local offHandSlot = _G["CharacterSecondaryHandSlot"]
+    
+    if mainHandSlot and not mainHandSlot._abstractRepositioned then
+        mainHandSlot:ClearAllPoints()
+        mainHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 85, -340)
+        mainHandSlot._abstractRepositioned = true
+        CreateEquipmentInfo(mainHandSlot, "CharacterMainHandSlot", "right")  -- Text goes left
+    end
+    
+    if offHandSlot and not offHandSlot._abstractRepositioned then
+        offHandSlot:ClearAllPoints()
+        offHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 215, -340)
+        offHandSlot._abstractRepositioned = true
+        CreateEquipmentInfo(offHandSlot, "CharacterSecondaryHandSlot", "left")  -- Text goes right
+    end
+    
+    -- Update all slot info
+    for slotName, _ in pairs(equipmentInfo) do
+        local slot = _G[slotName]
+        if slot then
             local slotID = slot:GetID()
             if slotID then
                 -- Initial update
                 UpdateEquipmentInfo(slot, slotID)
                 
                 -- Hook to update when items change
-                slot:HookScript("OnEvent", function(self, event)
-                    if event == "PLAYER_EQUIPMENT_CHANGED" then
-                        UpdateEquipmentInfo(self, slotID)
+                if not slot._eventHooked then
+                    slot:HookScript("OnEvent", function(self, event)
+                        if event == "PLAYER_EQUIPMENT_CHANGED" then
+                            UpdateEquipmentInfo(self, slotID)
+                        end
+                    end)
+                    
+                    -- Register for equipment changes if not already registered
+                    if not slot:IsEventRegistered("PLAYER_EQUIPMENT_CHANGED") then
+                        slot:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
                     end
-                end)
-                
-                -- Register for equipment changes if not already registered
-                if not slot:IsEventRegistered("PLAYER_EQUIPMENT_CHANGED") then
-                    slot:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+                    slot._eventHooked = true
                 end
             end
         end
