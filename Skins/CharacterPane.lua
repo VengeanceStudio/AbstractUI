@@ -1287,10 +1287,13 @@ local function SkinCharacterFrameBackdrop()
             self:Update()
         end)
         
-        -- Hook tab changes to update title
-        hooksecurefunc("CharacterFrame_ShowSubFrame", function()
-            if CharacterFrame.AbstractTitleBar then
-                CharacterFrame.AbstractTitleBar:Update()
+        -- Hook tab changes using OnUpdate to detect tab changes
+        local lastTab = PanelTemplates_GetSelectedTab(CharacterFrame)
+        titleFrame:SetScript("OnUpdate", function(self, elapsed)
+            local currentTab = PanelTemplates_GetSelectedTab(CharacterFrame)
+            if currentTab ~= lastTab then
+                lastTab = currentTab
+                self:Update()
             end
         end)
         
