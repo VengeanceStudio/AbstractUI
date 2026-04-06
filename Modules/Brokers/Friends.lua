@@ -191,15 +191,17 @@ local function UpdateFriendList()
                 else 
                     -- Whisper
                     if data.bnetAccountID then
-                        -- Use BattleTag for BNet friends
-                        ChatFrame_OpenChat("/w " .. data.bnet .. " ", SELECTED_DOCK_FRAME)
+                        -- For BNet friends, use the BNet chat system
+                        -- Create a BNet player link and use SetItemRef to open whisper
+                        local linkData = LinkUtil.FormatLink("BNplayer", data.name, data.bnetAccountID, 0, data.name)
+                        SetItemRef(linkData, linkData, "LeftButton")
                     else
                         -- Use character-realm for non-BNet friends
                         local t = data.name
                         if data.realm then 
                             t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
                         end
-                        ChatFrame_OpenChat("/w " .. t .. " ", SELECTED_DOCK_FRAME)
+                        ChatFrame_SendTell(t)
                     end
                 end
             end)
