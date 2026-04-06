@@ -394,9 +394,9 @@ local function RepositionEquipmentSlots()
             local point, relativeTo, relativePoint, xOfs, yOfs = slot:GetPoint(1)
             
             if point and relativeTo and relativePoint then
-                -- Move up by 30 pixels (increase y offset)
+                -- Move up by 25 pixels (increase y offset)
                 slot:ClearAllPoints()
-                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 30)
+                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 25)
                 slot._abstractRepositioned = true
             end
         end
