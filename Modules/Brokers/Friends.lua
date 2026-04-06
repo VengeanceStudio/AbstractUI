@@ -121,7 +121,18 @@ local function UpdateFriendList()
                         classToken = classInfo.classFile
                     end
                 end
-                table.insert(wowFriends, {name=g.characterName, bnet=info.battleTag, level=g.characterLevel, zone=g.areaName, realm=g.realmName, faction=g.factionName, class=classToken or g.className})
+                -- Include bnetAccountID and gameAccountID for proper BNet invites/whispers
+                table.insert(wowFriends, {
+                    name=g.characterName, 
+                    bnet=info.battleTag, 
+                    level=g.characterLevel, 
+                    zone=g.areaName, 
+                    realm=g.realmName, 
+                    faction=g.factionName, 
+                    class=classToken or g.className,
+                    bnetAccountID=info.bnetAccountID,
+                    gameAccountID=g.gameAccountID
+                })
             end
         end
     end
@@ -165,18 +176,30 @@ local function UpdateFriendList()
             AddText(data.bnet, colW.btag, colX.btag, {r=0.51,g=0.77,b=1})
 
             btn:SetScript("OnClick", function() 
-                -- Format: CharacterName-RealmName (with spaces and apostrophes removed)
-                local t = data.name
-                if data.realm then 
-                    t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
-                end
-                
                 if IsControlKeyDown() then 
-                    -- Invite
-                    C_PartyInfo.InviteUnit(t)
+                    -- Invite - use BNet invite for cross-realm friends
+                    if data.bnetAccountID then
+                        BNInviteFriend(data.gameAccountID)
+                    else
+                        -- Fallback to regular invite for non-BNet friends
+                        local t = data.name
+                        if data.realm then 
+                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                        end
+                        C_PartyInfo.InviteUnit(t)
+                    end
                 else 
-                    -- Whisper
-                    ChatFrame_SendTell(t)
+                    -- Whisper - use BNet whisper for cross-realm friends
+                    if data.gameAccountID then
+                        ChatFrame_SendBNetTell(data.bnet, data.gameAccountID)
+                    else
+                        -- Fallback to regular whisper for non-BNet friends
+                        local t = data.name
+                        if data.realm then 
+                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                        end
+                        ChatFrame_SendTell(t)
+                    end
                 end
             end)
         end
