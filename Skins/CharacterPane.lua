@@ -644,7 +644,7 @@ end
 local function RepositionEquipmentSlots()
     if not PaperDollItemsFrame then return end
     
-    local spacing = 42  -- Vertical spacing between items
+    local spacing = 41  -- Vertical spacing between items
     
     -- Position anchor slots first
     local headSlot = _G["CharacterHeadSlot"]
