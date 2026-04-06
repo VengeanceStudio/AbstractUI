@@ -191,11 +191,10 @@ local function UpdateFriendList()
                 else 
                     -- Whisper
                     if data.bnetAccountID then
-                        -- For BNet friends, use double slash for BNet whisper
-                        -- Extract the name part before the # in BattleTag
-                        local bnetName = data.bnet:match("([^#]+)#")
+                        -- For BNet friends, use /bw (BattleNet whisper) command
+                        local bnetName = data.bnet:match("([^#]+)")
                         if bnetName then
-                            ChatFrame_OpenChat("//" .. bnetName .. " ", SELECTED_DOCK_FRAME)
+                            ChatFrame_OpenChat("/bw " .. bnetName .. " ", SELECTED_DOCK_FRAME)
                         end
                     else
                         -- Use character-realm for non-BNet friends
