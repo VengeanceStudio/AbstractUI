@@ -192,10 +192,10 @@ local function UpdateFriendList()
                 else 
                     -- Whisper
                     if data.bnetAccountID then
-                        -- For BNet friends, use BNet conversation system
+                        -- For BNet friends, use BNet whisper system
                         local editBox = ChatEdit_ChooseBoxForSend()
-                        editBox:SetAttribute("chatType", "BN_CONVERSATION")
-                        editBox:SetAttribute("channelTarget", data.bnetAccountID)
+                        editBox:SetAttribute("chatType", "BN_WHISPER")
+                        editBox:SetAttribute("tellTarget", data.bnetAccountID)
                         ChatEdit_ActivateChat(editBox)
                     else
                         -- For regular WoW friends, use standard whisper
