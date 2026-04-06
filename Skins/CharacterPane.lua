@@ -766,6 +766,23 @@ local function SkinCharacterTabs()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                         tab.Icon:SetDrawLayer("ARTWORK")
+                        
+                        -- Hook to keep icon visible whenever tab updates
+                        if not tab._iconHooked then
+                            hooksecurefunc(tab.Icon, "SetTexture", function(self, texture)
+                                if texture and texture ~= "" then
+                                    self:Show()
+                                    self:SetAlpha(1)
+                                    self:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                                end
+                            end)
+                            hooksecurefunc(tab.Icon, "SetAtlas", function(self)
+                                self:Show()
+                                self:SetAlpha(1)
+                                self:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            end)
+                            tab._iconHooked = true
+                        end
                     end
                     
                     -- Highlight
@@ -1034,6 +1051,11 @@ function CharacterPane:ApplySkin()
     SkinAllEquipmentSlots()
     SkinCharacterTabs()
     SkinStatsPane()
+    
+    -- Re-skin tabs after a delay to catch any late-loading sidebar tabs
+    C_Timer.After(0.2, function()
+        SkinCharacterTabs()
+    end)
     
     -- Debug: Print frame hierarchy to help find sidebar tabs
     C_Timer.After(0.5, function()
