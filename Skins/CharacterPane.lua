@@ -984,7 +984,7 @@ local function CreateStatsOverlay()
     if not statsOverlay then
         statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
         -- Position right below the sidebar tabs
-        statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -30)
+        statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -20)
         statsOverlay:SetWidth(140)
         statsOverlay:SetHeight(500)
         
