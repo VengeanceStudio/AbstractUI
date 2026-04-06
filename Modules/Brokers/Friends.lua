@@ -189,20 +189,13 @@ local function UpdateFriendList()
                         C_PartyInfo.InviteUnit(t)
                     end
                 else 
-                    -- Whisper
-                    if data.bnetAccountID and data.gameAccountID then
-                        -- Use BNet whisper for cross-realm/cross-faction friends
-                        -- Set the chat frame to BNet whisper mode
-                        ChatFrame_SendSmartTell(data.name)
-                    else
-                        -- Fallback to regular whisper
-                        local t = data.name
-                        if data.realm then 
-                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
-                        end
-                        print("Attempting to whisper: " .. t)  -- Debug output
-                        ChatFrame_SendTell(t)
+                    -- Whisper - build character-realm string and open chat
+                    local t = data.name
+                    if data.realm then 
+                        t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
                     end
+                    -- Open chat with whisper command pre-filled
+                    ChatFrame_OpenChat("/w " .. t .. " ", SELECTED_DOCK_FRAME)
                 end
             end)
         end
