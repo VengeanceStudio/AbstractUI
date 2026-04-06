@@ -79,11 +79,12 @@ local function StripBlizzardTextures()
         CharacterFrame.Bg:Hide()
     end
     
-    -- Hide all unnamed child frames (decorative borders/bars)
+    -- Hide all unnamed child frames (decorative borders/bars), but keep sidebar tabs
     local children = {CharacterFrame:GetChildren()}
     for i, child in ipairs(children) do
         local childName = child:GetName()
-        if not childName or childName == "" then
+        -- Keep named children and specifically keep PaperDollSidebarTabs
+        if (not childName or childName == "") and childName ~= "PaperDollSidebarTabs" then
             child:Hide()
             child:SetAlpha(0)
             
@@ -346,6 +347,19 @@ local function StripBlizzardTextures()
         -- Make sure the tab container is visible
         PaperDollSidebarTabs:Show()
         PaperDollSidebarTabs:SetAlpha(1)
+        
+        -- Hook to prevent hiding
+        if not PaperDollSidebarTabs._abstractHooked then
+            hooksecurefunc(PaperDollSidebarTabs, "Hide", function(self)
+                self:Show()
+            end)
+            hooksecurefunc(PaperDollSidebarTabs, "SetAlpha", function(self, alpha)
+                if alpha < 1 then
+                    self:SetAlpha(1)
+                end
+            end)
+            PaperDollSidebarTabs._abstractHooked = true
+        end
         
         if PaperDollSidebarTabs.DecorLeft then
             PaperDollSidebarTabs.DecorLeft:Hide()
@@ -667,6 +681,14 @@ local function SkinCharacterTabs()
                 -- Make sure the tab itself is visible regardless of skinning status
                 tab:Show()
                 tab:SetAlpha(1)
+                
+                -- Hook to prevent hiding this tab
+                if not tab._abstractHooked then
+                    hooksecurefunc(tab, "Hide", function(self)
+                        self:Show()
+                    end)
+                    tab._abstractHooked = true
+                end
                 
                 if not tab._abstractSkinned then
                     -- Hide default textures
