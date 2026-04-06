@@ -503,16 +503,6 @@ local function SkinAllEquipmentSlots()
         local slot = _G[slotName]
         if slot then
             SkinItemSlot(slot)
-            
-            -- Move slots up by 30 pixels
-            if not slot._abstractRepositioned then
-                local point, relativeTo, relativePoint, xOfs, yOfs = slot:GetPoint()
-                if point and relativeTo and relativePoint then
-                    slot:ClearAllPoints()
-                    slot:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs + 30)
-                    slot._abstractRepositioned = true
-                end
-            end
         end
     end
     
