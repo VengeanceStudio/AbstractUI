@@ -567,11 +567,28 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     local itemLocation = ItemLocation:CreateFromEquipmentSlot(slotID)
     if itemLocation and itemLocation:IsValid() then
         local actualItemLevel = C_Item.GetCurrentItemLevel(itemLocation)
+        local levelText = ""
+        
         if actualItemLevel and actualItemLevel > 0 then
-            info.levelText:SetText(tostring(actualItemLevel))
+            levelText = tostring(actualItemLevel)
         elseif itemLevel then
-            info.levelText:SetText(tostring(itemLevel))
+            levelText = tostring(itemLevel)
         end
+        
+        -- Try to get upgrade track info
+        local upgradeInfo = C_ItemUpgrade.GetItemUpgradeItemInfo(itemLocation)
+        if upgradeInfo then
+            local currentUpgrade = upgradeInfo.currUpgrade or 0
+            local maxUpgrade = upgradeInfo.maxUpgrade or 0
+            local trackName = upgradeInfo.upgradeTypeName
+            
+            if trackName and maxUpgrade > 0 then
+                -- Format: "246 (Champion 1/6)"
+                levelText = levelText .. " (" .. trackName .. " " .. currentUpgrade .. "/" .. maxUpgrade .. ")"
+            end
+        end
+        
+        info.levelText:SetText(levelText)
     elseif itemLevel then
         info.levelText:SetText(tostring(itemLevel))
     end
