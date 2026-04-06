@@ -646,14 +646,14 @@ local function RepositionEquipmentSlots()
     
     if headSlot and not headSlot._abstractRepositioned then
         headSlot:ClearAllPoints()
-        headSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 15, -60)
+        headSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 15, -40)
         headSlot._abstractRepositioned = true
         CreateEquipmentInfo(headSlot, "CharacterHeadSlot", "left")
     end
     
     if handsSlot and not handsSlot._abstractRepositioned then
         handsSlot:ClearAllPoints()
-        handsSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 285, -60)
+        handsSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 285, -40)
         handsSlot._abstractRepositioned = true
         CreateEquipmentInfo(handsSlot, "CharacterHandsSlot", "right")
     end
