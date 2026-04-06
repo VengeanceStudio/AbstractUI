@@ -190,21 +190,14 @@ local function UpdateFriendList()
                         C_PartyInfo.InviteUnit(t)
                     end
                 else 
-                    -- Whisper
-                    local editBox = ChatEdit_ChooseBoxForSend()
-                    if data.bnetAccountID then
-                        -- For BNet friends, use BNet whisper system
-                        editBox:SetAttribute("chatType", "BN_WHISPER")
-                        editBox:SetAttribute("tellTarget", data.bnetAccountID)
-                    else
-                        -- For regular WoW friends, use standard whisper
-                        local t = data.name
-                        if data.realm then 
-                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
-                        end
-                        editBox:SetAttribute("chatType", "WHISPER")
-                        editBox:SetAttribute("tellTarget", t)
+                    -- Whisper - treat everyone as WoW character whispers
+                    local t = data.name
+                    if data.realm and data.realm ~= GetRealmName() then 
+                        t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
                     end
+                    local editBox = ChatEdit_ChooseBoxForSend()
+                    editBox:SetAttribute("chatType", "WHISPER")
+                    editBox:SetAttribute("tellTarget", t)
                     ChatEdit_ActivateChat(editBox)
                 end
             end)
