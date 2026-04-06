@@ -983,9 +983,9 @@ local function CreateStatsOverlay()
     -- Create our custom overlay frame
     if not statsOverlay then
         statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
-        statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -10)
-        statsOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -10, 10)
-        statsOverlay:SetWidth(200)
+        -- Position below the sidebar tabs (which are at the top)
+        statsOverlay:SetPoint("TOP", CharacterFrameInsetRight, "TOP", 0, -80)
+        statsOverlay:SetWidth(140)
         
         -- Storage for all text elements
         statsOverlay.texts = {}
@@ -994,7 +994,7 @@ local function CreateStatsOverlay()
             local text = statsOverlay:CreateFontString(nil, "OVERLAY")
             text:SetFont("Fonts\\FRIZQT__.TTF", isHeader and 13 or 12, "OUTLINE")
             text:SetJustifyH("LEFT")
-            text:SetWidth(90)
+            text:SetWidth(70)
             return text
         end
         
@@ -1007,7 +1007,7 @@ local function CreateStatsOverlay()
             local valueText = CreateText(label .. "Value", false)
             valueText:SetPoint("TOPRIGHT", statsOverlay, "TOPRIGHT", 0, yOffset)
             valueText:SetJustifyH("RIGHT")
-            valueText:SetWidth(100)
+            valueText:SetWidth(70)
             valueText:SetTextColor(1, 1, 1, 1)
             
             statsOverlay.texts[valueKey] = { label = labelText, value = valueText }
@@ -1030,9 +1030,9 @@ local function CreateStatsOverlay()
         y = CreateStatLine("Health", "health", y)
         y = CreateStatLine("Power", "power", y)
         
-        -- Attributes section
+        -- Primary section
         y = y - 5
-        y = CreateHeader("Attributes", y)
+        y = CreateHeader("Primary", y)
         y = CreateStatLine("Strength", "strength", y)
         y = CreateStatLine("Agility", "agility", y)
         y = CreateStatLine("Stamina", "stamina", y)
@@ -1046,13 +1046,6 @@ local function CreateStatsOverlay()
         y = CreateStatLine("Mastery", "mastery", y)
         y = CreateStatLine("Versatility", "versatility", y)
         
-        -- Attack section
-        y = y - 5
-        y = CreateHeader("Attack", y)
-        y = CreateStatLine("Attack Power", "attackPower", y)
-        y = CreateStatLine("Spell Power", "spellPower", y)
-        y = CreateStatLine("Attack Speed", "attackSpeed", y)
-        
         -- Defense section
         y = y - 5
         y = CreateHeader("Defense", y)
@@ -1061,9 +1054,9 @@ local function CreateStatsOverlay()
         y = CreateStatLine("Parry", "parry", y)
         y = CreateStatLine("Block", "block", y)
         
-        -- General section
+        -- Utility section
         y = y - 5
-        y = CreateHeader("General", y)
+        y = CreateHeader("Utility", y)
         y = CreateStatLine("Leech", "leech", y)
         y = CreateStatLine("Speed", "speed", y)
     end
@@ -1126,19 +1119,6 @@ local function UpdateStatsOverlay()
         texts.versatility.value:SetText(string.format("%s (%.1f%%)", FormatStatValue(versRating), versPercent))
     end
     
-    -- Attack
-    local base, posBuff, negBuff = UnitAttackPower("player")
-    local attackPower = base + posBuff + negBuff
-    if texts.attackPower then texts.attackPower.value:SetText(FormatStatValue(attackPower)) end
-    
-    local spellPower = GetSpellBonusDamage(2) -- 2 = Holy school, but returns max
-    if texts.spellPower then texts.spellPower.value:SetText(FormatStatValue(spellPower)) end
-    
-    local mainSpeed, offSpeed = UnitAttackSpeed("player")
-    if texts.attackSpeed then 
-        texts.attackSpeed.value:SetText(string.format("%.2fs", mainSpeed))
-    end
-    
     -- Defense
     local baseArmor, effectiveArmor, armor, posBuff, negBuff = UnitArmor("player")
     if texts.armor then texts.armor.value:SetText(FormatStatValue(effectiveArmor)) end
@@ -1152,7 +1132,7 @@ local function UpdateStatsOverlay()
     local block = GetBlockChance()
     if texts.block then texts.block.value:SetText(string.format("%.2f%%", block)) end
     
-    -- General
+    -- Utility
     local leechRating = GetCombatRating(CR_LIFESTEAL)
     local leechPercent = GetCombatRatingBonus(CR_LIFESTEAL)
     if texts.leech then 
