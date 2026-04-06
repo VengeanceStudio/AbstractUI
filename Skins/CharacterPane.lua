@@ -534,43 +534,25 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     end
     
     -- Get item info
-    local itemName, _, itemQuality, itemLevel = GetItemInfo(itemLink)
+    local itemName, _, itemQuality, itemLevel = C_Item.GetItemInfo(itemLink)
     
     -- Set item name with quality color
     if itemName and itemQuality then
-        local r, g, b = GetItemQualityColor(itemQuality)
+        local r, g, b = C_Item.GetItemQualityColor(itemQuality)
         info.nameText:SetText(itemName)
         info.nameText:SetTextColor(r, g, b, 1)
     end
     
-    -- Get upgrade info
-    local upgradeLevel, maxUpgrade = 0, 0
-    local upgradeLevelText = ""
-    
-    -- Try to get upgrade level from item stats
-    local stats = GetItemStats(itemLink)
-    if stats and stats.ITEM_MOD_UPGRADE then
-        upgradeLevel = stats.ITEM_MOD_UPGRADE or 0
+    -- Get current item level (accounts for upgrades)
+    local actualItemLevel = C_Item.GetCurrentItemLevel(itemLink)
+    if actualItemLevel then
+        info.levelText:SetText(tostring(actualItemLevel))
+    elseif itemLevel then
+        info.levelText:SetText(tostring(itemLevel))
     end
-    
-    -- Get upgrade bracket info (e.g., "Champion 1/6")
-    local itemString = string.match(itemLink, "item[%-?%d:]+")
-    if itemString then
-        local bonusIDs = C_Item.GetItemBonuses(itemLink)
-        if bonusIDs and #bonusIDs > 0 then
-            -- This is simplified - proper upgrade detection requires more work
-            -- For now just show item level
-            upgradeLevelText = string.format("%d", itemLevel or 0)
-        else
-            upgradeLevelText = string.format("%d", itemLevel or 0)
-        end
-    end
-    
-    info.levelText:SetText(upgradeLevelText)
     
     -- Check for enchant
     local enchantText = ""
-    local itemStats = GetItemStats(itemLink)
     local hasEnchant = false
     
     -- Try to detect enchant via tooltip scan
@@ -619,12 +601,27 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     end
     
     -- Get gem info
-    local gemInfo = C_Item.GetItemGems(itemLink)
-    if gemInfo and gemInfo.gems then
+    local itemID = C_Item.GetItemInfoInstant(itemLink)
+    local numSockets = 0
+    local socketInfo = C_Item.GetItemSocketInfo(itemLink)
+    
+    if socketInfo then
         for i = 1, 3 do
-            if gemInfo.gems[i] and gemInfo.gems[i].texture then
-                info.gems[i]:SetTexture(gemInfo.gems[i].texture)
-                info.gems[i]:Show()
+            if socketInfo[i] then
+                local gemID = socketInfo[i].gemItemID
+                if gemID then
+                    local gemTexture = C_Item.GetItemIconByID(gemID)
+                    if gemTexture then
+                        info.gems[i]:SetTexture(gemTexture)
+                        info.gems[i]:Show()
+                    else
+                        info.gems[i]:Hide()
+                    end
+                else
+                    -- Empty socket
+                    info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket")
+                    info.gems[i]:Show()
+                end
             else
                 info.gems[i]:Hide()
             end
