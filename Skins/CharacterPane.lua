@@ -370,9 +370,13 @@ local function StripBlizzardTextures()
         end
     end
     
+    -- Strip textures from InsetRight but KEEP IT VISIBLE (contains PaperDollSidebarTabs)
     if CharacterFrame.InsetRight then
-        CharacterFrame.InsetRight:SetAlpha(0)
-        CharacterFrame.InsetRight:Hide()
+        -- Don't hide or set alpha on the frame itself - it contains the sidebar tabs!
+        CharacterFrame.InsetRight:Show()  -- Make sure it's visible
+        CharacterFrame.InsetRight:SetAlpha(1)  -- Make sure it's fully opaque
+        
+        -- Only hide its background textures
         if CharacterFrame.InsetRight.Bg then
             CharacterFrame.InsetRight.Bg:SetAlpha(0)
             CharacterFrame.InsetRight.Bg:Hide()
@@ -954,6 +958,10 @@ end
 
 local function SkinStatsPane()
     if not CharacterStatsPane then return end
+    
+    -- Make sure the stats pane is visible
+    CharacterStatsPane:Show()
+    CharacterStatsPane:SetAlpha(1)
     
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
