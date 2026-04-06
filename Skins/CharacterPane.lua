@@ -545,6 +545,10 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     -- Set item name with quality color
     if itemName and itemQuality then
         local r, g, b = C_Item.GetItemQualityColor(itemQuality)
+        -- Truncate to 20 characters
+        if #itemName > 20 then
+            itemName = itemName:sub(1, 20) .. "..."
+        end
         info.nameText:SetText(itemName)
         info.nameText:SetTextColor(r, g, b, 1)
     end
@@ -576,6 +580,8 @@ local function UpdateEquipmentInfo(slotButton, slotID)
                 if text:find("Enchanted:") or text:find("Enchant ") then
                     hasEnchant = true
                     enchantText = text:gsub("Enchanted: ", "")
+                    -- Remove "Enchant [SLOT] - " prefix patterns
+                    enchantText = enchantText:gsub("^Enchant %w+ %- ", "")
                     break
                 end
             end
