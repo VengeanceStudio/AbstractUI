@@ -223,12 +223,12 @@ local function StripBlizzardTextures()
             end
         end
         
-        -- Hide any child frames that aren't equipment slots
+        -- Hide any child frames that aren't equipment slots or sidebar tabs
         local children = {PaperDollItemsFrame:GetChildren()}
         for _, child in ipairs(children) do
             local childName = child:GetName()
-            -- Only hide if it's not an actual equipment slot button
-            if childName and not childName:find("Slot$") then
+            -- Only hide if it's not an actual equipment slot button and not the sidebar tabs
+            if childName and not childName:find("Slot$") and childName ~= "PaperDollSidebarTabs" then
                 child:Hide()
                 child:SetAlpha(0)
                 
