@@ -308,9 +308,9 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Strip textures from InsetRight but keep it visible (contains stats pane)
     if CharacterFrame.InsetRight then
-        -- Don't hide the frame itself, just its background textures
+        CharacterFrame.InsetRight:SetAlpha(0)
+        CharacterFrame.InsetRight:Hide()
         if CharacterFrame.InsetRight.Bg then
             CharacterFrame.InsetRight.Bg:SetAlpha(0)
             CharacterFrame.InsetRight.Bg:Hide()
@@ -389,14 +389,15 @@ local function RepositionEquipmentSlots()
     
     for _, slotName in ipairs(topSlots) do
         local slot = _G[slotName]
-        if slot then
+        if slot and not slot._abstractRepositioned then
             -- Get current position
             local point, relativeTo, relativePoint, xOfs, yOfs = slot:GetPoint(1)
             
             if point and relativeTo and relativePoint then
-                -- Move up by 30 pixels (increase y offset)
+                -- Move up by 25 pixels (increase y offset)
                 slot:ClearAllPoints()
-                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 30)
+                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 25)
+                slot._abstractRepositioned = true
             end
         end
     end
@@ -870,47 +871,6 @@ local function SkinCharacterFrameBackdrop()
 end
 
 ---------------------------------------------------------------------------
--- WIDEN FRAME AND REPOSITION STATS
----------------------------------------------------------------------------
-
-local function WidenFrameAndRepositionStats()
-    if not CharacterFrame then return end
-    
-    local extraWidth = 150  -- Add 150 pixels of width
-    
-    -- Widen the CharacterFrame first
-    CharacterFrame:SetWidth(CharacterFrame:GetWidth() + extraWidth)
-    
-    -- Make sure InsetRight (stats container) is visible and positioned
-    if CharacterFrame.InsetRight then
-        CharacterFrame.InsetRight:Show()
-        CharacterFrame.InsetRight:SetAlpha(1)
-        
-        -- Get its original position and move it right
-        local numPoints = CharacterFrame.InsetRight:GetNumPoints()
-        if numPoints > 0 then
-            local point, relativeTo, relativePoint, xOfs, yOfs = CharacterFrame.InsetRight:GetPoint(1)
-            if point and relativeTo then
-                CharacterFrame.InsetRight:ClearAllPoints()
-                CharacterFrame.InsetRight:SetPoint(point, relativeTo, relativePoint, (xOfs or 0) + extraWidth, yOfs or 0)
-            end
-        end
-    end
-    
-    -- Ensure CharacterStatsPane is visible
-    if CharacterStatsPane then
-        CharacterStatsPane:Show()
-        CharacterStatsPane:SetAlpha(1)
-    end
-    
-    -- Ensure PaperDollSidebarTabs are visible
-    if PaperDollSidebarTabs then
-        PaperDollSidebarTabs:Show()
-        PaperDollSidebarTabs:SetAlpha(1)
-    end
-end
-
----------------------------------------------------------------------------
 -- SKIN STATS PANE
 ---------------------------------------------------------------------------
 
@@ -983,7 +943,6 @@ function CharacterPane:ApplySkin()
     
     -- Apply all skins
     StripBlizzardTextures()
-    WidenFrameAndRepositionStats()
     SkinCharacterFrameBackdrop()
     RepositionEquipmentSlots()
     SkinAllEquipmentSlots()
@@ -998,30 +957,6 @@ end
 
 function CharacterPane:OnThemeChanged()
     if not IsEnabled() then return end
-    
-    -- Clear all the repositioning/widening flags to allow re-application
-    if CharacterFrame then
-        CharacterFrame._abstractWidened = nil
-    end
-    if CharacterFrame and CharacterFrame.InsetRight then
-        CharacterFrame.InsetRight._abstractRepositioned = nil
-    end
-    if CharacterStatsPane then
-        CharacterStatsPane._abstractRepositioned = nil
-    end
-    if PaperDollSidebarTabs then
-        PaperDollSidebarTabs._abstractRepositioned = nil
-    end
-    
-    local slots = {
-        "CharacterHeadSlot", "CharacterHandsSlot",
-    }
-    for _, slotName in ipairs(slots) do
-        local slot = _G[slotName]
-        if slot then
-            slot._abstractRepositioned = nil
-        end
-    end
     
     -- Reapply skins with new theme colors
     skinned = false
