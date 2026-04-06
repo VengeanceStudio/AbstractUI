@@ -190,11 +190,13 @@ local function UpdateFriendList()
                     end
                 else 
                     -- Whisper
-                    if data.bnetAccountID then
-                        -- For BNet friends, use the BNet chat system
-                        -- Create a BNet player link and use SetItemRef to open whisper
-                        local linkData = LinkUtil.FormatLink("BNplayer", data.name, data.bnetAccountID, 0, data.name)
-                        SetItemRef(linkData, linkData, "LeftButton")
+                    if data.gameAccountID then
+                        -- For BNet friends, set the chat edit box to BNet whisper mode
+                        local editBox = ChatEdit_ChooseBoxForSend()
+                        ChatEdit_ActivateChat(editBox)
+                        editBox:SetAttribute("chatType", "BN_WHISPER")
+                        editBox:SetAttribute("tellTarget", data.gameAccountID)
+                        editBox:SetText("")
                     else
                         -- Use character-realm for non-BNet friends
                         local t = data.name
