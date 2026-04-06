@@ -465,14 +465,14 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         
         info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
         info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-        info.levelText:SetPoint("LEFT", slotButton, "RIGHT", 5, -4)
+        info.levelText:SetPoint("LEFT", slotButton, "RIGHT", 5, 0)
         info.levelText:SetJustifyH("LEFT")
         info.levelText:SetWidth(180)
         info.levelText:SetTextColor(1, 0.82, 0, 1)
         
         info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
         info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-        info.enchantText:SetPoint("LEFT", slotButton, "RIGHT", 5, -16)
+        info.enchantText:SetPoint("LEFT", slotButton, "RIGHT", 5, -12)
         info.enchantText:SetJustifyH("LEFT")
         info.enchantText:SetWidth(180)
         
@@ -495,14 +495,14 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         
         info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
         info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-        info.levelText:SetPoint("RIGHT", slotButton, "LEFT", -5, -4)
+        info.levelText:SetPoint("RIGHT", slotButton, "LEFT", -5, 0)
         info.levelText:SetJustifyH("RIGHT")
         info.levelText:SetWidth(180)
         info.levelText:SetTextColor(1, 0.82, 0, 1)
         
         info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
         info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
-        info.enchantText:SetPoint("RIGHT", slotButton, "LEFT", -5, -16)
+        info.enchantText:SetPoint("RIGHT", slotButton, "LEFT", -5, -12)
         info.enchantText:SetJustifyH("RIGHT")
         info.enchantText:SetWidth(180)
         
