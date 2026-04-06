@@ -391,10 +391,15 @@ local function StripBlizzardTextures()
     if CharacterModelScene then
         CharacterModelScene:SetAlpha(1) -- Keep model visible
         
-        -- Reposition character model 15px to the right
-        CharacterModelScene:ClearAllPoints()
-        CharacterModelScene:SetPoint("TOPLEFT", PaperDollFrame, "TOPLEFT", 15, 0)
-        CharacterModelScene:SetPoint("BOTTOMRIGHT", PaperDollFrame, "BOTTOMRIGHT", 15, 0)
+        -- Reposition character model 15px to the right (preserve size)
+        if not CharacterModelScene._abstractRepositioned then
+            local point, relativeTo, relativePoint, xOfs, yOfs = CharacterModelScene:GetPoint(1)
+            if point and relativeTo and relativePoint then
+                CharacterModelScene:ClearAllPoints()
+                CharacterModelScene:SetPoint(point, relativeTo, relativePoint, (xOfs or 0) + 15, yOfs or 0)
+                CharacterModelScene._abstractRepositioned = true
+            end
+        end
         
         -- Hide all texture regions
         for i = 1, CharacterModelScene:GetNumRegions() do
