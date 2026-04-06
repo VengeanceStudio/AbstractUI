@@ -191,12 +191,12 @@ local function UpdateFriendList()
                 else 
                     -- Whisper
                     if data.bnetAccountID then
-                        -- For BNet friends, set up BNet whisper
-                        local editBox = ChatEdit_ChooseBoxForSend()
-                        ChatEdit_ActivateChat(editBox)
-                        editBox:SetAttribute("chatType", "BN_WHISPER")
-                        editBox:SetAttribute("senderName", data.bnet)
-                        editBox:SetAttribute("presenceID", data.bnetAccountID)
+                        -- For BNet friends, use double slash for BNet whisper
+                        -- Extract the name part before the # in BattleTag
+                        local bnetName = data.bnet:match("([^#]+)#")
+                        if bnetName then
+                            ChatFrame_OpenChat("//" .. bnetName .. " ", SELECTED_DOCK_FRAME)
+                        end
                     else
                         -- Use character-realm for non-BNet friends
                         local t = data.name
