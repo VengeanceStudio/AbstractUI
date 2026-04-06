@@ -121,7 +121,7 @@ local function UpdateFriendList()
                         classToken = classInfo.classFile
                     end
                 end
-                -- Include bnetAccountID, gameAccountID, and presenceID for proper BNet invites/whispers
+                -- Include accountName (battleTag) and gameAccountID for proper BNet invites/whispers
                 table.insert(wowFriends, {
                     name=g.characterName, 
                     bnet=info.battleTag, 
@@ -130,9 +130,9 @@ local function UpdateFriendList()
                     realm=g.realmName, 
                     faction=g.factionName, 
                     class=classToken or g.className,
-                    bnetAccountID=info.bnetAccountID,
+                    accountName=info.accountName,  -- BattleTag for whispers
                     gameAccountID=g.gameAccountID,
-                    presenceID=g.playerGuid  -- This is the presenceID for whispers
+                    isBNetFriend=true
                 })
             end
         end
@@ -190,15 +190,37 @@ local function UpdateFriendList()
                         C_PartyInfo.InviteUnit(t)
                     end
                 else 
-                    -- Whisper - treat everyone as WoW character whispers
-                    local t = data.name
-                    if data.realm and data.realm ~= GetRealmName() then 
-                        t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                    -- Whisper
+                    if data.isBNetFriend and data.accountName then
+                        -- For BNet friends, use BNet whisper (works cross-realm)
+                        if ChatFrameUtil and ChatFrameUtil.SendBNetTell then
+                            ChatFrameUtil.SendBNetTell(data.accountName)
+                        elseif ChatFrame_SendBNetTell then
+                            ChatFrame_SendBNetTell(data.accountName)
+                        else
+                            -- Fallback to character name whisper
+                            local t = data.name
+                            if data.realm and data.realm ~= GetRealmName() then 
+                                t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                            end
+                            if ChatFrameUtil and ChatFrameUtil.SendTell then
+                                ChatFrameUtil.SendTell(t)
+                            else
+                                ChatFrame_OpenChat("/w " .. t .. " ")
+                            end
+                        end
+                    else
+                        -- For regular WoW friends, use standard whisper
+                        local t = data.name
+                        if data.realm and data.realm ~= GetRealmName() then 
+                            t = t .. "-" .. data.realm:gsub("%s+",""):gsub("'", "")
+                        end
+                        if ChatFrameUtil and ChatFrameUtil.SendTell then
+                            ChatFrameUtil.SendTell(t)
+                        else
+                            ChatFrame_OpenChat("/w " .. t .. " ")
+                        end
                     end
-                    local editBox = ChatEdit_ChooseBoxForSend()
-                    editBox:SetAttribute("chatType", "WHISPER")
-                    editBox:SetAttribute("tellTarget", t)
-                    ChatEdit_ActivateChat(editBox)
                 end
             end)
         end
