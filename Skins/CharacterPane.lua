@@ -606,33 +606,24 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     end
     
     -- Get gem info
-    local itemID = C_Item.GetItemInfoInstant(itemLink)
-    local numSockets = 0
-    local socketInfo = C_Item.GetItemSocketInfo(itemLink)
-    
-    if socketInfo then
-        for i = 1, 3 do
-            if socketInfo[i] then
-                local gemID = socketInfo[i].gemItemID
-                if gemID then
-                    local gemTexture = C_Item.GetItemIconByID(gemID)
-                    if gemTexture then
-                        info.gems[i]:SetTexture(gemTexture)
-                        info.gems[i]:Show()
-                    else
-                        info.gems[i]:Hide()
-                    end
-                else
-                    -- Empty socket
-                    info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket")
+    -- Try to get socket information by checking each potential socket
+    for i = 1, 3 do
+        local gemName, gemLink = GetItemGem(itemLink, i)
+        if gemLink then
+            -- Socket is filled with a gem
+            local gemItemID = tonumber(string.match(gemLink, "item:(%d+)"))
+            if gemItemID then
+                local gemTexture = C_Item.GetItemIconByID(gemItemID)
+                if gemTexture then
+                    info.gems[i]:SetTexture(gemTexture)
                     info.gems[i]:Show()
+                else
+                    info.gems[i]:Hide()
                 end
             else
                 info.gems[i]:Hide()
             end
-        end
-    else
-        for i = 1, 3 do
+        else
             info.gems[i]:Hide()
         end
     end
