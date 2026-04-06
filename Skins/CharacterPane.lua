@@ -373,6 +373,37 @@ local function StripBlizzardTextures()
 end
 
 ---------------------------------------------------------------------------
+-- REPOSITION EQUIPMENT SLOTS
+---------------------------------------------------------------------------
+
+local function RepositionEquipmentSlots()
+    if not PaperDollItemsFrame then return end
+    
+    -- Move equipment slots up by 30 pixels (weapon slots remain in original position)
+    local slots = {
+        "CharacterHeadSlot", "CharacterNeckSlot", "CharacterShoulderSlot", "CharacterBackSlot",
+        "CharacterChestSlot", "CharacterShirtSlot", "CharacterTabardSlot", "CharacterWristSlot",
+        "CharacterHandsSlot", "CharacterWaistSlot", "CharacterLegsSlot", "CharacterFeetSlot",
+        "CharacterFinger0Slot", "CharacterFinger1Slot", "CharacterTrinket0Slot", "CharacterTrinket1Slot",
+    }
+    
+    for _, slotName in ipairs(slots) do
+        local slot = _G[slotName]
+        if slot and not slot._abstractRepositioned then
+            -- Get current position
+            local point, relativeTo, relativePoint, xOfs, yOfs = slot:GetPoint(1)
+            
+            if point and relativeTo and relativePoint then
+                -- Move up by 30 pixels (increase y offset)
+                slot:ClearAllPoints()
+                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 30)
+                slot._abstractRepositioned = true
+            end
+        end
+    end
+end
+
+---------------------------------------------------------------------------
 -- SKIN EQUIPMENT SLOT BUTTONS
 ---------------------------------------------------------------------------
 
@@ -913,6 +944,7 @@ function CharacterPane:ApplySkin()
     -- Apply all skins
     StripBlizzardTextures()
     SkinCharacterFrameBackdrop()
+    RepositionEquipmentSlots()
     SkinAllEquipmentSlots()
     SkinCharacterTabs()
     SkinStatsPane()
