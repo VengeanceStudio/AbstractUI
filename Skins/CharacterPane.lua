@@ -962,6 +962,12 @@ local function SkinStatsPane()
     CharacterStatsPane:Show()
     CharacterStatsPane:SetAlpha(1)
     
+    -- Resize and reposition stats pane to be a narrow column on the right
+    CharacterStatsPane:ClearAllPoints()
+    CharacterStatsPane:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -5, -5)
+    CharacterStatsPane:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -5, 5)
+    CharacterStatsPane:SetWidth(180) -- Narrower width for compact column
+    
     local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
     
     -- Completely hide class background
