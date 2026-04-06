@@ -83,8 +83,11 @@ local function StripBlizzardTextures()
     local children = {CharacterFrame:GetChildren()}
     for i, child in ipairs(children) do
         local childName = child:GetName()
-        -- Keep named children and specifically keep PaperDollSidebarTabs
-        if (not childName or childName == "") and childName ~= "PaperDollSidebarTabs" then
+        -- Skip if this is PaperDollSidebarTabs or any named sidebar tab
+        if child == PaperDollSidebarTabs or (childName and childName:find("PaperDollSidebarTab")) then
+            -- Don't hide sidebar tabs
+        elseif not childName or childName == "" then
+            -- Hide unnamed decorative frames
             child:Hide()
             child:SetAlpha(0)
             
@@ -228,8 +231,12 @@ local function StripBlizzardTextures()
         local children = {PaperDollItemsFrame:GetChildren()}
         for _, child in ipairs(children) do
             local childName = child:GetName()
-            -- Only hide if it's not an actual equipment slot button and not the sidebar tabs
-            if childName and not childName:find("Slot$") and childName ~= "PaperDollSidebarTabs" then
+            -- Skip if this is PaperDollSidebarTabs, any sidebar tab, or an equipment slot
+            if child == PaperDollSidebarTabs or 
+               (childName and (childName:find("Slot$") or childName:find("PaperDollSidebarTab"))) then
+                -- Don't hide these
+            else
+                -- Hide decorative frames
                 child:Hide()
                 child:SetAlpha(0)
                 
@@ -347,19 +354,6 @@ local function StripBlizzardTextures()
         -- Make sure the tab container is visible
         PaperDollSidebarTabs:Show()
         PaperDollSidebarTabs:SetAlpha(1)
-        
-        -- Hook to prevent hiding
-        if not PaperDollSidebarTabs._abstractHooked then
-            hooksecurefunc(PaperDollSidebarTabs, "Hide", function(self)
-                self:Show()
-            end)
-            hooksecurefunc(PaperDollSidebarTabs, "SetAlpha", function(self, alpha)
-                if alpha < 1 then
-                    self:SetAlpha(1)
-                end
-            end)
-            PaperDollSidebarTabs._abstractHooked = true
-        end
         
         if PaperDollSidebarTabs.DecorLeft then
             PaperDollSidebarTabs.DecorLeft:Hide()
@@ -678,17 +672,9 @@ local function SkinCharacterTabs()
         for i = 1, numTabs do
             local tab = _G["PaperDollSidebarTab" .. i]
             if tab then
-                -- Make sure the tab itself is visible regardless of skinning status
+                -- Make sure the tab itself is visible
                 tab:Show()
                 tab:SetAlpha(1)
-                
-                -- Hook to prevent hiding this tab
-                if not tab._abstractHooked then
-                    hooksecurefunc(tab, "Hide", function(self)
-                        self:Show()
-                    end)
-                    tab._abstractHooked = true
-                end
                 
                 if not tab._abstractSkinned then
                     -- Hide default textures
