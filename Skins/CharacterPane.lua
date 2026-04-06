@@ -565,33 +565,37 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     
     -- Get current item level using ItemLocation
     local itemLocation = ItemLocation:CreateFromEquipmentSlot(slotID)
+    local levelText = ""
+    
     if itemLocation and itemLocation:IsValid() then
         local actualItemLevel = C_Item.GetCurrentItemLevel(itemLocation)
-        local levelText = ""
         
         if actualItemLevel and actualItemLevel > 0 then
             levelText = tostring(actualItemLevel)
         elseif itemLevel then
             levelText = tostring(itemLevel)
         end
-        
-        -- Try to get upgrade track info
-        local upgradeInfo = C_ItemUpgrade.GetItemUpgradeItemInfo(itemLocation)
-        if upgradeInfo then
-            local currentUpgrade = upgradeInfo.currUpgrade or 0
-            local maxUpgrade = upgradeInfo.maxUpgrade or 0
-            local trackName = upgradeInfo.upgradeTypeName
-            
-            if trackName and maxUpgrade > 0 then
-                -- Format: "246 (Champion 1/6)"
-                levelText = levelText .. " (" .. trackName .. " " .. currentUpgrade .. "/" .. maxUpgrade .. ")"
+    elseif itemLevel then
+        levelText = tostring(itemLevel)
+    end
+    
+    -- Try to get upgrade track info from tooltip
+    local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
+    if tooltipData and tooltipData.lines then
+        for _, line in ipairs(tooltipData.lines) do
+            if line.leftText then
+                local text = line.leftText
+                -- Look for upgrade track patterns like "Upgraded (1/6)", "Champion 1/6", etc.
+                local trackName, current, max = text:match("^(%w+)%s+(%d+)/(%d+)$")
+                if trackName and current and max then
+                    levelText = levelText .. " (" .. trackName .. " " .. current .. "/" .. max .. ")"
+                    break
+                end
             end
         end
-        
-        info.levelText:SetText(levelText)
-    elseif itemLevel then
-        info.levelText:SetText(tostring(itemLevel))
     end
+    
+    info.levelText:SetText(levelText)
     
     -- Check for enchant
     local enchantText = ""
