@@ -121,7 +121,7 @@ local function UpdateFriendList()
                         classToken = classInfo.classFile
                     end
                 end
-                -- Include bnetAccountID and gameAccountID for proper BNet invites/whispers
+                -- Include bnetAccountID, gameAccountID, and presenceID for proper BNet invites/whispers
                 table.insert(wowFriends, {
                     name=g.characterName, 
                     bnet=info.battleTag, 
@@ -131,7 +131,8 @@ local function UpdateFriendList()
                     faction=g.factionName, 
                     class=classToken or g.className,
                     bnetAccountID=info.bnetAccountID,
-                    gameAccountID=g.gameAccountID
+                    gameAccountID=g.gameAccountID,
+                    presenceID=g.playerGuid  -- This is the presenceID for whispers
                 })
             end
         end
@@ -190,12 +191,12 @@ local function UpdateFriendList()
                     end
                 else 
                     -- Whisper
-                    if data.bnetAccountID then
-                        -- For BNet friends, use /bw (BattleNet whisper) command
-                        local bnetName = data.bnet:match("([^#]+)")
-                        if bnetName then
-                            ChatFrame_OpenChat("/bw " .. bnetName .. " ", SELECTED_DOCK_FRAME)
-                        end
+                    if data.presenceID then
+                        -- For BNet friends, use the presenceID to set whisper target
+                        local editBox = ChatEdit_ChooseBoxForSend()
+                        ChatEdit_ActivateChat(editBox)
+                        editBox:SetAttribute("chatType", "BN_WHISPER")
+                        editBox:SetAttribute("tellTarget", data.presenceID)
                     else
                         -- Use character-realm for non-BNet friends
                         local t = data.name
