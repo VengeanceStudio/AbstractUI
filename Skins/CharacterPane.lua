@@ -760,29 +760,11 @@ local function SkinCharacterTabs()
                         tab.backdrop = backdrop
                     end
                     
-                    -- Style icon - make sure it's visible and properly cropped
+                    -- Style icon - ensure it's visible but DON'T modify texture coords (breaks atlas)
                     if tab.Icon then
                         tab.Icon:Show()
                         tab.Icon:SetAlpha(1)
-                        tab.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                         tab.Icon:SetDrawLayer("ARTWORK")
-                        
-                        -- Hook to keep icon visible whenever tab updates
-                        if not tab._iconHooked then
-                            hooksecurefunc(tab.Icon, "SetTexture", function(self, texture)
-                                if texture and texture ~= "" then
-                                    self:Show()
-                                    self:SetAlpha(1)
-                                    self:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                                end
-                            end)
-                            hooksecurefunc(tab.Icon, "SetAtlas", function(self)
-                                self:Show()
-                                self:SetAlpha(1)
-                                self:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                            end)
-                            tab._iconHooked = true
-                        end
                     end
                     
                     -- Highlight
