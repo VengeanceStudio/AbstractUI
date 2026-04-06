@@ -189,9 +189,10 @@ local function UpdateFriendList()
                         C_PartyInfo.InviteUnit(t)
                     end
                 else 
-                    -- Whisper - use BNet whisper for cross-realm friends
-                    if data.gameAccountID then
-                        ChatFrame_SendBNetTell(data.bnet, data.gameAccountID)
+                    -- Whisper
+                    if data.bnetAccountID then
+                        -- Use BNet whisper - open chat with BattleTag
+                        ChatFrame_OpenChat("/w " .. data.bnet .. " ", SELECTED_DOCK_FRAME)
                     else
                         -- Fallback to regular whisper for non-BNet friends
                         local t = data.name
