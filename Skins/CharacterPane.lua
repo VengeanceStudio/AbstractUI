@@ -653,7 +653,7 @@ local function RepositionEquipmentSlots()
     
     if handsSlot and not handsSlot._abstractRepositioned then
         handsSlot:ClearAllPoints()
-        handsSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 285, -40)
+        handsSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 325, -40)
         handsSlot._abstractRepositioned = true
         CreateEquipmentInfo(handsSlot, "CharacterHandsSlot", "right")
     end
