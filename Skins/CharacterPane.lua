@@ -459,7 +459,7 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         -- Left side: text goes to the RIGHT of icon
         info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
         info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
-        info.nameText:SetPoint("LEFT", slotButton, "RIGHT", 5, 10)
+        info.nameText:SetPoint("LEFT", slotButton, "RIGHT", 5, 12)
         info.nameText:SetJustifyH("LEFT")
         info.nameText:SetWidth(180)
         
@@ -489,7 +489,7 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         -- Right side: text goes to the LEFT of icon
         info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
         info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
-        info.nameText:SetPoint("RIGHT", slotButton, "LEFT", -5, 10)
+        info.nameText:SetPoint("RIGHT", slotButton, "LEFT", -5, 12)
         info.nameText:SetJustifyH("RIGHT")
         info.nameText:SetWidth(180)
         
