@@ -575,24 +575,48 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         elseif itemLevel then
             levelText = tostring(itemLevel)
         end
-    elseif itemLevel then
-        levelText = tostring(itemLevel)
-    end
-    
-    -- Try to get upgrade track info from tooltip
-    local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
-    if tooltipData and tooltipData.lines then
-        for _, line in ipairs(tooltipData.lines) do
-            if line.leftText then
-                local text = line.leftText
-                -- Look for upgrade track patterns like "Upgraded (1/6)", "Champion 1/6", etc.
-                local trackName, current, max = text:match("^(%w+)%s+(%d+)/(%d+)$")
-                if trackName and current and max then
-                    levelText = levelText .. " (" .. trackName .. " " .. current .. "/" .. max .. ")"
-                    break
+        
+        -- Try to get detailed item level info with upgrade track
+        local detailedLevel, _, baseLevel = C_Item.GetDetailedItemLevelInfo(itemLink)
+        if detailedLevel and baseLevel then
+            -- Check if item has upgrade information
+            local itemString = string.match(itemLink, "item[%-?%d:]+")
+            if itemString then
+                -- Try to determine upgrade track from item
+                -- Look for upgrade level in the item (this is a simplified approach)
+                local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
+                if tooltipData and tooltipData.lines then
+                    -- Debug: print all tooltip lines for the head slot to see format
+                    if slotID == 1 then -- Head slot for debugging
+                        print("=== Tooltip lines for slot", slotID, "===")
+                        for i, line in ipairs(tooltipData.lines) do
+                            if line.leftText then
+                                print(i, "LEFT:", line.leftText)
+                            end
+                            if line.rightText then
+                                print(i, "RIGHT:", line.rightText)
+                            end
+                        end
+                        print("=== End tooltip ===")
+                    end
+                    
+                    for _, line in ipairs(tooltipData.lines) do
+                        if line.leftText then
+                            local text = line.leftText
+                            -- Look for patterns like "Champion 1/6", "Hero 4/6", etc.
+                            -- The pattern is usually: TrackName Number/Number
+                            local track, curr, maxUp = text:match("^(.-)%s+(%d+)/(%d+)$")
+                            if track and curr and maxUp and tonumber(maxUp) > 0 then
+                                levelText = levelText .. " (" .. track .. " " .. curr .. "/" .. maxUp .. ")"
+                                break
+                            end
+                        end
+                    end
                 end
             end
         end
+    elseif itemLevel then
+        levelText = tostring(itemLevel)
     end
     
     info.levelText:SetText(levelText)
