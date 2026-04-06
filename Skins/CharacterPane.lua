@@ -1234,20 +1234,45 @@ local function SkinCharacterFrameBackdrop()
         
         -- Update function
         titleFrame.Update = function(self)
-            -- Character name
+            -- Check which tab is active
+            local selectedTab = PanelTemplates_GetSelectedTab(CharacterFrame) or 1
+            
+            -- Get character info
             local name = UnitName("player")
-            self.nameText:SetText(name or "")
-            
-            -- Item level
-            local avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel()
-            self.ilvlText:SetText(string.format("Item Level |cff%02x%02x%02x%.1f|r", pr*255, pg*255, pb*255, avgItemLevelEquipped))
-            
-            -- Level, Spec, Class
             local level = UnitLevel("player")
             local specIndex = GetSpecialization()
             local specName = specIndex and select(2, GetSpecializationInfo(specIndex)) or "No Spec"
             local className = UnitClass("player")
-            self.infoText:SetText(string.format("Level %d %s %s", level, specName, className))
+            local infoString = string.format("Level %d %s %s", level, specName, className)
+            
+            -- Tab 1 is Character (main equipment view)
+            -- Other tabs (Reputation, Currency, etc.) just show the character info
+            if selectedTab == 1 then
+                -- Show all three sections
+                self.nameText:Show()
+                self.ilvlText:Show()
+                self.infoText:Show()
+                
+                self.nameText:SetText(name or "")
+                
+                local avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel()
+                self.ilvlText:SetText(string.format("Item Level |cff%02x%02x%02x%.1f|r", pr*255, pg*255, pb*255, avgItemLevelEquipped))
+                
+                -- Reset infoText position to normal (after ilvl)
+                self.infoText:ClearAllPoints()
+                self.infoText:SetPoint("LEFT", self.ilvlText, "RIGHT", 20, 0)
+                self.infoText:SetText(infoString)
+            else
+                -- Hide name and item level, show only character info centered
+                self.nameText:Hide()
+                self.ilvlText:Hide()
+                self.infoText:Show()
+                
+                -- Center the info text
+                self.infoText:ClearAllPoints()
+                self.infoText:SetPoint("CENTER", titleFrame, "CENTER", 0, 0)
+                self.infoText:SetText(infoString)
+            end
         end
         
         -- Initial update
@@ -1260,6 +1285,13 @@ local function SkinCharacterFrameBackdrop()
         titleFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
         titleFrame:SetScript("OnEvent", function(self)
             self:Update()
+        end)
+        
+        -- Hook tab changes to update title
+        hooksecurefunc("CharacterFrame_ShowSubFrame", function()
+            if CharacterFrame.AbstractTitleBar then
+                CharacterFrame.AbstractTitleBar:Update()
+            end
         end)
         
         CharacterFrame.AbstractTitleBar = titleFrame
