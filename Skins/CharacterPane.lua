@@ -341,8 +341,12 @@ local function StripBlizzardTextures()
         end
     end
     
-    -- Hide sidebar tab decorations
+    -- Hide sidebar tab decorations but keep tabs visible
     if PaperDollSidebarTabs then
+        -- Make sure the tab container is visible
+        PaperDollSidebarTabs:Show()
+        PaperDollSidebarTabs:SetAlpha(1)
+        
         if PaperDollSidebarTabs.DecorLeft then
             PaperDollSidebarTabs.DecorLeft:Hide()
             PaperDollSidebarTabs.DecorLeft:SetAlpha(0)
@@ -655,53 +659,57 @@ local function SkinCharacterTabs()
         PaperDollSidebarTabs:Show()
         PaperDollSidebarTabs:SetAlpha(1)
         
-        for i = 1, #PAPERDOLL_SIDEBARS do
+        -- Try to skin up to 3 sidebar tabs (Stats, Titles, Gear Sets)
+        local numTabs = PAPERDOLL_SIDEBARS and #PAPERDOLL_SIDEBARS or 3
+        for i = 1, numTabs do
             local tab = _G["PaperDollSidebarTab" .. i]
-            if tab and not tab._abstractSkinned then
-                -- Make sure the tab itself is visible
+            if tab then
+                -- Make sure the tab itself is visible regardless of skinning status
                 tab:Show()
                 tab:SetAlpha(1)
                 
-                -- Hide default textures
-                if tab.TabBg then
-                    tab.TabBg:SetAlpha(0)
+                if not tab._abstractSkinned then
+                    -- Hide default textures
+                    if tab.TabBg then
+                        tab.TabBg:SetAlpha(0)
+                    end
+                    if tab.Hider then
+                        tab.Hider:SetTexture("")
+                    end
+                    
+                    -- Create backdrop frame
+                    if not tab.backdrop then
+                        local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
+                        backdrop:SetAllPoints()
+                        backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
+                        backdrop:SetBackdrop({
+                            bgFile = "Interface\\Buttons\\WHITE8x8",
+                            edgeFile = "Interface\\Buttons\\WHITE8x8",
+                            edgeSize = 1,
+                        })
+                        backdrop:SetBackdropColor(bgr, bgg, bgb, 0.4)
+                        backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
+                        tab.backdrop = backdrop
+                    end
+                    
+                    -- Style icon
+                    if tab.Icon then
+                        tab.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                        tab.Icon:ClearAllPoints()
+                        tab.Icon:SetPoint("TOPLEFT", 2, -2)
+                        tab.Icon:SetPoint("BOTTOMRIGHT", -2, 2)
+                    end
+                    
+                    -- Highlight
+                    if tab.Highlight then
+                        tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
+                        tab.Highlight:ClearAllPoints()
+                        tab.Highlight:SetPoint("TOPLEFT", 1, -1)
+                        tab.Highlight:SetPoint("BOTTOMRIGHT", -1, 1)
+                    end
+                    
+                    tab._abstractSkinned = true
                 end
-                if tab.Hider then
-                    tab.Hider:SetTexture("")
-                end
-                
-                -- Create backdrop frame
-                if not tab.backdrop then
-                    local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
-                    backdrop:SetAllPoints()
-                    backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
-                    backdrop:SetBackdrop({
-                        bgFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeSize = 1,
-                    })
-                    backdrop:SetBackdropColor(bgr, bgg, bgb, 0.4)
-                    backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
-                    tab.backdrop = backdrop
-                end
-                
-                -- Style icon
-                if tab.Icon then
-                    tab.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                    tab.Icon:ClearAllPoints()
-                    tab.Icon:SetPoint("TOPLEFT", 2, -2)
-                    tab.Icon:SetPoint("BOTTOMRIGHT", -2, 2)
-                end
-                
-                -- Highlight
-                if tab.Highlight then
-                    tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
-                    tab.Highlight:ClearAllPoints()
-                    tab.Highlight:SetPoint("TOPLEFT", 1, -1)
-                    tab.Highlight:SetPoint("BOTTOMRIGHT", -1, 1)
-                end
-                
-                tab._abstractSkinned = true
             end
         end
     end
