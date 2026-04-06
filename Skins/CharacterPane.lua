@@ -443,31 +443,230 @@ local function StripBlizzardTextures()
 end
 
 ---------------------------------------------------------------------------
--- REPOSITION EQUIPMENT SLOTS
+-- REPOSITION EQUIPMENT SLOTS WITH INFO
 ---------------------------------------------------------------------------
+
+-- Equipment slots data storage
+local equipmentInfo = {}
+
+-- Slot layout: position each slot in the center area
+local slotLayout = {
+    -- Left side (original left column moved right)
+    { slot = "CharacterHeadSlot", x = 85, y = -45 },
+    { slot = "CharacterNeckSlot", x = 85, y = -90 },
+    { slot = "CharacterShoulderSlot", x = 85, y = -135 },
+    { slot = "CharacterBackSlot", x = 85, y = -180 },
+    { slot = "CharacterChestSlot", x = 85, y = -225 },
+    { slot = "CharacterWristSlot", x = 85, y = -270 },
+    { slot = "CharacterHandsSlot", x = 85, y = -315 },
+    { slot = "CharacterWaistSlot", x = 85, y = -360 },
+    { slot = "CharacterLegsSlot", x = 85, y = -405 },
+    { slot = "CharacterFeetSlot", x = 85, y = -450 },
+    
+    -- Bottom row (weapons)
+    { slot = "CharacterMainHandSlot", x = 190, y = -495 },
+    { slot = "CharacterSecondaryHandSlot", x = 255, y = -495 },
+    
+    -- Right side trinkets and rings (keep closer to the right)
+    { slot = "CharacterFinger0Slot", x = 320, y = -405 },
+    { slot = "CharacterFinger1Slot", x = 320, y = -450 },
+    { slot = "CharacterTrinket0Slot", x = 320, y = -315 },
+    { slot = "CharacterTrinket1Slot", x = 320, y = -360 },
+}
+
+local function CreateEquipmentInfo(slotButton, slotName)
+    if not slotButton or slotButton._infoCreated then return end
+    
+    local info = {}
+    
+    -- Create item name text
+    info.nameText = slotButton:CreateFontString(nil, "OVERLAY")
+    info.nameText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+    info.nameText:SetPoint("LEFT", slotButton, "RIGHT", 5, 10)
+    info.nameText:SetJustifyH("LEFT")
+    info.nameText:SetWidth(180)
+    
+    -- Create item level + upgrade text
+    info.levelText = slotButton:CreateFontString(nil, "OVERLAY")
+    info.levelText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    info.levelText:SetPoint("LEFT", slotButton, "RIGHT", 5, -5)
+    info.levelText:SetJustifyH("LEFT")
+    info.levelText:SetWidth(180)
+    info.levelText:SetTextColor(1, 0.82, 0, 1) -- Gold color
+    
+    -- Create enchant status text
+    info.enchantText = slotButton:CreateFontString(nil, "OVERLAY")
+    info.enchantText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    info.enchantText:SetPoint("LEFT", slotButton, "RIGHT", 5, -20)
+    info.enchantText:SetJustifyH("LEFT")
+    info.enchantText:SetWidth(180)
+    
+    -- Create gem indicators (up to 3 sockets)
+    info.gems = {}
+    for i = 1, 3 do
+        local gem = slotButton:CreateTexture(nil, "OVERLAY")
+        gem:SetSize(12, 12)
+        gem:SetPoint("LEFT", slotButton, "LEFT", -15, 15 - (i-1) * 15)
+        gem:Hide()
+        info.gems[i] = gem
+    end
+    
+    equipmentInfo[slotName] = info
+    slotButton._infoCreated = true
+end
+
+local function UpdateEquipmentInfo(slotButton, slotID)
+    local slotName = slotButton:GetName()
+    local info = equipmentInfo[slotName]
+    if not info then return end
+    
+    local itemLink = GetInventoryItemLink("player", slotID)
+    
+    if not itemLink then
+        -- No item equipped
+        info.nameText:SetText("")
+        info.levelText:SetText("")
+        info.enchantText:SetText("")
+        for i = 1, 3 do
+            info.gems[i]:Hide()
+        end
+        return
+    end
+    
+    -- Get item info
+    local itemName, _, itemQuality, itemLevel = GetItemInfo(itemLink)
+    
+    -- Set item name with quality color
+    if itemName and itemQuality then
+        local r, g, b = GetItemQualityColor(itemQuality)
+        info.nameText:SetText(itemName)
+        info.nameText:SetTextColor(r, g, b, 1)
+    end
+    
+    -- Get upgrade info
+    local upgradeLevel, maxUpgrade = 0, 0
+    local upgradeLevelText = ""
+    
+    -- Try to get upgrade level from item stats
+    local stats = GetItemStats(itemLink)
+    if stats and stats.ITEM_MOD_UPGRADE then
+        upgradeLevel = stats.ITEM_MOD_UPGRADE or 0
+    end
+    
+    -- Get upgrade bracket info (e.g., "Champion 1/6")
+    local itemString = string.match(itemLink, "item[%-?%d:]+")
+    if itemString then
+        local bonusIDs = C_Item.GetItemBonuses(itemLink)
+        if bonusIDs and #bonusIDs > 0 then
+            -- This is simplified - proper upgrade detection requires more work
+            -- For now just show item level
+            upgradeLevelText = string.format("%d", itemLevel or 0)
+        else
+            upgradeLevelText = string.format("%d", itemLevel or 0)
+        end
+    end
+    
+    info.levelText:SetText(upgradeLevelText)
+    
+    -- Check for enchant
+    local enchantText = ""
+    local itemStats = GetItemStats(itemLink)
+    local hasEnchant = false
+    
+    -- Try to detect enchant via tooltip scan
+    local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
+    if tooltipData and tooltipData.lines then
+        for _, line in ipairs(tooltipData.lines) do
+            if line.leftText then
+                local text = line.leftText
+                -- Common enchant indicators
+                if text:find("Enchanted:") or text:find("Enchant ") then
+                    hasEnchant = true
+                    enchantText = text:gsub("Enchanted: ", "")
+                    break
+                end
+            end
+        end
+    end
+    
+    -- Check if slot can be enchanted (weapons, rings, neck, back, chest, wrist, feet, legs)
+    local enchantableSlots = {
+        [1] = false, -- head
+        [2] = true,  -- neck
+        [3] = false, -- shoulder
+        [5] = true,  -- chest
+        [6] = false, -- waist
+        [7] = true,  -- legs
+        [8] = true,  -- feet
+        [9] = true,  -- wrist
+        [11] = true, -- finger
+        [12] = true, -- finger
+        [15] = true, -- back
+        [16] = true, -- main hand
+        [17] = true, -- off hand
+    }
+    
+    if enchantableSlots[slotID] then
+        if hasEnchant then
+            info.enchantText:SetText(enchantText)
+            info.enchantText:SetTextColor(0, 1, 0, 1) -- Green
+        else
+            info.enchantText:SetText("No Enchant")
+            info.enchantText:SetTextColor(1, 0, 0, 1) -- Red
+        end
+    else
+        info.enchantText:SetText("")
+    end
+    
+    -- Get gem info
+    local gemInfo = C_Item.GetItemGems(itemLink)
+    if gemInfo and gemInfo.gems then
+        for i = 1, 3 do
+            if gemInfo.gems[i] and gemInfo.gems[i].texture then
+                info.gems[i]:SetTexture(gemInfo.gems[i].texture)
+                info.gems[i]:Show()
+            else
+                info.gems[i]:Hide()
+            end
+        end
+    else
+        for i = 1, 3 do
+            info.gems[i]:Hide()
+        end
+    end
+end
 
 local function RepositionEquipmentSlots()
     if not PaperDollItemsFrame then return end
     
-    -- Only move the top slot of each column - the rest are anchored relative to each other
-    -- Left column: Head slot (all other left slots anchor to it or each other)
-    -- Right column: Hands slot (all other right slots anchor to it or each other)
-    local topSlots = {
-        "CharacterHeadSlot",   -- Top of left column
-        "CharacterHandsSlot",  -- Top of right column
-    }
-    
-    for _, slotName in ipairs(topSlots) do
-        local slot = _G[slotName]
+    for _, data in ipairs(slotLayout) do
+        local slot = _G[data.slot]
         if slot and not slot._abstractRepositioned then
-            -- Get current position
-            local point, relativeTo, relativePoint, xOfs, yOfs = slot:GetPoint(1)
+            -- Clear all points and set new position
+            slot:ClearAllPoints()
+            slot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", data.x, data.y)
+            slot._abstractRepositioned = true
             
-            if point and relativeTo and relativePoint then
-                -- Move up by 25 pixels (increase y offset)
-                slot:ClearAllPoints()
-                slot:SetPoint(point, relativeTo, relativePoint, xOfs or 0, (yOfs or 0) + 25)
-                slot._abstractRepositioned = true
+            -- Create info displays
+            CreateEquipmentInfo(slot, data.slot)
+            
+            -- Get slot ID for this slot
+            local slotID = slot:GetID()
+            if slotID then
+                -- Initial update
+                UpdateEquipmentInfo(slot, slotID)
+                
+                -- Hook to update when items change
+                slot:HookScript("OnEvent", function(self, event)
+                    if event == "PLAYER_EQUIPMENT_CHANGED" then
+                        UpdateEquipmentInfo(self, slotID)
+                    end
+                end)
+                
+                -- Register for equipment changes if not already registered
+                if not slot:IsEventRegistered("PLAYER_EQUIPMENT_CHANGED") then
+                    slot:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+                end
             end
         end
     end
