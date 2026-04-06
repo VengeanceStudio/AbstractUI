@@ -481,7 +481,7 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         for i = 1, 3 do
             local gem = slotButton:CreateTexture(nil, "OVERLAY")
             gem:SetSize(12, 12)
-            gem:SetPoint("RIGHT", slotButton, "LEFT", -3, 15 - (i-1) * 15)
+            gem:SetPoint("RIGHT", slotButton, "LEFT", -3, 12 - (i-1) * 15)
             gem:Hide()
             info.gems[i] = gem
         end
@@ -511,7 +511,7 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
         for i = 1, 3 do
             local gem = slotButton:CreateTexture(nil, "OVERLAY")
             gem:SetSize(12, 12)
-            gem:SetPoint("LEFT", slotButton, "RIGHT", 3, 15 - (i-1) * 15)
+            gem:SetPoint("LEFT", slotButton, "RIGHT", 3, 12 - (i-1) * 15)
             gem:Hide()
             info.gems[i] = gem
         end
