@@ -1259,9 +1259,6 @@ local BLIZZARD_FRAMES = {
     "DressUpFrame",
     "InspectFrame",
     "QuestChoiceFrame",
-    
-    -- UIWidgets (Prey icon is widget 7663 in this container)
-    "UIWidgetPowerBarContainerFrame",
 }
 
 function Movable:MakeBlizzardFrameMovable(frameName)
@@ -1337,13 +1334,6 @@ function Movable:InitializeBlizzardFrames()
             self:MakeBlizzardFrameMovable(frameName)
         end
     end)
-    
-    -- UIWidget frames need extra loading attempts as they're created dynamically
-    for i = 1, 10 do
-        C_Timer.After(i * 2, function()
-            self:MakeBlizzardFrameMovable("UIWidgetPowerBarContainerFrame")
-        end)
-    end
     
     -- Hook ADDON_LOADED to catch addon frames as they load
     self:RegisterEvent("ADDON_LOADED")
