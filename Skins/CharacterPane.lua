@@ -1763,7 +1763,7 @@ local function CreateEquipmentManagerOverlay()
     if not equipmentOverlay then
         -- Main container
         local container = CreateFrame("Frame", "AbstractUI_EquipmentManagerOverlay", CharacterFrameInsetRight)
-        container:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 50, -12)
+        container:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 55, -12)
         container:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
         container:SetWidth(170)
         
