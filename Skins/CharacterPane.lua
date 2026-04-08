@@ -1840,20 +1840,11 @@ local function CreateEquipmentManagerOverlay()
         local scrollFrame = ScrollFrame:Create(container)
         scrollFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -28)
         scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0)
-        scrollFrame:Show()  -- Explicitly show the frame
-        
-        -- Force scrollbar to always be visible
-        if scrollFrame.scrollbar then
-            scrollFrame.scrollbar:Show()
-            -- Adjust scrollArea to account for scrollbar
-            scrollFrame.scrollArea:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", -20, 0)
-        end
         
         -- Get scroll child
         local scrollChild = scrollFrame:GetScrollChild()
         scrollChild:SetWidth(145)
         scrollChild:SetHeight(1)
-        scrollChild:Show()  -- Explicitly show the scroll child
         
         container.scrollFrame = scrollFrame
         container.scrollChild = scrollChild
@@ -2013,12 +2004,7 @@ UpdateEquipmentManagerOverlay = function()
     -- Update scroll child height
     scrollChild:SetHeight(math.abs(yOffset) + 20)
     
-    -- Force scrollbar to stay visible
-    if equipmentOverlay.scrollFrame and equipmentOverlay.scrollFrame.scrollbar then
-        equipmentOverlay.scrollFrame.scrollbar:Show()
-    end
-    
-    -- Update scrollbar visibility
+    -- Update scrollbar
     if equipmentOverlay.scrollFrame and equipmentOverlay.scrollFrame.UpdateScroll then
         equipmentOverlay.scrollFrame:UpdateScroll()
     end
