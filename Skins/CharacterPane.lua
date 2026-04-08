@@ -890,6 +890,26 @@ local function SkinAllEquipmentSlots()
 end
 
 ---------------------------------------------------------------------------
+-- STATS OVERLAY VISIBILITY MANAGEMENT
+---------------------------------------------------------------------------
+
+-- Forward declare function to be used in SkinCharacterTabs
+local UpdateStatsOverlayVisibility
+
+-- Function to update stats overlay visibility based on selected tab
+UpdateStatsOverlayVisibility = function()
+    if not statsOverlay then return end
+    
+    -- Check which sidebar tab is selected (Stats is tab 1)
+    local statsTab = _G["PaperDollSidebarTab1"]
+    if statsTab and PaperDollFrame.selectedSidebarTab == statsTab then
+        statsOverlay:Show()
+    else
+        statsOverlay:Hide()
+    end
+end
+
+---------------------------------------------------------------------------
 -- SKIN TABS
 ---------------------------------------------------------------------------
 
@@ -1062,19 +1082,6 @@ local function SkinCharacterTabs()
                 end
             end
         end
-    end
-end
-
--- Function to update stats overlay visibility based on selected tab
-local function UpdateStatsOverlayVisibility()
-    if not statsOverlay then return end
-    
-    -- Check which sidebar tab is selected (Stats is tab 1)
-    local statsTab = _G["PaperDollSidebarTab1"]
-    if statsTab and PaperDollFrame.selectedSidebarTab == statsTab then
-        statsOverlay:Show()
-    else
-        statsOverlay:Hide()
     end
 end
 
