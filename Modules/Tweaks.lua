@@ -796,14 +796,10 @@ function Tweaks:ApplyTweaks()
         -- Set Auto Loot CVars
         SetCVar("autoLootDefault", "1")
         -- Register instant loot event
-        if not self:IsEventRegistered("LOOT_READY") then
-            self:RegisterEvent("LOOT_READY")
-        end
+        self:RegisterEvent("LOOT_READY")
     else
         -- Unregister instant loot event if disabled
-        if self:IsEventRegistered("LOOT_READY") then
-            self:UnregisterEvent("LOOT_READY")
-        end
+        self:UnregisterEvent("LOOT_READY")
     end
     
     -- RevealMap is now called separately from PLAYER_ENTERING_WORLD with proper guards

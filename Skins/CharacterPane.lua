@@ -1621,14 +1621,24 @@ UpdateTitlesOverlay = function()
         if IsTitleKnown(titleID) then
             local name = GetTitleName(titleID)
             if name then
-                -- Truncate to 25 characters
+                -- Store full name for sorting
+                local fullName = name
+                -- Truncate to 25 characters for display
                 if string.len(name) > 25 then
                     name = string.sub(name, 1, 22) .. "..."
                 end
-                table.insert(titles, { id = titleID, name = name, isCurrent = (currentTitle == titleID) })
+                table.insert(titles, { id = titleID, name = name, fullName = fullName, isCurrent = (currentTitle == titleID) })
             end
         end
     end
+    
+    -- Sort titles alphabetically by full name (case-insensitive)
+    table.sort(titles, function(a, b)
+        -- Keep "No Title" at the top
+        if a.id == -1 then return true end
+        if b.id == -1 then return false end
+        return string.lower(a.fullName) < string.lower(b.fullName)
+    end)
     
     -- Create/update buttons
     local yOffset = 0
@@ -1673,7 +1683,10 @@ UpdateTitlesOverlay = function()
             else
                 SetCurrentTitle(self.titleID)
             end
-            UpdateTitlesOverlay()
+            -- Delay the update to allow GetCurrentTitle() to reflect the change
+            C_Timer.After(0.1, function()
+                UpdateTitlesOverlay()
+            end)
         end)
         
         button:Show()
