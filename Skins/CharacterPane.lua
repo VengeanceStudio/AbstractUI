@@ -1593,6 +1593,7 @@ local function CreateTitlesOverlay()
         
         -- Storage for title buttons
         titlesOverlay.buttons = {}
+        titlesOverlay.selectedTitleID = GetCurrentTitle()  -- Initialize with current title
     end
     
     -- Set initial visibility
@@ -1611,7 +1612,7 @@ UpdateTitlesOverlay = function()
     
     -- Get player titles
     local titles = {}
-    local currentTitle = GetCurrentTitle()
+    local currentTitle = titlesOverlay.selectedTitleID or GetCurrentTitle()
     
     -- Add "No Title" option
     table.insert(titles, { id = -1, name = "No Title", isCurrent = (currentTitle == -1 or currentTitle == 0) })
@@ -1677,16 +1678,18 @@ UpdateTitlesOverlay = function()
         
         -- Click handler
         button:SetScript("OnClick", function(self)
+            -- Store the selected title ID immediately
+            titlesOverlay.selectedTitleID = self.titleID
+            
             if self.titleID == -1 then
                 -- Clear title
                 SetCurrentTitle(0)
             else
                 SetCurrentTitle(self.titleID)
             end
-            -- Delay the update to allow GetCurrentTitle() to reflect the change
-            C_Timer.After(0.1, function()
-                UpdateTitlesOverlay()
-            end)
+            
+            -- Update the overlay immediately with our tracked selection
+            UpdateTitlesOverlay()
         end)
         
         button:Show()
