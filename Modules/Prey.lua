@@ -81,6 +81,15 @@ function Prey:OnInitialize()
                                     print("    Percentage: " .. percent .. "%")
                                 end
                             end
+                            
+                            -- Try to get icon/text info
+                            local iconInfo = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(widgetInfo.widgetID)
+                            if iconInfo then
+                                print("    Type: IconAndText")
+                                if iconInfo.text then
+                                    print("    Text: " .. tostring(iconInfo.text))
+                                end
+                            end
                         end
                     end
                 else
@@ -212,56 +221,93 @@ function Prey:UpdatePreyPercent()
     
     local foundWidget = false
     local hasValidProgress = false
+    local highestPercent = 0
     
     -- Try to get all widgets in the prey frame
     if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and frame.widgetSetID then
         local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
         
         if widgets then
-            -- Iterate through all widgets to find the status bar
+            -- Check for widget 7663 specifically (may indicate completion)
+            for _, widgetInfo in ipairs(widgets) do
+                if widgetInfo and widgetInfo.widgetID == 7663 then
+                    -- Widget 7663 exists but has no status bar data - this indicates completion
+                    percentText:SetText("Prey Found!")
+                    percentText:SetTextColor(1, 0, 0, 1)
+                    percentText:Show()
+                    return
+                end
+            end
+            
+            -- Check icon widgets for completion indicator
             for _, widgetInfo in ipairs(widgets) do
                 if widgetInfo and widgetInfo.widgetID then
-                    local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
-                    
-                    if statusBarInfo and statusBarInfo.barValue ~= nil and statusBarInfo.barMax ~= nil then
-                        preyCount = statusBarInfo.barValue or 0
-                        preyMax = statusBarInfo.barMax or 0
-                        foundWidget = true
-                        
-                        -- Check if this is valid progress data (not 0/0)
-                        if statusBarInfo.barMax > 0 then
-                            hasValidProgress = true
-                            
-                            -- Calculate percentage
-                            local percent = math.floor((preyCount / preyMax) * 100)
-                            
-                            -- Update display
-                            if percent >= 100 then
-                                percentText:SetText("Prey Found!")
-                                percentText:SetTextColor(1, 0, 0, 1) -- Full red
-                            else
-                                percentText:SetText(percent .. "%")
-                                -- Color gradient from grey to red (0% = grey, 100% = full red)
-                                local ratio = percent / 100
-                                local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
-                                local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-                                local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-                                percentText:SetTextColor(r, g, b, 1)
-                            end
-                            
+                    local iconInfo = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(widgetInfo.widgetID)
+                    if iconInfo and iconInfo.text then
+                        -- Check if the text contains completion indicators
+                        local text = iconInfo.text:lower()
+                        if text:find("found") or text:find("complete") or text:find("captured") then
+                            percentText:SetText("Prey Found!")
+                            percentText:SetTextColor(1, 0, 0, 1)
                             percentText:Show()
-                            break -- Found valid widget, stop searching
+                            return
                         end
                     end
                 end
             end
+            
+            -- Iterate through all widgets to find the status bar with highest percentage
+            for _, widgetInfo in ipairs(widgets) do
+                if widgetInfo and widgetInfo.widgetID then
+                    local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
+                    
+                    if statusBarInfo and statusBarInfo.barValue ~= nil and statusBarInfo.barMax ~= nil and statusBarInfo.barMax > 0 then
+                        preyCount = statusBarInfo.barValue or 0
+                        preyMax = statusBarInfo.barMax or 0
+                        foundWidget = true
+                        hasValidProgress = true
+                        
+                        -- Calculate percentage
+                        local percent = math.floor((preyCount / preyMax) * 100)
+                        
+                        if percent > highestPercent then
+                            highestPercent = percent
+                        end
+                    end
+                end
+            end
+            
+            -- If we found valid progress data, use it
+            if hasValidProgress and highestPercent > 0 then
+                if highestPercent >= 100 then
+                    percentText:SetText("Prey Found!")
+                    percentText:SetTextColor(1, 0, 0, 1)
+                else
+                    percentText:SetText(highestPercent .. "%")
+                    -- Color gradient from grey to red
+                    local ratio = highestPercent / 100
+                    local r = 0.6 + (ratio * 0.4)
+                    local g = 0.6 - (ratio * 0.6)
+                    local b = 0.6 - (ratio * 0.6)
+                    percentText:SetTextColor(r, g, b, 1)
+                end
+                percentText:Show()
+                return
+            end
         end
     end
     
-    -- If frame is visible but no valid progress data, assume complete (blood animation stage)
-    if not hasValidProgress then
+    -- If frame is visible but we found widgets showing 0%, check if it's been long enough to assume completion
+    -- (frame stays visible after blood animation starts when hunt is complete)
+    if foundWidget and highestPercent == 0 then
+        -- All status bars show 0% but frame is visible - assume completion state
         percentText:SetText("Prey Found!")
-        percentText:SetTextColor(1, 0, 0, 1) -- Full red
+        percentText:SetTextColor(1, 0, 0, 1)
+        percentText:Show()
+    elseif not hasValidProgress then
+        -- No valid progress data at all - also assume completion
+        percentText:SetText("Prey Found!")
+        percentText:SetTextColor(1, 0, 0, 1)
         percentText:Show()
     end
 end
