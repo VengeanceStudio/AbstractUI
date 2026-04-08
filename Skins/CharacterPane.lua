@@ -1319,7 +1319,11 @@ local function FormatStatValue(value)
 end
 
 local function CreateStatsOverlay()
-    if not CharacterFrameInsetRight then return end
+    print("CreateStatsOverlay called")
+    if not CharacterFrameInsetRight then 
+        print("CharacterFrameInsetRight is nil, cannot create stats overlay")
+        return 
+    end
     
     -- Hide all Blizzard stats UI
     if CharacterStatsPane then
@@ -1329,6 +1333,7 @@ local function CreateStatsOverlay()
     
     -- Create our custom overlay frame
     if not statsOverlay then
+        print("Creating new statsOverlay frame")
         statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
         -- Position right below the sidebar tabs
         statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -12)
@@ -1496,7 +1501,11 @@ local function UpdateStatsOverlay()
 end
 
 local function SkinStatsPane()
-    if not CharacterStatsPane then return end
+    print("SkinStatsPane called")
+    if not CharacterStatsPane then 
+        print("CharacterStatsPane is nil, skipping stats pane skinning")
+        return 
+    end
     
     -- Hide Blizzard's stats pane completely
     CharacterStatsPane:Hide()
@@ -1504,6 +1513,7 @@ local function SkinStatsPane()
     
     -- Create and show our custom overlay
     CreateStatsOverlay()
+    print("After CreateStatsOverlay, statsOverlay is:", statsOverlay)
     UpdateStatsOverlay()
     
     -- Now that statsOverlay exists, set up tab click hooks
@@ -1536,9 +1546,11 @@ end
 ---------------------------------------------------------------------------
 
 function CharacterPane:ApplySkin()
+    print("ApplySkin called, skinned =", skinned)
     if not IsEnabled() or skinned then return end
     if not CharacterFrame then return end
     
+    print("Applying character pane skin...")
     -- Apply all skins
     StripBlizzardTextures()
     SkinCharacterFrameBackdrop()
@@ -1553,6 +1565,7 @@ function CharacterPane:ApplySkin()
     end)
     
     skinned = true
+    print("Character pane skin applied")
     
     -- Listen for theme changes
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
