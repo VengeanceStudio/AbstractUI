@@ -1580,13 +1580,13 @@ local function CreateTitlesOverlay()
     -- Create our custom titles overlay frame
     if not titlesOverlay then
         titlesOverlay = CreateFrame("ScrollFrame", "AbstractUI_TitlesOverlay", CharacterFrameInsetRight, "UIPanelScrollFrameTemplate")
-        titlesOverlay:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 8, -12)
+        titlesOverlay:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 38, -12)
         titlesOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
-        titlesOverlay:SetWidth(200)  -- Narrower width to avoid equipment slots
+        titlesOverlay:SetWidth(170)  -- Narrower width to avoid equipment slots
         
         -- Create scroll child
         local scrollChild = CreateFrame("Frame", nil, titlesOverlay)
-        scrollChild:SetWidth(180)
+        scrollChild:SetWidth(150)
         scrollChild:SetHeight(1)  -- Will be set dynamically
         titlesOverlay:SetScrollChild(scrollChild)
         titlesOverlay.scrollChild = scrollChild
