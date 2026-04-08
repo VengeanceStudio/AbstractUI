@@ -234,6 +234,14 @@ function Prey:UpdatePreyPercent()
         return
     end
     
+    -- Check if there's an active prey hunt quest
+    -- If not on a hunt, the widget shows overall prey level progress instead
+    local activePreyQuest = C_QuestLog and C_QuestLog.GetActivePreyQuest and C_QuestLog.GetActivePreyQuest()
+    if not activePreyQuest then
+        percentText:Hide()
+        return
+    end
+    
     local foundPreyWidget = false
     
     -- Use the proper Prey Hunt Progress API
