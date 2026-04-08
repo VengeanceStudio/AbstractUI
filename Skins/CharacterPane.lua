@@ -1839,6 +1839,36 @@ local function CreateEquipmentManagerOverlay()
         end)
         container.saveButton = saveButton
         
+        -- New button (square with +)
+        local newButton = CreateFrame("Button", nil, container, "BackdropTemplate")
+        newButton:SetSize(22, 22)
+        newButton:SetPoint("TOPRIGHT", saveButton, "TOPLEFT", -4, 0)
+        newButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        newButton:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+        newButton:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+        local newText = newButton:CreateFontString(nil, "OVERLAY")
+        newText:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
+        newText:SetText("+")
+        newText:SetPoint("CENTER", 0, 1)
+        newText:SetTextColor(ColorPalette:GetColor("text-primary"))
+        newButton:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+        end)
+        newButton:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+        end)
+        newButton:SetScript("OnClick", function()
+            -- Open Blizzard's equipment set creation dialog
+            StaticPopup_Show("EQUIPMENT_SET_NAME")
+        end)
+        container.newButton = newButton
+        
         -- Scroll frame for sets list using AbstractUI's custom ScrollFrame
         local scrollFrame = ScrollFrame:Create(container)
         scrollFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -28)
