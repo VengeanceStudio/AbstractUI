@@ -2007,11 +2007,11 @@ UpdateEquipmentManagerOverlay = function()
             icon:SetPoint("LEFT", button, "LEFT", 2, 0)
             button.icon = icon
             
-            -- Equipped indicator (checkmark)
-            local equipped = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            -- Equipped indicator (checkmark texture)
+            local equipped = button:CreateTexture(nil, "OVERLAY")
+            equipped:SetSize(16, 16)
             equipped:SetPoint("RIGHT", button, "RIGHT", -2, 0)
-            equipped:SetText("✓")
-            equipped:SetTextColor(0, 1, 0)  -- Green checkmark
+            equipped:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")  -- Green checkmark
             button.equipped = equipped
             
             -- Text
