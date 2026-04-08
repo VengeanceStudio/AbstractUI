@@ -6,6 +6,8 @@ local hiddenFrame = CreateFrame("Frame")
 hiddenFrame:Hide()
 
 local LOADOUT_SERIALIZATION_VERSION
+local lootEpoch = 0
+local LOOT_DELAY = 0.3
 
 local defaults = {
     profile = {
@@ -137,6 +139,10 @@ function Tweaks:OnDBReady()
         self:RegisterEvent("ACHIEVEMENT_EARNED")
     end
     
+    if self.db.profile.fastLoot then
+        self:RegisterEvent("LOOT_READY")
+    end
+    
     -- Hook WorldMapFrame to refresh when opened
     if self.db.profile.revealMap then
         self:HookWorldMapFrame()
@@ -248,6 +254,24 @@ end
 
 function Tweaks:GOSSIP_SHOW()
     self:ApplyQuestFrameScale()
+end
+
+function Tweaks:LOOT_READY()
+    -- Instant looting: Auto-loot all items immediately when loot window opens
+    if GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE") then
+        if (GetTime() - lootEpoch) >= LOOT_DELAY then
+            -- TSM compatibility: Don't loot if TSM destroy button is active
+            if TSMDestroyBtn and TSMDestroyBtn:IsShown() and TSMDestroyBtn:GetButtonState() == "DISABLED" then
+                lootEpoch = GetTime()
+                return
+            end
+            -- Loot all items in reverse order for better compatibility
+            for i = GetNumLootItems(), 1, -1 do
+                LootSlot(i)
+            end
+            lootEpoch = GetTime()
+        end
+    end
 end
 
 function Tweaks:BAG_UPDATE_DELAYED()
@@ -771,6 +795,15 @@ function Tweaks:ApplyTweaks()
     if self.db.profile.fastLoot then
         -- Set Auto Loot CVars
         SetCVar("autoLootDefault", "1")
+        -- Register instant loot event
+        if not self:IsEventRegistered("LOOT_READY") then
+            self:RegisterEvent("LOOT_READY")
+        end
+    else
+        -- Unregister instant loot event if disabled
+        if self:IsEventRegistered("LOOT_READY") then
+            self:UnregisterEvent("LOOT_READY")
+        end
     end
     
     -- RevealMap is now called separately from PLAYER_ENTERING_WORLD with proper guards
@@ -913,7 +946,9 @@ function Tweaks:GetOptions()
         get = function(info) return self.db.profile[info[#info]] end,
         set = function(info, value) self.db.profile[info[#info]] = value end,
         args = {
-            fastLoot = { name = "Fast Loot", type = "toggle", order = 1},
+            fastLoot = { name = "Fast Loot", type = "toggle", order = 1,
+                desc = "Enables auto-loot and instant item pickup without loot window delay",
+                set = function(_, v) self.db.profile.fastLoot = v; self:ApplyTweaks() end },
             hideGryphons = { name = "Hide Action Bar Art", type = "toggle", order = 2,
                 set = function(_, v) 
                     self.db.profile.hideGryphons = v

@@ -1,0 +1,21 @@
+## Interface: 120005, 120001, 50503, 40402, 30405, 38000, 20505, 11508
+#
+# Mainline: 120001 (Midnight Beta, Live), 120005 (PTR)
+# Mists: 50503 (Live, PTR)
+# Cata: 40402 (Live)
+# Wrath: 30405 (Live)
+# Wrath (Titan): 38000 (Live China)
+# TBC: 20505 (Live, PTR)
+# Vanilla: 11508 (Live)
+#
+## Title: Faster Loot
+## Notes: Makes the loot frame instant
+## Version: 20260320
+## Author: Xarano
+## Category: Loot
+## IconTexture: Interface\Icons\Inv_cape_special_treasure_c_01
+## X-Curse-Project-ID: 261459
+## X-WoWI-ID: 26759
+## X-Wago-ID: bGoMJr60
+
+FasterLoot.lua
