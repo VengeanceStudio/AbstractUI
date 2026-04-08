@@ -1872,7 +1872,7 @@ local function CreateEquipmentManagerOverlay()
                 hasEditBox = true,
                 maxLetters = 31,
                 OnAccept = function(self)
-                    local name = self.editBox:GetText()
+                    local name = self.EditBox:GetText()
                     if name and name ~= "" then
                         -- Create the equipment set with current gear
                         local icon = GetInventoryItemTexture("player", 1) or 134400  -- Use head slot icon or default
