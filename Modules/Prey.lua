@@ -204,7 +204,6 @@ function Prey:AttachPercentText()
         percentText:SetTextColor(1, 1, 1, 1)
         percentText:SetJustifyH("CENTER")
         percentText:SetDrawLayer("OVERLAY", 7)
-        print("|cff00ff00Prey:|r Percentage text attached to prey icon")
     end
     
     -- Update immediately
