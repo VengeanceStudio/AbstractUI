@@ -1976,7 +1976,7 @@ end
 local function ShowEquipmentSetEditor(setID)
     -- Create custom equipment set editor dialog
     local editor = CreateFrame("Frame", "AbstractUI_EquipmentSetEditor", UIParent, "BackdropTemplate")
-    editor:SetSize(300, 160)
+    editor:SetSize(400, 400)
     editor:SetPoint("CENTER")
     editor:SetFrameStrata("DIALOG")
     editor:SetBackdrop({
@@ -2000,65 +2000,19 @@ local function ShowEquipmentSetEditor(setID)
     title:SetText("Edit Equipment Set")
     title:SetTextColor(ColorPalette:GetColor("text-primary"))
     
-    -- Icon display
-    local iconFrame = CreateFrame("Button", nil, editor)
-    iconFrame:SetSize(40, 40)
-    iconFrame:SetPoint("TOPLEFT", editor, "TOPLEFT", 15, -40)
-    
-    local iconTexture = iconFrame:CreateTexture(nil, "ARTWORK")
-    iconTexture:SetAllPoints()
-    editor.iconTexture = iconTexture
-    
-    local iconBorder = iconFrame:CreateTexture(nil, "OVERLAY")
-    iconBorder:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-    iconBorder:SetBlendMode("ADD")
-    iconBorder:SetAllPoints()
-    
     -- Get current values
     local currentName, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
     editor.selectedIcon = currentIcon or 134400
-    iconTexture:SetTexture(editor.selectedIcon)
-    
-    -- Icon button to select new icon
-    local selectIconBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
-    selectIconBtn:SetSize(80, 20)
-    selectIconBtn:SetPoint("LEFT", iconFrame, "RIGHT", 5, 0)
-    selectIconBtn:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        tile = false,
-        edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 }
-    })
-    selectIconBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
-    selectIconBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
-    local selectIconText = selectIconBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    selectIconText:SetPoint("CENTER")
-    selectIconText:SetText("Select Icon")
-    selectIconText:SetTextColor(ColorPalette:GetColor("text-primary"))
-    selectIconBtn:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
-    end)
-    selectIconBtn:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
-    end)
-    selectIconBtn:SetScript("OnClick", function()
-        -- Show Blizzard's GearManagerPopupFrame just for icon selection
-        if GearManagerPopupFrame then
-            GearManagerPopupFrame.AbstractUI_EditorRef = editor
-            GearManagerPopupFrame:Show()
-        end
-    end)
     
     -- Name label
     local nameLabel = editor:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nameLabel:SetPoint("TOPLEFT", iconFrame, "BOTTOMLEFT", 0, -15)
+    nameLabel:SetPoint("TOPLEFT", editor, "TOPLEFT", 15, -40)
     nameLabel:SetText("Name:")
     nameLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
     
     -- Name edit box
     local nameBox = CreateFrame("EditBox", nil, editor, "BackdropTemplate")
-    nameBox:SetSize(270, 22)
+    nameBox:SetSize(370, 22)
     nameBox:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -5)
     nameBox:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -2075,8 +2029,81 @@ local function ShowEquipmentSetEditor(setID)
     nameBox:SetMaxLetters(31)
     nameBox:SetText(currentName or "")
     nameBox:SetCursorPosition(0)
-    nameBox:HighlightText()
     editor.nameBox = nameBox
+    
+    -- Icon selection label
+    local iconLabel = editor:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    iconLabel:SetPoint("TOPLEFT", nameBox, "BOTTOMLEFT", 0, -10)
+    iconLabel:SetText("Select Icon:")
+    iconLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Icon grid container with scroll
+    local iconScrollFrame = CreateFrame("ScrollFrame", nil, editor, "UIPanelScrollFrameTemplate")
+    iconScrollFrame:SetPoint("TOPLEFT", iconLabel, "BOTTOMLEFT", 0, -5)
+    iconScrollFrame:SetSize(370, 250)
+    
+    local iconScrollChild = CreateFrame("Frame", nil, iconScrollFrame)
+    iconScrollChild:SetSize(370, 1)
+    iconScrollFrame:SetScrollChild(iconScrollChild)
+    
+    -- Get equipment/armor icons
+    local icons = {}
+    local iconDataProvider = CreateAndInitFromMixin(IconDataProviderMixin, IconDataProviderExtraType.Equipment)
+    local iconData = iconDataProvider:GetIcons()
+    for i = 1, #iconData do
+        table.insert(icons, iconData[i])
+    end
+    
+    -- Create icon buttons in grid
+    local iconsPerRow = 10
+    local iconSize = 32
+    local iconSpacing = 4
+    local iconButtons = {}
+    
+    for i, iconID in ipairs(icons) do
+        local row = math.floor((i - 1) / iconsPerRow)
+        local col = (i - 1) % iconsPerRow
+        
+        local btn = CreateFrame("Button", nil, iconScrollChild)
+        btn:SetSize(iconSize, iconSize)
+        btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
+        
+        local tex = btn:CreateTexture(nil, "ARTWORK")
+        tex:SetAllPoints()
+        tex:SetTexture(iconID)
+        btn.texture = tex
+        
+        local border = btn:CreateTexture(nil, "OVERLAY")
+        border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+        border:SetBlendMode("ADD")
+        border:SetAllPoints()
+        border:Hide()
+        btn.border = border
+        
+        local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(1, 1, 1, 0.3)
+        
+        btn:SetScript("OnClick", function(self)
+            editor.selectedIcon = iconID
+            -- Update all borders
+            for _, b in ipairs(iconButtons) do
+                b.border:Hide()
+            end
+            self.border:Show()
+        end)
+        
+        -- Show border if this is the current icon
+        if iconID == editor.selectedIcon then
+            border:Show()
+        end
+        
+        table.insert(iconButtons, btn)
+    end
+    
+    -- Set scroll child height
+    local numRows = math.ceil(#icons / iconsPerRow)
+    iconScrollChild:SetHeight(numRows * (iconSize + iconSpacing))
     
     -- Save button
     local saveBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
@@ -2136,20 +2163,6 @@ local function ShowEquipmentSetEditor(setID)
     cancelBtn:SetScript("OnClick", function()
         editor:Hide()
     end)
-    
-    -- Hook GearManagerPopupFrame if it exists to capture icon selection
-    if GearManagerPopupFrame then
-        hooksecurefunc(GearManagerPopupFrame, "Hide", function(self)
-            if self.AbstractUI_EditorRef then
-                local selectedIcon = self.selectedIconTexture or self.selectedIcon
-                if selectedIcon then
-                    self.AbstractUI_EditorRef.selectedIcon = selectedIcon
-                    self.AbstractUI_EditorRef.iconTexture:SetTexture(selectedIcon)
-                end
-                self.AbstractUI_EditorRef = nil
-            end
-        end)
-    end
     
     -- ESC to close
     nameBox:SetScript("OnEscapePressed", function(self)
