@@ -2084,12 +2084,19 @@ local function ShowEquipmentSetEditor(setID)
         end
         editor.iconButtons = {}
         
-        -- Filter icons (limit to 200 max for performance)
+        -- Filter icons
         local displayIcons = {}
-        if searchText and searchText ~= "" and searchText ~= "Search icons..." then
-            -- For now, just show first 200 icons (search by icon ID not implemented)
-            for i = 1, math.min(200, #allIcons) do
-                table.insert(displayIcons, allIcons[i])
+        local searchLower = searchText and string.lower(searchText) or ""
+        local usingSearch = searchLower ~= "" and searchLower ~= "search icons..."
+        
+        if usingSearch and _G.ICON_FILE_NAMES then
+            -- Search by icon name
+            for _, iconID in ipairs(allIcons) do
+                local iconName = _G.ICON_FILE_NAMES[iconID]
+                if iconName and string.find(string.lower(iconName), searchLower, 1, true) then
+                    table.insert(displayIcons, iconID)
+                    if #displayIcons >= 200 then break end
+                end
             end
         else
             -- Show first 100 icons by default
@@ -2137,6 +2144,18 @@ local function ShowEquipmentSetEditor(setID)
                 self.border:Show()
             end)
             
+            -- Tooltip with icon name
+            if _G.ICON_FILE_NAMES and _G.ICON_FILE_NAMES[iconID] then
+                btn:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(_G.ICON_FILE_NAMES[iconID])
+                    GameTooltip:Show()
+                end)
+                btn:SetScript("OnLeave", function(self)
+                    GameTooltip:Hide()
+                end)
+            end
+            
             -- Show border if this is the current icon
             if iconID == editor.selectedIcon then
                 border:Show()
@@ -2148,6 +2167,9 @@ local function ShowEquipmentSetEditor(setID)
         -- Set scroll child height
         local numRows = math.ceil(#displayIcons / iconsPerRow)
         iconScrollChild:SetHeight(math.max(1, numRows * (iconSize + iconSpacing)))
+        
+        -- Scroll to top
+        iconScrollFrame:SetVerticalScroll(0)
     end
     
     -- Search box handlers
