@@ -895,6 +895,7 @@ end
 
 -- Declare statsOverlay at module level so all functions can access it
 local statsOverlay = nil
+local titlesOverlay = nil
 
 -- Track which sidebar tab is currently selected (1=Stats, 2=Titles, 3=EquipmentManager)
 local selectedSidebarTab = 1  -- Default to Stats tab
@@ -911,6 +912,15 @@ UpdateStatsOverlayVisibility = function()
         statsOverlay:Show()
     else
         statsOverlay:Hide()
+    end
+    
+    -- Show titles overlay only when Titles tab (2) is selected
+    if titlesOverlay then
+        if selectedSidebarTab == 2 then
+            titlesOverlay:Show()
+        else
+            titlesOverlay:Hide()
+        end
     end
 end
 
@@ -1525,6 +1535,141 @@ local function SkinStatsPane()
 end
 
 ---------------------------------------------------------------------------
+-- CUSTOM TITLES PANEL
+---------------------------------------------------------------------------
+
+local function CreateTitlesOverlay()
+    if not CharacterFrameInsetRight then return end
+    
+    -- Hide Blizzard's titles scroll frame
+    local blizzTitles = _G["PaperDollFrame"] and _G["PaperDollFrame"].TitlesPane
+    if blizzTitles then
+        blizzTitles:Hide()
+        blizzTitles:SetAlpha(0)
+    end
+    
+    -- Create our custom titles overlay frame
+    if not titlesOverlay then
+        titlesOverlay = CreateFrame("ScrollFrame", "AbstractUI_TitlesOverlay", CharacterFrameInsetRight, "UIPanelScrollFrameTemplate")
+        titlesOverlay:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 8, -12)
+        titlesOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
+        titlesOverlay:SetWidth(200)  -- Narrower width to avoid equipment slots
+        
+        -- Create scroll child
+        local scrollChild = CreateFrame("Frame", nil, titlesOverlay)
+        scrollChild:SetWidth(180)
+        scrollChild:SetHeight(1)  -- Will be set dynamically
+        titlesOverlay:SetScrollChild(scrollChild)
+        titlesOverlay.scrollChild = scrollChild
+        
+        -- Storage for title buttons
+        titlesOverlay.buttons = {}
+    end
+    
+    -- Set initial visibility
+    if selectedSidebarTab == 2 then
+        titlesOverlay:Show()
+    else
+        titlesOverlay:Hide()
+    end
+end
+
+local function UpdateTitlesOverlay()
+    if not titlesOverlay or not titlesOverlay.scrollChild then return end
+    
+    local scrollChild = titlesOverlay.scrollChild
+    local buttons = titlesOverlay.buttons
+    
+    -- Get player titles
+    local titles = {}
+    local numTitles = GetNumTitles()
+    local currentTitle = GetCurrentTitle()
+    
+    -- Add "No Title" option
+    table.insert(titles, { id = -1, name = "No Title", isCurrent = (currentTitle == -1 or currentTitle == 0) })
+    
+   -- Add all available titles
+    for i = 1, numTitles do
+        local name = GetTitleName(i)
+        if name then
+            -- Truncate to 20 characters
+            if string.len(name) > 20 then
+                name = string.sub(name, 1, 17) .. "..."
+            end
+            table.insert(titles, { id = i, name = name, isCurrent = (currentTitle == i) })
+        end
+    end
+    
+    -- Create/update buttons
+    local yOffset = 0
+    for i, titleData in ipairs(titles) do
+        local button = buttons[i]
+        if not button then
+            button = CreateFrame("Button", nil, scrollChild)
+            button:SetSize(180, 20)
+            button:SetNormalFontObject("GameFontNormalSmall")
+            button:SetHighlightFontObject("GameFontHighlightSmall")
+            
+            local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            text:SetPoint("LEFT", button, "LEFT", 5, 0)
+            text:SetJustifyH("LEFT")
+            text:SetWidth(170)
+            button.text = text
+            
+            -- Highlight texture
+            local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(0.3, 0.3, 0.3, 0.3)
+            
+            buttons[i] = button
+        end
+        
+        button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+        button.text:SetText(titleData.name)
+        
+        -- Highlight current title
+        if titleData.isCurrent then
+            button.text:SetTextColor(1, 0.82, 0)  -- Gold
+        else
+            button.text:SetTextColor(1, 1, 1)  -- White
+        end
+        
+        -- Click handler
+        button:SetScript("OnClick", function(self)
+            SetCurrentTitle(titleData.id)
+            UpdateTitlesOverlay()
+        end)
+        
+        button:Show()
+        yOffset = yOffset - 22
+    end
+    
+  -- Hide unused buttons
+    for i = #titles + 1, #buttons do
+        buttons[i]:Hide()
+    end
+    
+    -- Update scroll child height
+    scrollChild:SetHeight(math.abs(yOffset) + 20)
+end
+
+local function SkinTitlesPane()
+    CreateTitlesOverlay()
+    UpdateTitlesOverlay()
+    
+    -- Update when titles change
+    if not CharacterFrame._titlesUpdateHooked then
+        CharacterFrame:RegisterEvent("PLAYER_TITLE_UPDATE")
+        CharacterFrame:HookScript("OnEvent", function(self, event)
+            if event == "PLAYER_TITLE_UPDATE" then
+                UpdateTitlesOverlay()
+            end
+        end)
+        CharacterFrame._titlesUpdateHooked = true
+    end
+end
+
+---------------------------------------------------------------------------
 -- MAIN SKIN APPLICATION
 ---------------------------------------------------------------------------
 
@@ -1539,6 +1684,7 @@ function CharacterPane:ApplySkin()
     SkinAllEquipmentSlots()
     SkinCharacterTabs()
     SkinStatsPane()
+    SkinTitlesPane()
     
     -- Re-skin tabs after a delay to catch any late-loading sidebar tabs
     C_Timer.After(0.2, function()
