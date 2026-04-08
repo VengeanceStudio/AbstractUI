@@ -21,7 +21,7 @@ local defaults = {
             enabled = true,
             position = nil, -- Separate position for tracker
             scale = 1.0,
-            showWhenInactive = false, -- Show tracker even when not in prey event
+            showWhenInactive = true, -- Show tracker even when not in prey event
         }
     }
 }
@@ -33,6 +33,34 @@ local defaults = {
 function Prey:OnInitialize()
     -- Initialize database
     self.db = AbstractUI.db:RegisterNamespace("Prey", defaults)
+    
+    -- Register slash command for testing
+    SLASH_PREYDEBUG1 = "/preydebug"
+    SlashCmdList["PREYDEBUG"] = function(msg)
+        if msg == "show" then
+            if trackerFrame then
+                trackerFrame:Show()
+                print("Prey tracker shown")
+            else
+                print("Prey tracker not created yet")
+            end
+        elseif msg == "hide" then
+            if trackerFrame then
+                trackerFrame:Hide()
+                print("Prey tracker hidden")
+            else
+                print("Prey tracker not created yet")
+            end
+        elseif msg == "update" then
+            self:UpdatePreyCount()
+            print("Prey count updated: " .. preyCount .. "/" .. preyMax)
+        else
+            print("Prey Debug Commands:")
+            print("  /preydebug show - Show tracker")
+            print("  /preydebug hide - Hide tracker")
+            print("  /preydebug update - Update prey count")
+        end
+    end
 end
 
 function Prey:OnEnable()
@@ -86,6 +114,7 @@ function Prey:CreateTrackerFrame()
     trackerFrame:SetSize(64, 64)
     trackerFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
     trackerFrame:SetFrameStrata("MEDIUM")
+    trackerFrame:SetFrameLevel(100)
     trackerFrame:SetClampedToScreen(true)
     
     -- Make it draggable
@@ -171,56 +200,59 @@ function Prey:CreateTrackerFrame()
         trackerFrame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
     end
     
-    -- Initially hide if not in prey event
-    if not self.db.profile.tracker.showWhenInactive then
-        trackerFrame:Hide()
-    end
+    -- Initially show the frame
+    trackerFrame:Show()
     
     -- Initial update
     self:UpdatePreyCount()
+    
+    -- Debug message
+    print("|cff00ff00AbstractUI Prey:|r Tracker created at center of screen")
 end
 
 function Prey:UpdatePreyCount()
     if not trackerFrame then return end
     
+    local foundWidget = false
+    
     -- Try to get prey count from UIWidget
     -- Widget ID 7663 is mentioned for prey tracking
-    local widgetInfo = C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo and 
-                       C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
+    if C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo then
+        local widgetInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
+        
+        if widgetInfo and widgetInfo.barValue and widgetInfo.barMax then
+            preyCount = widgetInfo.barValue or 0
+            preyMax = widgetInfo.barMax or 0
+            foundWidget = true
+            
+            -- Update display
+            trackerFrame.count:SetText(string.format("%d/%d", preyCount, preyMax))
+            
+            -- Color the count based on progress
+            local ratio = preyMax > 0 and (preyCount / preyMax) or 0
+            if ratio >= 1 then
+                trackerFrame.count:SetTextColor(0, 1, 0, 1) -- Green when complete
+            elseif ratio >= 0.5 then
+                trackerFrame.count:SetTextColor(1, 0.82, 0, 1) -- Gold when halfway
+            else
+                trackerFrame.count:SetTextColor(1, 1, 1, 1) -- White
+            end
+        end
+    end
     
-    if widgetInfo and widgetInfo.barValue and widgetInfo.barMax then
-        preyCount = widgetInfo.barValue or 0
-        preyMax = widgetInfo.barMax or 0
-        
-        -- Update display
-        trackerFrame.count:SetText(string.format("%d/%d", preyCount, preyMax))
-        
-        -- Show tracker if enabled
-        if preyCount > 0 or self.db.profile.tracker.showWhenInactive then
-            trackerFrame:Show()
-        else
-            trackerFrame:Hide()
-        end
-        
-        -- Color the count based on progress
-        local ratio = preyMax > 0 and (preyCount / preyMax) or 0
-        if ratio >= 1 then
-            trackerFrame.count:SetTextColor(0, 1, 0, 1) -- Green when complete
-        elseif ratio >= 0.5 then
-            trackerFrame.count:SetTextColor(1, 0.82, 0, 1) -- Gold when halfway
-        else
-            trackerFrame.count:SetTextColor(1, 1, 1, 1) -- White
-        end
-    else
+    if not foundWidget then
         -- No active prey hunt
         preyCount = 0
         preyMax = 0
         trackerFrame.count:SetText("0/0")
         trackerFrame.count:SetTextColor(0.5, 0.5, 0.5, 1)
-        
-        if not self.db.profile.tracker.showWhenInactive then
-            trackerFrame:Hide()
-        end
+    end
+    
+    -- Show/hide based on settings
+    if foundWidget or self.db.profile.tracker.showWhenInactive then
+        trackerFrame:Show()
+    else
+        trackerFrame:Hide()
     end
 end
 
