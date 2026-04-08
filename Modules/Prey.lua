@@ -50,6 +50,39 @@ function Prey:OnInitialize()
             end
         elseif msg == "update" then
             self:UpdatePreyPercent()
+        elseif msg == "widget" then
+            -- Debug widget info
+            if C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo then
+                local widgetInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
+                if widgetInfo then
+                    print("|cff00ff00Prey Widget 7663 Data:|r")
+                    print("  barValue: " .. tostring(widgetInfo.barValue))
+                    print("  barMax: " .. tostring(widgetInfo.barMax))
+                    print("  barMin: " .. tostring(widgetInfo.barMin))
+                    if widgetInfo.barValue and widgetInfo.barMax then
+                        local percent = math.floor((widgetInfo.barValue / widgetInfo.barMax) * 100)
+                        print("  Calculated: " .. percent .. "%")
+                    end
+                else
+                    print("|cffff0000Prey:|r Widget 7663 returned nil")
+                end
+                
+                -- Also try getting all widget info
+                if C_UIWidgetManager.GetAllWidgetsBySetID then
+                    print("|cff00ff00Checking all widgets in prey frame:|r")
+                    local frame = _G["UIWidgetPowerBarContainerFrame"]
+                    if frame and frame.widgetSetID then
+                        local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
+                        if widgets then
+                            for _, widgetID in ipairs(widgets) do
+                                print("  Widget ID: " .. tostring(widgetID))
+                            end
+                        end
+                    end
+                end
+            else
+                print("|cffff0000Prey:|r C_UIWidgetManager not available")
+            end
         elseif msg == "test" then
             -- Force create and show with test text
             self:AttachPercentText()
@@ -71,6 +104,7 @@ function Prey:OnInitialize()
             print("  /preydebug show - Show percent")
             print("  /preydebug hide - Hide percent")
             print("  /preydebug update - Update prey percent")
+            print("  /preydebug widget - Show raw widget data")
             print("  /preydebug test - Show test '100%' text")
             print("  /preydebug frame - Check if prey frame exists")
         end
@@ -152,6 +186,10 @@ function Prey:UpdatePreyPercent()
     
     local frame = _G["UIWidgetPowerBarContainerFrame"]
     if not frame then 
+        -- Hide text if frame doesn't exist
+        if percentText then
+            percentText:Hide()
+        end
         return
     end
     
@@ -160,7 +198,7 @@ function Prey:UpdatePreyPercent()
         if not percentText then return end
     end
     
-    -- Only hide if the frame itself is hidden
+    -- Hide text if the prey frame itself is hidden
     if not frame:IsShown() then
         percentText:Hide()
         return
@@ -181,24 +219,26 @@ function Prey:UpdatePreyPercent()
             local percent = (preyMax > 0) and math.floor((preyCount / preyMax) * 100) or 0
             
             -- Update display
-            percentText:SetText(percent .. "%")
-            
-            -- Color gradient from grey to red (0% = grey, 100% = full red)
-            local ratio = percent / 100
-            local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
-            local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-            local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-            percentText:SetTextColor(r, g, b, 1)
+            if percent >= 100 then
+                percentText:SetText("Prey Found!")
+                percentText:SetTextColor(1, 0, 0, 1) -- Full red
+            else
+                percentText:SetText(percent .. "%")
+                -- Color gradient from grey to red (0% = grey, 100% = full red)
+                local ratio = percent / 100
+                local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
+                local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                percentText:SetTextColor(r, g, b, 1)
+            end
             
             percentText:Show()
         end
     end
     
-    -- If no widget found, still show 0% rather than hiding
+    -- If no widget found, hide the text
     if not foundWidget then
-        percentText:SetText("0%")
-        percentText:SetTextColor(0.6, 0.6, 0.6, 1) -- Grey for 0%
-        percentText:Show()
+        percentText:Hide()
     end
 end
 
