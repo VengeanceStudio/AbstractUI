@@ -1808,7 +1808,7 @@ local function CreateEquipmentManagerOverlay()
         -- Save button
         local saveButton = CreateFrame("Button", nil, container, "BackdropTemplate")
         saveButton:SetSize(48, 22)
-        saveButton:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 0)
+        saveButton:SetPoint("LEFT", equipButton, "RIGHT", 2, 0)
         saveButton:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -1842,7 +1842,7 @@ local function CreateEquipmentManagerOverlay()
         -- New button (square with +)
         local newButton = CreateFrame("Button", nil, container, "BackdropTemplate")
         newButton:SetSize(22, 22)
-        newButton:SetPoint("TOPRIGHT", saveButton, "TOPLEFT", -4, 0)
+        newButton:SetPoint("LEFT", saveButton, "RIGHT", 2, 0)
         newButton:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = "Interface\\Buttons\\WHITE8X8",
