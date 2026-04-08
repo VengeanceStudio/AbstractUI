@@ -1963,10 +1963,22 @@ UpdateEquipmentManagerOverlay = function()
         return string.lower(a.fullName) < string.lower(b.fullName)
     end)
     
-    -- Auto-select first set if none selected, or clear selection if selected set doesn't exist
+    -- Auto-select first equipped set if none selected (or first set if none equipped)
     if #sets > 0 then
         if not equipmentOverlay.selectedSetID then
-            equipmentOverlay.selectedSetID = sets[1].id
+            -- Try to find first equipped set
+            local foundEquipped = false
+            for _, setData in ipairs(sets) do
+                if setData.isEquipped then
+                    equipmentOverlay.selectedSetID = setData.id
+                    foundEquipped = true
+                    break
+                end
+            end
+            -- Fall back to first set if none equipped
+            if not foundEquipped then
+                equipmentOverlay.selectedSetID = sets[1].id
+            end
         else
             -- Check if selected set still exists
             local found = false
@@ -1977,7 +1989,18 @@ UpdateEquipmentManagerOverlay = function()
                 end
             end
             if not found then
-                equipmentOverlay.selectedSetID = sets[1].id
+                -- If selected set was deleted, try to select first equipped set
+                local foundEquipped = false
+                for _, setData in ipairs(sets) do
+                    if setData.isEquipped then
+                        equipmentOverlay.selectedSetID = setData.id
+                        foundEquipped = true
+                        break
+                    end
+                end
+                if not foundEquipped then
+                    equipmentOverlay.selectedSetID = sets[1].id
+                end
             end
         end
     else
