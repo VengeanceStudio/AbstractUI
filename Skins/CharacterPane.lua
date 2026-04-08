@@ -900,8 +900,9 @@ local titlesOverlay = nil
 -- Track which sidebar tab is currently selected (1=Stats, 2=Titles, 3=EquipmentManager)
 local selectedSidebarTab = 1  -- Default to Stats tab
 
--- Forward declare function to be used in SkinCharacterTabs
+-- Forward declare functions
 local UpdateStatsOverlayVisibility
+local UpdateTitlesOverlay
 
 -- Function to update stats overlay visibility based on selected tab
 UpdateStatsOverlayVisibility = function()
@@ -1579,7 +1580,7 @@ local function CreateTitlesOverlay()
     end
 end
 
-local function UpdateTitlesOverlay()
+UpdateTitlesOverlay = function()
     if not titlesOverlay or not titlesOverlay.scrollChild then return end
     
     local scrollChild = titlesOverlay.scrollChild
