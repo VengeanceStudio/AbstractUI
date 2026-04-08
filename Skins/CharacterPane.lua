@@ -1768,8 +1768,7 @@ local function CreateEquipmentManagerOverlay()
         -- Main container
         local container = CreateFrame("Frame", "AbstractUI_EquipmentManagerOverlay", CharacterFrameInsetRight)
         container:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 60, -12)
-        container:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
-        container:SetWidth(170)
+        container:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -5, 8)  -- Moved from -30 to -5 for more width
         
         -- Equip button
         local equipButton = CreateFrame("Button", nil, container, "BackdropTemplate")
@@ -2019,7 +2018,7 @@ UpdateEquipmentManagerOverlay = function()
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
             text:SetJustifyH("LEFT")
-            text:SetWidth(140)  -- Increased from 115 to accommodate longer names and checkmark
+            text:SetWidth(130)  -- Leave space for checkmark on right
             button.text = text
             
             -- Highlight texture
