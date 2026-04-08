@@ -906,6 +906,7 @@ end
 -- Declare statsOverlay at module level so all functions can access it
 local statsOverlay = nil
 local titlesOverlay = nil
+local equipmentOverlay = nil
 
 -- Track which sidebar tab is currently selected (1=Stats, 2=Titles, 3=EquipmentManager)
 local selectedSidebarTab = 1  -- Default to Stats tab
@@ -913,6 +914,7 @@ local selectedSidebarTab = 1  -- Default to Stats tab
 -- Forward declare functions
 local UpdateStatsOverlayVisibility
 local UpdateTitlesOverlay
+local UpdateEquipmentManagerOverlay
 
 -- Function to update stats overlay visibility based on selected tab
 UpdateStatsOverlayVisibility = function()
@@ -934,9 +936,21 @@ UpdateStatsOverlayVisibility = function()
         end
     end
     
-    -- Always hide Blizzard's TitleManagerPane (we use our custom titles overlay instead)
+    -- Show equipment overlay only when Equipment Manager tab (3) is selected
+    if equipmentOverlay then
+        if selectedSidebarTab == 3 then
+            equipmentOverlay:Show()
+        else
+            equipmentOverlay:Hide()
+        end
+    end
+    
+    -- Always hide Blizzard's TitleManagerPane and EquipmentManagerPane
     if PaperDollFrame and PaperDollFrame.TitleManagerPane then
         PaperDollFrame.TitleManagerPane:Hide()
+    end
+    if PaperDollFrame and PaperDollFrame.EquipmentManagerPane then
+        PaperDollFrame.EquipmentManagerPane:Hide()
     end
 end
 
@@ -1711,6 +1725,175 @@ local function SkinTitlesPane()
 end
 
 ---------------------------------------------------------------------------
+-- CUSTOM EQUIPMENT MANAGER PANEL
+---------------------------------------------------------------------------
+
+local function CreateEquipmentManagerOverlay()
+    if not CharacterFrameInsetRight then return end
+    
+    -- Always hide Blizzard's EquipmentManagerPane
+    if PaperDollFrame and PaperDollFrame.EquipmentManagerPane then
+        PaperDollFrame.EquipmentManagerPane:Hide()
+    end
+    
+    -- Create our custom equipment manager overlay frame
+    if not equipmentOverlay then
+        equipmentOverlay = CreateFrame("ScrollFrame", "AbstractUI_EquipmentManagerOverlay", CharacterFrameInsetRight, "UIPanelScrollFrameTemplate")
+        equipmentOverlay:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 50, -12)
+        equipmentOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
+        equipmentOverlay:SetWidth(170)
+        
+        -- Create scroll child
+        local scrollChild = CreateFrame("Frame", nil, equipmentOverlay)
+        scrollChild:SetWidth(150)
+        scrollChild:SetHeight(1)
+        equipmentOverlay:SetScrollChild(scrollChild)
+        equipmentOverlay.scrollChild = scrollChild
+        
+        -- Storage for equipment set buttons
+        equipmentOverlay.buttons = {}
+        equipmentOverlay.selectedSetID = nil
+    end
+    
+    -- Set initial visibility
+    if selectedSidebarTab == 3 then
+        equipmentOverlay:Show()
+    else
+        equipmentOverlay:Hide()
+    end
+end
+
+UpdateEquipmentManagerOverlay = function()
+    if not equipmentOverlay or not equipmentOverlay.scrollChild then return end
+    
+    local scrollChild = equipmentOverlay.scrollChild
+    local buttons = equipmentOverlay.buttons
+    
+    -- Get equipment sets
+    local sets = {}
+    local setIDs = C_EquipmentSet.GetEquipmentSetIDs()
+    
+    for _, setID in ipairs(setIDs) do
+        local name, iconTexture, setID, isEquipped, numItems, numEquipped, numInventory, numMissing = C_EquipmentSet.GetEquipmentSetInfo(setID)
+        if name then
+            -- Truncate to 25 characters for display
+            local displayName = name
+            if string.len(name) > 25 then
+                displayName = string.sub(name, 1, 22) .. "..."
+            end
+            table.insert(sets, {
+                id = setID,
+                name = displayName,
+                fullName = name,
+                icon = iconTexture,
+                isEquipped = isEquipped,
+                numEquipped = numEquipped,
+                numItems = numItems
+            })
+        end
+    end
+    
+    -- Sort alphabetically by full name
+    table.sort(sets, function(a, b)
+        return string.lower(a.fullName) < string.lower(b.fullName)
+    end)
+    
+    -- Create/update buttons
+    local yOffset = 0
+    for i, setData in ipairs(sets) do
+        local button = buttons[i]
+        if not button then
+            button = CreateFrame("Button", nil, scrollChild)
+            button:SetSize(180, 24)
+            button:SetNormalFontObject("GameFontNormalSmall")
+            button:SetHighlightFontObject("GameFontHighlightSmall")
+            
+            -- Icon
+            local icon = button:CreateTexture(nil, "ARTWORK")
+            icon:SetSize(20, 20)
+            icon:SetPoint("LEFT", button, "LEFT", 2, 0)
+            button.icon = icon
+            
+            -- Text
+            local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
+            text:SetJustifyH("LEFT")
+            text:SetWidth(145)
+            button.text = text
+            
+            -- Highlight texture
+            local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(0.3, 0.3, 0.3, 0.3)
+            
+            buttons[i] = button
+        end
+        
+        button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+        button.icon:SetTexture(setData.icon)
+        button.text:SetText(setData.name)
+        button.setID = setData.id
+        
+        -- Highlight equipped set
+        if setData.isEquipped then
+            button.text:SetTextColor(1, 0.82, 0)  -- Gold
+        else
+            button.text:SetTextColor(1, 1, 1)  -- White
+        end
+        
+        -- Click handler to equip set
+        button:SetScript("OnClick", function(self, mouseButton)
+            if mouseButton == "LeftButton" then
+                -- Equip the set
+                C_EquipmentSet.UseEquipmentSet(self.setID)
+                equipmentOverlay.selectedSetID = self.setID
+                C_Timer.After(0.3, function()
+                    UpdateEquipmentManagerOverlay()
+                end)
+            end
+        end)
+        
+        -- Right-click context menu (save set to current equipment)
+        button:SetScript("OnMouseUp", function(self, mouseButton)
+            if mouseButton == "RightButton" then
+                -- Save current equipment to this set
+                C_EquipmentSet.SaveEquipmentSet(self.setID)
+                print("Saved current equipment to set: " .. setData.fullName)
+                UpdateEquipmentManagerOverlay()
+            end
+        end)
+        
+        button:Show()
+        yOffset = yOffset - 26
+    end
+    
+    -- Hide unused buttons
+    for i = #sets + 1, #buttons do
+        buttons[i]:Hide()
+    end
+    
+    -- Update scroll child height
+    scrollChild:SetHeight(math.abs(yOffset) + 20)
+end
+
+local function SkinEquipmentManagerPane()
+    CreateEquipmentManagerOverlay()
+    UpdateEquipmentManagerOverlay()
+    
+    -- Register for equipment set changes
+    if not CharacterFrame.equipmentSetEventRegistered then
+        CharacterFrame:RegisterEvent("EQUIPMENT_SETS_CHANGED")
+        CharacterFrame:RegisterEvent("EQUIPMENT_SWAP_FINISHED")
+        CharacterFrame:HookScript("OnEvent", function(self, event)
+            if event == "EQUIPMENT_SETS_CHANGED" or event == "EQUIPMENT_SWAP_FINISHED" then
+                UpdateEquipmentManagerOverlay()
+            end
+        end)
+        CharacterFrame.equipmentSetEventRegistered = true
+    end
+end
+
+---------------------------------------------------------------------------
 -- MAIN SKIN APPLICATION
 ---------------------------------------------------------------------------
 
@@ -1726,6 +1909,7 @@ function CharacterPane:ApplySkin()
     SkinCharacterTabs()
     SkinStatsPane()
     SkinTitlesPane()
+    SkinEquipmentManagerPane()
     
     -- Re-skin tabs after a delay to catch any late-loading sidebar tabs
     C_Timer.After(0.2, function()
