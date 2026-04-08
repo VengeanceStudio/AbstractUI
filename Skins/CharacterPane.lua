@@ -1531,6 +1531,16 @@ local function SkinStatsPane()
                 
                 -- Refresh titles list when Titles tab is clicked
                 if tabNumber == 2 and titlesOverlay then
+                    -- Hide any Blizzard scroll frames in CharacterFrameInsetRight
+                    if CharacterFrameInsetRight then
+                        local children = {CharacterFrameInsetRight:GetChildren()}
+                        for _, child in ipairs(children) do
+                            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay then
+                                child:Hide()
+                                child:SetAlpha(0)
+                            end
+                        end
+                    end
                     UpdateTitlesOverlay()
                 end
             end)
@@ -1557,22 +1567,40 @@ end
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
     
-    -- Hide Blizzard's titles scroll frame - try multiple possible names
-    local blizzTitles = PaperDollFrame and PaperDollFrame.TitlesPane
-    if blizzTitles then
-        blizzTitles:Hide()
-        blizzTitles:SetAlpha(0)
+    -- Hide Blizzard's titles scroll frame - comprehensive search
+    -- Try all known possible frame names
+    local framesToHide = {
+        PaperDollFrame and PaperDollFrame.TitlesPane,
+        _G["PaperDollTitlesPane"],
+        _G["CharacterFrameTitlePane"],
+        CharacterFrameInsetRight and CharacterFrameInsetRight.TitlesPane,
+    }
+    
+    for _, frame in ipairs(framesToHide) do
+        if frame then
+            frame:Hide()
+            frame:SetAlpha(0)
+            -- Also hide all children
+            local children = {frame:GetChildren()}
+            for _, child in ipairs(children) do
+                if child then
+                    child:Hide()
+                    child:SetAlpha(0)
+                end
+            end
+        end
     end
     
-    -- Also try global frame names
-    if _G["PaperDollTitlesPane"] then
-        _G["PaperDollTitlesPane"]:Hide()
-        _G["PaperDollTitlesPane"]:SetAlpha(0)
-    end
-    
-    if _G["CharacterFrameTitlePane"] then
-        _G["CharacterFrameTitlePane"]:Hide()
-        _G["CharacterFrameTitlePane"]:SetAlpha(0)
+    -- Also search CharacterFrameInsetRight for any ScrollFrame children
+    if CharacterFrameInsetRight then
+        local children = {CharacterFrameInsetRight:GetChildren()}
+        for _, child in ipairs(children) do
+            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay then
+                -- This is likely Blizzard's titles scroll frame, hide it
+                child:Hide()
+                child:SetAlpha(0)
+            end
+        end
     end
     
     -- Create our custom titles overlay frame
