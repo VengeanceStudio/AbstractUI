@@ -2042,29 +2042,51 @@ local function ShowEquipmentSetContextMenu(setID, anchorFrame)
             -- Store the setID for the save callback
             GearManagerPopupFrame.selectedSetID = setID
             
-            -- Override the okay button to save to our equipment set
-            if not GearManagerPopupFrame.AbstractUI_OriginalOkay then
-                GearManagerPopupFrame.AbstractUI_OriginalOkay = GearManagerPopupFrame.okay:GetScript("OnClick")
+            -- Hook the save functionality if we haven't already
+            if not GearManagerPopupFrame.AbstractUI_Hooked then
+                -- Find buttons by iterating children
+                local okayButton, cancelButton
+                for i = 1, GearManagerPopupFrame:GetNumChildren() do
+                    local child = select(i, GearManagerPopupFrame:GetChildren())
+                    if child.GetObjectType and child:GetObjectType() == "Button" then
+                        local text = child:GetText()
+                        if text == OKAY or text == ACCEPT or text == SAVE then
+                            okayButton = child
+                        elseif text == CANCEL then
+                            cancelButton = child
+                        end
+                    end
+                end
+                
+                if okayButton then
+                    GearManagerPopupFrame.AbstractUI_OriginalOkay = okayButton:GetScript("OnClick")
+                    
+                    okayButton:SetScript("OnClick", function(self)
+                        local editBox = GearManagerPopupFrame.editBox or GearManagerPopupFrame.name
+                        local newName = editBox and editBox:GetText()
+                        local newIcon = GearManagerPopupFrame.selectedIconTexture or GearManagerPopupFrame.selectedIcon
+                        
+                        if newName and newName ~= "" and GearManagerPopupFrame.selectedSetID then
+                            C_EquipmentSet.ModifyEquipmentSet(GearManagerPopupFrame.selectedSetID, newName, newIcon or 134400)
+                            UpdateEquipmentManagerOverlay()
+                        end
+                        GearManagerPopupFrame:Hide()
+                    end)
+                    
+                    GearManagerPopupFrame.AbstractUI_Hooked = true
+                end
             end
             
-            GearManagerPopupFrame.okay:SetScript("OnClick", function(self)
-                local newName = GearManagerPopupFrame.name:GetText()
-                local newIcon = GearManagerPopupFrame.selectedIconTexture
-                if newName and newName ~= "" and GearManagerPopupFrame.selectedSetID then
-                    C_EquipmentSet.ModifyEquipmentSet(GearManagerPopupFrame.selectedSetID, newName, newIcon or 134400)
-                    UpdateEquipmentManagerOverlay()
-                end
-                GearManagerPopupFrame:Hide()
-            end)
-            
             -- Set initial values
-            if GearManagerPopupFrame.name then
-                GearManagerPopupFrame.name:SetText(name or "")
-                GearManagerPopupFrame.name:SetFocus()
-                GearManagerPopupFrame.name:HighlightText()
+            local editBox = GearManagerPopupFrame.editBox or GearManagerPopupFrame.name
+            if editBox then
+                editBox:SetText(name or "")
+                editBox:SetFocus()
+                editBox:HighlightText()
             end
             
             GearManagerPopupFrame.selectedIconTexture = icon
+            GearManagerPopupFrame.selectedIcon = icon
             GearManagerPopupFrame:Show()
         else
             -- Fall back to simple rename dialog
