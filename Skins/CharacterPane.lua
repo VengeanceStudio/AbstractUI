@@ -1763,6 +1763,86 @@ local function CreateEquipmentManagerOverlay()
         PaperDollFrame.EquipmentManagerPane:Hide()
     end
     
+    -- Define StaticPopup dialogs
+    if not StaticPopupDialogs["ABSTRACTUI_CREATE_EQUIPMENT_SET"] then
+        StaticPopupDialogs["ABSTRACTUI_CREATE_EQUIPMENT_SET"] = {
+            text = "Enter a name for your equipment set:",
+            button1 = "Create",
+            button2 = "Cancel",
+            hasEditBox = true,
+            maxLetters = 31,
+            OnAccept = function(self)
+                local name = self.EditBox:GetText()
+                if name and name ~= "" then
+                    local icon = GetInventoryItemTexture("player", 1) or 134400
+                    C_EquipmentSet.CreateEquipmentSet(name, icon)
+                    UpdateEquipmentManagerOverlay()
+                end
+            end,
+            EditBoxOnEnterPressed = function(self)
+                local name = self:GetText()
+                if name and name ~= "" then
+                    local icon = GetInventoryItemTexture("player", 1) or 134400
+                    C_EquipmentSet.CreateEquipmentSet(name, icon)
+                    UpdateEquipmentManagerOverlay()
+                end
+                self:GetParent():Hide()
+            end,
+            EditBoxOnEscapePressed = function(self)
+                self:GetParent():Hide()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+    
+    if not StaticPopupDialogs["ABSTRACTUI_RENAME_EQUIPMENT_SET"] then
+        StaticPopupDialogs["ABSTRACTUI_RENAME_EQUIPMENT_SET"] = {
+            text = "Enter a new name for the equipment set:",
+            button1 = "Save",
+            button2 = "Cancel",
+            hasEditBox = true,
+            maxLetters = 31,
+            OnShow = function(self, setID)
+                if setID then
+                    local name = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                    if name then
+                        self.EditBox:SetText(name)
+                        self.EditBox:HighlightText()
+                    end
+                end
+            end,
+            OnAccept = function(self, setID)
+                local name = self.EditBox:GetText()
+                if name and name ~= "" and setID then
+                    local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                    C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
+                    UpdateEquipmentManagerOverlay()
+                end
+            end,
+            EditBoxOnEnterPressed = function(self)
+                local dialog = self:GetParent()
+                local name = self:GetText()
+                local setID = dialog.data
+                if name and name ~= "" and setID then
+                    local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                    C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
+                    UpdateEquipmentManagerOverlay()
+                end
+                dialog:Hide()
+            end,
+            EditBoxOnEscapePressed = function(self)
+                self:GetParent():Hide()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+    
     -- Create our custom equipment manager overlay frame
     if not equipmentOverlay then
         -- Main container
@@ -1863,84 +1943,6 @@ local function CreateEquipmentManagerOverlay()
             self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
         end)
         newButton:SetScript("OnClick", function()
-            -- Create a custom popup dialog for naming the equipment set
-            StaticPopupDialogs["ABSTRACTUI_CREATE_EQUIPMENT_SET"] = {
-                text = "Enter a name for your equipment set:",
-                button1 = "Create",
-                button2 = "Cancel",
-                hasEditBox = true,
-                maxLetters = 31,
-                OnAccept = function(self)
-                    local name = self.EditBox:GetText()
-                    if name and name ~= "" then
-                        -- Create the equipment set with current gear
-                        local icon = GetInventoryItemTexture("player", 1) or 134400  -- Use head slot icon or default
-                        C_EquipmentSet.CreateEquipmentSet(name, icon)
-                        UpdateEquipmentManagerOverlay()
-                    end
-                end,
-                EditBoxOnEnterPressed = function(self)
-                    local name = self:GetText()
-                    if name and name ~= "" then
-                        local icon = GetInventoryItemTexture("player", 1) or 134400
-                        C_EquipmentSet.CreateEquipmentSet(name, icon)
-                        UpdateEquipmentManagerOverlay()
-                    end
-                    self:GetParent():Hide()
-                end,
-                EditBoxOnEscapePressed = function(self)
-                    self:GetParent():Hide()
-                end,
-                timeout = 0,
-                whileDead = true,
-                hideOnEscape = true,
-                preferredIndex = 3,
-            }
-            
-            -- Rename equipment set dialog
-            StaticPopupDialogs["ABSTRACTUI_RENAME_EQUIPMENT_SET"] = {
-                text = "Enter a new name for the equipment set:",
-                button1 = "Save",
-                button2 = "Cancel",
-                hasEditBox = true,
-                maxLetters = 31,
-                OnShow = function(self, setID)
-                    if setID then
-                        local name = C_EquipmentSet.GetEquipmentSetInfo(setID)
-                        if name then
-                            self.EditBox:SetText(name)
-                            self.EditBox:HighlightText()
-                        end
-                    end
-                end,
-                OnAccept = function(self, setID)
-                    local name = self.EditBox:GetText()
-                    if name and name ~= "" and setID then
-                        local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
-                        C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
-                        UpdateEquipmentManagerOverlay()
-                    end
-                end,
-                EditBoxOnEnterPressed = function(self)
-                    local dialog = self:GetParent()
-                    local name = self:GetText()
-                    local setID = dialog.data
-                    if name and name ~= "" and setID then
-                        local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
-                        C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
-                        UpdateEquipmentManagerOverlay()
-                    end
-                    dialog:Hide()
-                end,
-                EditBoxOnEscapePressed = function(self)
-                    self:GetParent():Hide()
-                end,
-                timeout = 0,
-                whileDead = true,
-                hideOnEscape = true,
-                preferredIndex = 3,
-            }
-            
             StaticPopup_Show("ABSTRACTUI_CREATE_EQUIPMENT_SET")
         end)
         container.newButton = newButton
