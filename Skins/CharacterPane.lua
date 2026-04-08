@@ -1517,6 +1517,11 @@ local function SkinStatsPane()
             tab:HookScript("OnClick", function(self)
                 selectedSidebarTab = tabNumber
                 UpdateStatsOverlayVisibility()
+                
+                -- Refresh titles list when Titles tab is clicked
+                if tabNumber == 2 and titlesOverlay then
+                    UpdateTitlesOverlay()
+                end
             end)
             tab._abstractStatsHooked = true
         end
@@ -1656,17 +1661,6 @@ end
 local function SkinTitlesPane()
     CreateTitlesOverlay()
     UpdateTitlesOverlay()
-    
-    -- Update when titles change
-    if not CharacterFrame._titlesUpdateHooked then
-        CharacterFrame:RegisterEvent("PLAYER_TITLE_UPDATE")
-        CharacterFrame:HookScript("OnEvent", function(self, event)
-            if event == "PLAYER_TITLE_UPDATE" then
-                UpdateTitlesOverlay()
-            end
-        end)
-        CharacterFrame._titlesUpdateHooked = true
-    end
 end
 
 ---------------------------------------------------------------------------
