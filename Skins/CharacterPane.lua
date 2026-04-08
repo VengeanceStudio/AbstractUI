@@ -1016,7 +1016,6 @@ local function SkinCharacterTabs()
                     -- Create backdrop frame
                     if not tab.backdrop then
                         local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
-                        backdrop:SetAllPoints()
                         backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
                         backdrop:SetBackdrop({
                             bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -1028,13 +1027,18 @@ local function SkinCharacterTabs()
                         tab.backdrop = backdrop
                     end
                     
+                    -- Position backdrop with same offset as icon (20px to the right)
+                    tab.backdrop:ClearAllPoints()
+                    tab.backdrop:SetPoint("TOPLEFT", tab, "TOPLEFT", 20, 0)
+                    tab.backdrop:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 20, 0)
+                    
                     -- Style icon - ensure it's visible but DON'T modify texture coords (breaks atlas)
                     if tab.Icon then
                         tab.Icon:Show()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetDrawLayer("ARTWORK")
                         
-                        -- Move icon 10px to the right
+                        -- Move icon 20px to the right
                         tab.Icon:ClearAllPoints()
                         tab.Icon:SetPoint("CENTER", tab, "CENTER", 20, 0)
                     end
@@ -1043,6 +1047,11 @@ local function SkinCharacterTabs()
                     if tab.Highlight then
                         tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
                         tab.Highlight:SetDrawLayer("HIGHLIGHT")
+                        
+                        -- Position highlight with same offset as icon and backdrop
+                        tab.Highlight:ClearAllPoints()
+                        tab.Highlight:SetPoint("TOPLEFT", tab, "TOPLEFT", 20, 0)
+                        tab.Highlight:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 20, 0)
                     end
                     
                     tab._abstractSkinned = true
