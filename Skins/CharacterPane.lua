@@ -939,9 +939,14 @@ UpdateStatsOverlayVisibility = function()
     -- Show equipment overlay only when Equipment Manager tab (3) is selected
     if equipmentOverlay then
         if selectedSidebarTab == 3 then
+            print("AbstractUI: Showing equipment overlay")
             equipmentOverlay:Show()
         else
             equipmentOverlay:Hide()
+        end
+    else
+        if selectedSidebarTab == 3 then
+            print("AbstractUI: Equipment overlay is nil, cannot show")
         end
     end
     
@@ -1545,6 +1550,7 @@ local function SkinStatsPane()
         if tab and not tab._abstractStatsHooked then
             local tabNumber = i  -- Capture for closure
             tab:HookScript("OnClick", function(self)
+                print("AbstractUI: Tab clicked:", tabNumber)
                 selectedSidebarTab = tabNumber
                 UpdateStatsOverlayVisibility()
                 
@@ -1554,13 +1560,36 @@ local function SkinStatsPane()
                     if CharacterFrameInsetRight then
                         local children = {CharacterFrameInsetRight:GetChildren()}
                         for _, child in ipairs(children) do
-                            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay then
+                            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay and child ~= equipmentOverlay then
                                 child:Hide()
                                 child:SetAlpha(0)
                             end
                         end
                     end
                     UpdateTitlesOverlay()
+                end
+                
+                -- Refresh equipment manager when Equipment Manager tab is clicked
+                if tabNumber == 3 then
+                    -- Create equipment overlay if it doesn't exist yet
+                    if not equipmentOverlay then
+                        CreateEquipmentManagerOverlay()
+                    end
+                    
+                    -- Hide any Blizzard scroll frames in CharacterFrameInsetRight
+                    if CharacterFrameInsetRight then
+                        local children = {CharacterFrameInsetRight:GetChildren()}
+                        for _, child in ipairs(children) do
+                            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay and child ~= equipmentOverlay then
+                                child:Hide()
+                                child:SetAlpha(0)
+                            end
+                        end
+                    end
+                    
+                    if equipmentOverlay then
+                        UpdateEquipmentManagerOverlay()
+                    end
                 end
             end)
             tab._abstractStatsHooked = true
@@ -1753,6 +1782,8 @@ local function CreateEquipmentManagerOverlay()
         -- Storage for equipment set buttons
         equipmentOverlay.buttons = {}
         equipmentOverlay.selectedSetID = nil
+        
+        print("AbstractUI: Created equipment manager overlay")
     end
     
     -- Set initial visibility
