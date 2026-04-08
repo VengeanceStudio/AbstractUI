@@ -1033,6 +1033,10 @@ local function SkinCharacterTabs()
                         tab.Icon:Show()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetDrawLayer("ARTWORK")
+                        
+                        -- Move icon 10px to the right
+                        tab.Icon:ClearAllPoints()
+                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 10, 0)
                     end
                     
                     -- Highlight
