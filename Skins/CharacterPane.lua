@@ -1621,9 +1621,9 @@ UpdateTitlesOverlay = function()
     for i = 1, numTitles do
         local name = GetTitleName(i)
         if name then
-            -- Truncate to 20 characters
-            if string.len(name) > 20 then
-                name = string.sub(name, 1, 17) .. "..."
+            -- Truncate to 25 characters
+            if string.len(name) > 25 then
+                name = string.sub(name, 1, 22) .. "..."
             end
             table.insert(titles, { id = i, name = name, isCurrent = (currentTitle == i) })
         end
