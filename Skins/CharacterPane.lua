@@ -1080,7 +1080,9 @@ local function SkinCharacterTabs()
                     
                     -- Hook tab clicks to manage stats overlay visibility
                     if not tab._abstractClickHooked then
+                        print("Setting up click hook for", tab:GetName())
                         tab:HookScript("OnClick", function(self)
+                            print("Tab clicked:", self:GetName())
                             UpdateStatsOverlayVisibility()
                         end)
                         tab._abstractClickHooked = true
