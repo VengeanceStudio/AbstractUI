@@ -906,15 +906,31 @@ UpdateStatsOverlayVisibility = function()
         return 
     end
     
-    -- Debug: print current state
+    -- Debug: Check tab state
     print("UpdateStatsOverlayVisibility called")
+    local statsTab = _G["PaperDollSidebarTab1"]
+    if statsTab then
+        print("Stats tab:", statsTab:GetName())
+        print("Stats tab isSelected:", statsTab.isSelected)
+        print("Stats tab IsSelected():", statsTab.IsSelected and statsTab:IsSelected() or "no method")
+    end
+    
+    local titlesTab = _G["PaperDollSidebarTab2"]
+    if titlesTab then
+        print("Titles tab isSelected:", titlesTab.isSelected)
+    end
+    
+    local gearTab = _G["PaperDollSidebarTab3"]
+    if gearTab then
+        print("Gear tab isSelected:", gearTab.isSelected)
+    end
+    
     if PaperDollFrame then
         print("PaperDollFrame.selectedSidebarTab:", PaperDollFrame.selectedSidebarTab and PaperDollFrame.selectedSidebarTab:GetName() or "nil")
     end
     
-    -- Check which sidebar tab is selected (Stats is tab 1)
-    local statsTab = _G["PaperDollSidebarTab1"]
-    if statsTab and PaperDollFrame.selectedSidebarTab == statsTab then
+    -- Check if Stats tab is selected (tab 1)
+    if statsTab and statsTab.isSelected then
         print("Showing stats overlay")
         statsOverlay:Show()
     else
