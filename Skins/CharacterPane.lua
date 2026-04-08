@@ -1048,14 +1048,18 @@ local function SkinCharacterTabs()
                         tab.Icon:Show()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetDrawLayer("ARTWORK")
-                        -- No need to reposition icon since the tab frame itself moved
+                        -- Clear any previous positioning and reset to default center position
+                        tab.Icon:ClearAllPoints()
+                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 0, 0)
                     end
                     
                     -- Highlight (no offset needed since tab itself moved)
                     if tab.Highlight then
                         tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
                         tab.Highlight:SetDrawLayer("HIGHLIGHT")
-                        -- Highlight should already be positioned correctly relative to tab
+                        -- Reset to default positioning (fill the entire tab)
+                        tab.Highlight:ClearAllPoints()
+                        tab.Highlight:SetAllPoints(tab)
                     end
                     
                     tab._abstractSkinned = true
