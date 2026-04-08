@@ -893,6 +893,9 @@ end
 -- STATS OVERLAY VISIBILITY MANAGEMENT
 ---------------------------------------------------------------------------
 
+-- Declare statsOverlay at module level so all functions can access it
+local statsOverlay = nil
+
 -- Forward declare function to be used in SkinCharacterTabs
 local UpdateStatsOverlayVisibility
 
@@ -1305,8 +1308,6 @@ end
 ---------------------------------------------------------------------------
 -- CUSTOM STATS PANEL
 ---------------------------------------------------------------------------
-
-local statsOverlay = nil
 
 local function FormatStatValue(value)
     if value >= 1000000 then
