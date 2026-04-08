@@ -1896,6 +1896,51 @@ local function CreateEquipmentManagerOverlay()
                 hideOnEscape = true,
                 preferredIndex = 3,
             }
+            
+            -- Rename equipment set dialog
+            StaticPopupDialogs["ABSTRACTUI_RENAME_EQUIPMENT_SET"] = {
+                text = "Enter a new name for the equipment set:",
+                button1 = "Save",
+                button2 = "Cancel",
+                hasEditBox = true,
+                maxLetters = 31,
+                OnShow = function(self, setID)
+                    if setID then
+                        local name = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                        if name then
+                            self.EditBox:SetText(name)
+                            self.EditBox:HighlightText()
+                        end
+                    end
+                end,
+                OnAccept = function(self, setID)
+                    local name = self.EditBox:GetText()
+                    if name and name ~= "" and setID then
+                        local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                        C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
+                        UpdateEquipmentManagerOverlay()
+                    end
+                end,
+                EditBoxOnEnterPressed = function(self)
+                    local dialog = self:GetParent()
+                    local name = self:GetText()
+                    local setID = dialog.data
+                    if name and name ~= "" and setID then
+                        local _, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+                        C_EquipmentSet.ModifyEquipmentSet(setID, name, currentIcon or 134400)
+                        UpdateEquipmentManagerOverlay()
+                    end
+                    dialog:Hide()
+                end,
+                EditBoxOnEscapePressed = function(self)
+                    self:GetParent():Hide()
+                end,
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+            }
+            
             StaticPopup_Show("ABSTRACTUI_CREATE_EQUIPMENT_SET")
         end)
         container.newButton = newButton
@@ -1924,6 +1969,149 @@ local function CreateEquipmentManagerOverlay()
     else
         equipmentOverlay:Hide()
     end
+end
+
+local function ShowEquipmentSetContextMenu(setID, anchorFrame)
+    -- Create context menu
+    local menu = CreateFrame("Frame", "AbstractUI_EquipmentSetMenu", UIParent, "BackdropTemplate")
+    menu:SetFrameStrata("TOOLTIP")
+    menu:SetSize(200, 1)  -- Height will be set based on items
+    menu:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    menu:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+    menu:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    
+    local menuItems = {}
+    local yOffset = -4
+    
+    -- Helper to create menu item
+    local function CreateMenuItem(text, onClick, isHeader)
+        local item = CreateFrame("Button", nil, menu)
+        item:SetSize(192, isHeader and 16 or 20)
+        item:SetPoint("TOPLEFT", menu, "TOPLEFT", 4, yOffset)
+        
+        local itemText = item:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        itemText:SetPoint("LEFT", item, "LEFT", isHeader and 0 or 10, 0)
+        itemText:SetText(text)
+        itemText:SetJustifyH("LEFT")
+        
+        if isHeader then
+            itemText:SetTextColor(1, 0.82, 0)  -- Gold for headers
+        else
+            itemText:SetTextColor(1, 1, 1)
+            
+            -- Highlight
+            local highlight = item:CreateTexture(nil, "BACKGROUND")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(0.3, 0.3, 0.3, 0.5)
+            highlight:Hide()
+            
+            item:SetScript("OnEnter", function(self)
+                highlight:Show()
+            end)
+            item:SetScript("OnLeave", function(self)
+                highlight:Hide()
+            end)
+            
+            if onClick then
+                item:SetScript("OnClick", function(self)
+                    onClick()
+                    menu:Hide()
+                end)
+            end
+        end
+        
+        table.insert(menuItems, item)
+        yOffset = yOffset - (isHeader and 16 or 20)
+        return item
+    end
+    
+    -- Change Name/Icon
+    CreateMenuItem("Change Name/Icon", function()
+        -- Use Blizzard's built-in dialog if available, or create custom one
+        StaticPopup_Show("ABSTRACTUI_RENAME_EQUIPMENT_SET", nil, nil, setID)
+    end)
+    
+    -- Delete
+    CreateMenuItem("Delete", function()
+        C_EquipmentSet.DeleteEquipmentSet(setID)
+        equipmentOverlay.selectedSetID = nil
+        UpdateEquipmentManagerOverlay()
+    end)
+    
+    -- Assign to Specialization header
+    CreateMenuItem("Assign to Specialization:", nil, true)
+    
+    -- Get character's specializations
+    local numSpecs = GetNumSpecializations()
+    local currentAssignedSpec = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID)
+    
+    for i = 1, numSpecs do
+        local specID, specName = GetSpecializationInfo(i)
+        if specName then
+            local item = CreateMenuItem(specName, function()
+                C_EquipmentSet.AssignSpecToEquipmentSet(setID, i)
+                UpdateEquipmentManagerOverlay()
+            end)
+            
+            -- Add checkmark if this spec is assigned
+            if currentAssignedSpec == i then
+                local check = item:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                check:SetPoint("LEFT", item, "LEFT", 0, 0)
+                check:SetText("✓")
+                check:SetTextColor(0, 1, 0)
+            end
+        end
+    end
+    
+    -- Add "None" option to unassign
+    local noneItem = CreateMenuItem("None", function()
+        C_EquipmentSet.UnassignEquipmentSetSpec(setID)
+        UpdateEquipmentManagerOverlay()
+    end)
+    
+    if not currentAssignedSpec or currentAssignedSpec == 0 then
+        local check = noneItem:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        check:SetPoint("LEFT", noneItem, "LEFT", 0, 0)
+        check:SetText("✓")
+        check:SetTextColor(0, 1, 0)
+    end
+    
+    -- Set final height
+    menu:SetHeight(math.abs(yOffset) + 4)
+    
+    -- Position menu at cursor
+    local x, y = GetCursorPosition()
+    local scale = UIParent:GetEffectiveScale()
+    menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale, y / scale)
+    
+    menu:Show()
+    
+    -- Close menu when clicking elsewhere
+    menu:SetScript("OnHide", function(self)
+        self:SetParent(nil)
+    end)
+    
+    -- Click outside to close
+    local closer = CreateFrame("Frame", nil, UIParent)
+    closer:SetFrameStrata("BACKGROUND")
+    closer:SetAllPoints()
+    closer:EnableMouse(true)
+    closer:SetScript("OnMouseDown", function(self)
+        menu:Hide()
+        self:Hide()
+    end)
+    closer:Show()
+    
+    menu:SetScript("OnHide", function(self)
+        closer:Hide()
+        self:SetParent(nil)
+    end)
 end
 
 UpdateEquipmentManagerOverlay = function()
@@ -2073,11 +2261,16 @@ UpdateEquipmentManagerOverlay = function()
             button:SetBackdropBorderColor(0, 0, 0, 0)  -- Hide border
         end
         
-        -- Click handler to select set
-        button:SetScript("OnClick", function(self)
-            equipmentOverlay.selectedSetID = self.setID
-            UpdateEquipmentManagerOverlay()
+        -- Click handler to select set (left) or show menu (right)
+        button:SetScript("OnClick", function(self, mouseButton)
+            if mouseButton == "LeftButton" then
+                equipmentOverlay.selectedSetID = self.setID
+                UpdateEquipmentManagerOverlay()
+            elseif mouseButton == "RightButton" then
+                ShowEquipmentSetContextMenu(self.setID, self)
+            end
         end)
+        button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         
         button:Show()
         yOffset = yOffset - 26
