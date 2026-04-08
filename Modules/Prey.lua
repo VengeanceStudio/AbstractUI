@@ -62,32 +62,28 @@ function Prey:OnInitialize()
             
             if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and frame.widgetSetID then
                 local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
+                local PREY_WIDGET_TYPE = Enum and Enum.UIWidgetVisualizationType and 
+                                        Enum.UIWidgetVisualizationType.PreyHuntProgress or 31
                 
                 if widgets then
                     print("|cff00ff00Found " .. #widgets .. " widgets in prey frame:|r")
                     for i, widgetInfo in ipairs(widgets) do
                         if widgetInfo and widgetInfo.widgetID then
-                            print("  Widget #" .. i .. " ID: " .. tostring(widgetInfo.widgetID))
+                            print("  Widget #" .. i .. " ID: " .. tostring(widgetInfo.widgetID) .. 
+                                  " Type: " .. tostring(widgetInfo.widgetType))
                             
-                            -- Try to get status bar info
-                            local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
-                            if statusBarInfo then
-                                print("    Type: StatusBar")
-                                print("    barValue: " .. tostring(statusBarInfo.barValue))
-                                print("    barMax: " .. tostring(statusBarInfo.barMax))
-                                print("    barMin: " .. tostring(statusBarInfo.barMin))
-                                if statusBarInfo.barValue and statusBarInfo.barMax and statusBarInfo.barMax > 0 then
-                                    local percent = math.floor((statusBarInfo.barValue / statusBarInfo.barMax) * 100)
-                                    print("    Percentage: " .. percent .. "%")
-                                end
-                            end
-                            
-                            -- Try to get icon/text info
-                            local iconInfo = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(widgetInfo.widgetID)
-                            if iconInfo then
-                                print("    Type: IconAndText")
-                                if iconInfo.text then
-                                    print("    Text: " .. tostring(iconInfo.text))
+                            -- Check if this is a PreyHuntProgress widget
+                            if widgetInfo.widgetType == PREY_WIDGET_TYPE then
+                                if C_UIWidgetManager.GetPreyHuntProgressWidgetVisualizationInfo then
+                                    local preyInfo = C_UIWidgetManager.GetPreyHuntProgressWidgetVisualizationInfo(widgetInfo.widgetID)
+                                    if preyInfo then
+                                        print("    Type: PreyHuntProgress")
+                                        print("    progressState: " .. tostring(preyInfo.progressState))
+                                        local stateNames = { [0] = "Cold (0%)", [1] = "Warm (34%)", [2] = "Hot (67%)", [3] = "Final (100%)" }
+                                        if preyInfo.progressState ~= nil then
+                                            print("    State: " .. (stateNames[preyInfo.progressState] or "Unknown"))
+                                        end
+                                    end
                                 end
                             end
                         end
@@ -238,96 +234,60 @@ function Prey:UpdatePreyPercent()
         return
     end
     
-    local foundWidget = false
-    local hasValidProgress = false
-    local highestPercent = 0
+    local foundPreyWidget = false
     
-    -- Try to get all widgets in the prey frame
-    if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and frame.widgetSetID then
+    -- Use the proper Prey Hunt Progress API
+    if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and 
+       C_UIWidgetManager.GetPreyHuntProgressWidgetVisualizationInfo and frame.widgetSetID then
         local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
         
         if widgets then
-            -- Check for widget 7663 specifically (may indicate completion)
-            for _, widgetInfo in ipairs(widgets) do
-                if widgetInfo and widgetInfo.widgetID == 7663 then
-                    -- Widget 7663 exists but has no status bar data - this indicates completion
-                    percentText:SetText("Prey Found!")
-                    percentText:SetTextColor(1, 0, 0, 1)
-                    percentText:Show()
-                    return
-                end
-            end
+            -- Look for the PreyHuntProgress widget type (31)
+            local PREY_WIDGET_TYPE = Enum and Enum.UIWidgetVisualizationType and 
+                                    Enum.UIWidgetVisualizationType.PreyHuntProgress or 31
             
-            -- Check icon widgets for completion indicator
             for _, widgetInfo in ipairs(widgets) do
-                if widgetInfo and widgetInfo.widgetID then
-                    local iconInfo = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(widgetInfo.widgetID)
-                    if iconInfo and iconInfo.text then
-                        -- Check if the text contains completion indicators
-                        local text = iconInfo.text:lower()
-                        if text:find("found") or text:find("complete") or text:find("captured") then
-                            percentText:SetText("Prey Found!")
-                            percentText:SetTextColor(1, 0, 0, 1)
-                            percentText:Show()
-                            return
-                        end
-                    end
-                end
-            end
-            
-            -- Iterate through all widgets to find the status bar with highest percentage
-            for _, widgetInfo in ipairs(widgets) do
-                if widgetInfo and widgetInfo.widgetID then
-                    local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
+                if widgetInfo and widgetInfo.widgetID and widgetInfo.widgetType == PREY_WIDGET_TYPE then
+                    local preyInfo = C_UIWidgetManager.GetPreyHuntProgressWidgetVisualizationInfo(widgetInfo.widgetID)
                     
-                    if statusBarInfo and statusBarInfo.barValue ~= nil and statusBarInfo.barMax ~= nil and statusBarInfo.barMax > 0 then
-                        preyCount = statusBarInfo.barValue or 0
-                        preyMax = statusBarInfo.barMax or 0
-                        foundWidget = true
-                        hasValidProgress = true
+                    if preyInfo and preyInfo.progressState ~= nil then
+                        foundPreyWidget = true
                         
-                        -- Calculate percentage
-                        local percent = math.floor((preyCount / preyMax) * 100)
+                        -- Map prey states to percentages (matches Preybreaker)
+                        local progressByState = {
+                            [0] = 0,   -- Cold
+                            [1] = 34,  -- Warm
+                            [2] = 67,  -- Hot
+                            [3] = 100, -- Final
+                        }
                         
-                        if percent > highestPercent then
-                            highestPercent = percent
+                        local percent = progressByState[preyInfo.progressState] or 0
+                        
+                        -- Update display
+                        if percent >= 100 then
+                            percentText:SetText("Prey Found!")
+                            percentText:SetTextColor(1, 0, 0, 1) -- Full red
+                        else
+                            percentText:SetText(percent .. "%")
+                            -- Color gradient from grey to red
+                            local ratio = percent / 100
+                            local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
+                            local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                            local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                            percentText:SetTextColor(r, g, b, 1)
                         end
+                        
+                        percentText:Show()
+                        break
                     end
                 end
-            end
-            
-            -- If we found valid progress data, use it
-            if hasValidProgress and highestPercent > 0 then
-                if highestPercent >= 100 then
-                    percentText:SetText("Prey Found!")
-                    percentText:SetTextColor(1, 0, 0, 1)
-                else
-                    percentText:SetText(highestPercent .. "%")
-                    -- Color gradient from grey to red
-                    local ratio = highestPercent / 100
-                    local r = 0.6 + (ratio * 0.4)
-                    local g = 0.6 - (ratio * 0.6)
-                    local b = 0.6 - (ratio * 0.6)
-                    percentText:SetTextColor(r, g, b, 1)
-                end
-                percentText:Show()
-                return
             end
         end
     end
     
-    -- If frame is visible but we found widgets showing 0%, check if it's been long enough to assume completion
-    -- (frame stays visible after blood animation starts when hunt is complete)
-    if foundWidget and highestPercent == 0 then
-        -- All status bars show 0% but frame is visible - assume completion state
-        percentText:SetText("Prey Found!")
-        percentText:SetTextColor(1, 0, 0, 1)
-        percentText:Show()
-    elseif not hasValidProgress then
-        -- No valid progress data at all - also assume completion
-        percentText:SetText("Prey Found!")
-        percentText:SetTextColor(1, 0, 0, 1)
-        percentText:Show()
+    -- Hide if no prey widget found
+    if not foundPreyWidget then
+        percentText:Hide()
     end
 end
 
