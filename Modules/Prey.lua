@@ -55,9 +55,9 @@ function Prey:OnInitialize()
             self:AttachPercentText()
             if percentText then
                 percentText:SetText("100%")
-                percentText:SetTextColor(0, 1, 0, 1)
+                percentText:SetTextColor(1, 0, 0, 1) -- Full red for 100%
                 percentText:Show()
-                print("|cff00ff00Prey:|r Test text '100%' displayed")
+                print("|cff00ff00Prey:|r Test text '100%' displayed in red")
             end
         elseif msg == "frame" then
             local frame = _G["UIWidgetPowerBarContainerFrame"]
@@ -183,14 +183,12 @@ function Prey:UpdatePreyPercent()
             -- Update display
             percentText:SetText(percent .. "%")
             
-            -- Color based on progress
-            if percent >= 100 then
-                percentText:SetTextColor(0, 1, 0, 1) -- Green when complete
-            elseif percent >= 50 then
-                percentText:SetTextColor(1, 0.82, 0, 1) -- Gold when halfway
-            else
-                percentText:SetTextColor(1, 1, 1, 1) -- White
-            end
+            -- Color gradient from grey to red (0% = grey, 100% = full red)
+            local ratio = percent / 100
+            local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
+            local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+            local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+            percentText:SetTextColor(r, g, b, 1)
             
             percentText:Show()
         end
@@ -199,7 +197,7 @@ function Prey:UpdatePreyPercent()
     -- If no widget found, still show 0% rather than hiding
     if not foundWidget then
         percentText:SetText("0%")
-        percentText:SetTextColor(0.5, 0.5, 0.5, 1)
+        percentText:SetTextColor(0.6, 0.6, 0.6, 1) -- Grey for 0%
         percentText:Show()
     end
 end
@@ -363,7 +361,7 @@ function Prey:GetOptions()
                 order = 10,
             },
             description = {
-                name = "The Prey tracking icon appears during active Prey events. This module allows you to drag it and displays a percentage (1-100%) below the icon showing your hunt progress.",
+                name = "The Prey tracking icon appears during active Prey events. This module allows you to drag it and displays a percentage (1-100%) below the icon showing your hunt progress.\n\nThe percentage text transitions from grey (0%) to red (100%) to match Blizzard's styling.",
                 type = "description",
                 order = 11,
             },
