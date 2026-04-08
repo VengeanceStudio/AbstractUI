@@ -135,6 +135,12 @@ function Prey:OnEnable()
         oldTracker:Hide()
     end
     
+    -- Check initial state and hide text if prey frame is not visible
+    local preyFrame = _G["UIWidgetPowerBarContainerFrame"]
+    if percentText and (not preyFrame or not preyFrame:IsShown()) then
+        percentText:Hide()
+    end
+    
     -- Register events for tracking prey count
     self:RegisterEvent("UPDATE_UI_WIDGET")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -177,8 +183,21 @@ function Prey:AttachPercentText()
     local frame = _G["UIWidgetPowerBarContainerFrame"]
     if not frame then 
         print("|cffff0000Prey:|r UIWidgetPowerBarContainerFrame not found")
+        -- Hide text if it exists but frame doesn't
+        if percentText then
+            percentText:Hide()
+        end
         return 
     end
+    
+    -- Hide text if frame exists but is not shown
+    if not frame:IsShown() then
+        if percentText then
+            percentText:Hide()
+        end
+        return
+    end
+    
     if not self.db.profile.showPercent then return end
     
     -- Create percent text if it doesn't exist
