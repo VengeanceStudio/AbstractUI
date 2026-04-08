@@ -1655,6 +1655,7 @@ UpdateTitlesOverlay = function()
         
         button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
         button.text:SetText(titleData.name)
+        button.titleID = titleData.id  -- Store the ID on the button
         
         -- Highlight current title
         if titleData.isCurrent then
@@ -1665,7 +1666,7 @@ UpdateTitlesOverlay = function()
         
         -- Click handler
         button:SetScript("OnClick", function(self)
-            SetCurrentTitle(titleData.id)
+            SetCurrentTitle(self.titleID)
             UpdateTitlesOverlay()
         end)
         
