@@ -1050,10 +1050,31 @@ local function SkinCharacterTabs()
                     -- Extend the tab's hit area 15px to the right to include the visual offset
                     tab:SetHitRectInsets(0, -15, 0, 0)
                     
+                    -- Hook tab clicks to manage stats overlay visibility
+                    if not tab._abstractClickHooked then
+                        tab:HookScript("OnClick", function(self)
+                            UpdateStatsOverlayVisibility()
+                        end)
+                        tab._abstractClickHooked = true
+                    end
+                    
                     tab._abstractSkinned = true
                 end
             end
         end
+    end
+end
+
+-- Function to update stats overlay visibility based on selected tab
+local function UpdateStatsOverlayVisibility()
+    if not statsOverlay then return end
+    
+    -- Check which sidebar tab is selected (Stats is tab 1)
+    local statsTab = _G["PaperDollSidebarTab1"]
+    if statsTab and PaperDollFrame.selectedSidebarTab == statsTab then
+        statsOverlay:Show()
+    else
+        statsOverlay:Hide()
     end
 end
 
@@ -1378,7 +1399,8 @@ local function CreateStatsOverlay()
         y = CreateStatLine("Speed", "speed", y)
     end
     
-    statsOverlay:Show()
+    -- Set initial visibility based on selected tab
+    UpdateStatsOverlayVisibility()
 end
 
 local function UpdateStatsOverlay()
@@ -1477,7 +1499,10 @@ local function SkinStatsPane()
     -- Update when character frame is shown
     if not CharacterFrame._statsUpdateHooked then
         CharacterFrame:HookScript("OnShow", function()
-            C_Timer.After(0.1, UpdateStatsOverlay)
+            C_Timer.After(0.1, function()
+                UpdateStatsOverlay()
+                UpdateStatsOverlayVisibility()
+            end)
         end)
         CharacterFrame._statsUpdateHooked = true
     end
