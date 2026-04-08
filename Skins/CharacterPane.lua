@@ -1769,7 +1769,7 @@ local function CreateEquipmentManagerOverlay()
         
         -- Equip button
         local equipButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-        equipButton:SetSize(80, 22)
+        equipButton:SetSize(48, 22)
         equipButton:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
         equipButton:SetText("Equip")
         equipButton:SetScript("OnClick", function()
@@ -1784,7 +1784,7 @@ local function CreateEquipmentManagerOverlay()
         
         -- Save button
         local saveButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-        saveButton:SetSize(80, 22)
+        saveButton:SetSize(48, 22)
         saveButton:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 0)
         saveButton:SetText("Save")
         saveButton:SetScript("OnClick", function()
