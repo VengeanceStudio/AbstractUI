@@ -1027,10 +1027,10 @@ local function SkinCharacterTabs()
                         tab.backdrop = backdrop
                     end
                     
-                    -- Position backdrop with same offset as icon (20px to the right)
+                    -- Position backdrop with same offset as icon (15px to the right)
                     tab.backdrop:ClearAllPoints()
-                    tab.backdrop:SetPoint("TOPLEFT", tab, "TOPLEFT", 20, 0)
-                    tab.backdrop:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 20, 0)
+                    tab.backdrop:SetPoint("TOPLEFT", tab, "TOPLEFT", 15, 0)
+                    tab.backdrop:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 15, 0)
                     
                     -- Style icon - ensure it's visible but DON'T modify texture coords (breaks atlas)
                     if tab.Icon then
@@ -1038,9 +1038,9 @@ local function SkinCharacterTabs()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetDrawLayer("ARTWORK")
                         
-                        -- Move icon 20px to the right
+                        -- Move icon 15px to the right
                         tab.Icon:ClearAllPoints()
-                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 20, 0)
+                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 15, 0)
                     end
                     
                     -- Highlight
@@ -1050,8 +1050,8 @@ local function SkinCharacterTabs()
                         
                         -- Position highlight with same offset as icon and backdrop
                         tab.Highlight:ClearAllPoints()
-                        tab.Highlight:SetPoint("TOPLEFT", tab, "TOPLEFT", 20, 0)
-                        tab.Highlight:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 20, 0)
+                        tab.Highlight:SetPoint("TOPLEFT", tab, "TOPLEFT", 15, 0)
+                        tab.Highlight:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 15, 0)
                     end
                     
                     tab._abstractSkinned = true
