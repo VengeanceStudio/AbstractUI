@@ -906,35 +906,29 @@ UpdateStatsOverlayVisibility = function()
         return 
     end
     
-    -- Debug: Check tab state
-    print("UpdateStatsOverlayVisibility called")
-    local statsTab = _G["PaperDollSidebarTab1"]
-    if statsTab then
-        print("Stats tab:", statsTab:GetName())
-        print("Stats tab isSelected:", statsTab.isSelected)
-        print("Stats tab IsSelected():", statsTab.IsSelected and statsTab:IsSelected() or "no method")
+    -- Check which content pane is visible to determine selected tab
+    -- Stats pane (tab 1) = CharacterStatsPane
+    -- Titles pane (tab 2) = PaperDollTitlesPane  
+    -- Equipment Manager (tab 3) = PaperDollEquipmentManagerPane
+    
+    local showStats = false
+    
+    -- Check if titles or equipment manager panes are visible
+    if PaperDollTitlesPane and PaperDollTitlesPane:IsShown() then
+        print("Titles pane is shown - hiding stats")
+        showStats = false
+    elseif PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() then
+        print("Equipment Manager pane is shown - hiding stats")
+        showStats = false
+    else
+        -- Default to showing stats (Stats tab is selected)
+        print("Stats tab active - showing stats")
+        showStats = true
     end
     
-    local titlesTab = _G["PaperDollSidebarTab2"]
-    if titlesTab then
-        print("Titles tab isSelected:", titlesTab.isSelected)
-    end
-    
-    local gearTab = _G["PaperDollSidebarTab3"]
-    if gearTab then
-        print("Gear tab isSelected:", gearTab.isSelected)
-    end
-    
-    if PaperDollFrame then
-        print("PaperDollFrame.selectedSidebarTab:", PaperDollFrame.selectedSidebarTab and PaperDollFrame.selectedSidebarTab:GetName() or "nil")
-    end
-    
-    -- Check if Stats tab is selected (tab 1)
-    if statsTab and statsTab.isSelected then
-        print("Showing stats overlay")
+    if showStats then
         statsOverlay:Show()
     else
-        print("Hiding stats overlay")
         statsOverlay:Hide()
     end
 end
