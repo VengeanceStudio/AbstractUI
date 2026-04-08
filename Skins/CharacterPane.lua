@@ -934,13 +934,9 @@ UpdateStatsOverlayVisibility = function()
         end
     end
     
-    -- Hide Blizzard's TitleManagerPane when our custom Titles tab is selected
+    -- Always hide Blizzard's TitleManagerPane (we use our custom titles overlay instead)
     if PaperDollFrame and PaperDollFrame.TitleManagerPane then
-        if selectedSidebarTab == 2 then
-            PaperDollFrame.TitleManagerPane:Hide()
-        else
-            PaperDollFrame.TitleManagerPane:Show()
-        end
+        PaperDollFrame.TitleManagerPane:Hide()
     end
 end
 
@@ -1575,6 +1571,11 @@ end
 
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
+    
+    -- Always hide Blizzard's TitleManagerPane
+    if PaperDollFrame and PaperDollFrame.TitleManagerPane then
+        PaperDollFrame.TitleManagerPane:Hide()
+    end
     
     -- Create our custom titles overlay frame
     if not titlesOverlay then
