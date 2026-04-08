@@ -395,6 +395,16 @@ local function StripBlizzardTextures()
             end
         end
     end
+    
+    -- Hide Blizzard's titles pane completely
+    if PaperDollFrame and PaperDollFrame.TitlesPane then
+        PaperDollFrame.TitlesPane:Hide()
+        PaperDollFrame.TitlesPane:SetAlpha(0)
+    end
+    if _G["PaperDollTitlesPane"] then
+        _G["PaperDollTitlesPane"]:Hide()
+        _G["PaperDollTitlesPane"]:SetAlpha(0)
+    end
 
 end
 
@@ -1547,11 +1557,22 @@ end
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
     
-    -- Hide Blizzard's titles scroll frame
-    local blizzTitles = _G["PaperDollFrame"] and _G["PaperDollFrame"].TitlesPane
+    -- Hide Blizzard's titles scroll frame - try multiple possible names
+    local blizzTitles = PaperDollFrame and PaperDollFrame.TitlesPane
     if blizzTitles then
         blizzTitles:Hide()
         blizzTitles:SetAlpha(0)
+    end
+    
+    -- Also try global frame names
+    if _G["PaperDollTitlesPane"] then
+        _G["PaperDollTitlesPane"]:Hide()
+        _G["PaperDollTitlesPane"]:SetAlpha(0)
+    end
+    
+    if _G["CharacterFrameTitlePane"] then
+        _G["CharacterFrameTitlePane"]:Hide()
+        _G["CharacterFrameTitlePane"]:SetAlpha(0)
     end
     
     -- Create our custom titles overlay frame
