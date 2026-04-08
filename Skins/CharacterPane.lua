@@ -1768,10 +1768,29 @@ local function CreateEquipmentManagerOverlay()
         container:SetWidth(170)
         
         -- Equip button
-        local equipButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+        local equipButton = CreateFrame("Button", nil, container, "BackdropTemplate")
         equipButton:SetSize(48, 22)
         equipButton:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
-        equipButton:SetText("Equip")
+        equipButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        equipButton:SetBackdropColor(GetCurrentColor("button-bg"))
+        equipButton:SetBackdropBorderColor(GetCurrentColor("accent-primary"))
+        local equipText = equipButton:CreateFontString(nil, "OVERLAY")
+        equipText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        equipText:SetText("Equip")
+        equipText:SetPoint("CENTER")
+        equipText:SetTextColor(GetCurrentColor("text-primary"))
+        equipButton:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(GetCurrentColor("button-hover"))
+        end)
+        equipButton:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(GetCurrentColor("button-bg"))
+        end)
         equipButton:SetScript("OnClick", function()
             if container.selectedSetID then
                 C_EquipmentSet.UseEquipmentSet(container.selectedSetID)
@@ -1783,10 +1802,29 @@ local function CreateEquipmentManagerOverlay()
         container.equipButton = equipButton
         
         -- Save button
-        local saveButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+        local saveButton = CreateFrame("Button", nil, container, "BackdropTemplate")
         saveButton:SetSize(48, 22)
         saveButton:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 0)
-        saveButton:SetText("Save")
+        saveButton:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            tile = false,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        saveButton:SetBackdropColor(GetCurrentColor("button-bg"))
+        saveButton:SetBackdropBorderColor(GetCurrentColor("accent-primary"))
+        local saveText = saveButton:CreateFontString(nil, "OVERLAY")
+        saveText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+        saveText:SetText("Save")
+        saveText:SetPoint("CENTER")
+        saveText:SetTextColor(GetCurrentColor("text-primary"))
+        saveButton:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(GetCurrentColor("button-hover"))
+        end)
+        saveButton:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(GetCurrentColor("button-bg"))
+        end)
         saveButton:SetScript("OnClick", function()
             if container.selectedSetID then
                 C_EquipmentSet.SaveEquipmentSet(container.selectedSetID)
