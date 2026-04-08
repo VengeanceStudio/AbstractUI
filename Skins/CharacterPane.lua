@@ -2035,8 +2035,41 @@ local function ShowEquipmentSetContextMenu(setID, anchorFrame)
     
     -- Change Name/Icon
     CreateMenuItem("Change Name/Icon", function()
-        -- Use Blizzard's built-in dialog if available, or create custom one
-        StaticPopup_Show("ABSTRACTUI_RENAME_EQUIPMENT_SET", nil, nil, setID)
+        -- Use Blizzard's GearManagerPopupFrame for icon selection
+        if GearManagerPopupFrame then
+            local name, icon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+            
+            -- Store the setID for the save callback
+            GearManagerPopupFrame.selectedSetID = setID
+            
+            -- Override the okay button to save to our equipment set
+            if not GearManagerPopupFrame.AbstractUI_OriginalOkay then
+                GearManagerPopupFrame.AbstractUI_OriginalOkay = GearManagerPopupFrame.okay:GetScript("OnClick")
+            end
+            
+            GearManagerPopupFrame.okay:SetScript("OnClick", function(self)
+                local newName = GearManagerPopupFrame.name:GetText()
+                local newIcon = GearManagerPopupFrame.selectedIconTexture
+                if newName and newName ~= "" and GearManagerPopupFrame.selectedSetID then
+                    C_EquipmentSet.ModifyEquipmentSet(GearManagerPopupFrame.selectedSetID, newName, newIcon or 134400)
+                    UpdateEquipmentManagerOverlay()
+                end
+                GearManagerPopupFrame:Hide()
+            end)
+            
+            -- Set initial values
+            if GearManagerPopupFrame.name then
+                GearManagerPopupFrame.name:SetText(name or "")
+                GearManagerPopupFrame.name:SetFocus()
+                GearManagerPopupFrame.name:HighlightText()
+            end
+            
+            GearManagerPopupFrame.selectedIconTexture = icon
+            GearManagerPopupFrame:Show()
+        else
+            -- Fall back to simple rename dialog
+            StaticPopup_Show("ABSTRACTUI_RENAME_EQUIPMENT_SET", nil, nil, setID)
+        end
     end)
     
     -- Delete
