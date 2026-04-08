@@ -1842,14 +1842,18 @@ local function CreateEquipmentManagerOverlay()
         scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0)
         scrollFrame:Show()  -- Explicitly show the frame
         
+        -- Force scrollbar to always be visible
+        if scrollFrame.scrollbar then
+            scrollFrame.scrollbar:Show()
+            -- Adjust scrollArea to account for scrollbar
+            scrollFrame.scrollArea:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", -20, 0)
+        end
+        
         -- Get scroll child
         local scrollChild = scrollFrame:GetScrollChild()
         scrollChild:SetWidth(145)
         scrollChild:SetHeight(1)
         scrollChild:Show()  -- Explicitly show the scroll child
-        
-        print("AbstractUI: Created scrollFrame, scrollArea:", scrollFrame.scrollArea and "exists" or "nil")
-        print("AbstractUI: scrollChild size:", scrollChild:GetWidth(), scrollChild:GetHeight())
         
         container.scrollFrame = scrollFrame
         container.scrollChild = scrollChild
@@ -1869,25 +1873,19 @@ end
 
 UpdateEquipmentManagerOverlay = function()
     if not equipmentOverlay or not equipmentOverlay.scrollChild then 
-        print("AbstractUI: equipmentOverlay or scrollChild is nil")
         return 
     end
     
     local scrollChild = equipmentOverlay.scrollChild
     local buttons = equipmentOverlay.buttons
     
-    print("AbstractUI: Updating equipment manager overlay")
-    
     -- Get equipment sets
     local sets = {}
     local setIDs = C_EquipmentSet.GetEquipmentSetIDs()
     
-    print("AbstractUI: Found", #setIDs, "equipment sets")
-    
     for _, setID in ipairs(setIDs) do
         local name, iconTexture, setID, isEquipped, numItems, numEquipped, numInventory, numMissing = C_EquipmentSet.GetEquipmentSetInfo(setID)
         if name then
-            print("AbstractUI: Set:", name)
             -- Truncate to 25 characters for display
             local displayName = name
             if string.len(name) > 25 then
@@ -2015,9 +2013,10 @@ UpdateEquipmentManagerOverlay = function()
     -- Update scroll child height
     scrollChild:SetHeight(math.abs(yOffset) + 20)
     
-    print("AbstractUI: Created", #sets, "buttons, scrollChild height:", scrollChild:GetHeight())
-    print("AbstractUI: scrollFrame visible:", equipmentOverlay.scrollFrame:IsVisible())
-    print("AbstractUI: scrollChild visible:", scrollChild:IsVisible())
+    -- Force scrollbar to stay visible
+    if equipmentOverlay.scrollFrame and equipmentOverlay.scrollFrame.scrollbar then
+        equipmentOverlay.scrollFrame.scrollbar:Show()
+    end
     
     -- Update scrollbar visibility
     if equipmentOverlay.scrollFrame and equipmentOverlay.scrollFrame.UpdateScroll then
