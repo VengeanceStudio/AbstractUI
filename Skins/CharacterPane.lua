@@ -1582,8 +1582,11 @@ local function SkinStatsPane()
                         end
                     end
                     
+                    -- Delay update to allow scroll frame to initialize
                     if equipmentOverlay then
-                        UpdateEquipmentManagerOverlay()
+                        C_Timer.After(0, function()
+                            UpdateEquipmentManagerOverlay()
+                        end)
                     end
                 end
             end)
@@ -2012,7 +2015,11 @@ end
 
 local function SkinEquipmentManagerPane()
     CreateEquipmentManagerOverlay()
-    UpdateEquipmentManagerOverlay()
+    
+    -- Delay the initial update to allow scroll frame to initialize
+    C_Timer.After(0.1, function()
+        UpdateEquipmentManagerOverlay()
+    end)
     
     -- Register for equipment set changes
     if not CharacterFrame.equipmentSetEventRegistered then
