@@ -911,6 +911,10 @@ UpdateStatsOverlayVisibility = function()
     -- Titles pane (tab 2) = PaperDollTitlesPane  
     -- Equipment Manager (tab 3) = PaperDollEquipmentManagerPane
     
+    print("Checking panes:")
+    print("  PaperDollTitlesPane:", PaperDollTitlesPane and "exists" or "nil", PaperDollTitlesPane and PaperDollTitlesPane:IsShown() and "SHOWN" or "hidden")
+    print("  PaperDollEquipmentManagerPane:", PaperDollEquipmentManagerPane and "exists" or "nil", PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() and "SHOWN" or "hidden")
+    
     local showStats = false
     
     -- Check if titles or equipment manager panes are visible
