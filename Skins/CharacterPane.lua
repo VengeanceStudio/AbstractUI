@@ -1611,21 +1611,22 @@ UpdateTitlesOverlay = function()
     
     -- Get player titles
     local titles = {}
-    local numTitles = GetNumTitles()
     local currentTitle = GetCurrentTitle()
     
     -- Add "No Title" option
     table.insert(titles, { id = -1, name = "No Title", isCurrent = (currentTitle == -1 or currentTitle == 0) })
     
-   -- Add all available titles
-    for i = 1, numTitles do
-        local name = GetTitleName(i)
-        if name then
-            -- Truncate to 25 characters
-            if string.len(name) > 25 then
-                name = string.sub(name, 1, 22) .. "..."
+    -- Iterate through all possible title IDs
+    for titleID = 1, 500 do  -- Check a wide range of possible title IDs
+        if IsTitleKnown(titleID) then
+            local name = GetTitleName(titleID)
+            if name then
+                -- Truncate to 25 characters
+                if string.len(name) > 25 then
+                    name = string.sub(name, 1, 22) .. "..."
+                end
+                table.insert(titles, { id = titleID, name = name, isCurrent = (currentTitle == titleID) })
             end
-            table.insert(titles, { id = i, name = name, isCurrent = (currentTitle == i) })
         end
     end
     
@@ -1666,14 +1667,12 @@ UpdateTitlesOverlay = function()
         
         -- Click handler
         button:SetScript("OnClick", function(self)
-            print("Clicking title ID:", self.titleID)
             if self.titleID == -1 then
                 -- Clear title
                 SetCurrentTitle(0)
             else
                 SetCurrentTitle(self.titleID)
             end
-            print("Current title after set:", GetCurrentTitle())
             UpdateTitlesOverlay()
         end)
         
