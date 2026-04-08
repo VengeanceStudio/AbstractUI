@@ -642,6 +642,9 @@ function MinimapButtons:CollectMinimapButtons()
     
     -- Reset the cached anchor so it recalculates on next expand
     self.buttonBar.collapsedAnchor = nil
+    
+    -- Collapse the bar after collection to ensure it starts hidden
+    self:CollapseButtonBar()
 end
 
 -- -----------------------------------------------------------------------------
