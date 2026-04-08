@@ -222,6 +222,17 @@ delvesObj = LDB:NewDataObject("AbstractDelves", {
     OnLeave = function()
         GameTooltip:Hide()
     end,
+    OnClick = function(self, button)
+        -- Open the Delves Companion Configuration window
+        local companionFrame = _G["DelvesCompanionConfigurationFrame"]
+        if companionFrame then
+            if companionFrame:IsShown() then
+                HideUIPanel(companionFrame)
+            else
+                ShowUIPanel(companionFrame)
+            end
+        end
+    end,
 })
 
 -- Initialize
