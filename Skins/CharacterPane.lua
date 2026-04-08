@@ -1908,7 +1908,7 @@ local function CreateEquipmentManagerOverlay()
         
         -- Get scroll child
         local scrollChild = scrollFrame:GetScrollChild()
-        scrollChild:SetWidth(145)
+        scrollChild:SetWidth(170)  -- Increased from 145 to give more space
         scrollChild:SetHeight(1)
         
         container.scrollFrame = scrollFrame
@@ -1991,7 +1991,7 @@ UpdateEquipmentManagerOverlay = function()
         local button = buttons[i]
         if not button then
             button = CreateFrame("Button", nil, scrollChild, "BackdropTemplate")
-            button:SetSize(145, 24)  -- Fixed width to ensure visibility
+            button:SetSize(170, 24)  -- Increased from 145 to give more space
             button:SetNormalFontObject("GameFontNormalSmall")
             button:SetHighlightFontObject("GameFontHighlightSmall")
             
@@ -2019,7 +2019,7 @@ UpdateEquipmentManagerOverlay = function()
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
             text:SetJustifyH("LEFT")
-            text:SetWidth(115)  -- More space for text than before (was 130 with old scrollbar)
+            text:SetWidth(140)  -- Increased from 115 to accommodate longer names and checkmark
             button.text = text
             
             -- Highlight texture
