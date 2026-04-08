@@ -898,7 +898,10 @@ local UpdateStatsOverlayVisibility
 
 -- Function to update stats overlay visibility based on selected tab
 UpdateStatsOverlayVisibility = function()
-    if not statsOverlay then return end
+    if not statsOverlay then 
+        print("UpdateStatsOverlayVisibility: statsOverlay is nil")
+        return 
+    end
     
     -- Debug: print current state
     print("UpdateStatsOverlayVisibility called")
@@ -1077,16 +1080,6 @@ local function SkinCharacterTabs()
                     
                     -- Extend the tab's hit area 15px to the right to include the visual offset
                     tab:SetHitRectInsets(0, -15, 0, 0)
-                    
-                    -- Hook tab clicks to manage stats overlay visibility
-                    if not tab._abstractClickHooked then
-                        print("Setting up click hook for", tab:GetName())
-                        tab:HookScript("OnClick", function(self)
-                            print("Tab clicked:", self:GetName())
-                            UpdateStatsOverlayVisibility()
-                        end)
-                        tab._abstractClickHooked = true
-                    end
                     
                     tab._abstractSkinned = true
                 end
@@ -1512,6 +1505,19 @@ local function SkinStatsPane()
     -- Create and show our custom overlay
     CreateStatsOverlay()
     UpdateStatsOverlay()
+    
+    -- Now that statsOverlay exists, set up tab click hooks
+    local numTabs = PAPERDOLL_SIDEBARS and #PAPERDOLL_SIDEBARS or 3
+    for i = 1, numTabs do
+        local tab = _G["PaperDollSidebarTab" .. i]
+        if tab and not tab._abstractStatsHooked then
+            tab:HookScript("OnClick", function(self)
+                print("Tab clicked (stats hook):", self:GetName())
+                UpdateStatsOverlayVisibility()
+            end)
+            tab._abstractStatsHooked = true
+        end
+    end
     
     -- Update when character frame is shown
     if not CharacterFrame._statsUpdateHooked then
