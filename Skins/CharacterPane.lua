@@ -1973,6 +1973,198 @@ local function CreateEquipmentManagerOverlay()
     end
 end
 
+local function ShowEquipmentSetEditor(setID)
+    -- Create custom equipment set editor dialog
+    local editor = CreateFrame("Frame", "AbstractUI_EquipmentSetEditor", UIParent, "BackdropTemplate")
+    editor:SetSize(300, 160)
+    editor:SetPoint("CENTER")
+    editor:SetFrameStrata("DIALOG")
+    editor:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    editor:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+    editor:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    editor:EnableMouse(true)
+    editor:SetMovable(true)
+    editor:RegisterForDrag("LeftButton")
+    editor:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    editor:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    
+    -- Title
+    local title = editor:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", editor, "TOP", 0, -10)
+    title:SetText("Edit Equipment Set")
+    title:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Icon display
+    local iconFrame = CreateFrame("Button", nil, editor)
+    iconFrame:SetSize(40, 40)
+    iconFrame:SetPoint("TOPLEFT", editor, "TOPLEFT", 15, -40)
+    
+    local iconTexture = iconFrame:CreateTexture(nil, "ARTWORK")
+    iconTexture:SetAllPoints()
+    editor.iconTexture = iconTexture
+    
+    local iconBorder = iconFrame:CreateTexture(nil, "OVERLAY")
+    iconBorder:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+    iconBorder:SetBlendMode("ADD")
+    iconBorder:SetAllPoints()
+    
+    -- Get current values
+    local currentName, currentIcon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+    editor.selectedIcon = currentIcon or 134400
+    iconTexture:SetTexture(editor.selectedIcon)
+    
+    -- Icon button to select new icon
+    local selectIconBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    selectIconBtn:SetSize(80, 20)
+    selectIconBtn:SetPoint("LEFT", iconFrame, "RIGHT", 5, 0)
+    selectIconBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    selectIconBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    selectIconBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local selectIconText = selectIconBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    selectIconText:SetPoint("CENTER")
+    selectIconText:SetText("Select Icon")
+    selectIconText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    selectIconBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    selectIconBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    selectIconBtn:SetScript("OnClick", function()
+        -- Show Blizzard's GearManagerPopupFrame just for icon selection
+        if GearManagerPopupFrame then
+            GearManagerPopupFrame.AbstractUI_EditorRef = editor
+            GearManagerPopupFrame:Show()
+        end
+    end)
+    
+    -- Name label
+    local nameLabel = editor:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    nameLabel:SetPoint("TOPLEFT", iconFrame, "BOTTOMLEFT", 0, -15)
+    nameLabel:SetText("Name:")
+    nameLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Name edit box
+    local nameBox = CreateFrame("EditBox", nil, editor, "BackdropTemplate")
+    nameBox:SetSize(270, 22)
+    nameBox:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -5)
+    nameBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    nameBox:SetBackdropColor(0.05, 0.05, 0.05, 0.9)
+    nameBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    nameBox:SetFont("Fonts\\FRIZQT__.TTF", 12)
+    nameBox:SetTextColor(1, 1, 1)
+    nameBox:SetAutoFocus(false)
+    nameBox:SetMaxLetters(31)
+    nameBox:SetText(currentName or "")
+    nameBox:SetCursorPosition(0)
+    nameBox:HighlightText()
+    editor.nameBox = nameBox
+    
+    -- Save button
+    local saveBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    saveBtn:SetSize(80, 24)
+    saveBtn:SetPoint("BOTTOMLEFT", editor, "BOTTOMLEFT", 15, 15)
+    saveBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    saveBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    saveBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local saveText = saveBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    saveText:SetPoint("CENTER")
+    saveText:SetText("Save")
+    saveText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    saveBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    saveBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    saveBtn:SetScript("OnClick", function()
+        local newName = nameBox:GetText()
+        if newName and newName ~= "" then
+            C_EquipmentSet.ModifyEquipmentSet(setID, newName, editor.selectedIcon)
+            UpdateEquipmentManagerOverlay()
+        end
+        editor:Hide()
+    end)
+    
+    -- Cancel button
+    local cancelBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    cancelBtn:SetSize(80, 24)
+    cancelBtn:SetPoint("BOTTOMRIGHT", editor, "BOTTOMRIGHT", -15, 15)
+    cancelBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    cancelBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    cancelBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local cancelText = cancelBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    cancelText:SetPoint("CENTER")
+    cancelText:SetText("Cancel")
+    cancelText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    cancelBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    cancelBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    cancelBtn:SetScript("OnClick", function()
+        editor:Hide()
+    end)
+    
+    -- Hook GearManagerPopupFrame if it exists to capture icon selection
+    if GearManagerPopupFrame then
+        hooksecurefunc(GearManagerPopupFrame, "Hide", function(self)
+            if self.AbstractUI_EditorRef then
+                local selectedIcon = self.selectedIconTexture or self.selectedIcon
+                if selectedIcon then
+                    self.AbstractUI_EditorRef.selectedIcon = selectedIcon
+                    self.AbstractUI_EditorRef.iconTexture:SetTexture(selectedIcon)
+                end
+                self.AbstractUI_EditorRef = nil
+            end
+        end)
+    end
+    
+    -- ESC to close
+    nameBox:SetScript("OnEscapePressed", function(self)
+        editor:Hide()
+    end)
+    
+    -- Enter to save
+    nameBox:SetScript("OnEnterPressed", function(self)
+        saveBtn:Click()
+    end)
+    
+    editor:Show()
+    nameBox:SetFocus()
+end
+
 local function ShowEquipmentSetContextMenu(setID, anchorFrame)
     -- Create context menu
     local menu = CreateFrame("Frame", "AbstractUI_EquipmentSetMenu", UIParent, "BackdropTemplate")
@@ -2035,63 +2227,7 @@ local function ShowEquipmentSetContextMenu(setID, anchorFrame)
     
     -- Change Name/Icon
     CreateMenuItem("Change Name/Icon", function()
-        -- Use Blizzard's GearManagerPopupFrame for icon selection
-        if GearManagerPopupFrame then
-            local name, icon = C_EquipmentSet.GetEquipmentSetInfo(setID)
-            
-            -- Store the setID for the save callback
-            GearManagerPopupFrame.selectedSetID = setID
-            
-            -- Hook the save functionality if we haven't already
-            if not GearManagerPopupFrame.AbstractUI_Hooked then
-                -- Find buttons by iterating children
-                local okayButton, cancelButton
-                for i = 1, GearManagerPopupFrame:GetNumChildren() do
-                    local child = select(i, GearManagerPopupFrame:GetChildren())
-                    if child.GetObjectType and child:GetObjectType() == "Button" then
-                        local text = child:GetText()
-                        if text == OKAY or text == ACCEPT or text == SAVE then
-                            okayButton = child
-                        elseif text == CANCEL then
-                            cancelButton = child
-                        end
-                    end
-                end
-                
-                if okayButton then
-                    GearManagerPopupFrame.AbstractUI_OriginalOkay = okayButton:GetScript("OnClick")
-                    
-                    okayButton:SetScript("OnClick", function(self)
-                        local editBox = GearManagerPopupFrame.editBox or GearManagerPopupFrame.name
-                        local newName = editBox and editBox:GetText()
-                        local newIcon = GearManagerPopupFrame.selectedIconTexture or GearManagerPopupFrame.selectedIcon
-                        
-                        if newName and newName ~= "" and GearManagerPopupFrame.selectedSetID then
-                            C_EquipmentSet.ModifyEquipmentSet(GearManagerPopupFrame.selectedSetID, newName, newIcon or 134400)
-                            UpdateEquipmentManagerOverlay()
-                        end
-                        GearManagerPopupFrame:Hide()
-                    end)
-                    
-                    GearManagerPopupFrame.AbstractUI_Hooked = true
-                end
-            end
-            
-            -- Set initial values
-            local editBox = GearManagerPopupFrame.editBox or GearManagerPopupFrame.name
-            if editBox then
-                editBox:SetText(name or "")
-                editBox:SetFocus()
-                editBox:HighlightText()
-            end
-            
-            GearManagerPopupFrame.selectedIconTexture = icon
-            GearManagerPopupFrame.selectedIcon = icon
-            GearManagerPopupFrame:Show()
-        else
-            -- Fall back to simple rename dialog
-            StaticPopup_Show("ABSTRACTUI_RENAME_EQUIPMENT_SET", nil, nil, setID)
-        end
+        ShowEquipmentSetEditor(setID)
     end)
     
     -- Delete
