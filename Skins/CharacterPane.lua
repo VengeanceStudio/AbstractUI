@@ -900,11 +900,19 @@ local UpdateStatsOverlayVisibility
 UpdateStatsOverlayVisibility = function()
     if not statsOverlay then return end
     
+    -- Debug: print current state
+    print("UpdateStatsOverlayVisibility called")
+    if PaperDollFrame then
+        print("PaperDollFrame.selectedSidebarTab:", PaperDollFrame.selectedSidebarTab and PaperDollFrame.selectedSidebarTab:GetName() or "nil")
+    end
+    
     -- Check which sidebar tab is selected (Stats is tab 1)
     local statsTab = _G["PaperDollSidebarTab1"]
     if statsTab and PaperDollFrame.selectedSidebarTab == statsTab then
+        print("Showing stats overlay")
         statsOverlay:Show()
     else
+        print("Hiding stats overlay")
         statsOverlay:Hide()
     end
 end
