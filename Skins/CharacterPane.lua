@@ -934,21 +934,12 @@ UpdateStatsOverlayVisibility = function()
         end
     end
     
-    -- Hide Blizzard's content frame when Titles tab is selected
-    -- The first unnamed child of CharacterFrameInsetRight is the content area
-    if CharacterFrameInsetRight then
-        local children = {CharacterFrameInsetRight:GetChildren()}
-        for i, child in ipairs(children) do
-            local name = child:GetName()
-            -- Hide the first unnamed frame (Blizzard's content) when on Titles tab
-            if not name and i == 1 then
-                if selectedSidebarTab == 2 then
-                    child:Hide()
-                else
-                    child:Show()
-                end
-                break
-            end
+    -- Hide Blizzard's TitleManagerPane when our custom Titles tab is selected
+    if PaperDollFrame and PaperDollFrame.TitleManagerPane then
+        if selectedSidebarTab == 2 then
+            PaperDollFrame.TitleManagerPane:Hide()
+        else
+            PaperDollFrame.TitleManagerPane:Show()
         end
     end
 end
