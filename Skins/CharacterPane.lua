@@ -1003,21 +1003,6 @@ local function SkinCharacterTabs()
                 tab:SetAlpha(1)
                 
                 if not tab._abstractSkinned then
-                    -- Store original position
-                    local numPoints = tab:GetNumPoints()
-                    local originalPoints = {}
-                    for i = 1, numPoints do
-                        local point, relativeTo, relativePoint, xOfs, yOfs = tab:GetPoint(i)
-                        table.insert(originalPoints, {point, relativeTo, relativePoint, xOfs, yOfs})
-                    end
-                    
-                    -- Reposition the tab frame itself 15px to the right
-                    tab:ClearAllPoints()
-                    for _, pointData in ipairs(originalPoints) do
-                        local point, relativeTo, relativePoint, xOfs, yOfs = unpack(pointData)
-                        tab:SetPoint(point, relativeTo, relativePoint, (xOfs or 0) + 15, yOfs or 0)
-                    end
-                    
                     -- Hide default textures but not completely
                     if tab.TabBg then
                         tab.TabBg:SetAlpha(0)
@@ -1028,7 +1013,7 @@ local function SkinCharacterTabs()
                         tab.Hider:Hide()
                     end
                     
-                    -- Create backdrop frame (no offset needed since tab itself moved)
+                    -- Create backdrop frame offset 15px to the right within the tab
                     if not tab.backdrop then
                         local backdrop = CreateFrame("Frame", nil, tab, "BackdropTemplate")
                         backdrop:SetFrameLevel(tab:GetFrameLevel() - 1)
@@ -1039,28 +1024,31 @@ local function SkinCharacterTabs()
                         })
                         backdrop:SetBackdropColor(bgr, bgg, bgb, 0.4)
                         backdrop:SetBackdropBorderColor(pr * 0.2, pg * 0.2, pb * 0.2, 0.5)
-                        backdrop:SetAllPoints(tab)
+                        backdrop:SetPoint("TOPLEFT", tab, "TOPLEFT", 15, 0)
+                        backdrop:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 15, 0)
                         tab.backdrop = backdrop
                     end
                     
-                    -- Style icon - ensure it's visible but DON'T modify texture coords (breaks atlas)
+                    -- Style icon - move 15px to the right
                     if tab.Icon then
                         tab.Icon:Show()
                         tab.Icon:SetAlpha(1)
                         tab.Icon:SetDrawLayer("ARTWORK")
-                        -- Clear any previous positioning and reset to default center position
                         tab.Icon:ClearAllPoints()
-                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 0, 0)
+                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 15, 0)
                     end
                     
-                    -- Highlight (no offset needed since tab itself moved)
+                    -- Highlight - offset 15px to the right
                     if tab.Highlight then
                         tab.Highlight:SetColorTexture(pr, pg, pb, 0.2)
                         tab.Highlight:SetDrawLayer("HIGHLIGHT")
-                        -- Reset to default positioning (fill the entire tab)
                         tab.Highlight:ClearAllPoints()
-                        tab.Highlight:SetAllPoints(tab)
+                        tab.Highlight:SetPoint("TOPLEFT", tab, "TOPLEFT", 15, 0)
+                        tab.Highlight:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 15, 0)
                     end
+                    
+                    -- Extend the tab's hit area 15px to the right to include the visual offset
+                    tab:SetHitRectInsets(0, -15, 0, 0)
                     
                     tab._abstractSkinned = true
                 end
