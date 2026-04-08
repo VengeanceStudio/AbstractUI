@@ -907,6 +907,7 @@ end
 local statsOverlay = nil
 local titlesOverlay = nil
 local equipmentOverlay = nil
+local ScrollFrame = _G.AbstractUI_ScrollFrame
 
 -- Track which sidebar tab is currently selected (1=Stats, 2=Titles, 3=EquipmentManager)
 local selectedSidebarTab = 1  -- Default to Stats tab
@@ -1835,16 +1836,15 @@ local function CreateEquipmentManagerOverlay()
         end)
         container.saveButton = saveButton
         
-        -- Scroll frame for sets list
-        local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+        -- Scroll frame for sets list using AbstractUI's custom ScrollFrame
+        local scrollFrame = ScrollFrame:Create(container)
         scrollFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -28)
-        scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -25, 0)
+        scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", 0, 0)
         
-        -- Create scroll child
-        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-        scrollChild:SetWidth(150)
+        -- Get scroll child
+        local scrollChild = scrollFrame:GetScrollChild()
+        scrollChild:SetWidth(scrollFrame.scrollArea:GetWidth())
         scrollChild:SetHeight(1)
-        scrollFrame:SetScrollChild(scrollChild)
         
         container.scrollFrame = scrollFrame
         container.scrollChild = scrollChild
@@ -1923,10 +1923,17 @@ UpdateEquipmentManagerOverlay = function()
     for i, setData in ipairs(sets) do
         local button = buttons[i]
         if not button then
-            button = CreateFrame("Button", nil, scrollChild)
-            button:SetSize(180, 24)
+            button = CreateFrame("Button", nil, scrollChild, "BackdropTemplate")
+            button:SetSize(scrollChild:GetWidth() - 4, 24)
             button:SetNormalFontObject("GameFontNormalSmall")
             button:SetHighlightFontObject("GameFontHighlightSmall")
+            
+            -- Selection border
+            button:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = 2,
+            })
+            button:SetBackdropBorderColor(0, 0, 0, 0)  -- Hidden by default
             
             -- Icon
             local icon = button:CreateTexture(nil, "ARTWORK")
@@ -1945,7 +1952,7 @@ UpdateEquipmentManagerOverlay = function()
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
             text:SetJustifyH("LEFT")
-            text:SetWidth(130)
+            text:SetWidth(button:GetWidth() - 50)  -- More space for text
             button.text = text
             
             -- Highlight texture
@@ -1957,6 +1964,8 @@ UpdateEquipmentManagerOverlay = function()
         end
         
         button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+        button:SetSize(scrollChild:GetWidth() - 4, 24)
+        button.text:SetWidth(button:GetWidth() - 50)  -- Update text width based on button width
         button.icon:SetTexture(setData.icon)
         button.text:SetText(setData.name)
         button.setID = setData.id
@@ -1971,8 +1980,10 @@ UpdateEquipmentManagerOverlay = function()
         -- Highlight selected set in gold, others in white
         if equipmentOverlay.selectedSetID == setData.id then
             button.text:SetTextColor(1, 0.82, 0)  -- Gold for selected
+            button:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))  -- Show selection border
         else
             button.text:SetTextColor(1, 1, 1)  -- White
+            button:SetBackdropBorderColor(0, 0, 0, 0)  -- Hide border
         end
         
         -- Click handler to select set
@@ -1992,6 +2003,11 @@ UpdateEquipmentManagerOverlay = function()
     
     -- Update scroll child height
     scrollChild:SetHeight(math.abs(yOffset) + 20)
+    
+    -- Update scrollbar visibility
+    if equipmentOverlay.scrollFrame and equipmentOverlay.scrollFrame.UpdateScroll then
+        equipmentOverlay.scrollFrame:UpdateScroll()
+    end
 end
 
 local function SkinEquipmentManagerPane()
