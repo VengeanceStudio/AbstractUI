@@ -381,6 +381,13 @@ function Prey:MakePreyIconDraggable()
             Prey:UpdatePreyPercent()
         end)
     end)
+    
+    -- Hook OnHide to clean up percent text when prey hunt ends
+    frame:HookScript("OnHide", function(self)
+        if percentText then
+            percentText:Hide()
+        end
+    end)
 end
 
 -- ============================================================================
