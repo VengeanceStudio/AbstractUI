@@ -1567,15 +1567,18 @@ end
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
     
-    -- Debug: Print all children of CharacterFrameInsetRight to find Blizzard's titles frame
-    print("CharacterFrameInsetRight children:")
-    if CharacterFrameInsetRight then
-        local children = {CharacterFrameInsetRight:GetChildren()}
+    -- Debug: Print all children of PaperDollFrame to find Blizzard's titles frame
+    print("PaperDollFrame children:")
+    if PaperDollFrame then
+        local children = {PaperDollFrame:GetChildren()}
         for i, child in ipairs(children) do
             if child then
                 local name = child:GetName() or "unnamed"
                 local type = child:GetObjectType()
                 print("  Child", i, ":", name, "-", type)
+                if name:find("Title") or name:find("title") then
+                    print("    ^^ FOUND TITLE FRAME!")
+                end
             end
         end
     end
@@ -1594,6 +1597,7 @@ local function CreateTitlesOverlay()
             print("Hiding frame:", frame:GetName() or "unnamed")
             frame:Hide()
             frame:SetAlpha(0)
+            frame:SetParent(nil)
             -- Also hide all children
             local children = {frame:GetChildren()}
             for _, child in ipairs(children) do
@@ -1601,19 +1605,6 @@ local function CreateTitlesOverlay()
                     child:Hide()
                     child:SetAlpha(0)
                 end
-            end
-        end
-    end
-    
-    -- Also search CharacterFrameInsetRight for any ScrollFrame children
-    if CharacterFrameInsetRight then
-        local children = {CharacterFrameInsetRight:GetChildren()}
-        for _, child in ipairs(children) do
-            if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay then
-                -- This is likely Blizzard's titles scroll frame, hide it
-                print("Hiding ScrollFrame child:", child:GetName() or "unnamed")
-                child:Hide()
-                child:SetAlpha(0)
             end
         end
     end
