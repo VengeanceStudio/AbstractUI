@@ -1567,6 +1567,19 @@ end
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
     
+    -- Debug: Print all children of CharacterFrameInsetRight to find Blizzard's titles frame
+    print("CharacterFrameInsetRight children:")
+    if CharacterFrameInsetRight then
+        local children = {CharacterFrameInsetRight:GetChildren()}
+        for i, child in ipairs(children) do
+            if child then
+                local name = child:GetName() or "unnamed"
+                local type = child:GetObjectType()
+                print("  Child", i, ":", name, "-", type)
+            end
+        end
+    end
+    
     -- Hide Blizzard's titles scroll frame - comprehensive search
     -- Try all known possible frame names
     local framesToHide = {
@@ -1578,6 +1591,7 @@ local function CreateTitlesOverlay()
     
     for _, frame in ipairs(framesToHide) do
         if frame then
+            print("Hiding frame:", frame:GetName() or "unnamed")
             frame:Hide()
             frame:SetAlpha(0)
             -- Also hide all children
@@ -1597,6 +1611,7 @@ local function CreateTitlesOverlay()
         for _, child in ipairs(children) do
             if child and child:GetObjectType() == "ScrollFrame" and child ~= titlesOverlay then
                 -- This is likely Blizzard's titles scroll frame, hide it
+                print("Hiding ScrollFrame child:", child:GetName() or "unnamed")
                 child:Hide()
                 child:SetAlpha(0)
             end
