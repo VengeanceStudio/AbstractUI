@@ -1036,7 +1036,7 @@ local function SkinCharacterTabs()
                         
                         -- Move icon 10px to the right
                         tab.Icon:ClearAllPoints()
-                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 10, 0)
+                        tab.Icon:SetPoint("CENTER", tab, "CENTER", 20, 0)
                     end
                     
                     -- Highlight
