@@ -324,10 +324,8 @@ function AddonManager:EnableDependencies(addon)
     self:ReadDependencies(deps, GetAddOnOptionalDependencies(addon))
     
     for dep in pairs(deps) do
-        local depIndex = self:GetAddonIndex(dep)
-        if depIndex then
-            EnableAddOn(depIndex)
-        end
+        -- Use addon name directly instead of index to support Blizzard addons
+        EnableAddOn(dep)
     end
 end
 
