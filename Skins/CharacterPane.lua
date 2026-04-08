@@ -2048,10 +2048,14 @@ local function ShowEquipmentSetEditor(setID)
     
     -- Get equipment/armor icons
     local icons = {}
-    local iconDataProvider = CreateAndInitFromMixin(IconDataProviderMixin, IconDataProviderExtraType.Equipment)
-    local iconData = iconDataProvider:GetIcons()
-    for i = 1, #iconData do
-        table.insert(icons, iconData[i])
+    
+    -- Get item icons (includes armor/weapons)
+    GetMacroItemIcons(icons)
+    
+    -- Also get general macro icons which includes more equipment sets
+    local macroIcons = GetMacroIcons()
+    for i = 1, #macroIcons do
+        table.insert(icons, macroIcons[i])
     end
     
     -- Create icon buttons in grid
