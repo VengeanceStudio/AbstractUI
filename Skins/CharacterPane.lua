@@ -1666,7 +1666,14 @@ UpdateTitlesOverlay = function()
         
         -- Click handler
         button:SetScript("OnClick", function(self)
-            SetCurrentTitle(self.titleID)
+            print("Clicking title ID:", self.titleID)
+            if self.titleID == -1 then
+                -- Clear title
+                SetCurrentTitle(0)
+            else
+                SetCurrentTitle(self.titleID)
+            end
+            print("Current title after set:", GetCurrentTitle())
             UpdateTitlesOverlay()
         end)
         
