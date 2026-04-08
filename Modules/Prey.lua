@@ -22,10 +22,6 @@ local defaults = {
 function Prey:OnInitialize()
     -- Initialize database
     self.db = AbstractUI.db:RegisterNamespace("Prey", defaults)
-    
-    -- Register options
-    self.optionsTable = self:GetOptions()
-    AbstractUI:RegisterModuleOptions("Prey", self.optionsTable, "Prey")
 end
 
 function Prey:OnEnable()

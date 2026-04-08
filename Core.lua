@@ -56,7 +56,8 @@ local defaults = {
             groupManager = false,  -- Disabled by default - user must enable
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
-            timePlayed = true
+            timePlayed = true,
+            prey = true
         }
     }
 }
@@ -2231,6 +2232,8 @@ function AbstractUI:GetOptions()
                 displayName = "Cursor Animate"
             elseif name == "TimePlayed" then
                 displayName = "Time Played"
+            elseif name == "Prey" then
+                displayName = "Prey Icon"
             end
             
             -- Set module order based on name
@@ -2265,6 +2268,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 13.5
             elseif name == "TimePlayed" then
                 moduleOrder = 13.6
+            elseif name == "Prey" then
+                moduleOrder = 13.7
             elseif name == "AddonManager" then
                 moduleOrder = 14
             elseif name == "Setup" then
