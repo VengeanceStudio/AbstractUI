@@ -939,14 +939,9 @@ UpdateStatsOverlayVisibility = function()
     -- Show equipment overlay only when Equipment Manager tab (3) is selected
     if equipmentOverlay then
         if selectedSidebarTab == 3 then
-            print("AbstractUI: Showing equipment overlay")
             equipmentOverlay:Show()
         else
             equipmentOverlay:Hide()
-        end
-    else
-        if selectedSidebarTab == 3 then
-            print("AbstractUI: Equipment overlay is nil, cannot show")
         end
     end
     
@@ -1550,7 +1545,6 @@ local function SkinStatsPane()
         if tab and not tab._abstractStatsHooked then
             local tabNumber = i  -- Capture for closure
             tab:HookScript("OnClick", function(self)
-                print("AbstractUI: Tab clicked:", tabNumber)
                 selectedSidebarTab = tabNumber
                 UpdateStatsOverlayVisibility()
                 
@@ -1767,23 +1761,59 @@ local function CreateEquipmentManagerOverlay()
     
     -- Create our custom equipment manager overlay frame
     if not equipmentOverlay then
-        equipmentOverlay = CreateFrame("ScrollFrame", "AbstractUI_EquipmentManagerOverlay", CharacterFrameInsetRight, "UIPanelScrollFrameTemplate")
-        equipmentOverlay:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 50, -12)
-        equipmentOverlay:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
-        equipmentOverlay:SetWidth(170)
+        -- Main container
+        local container = CreateFrame("Frame", "AbstractUI_EquipmentManagerOverlay", CharacterFrameInsetRight)
+        container:SetPoint("TOPLEFT", CharacterFrameInsetRight, "TOPLEFT", 50, -12)
+        container:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "BOTTOMRIGHT", -30, 8)
+        container:SetWidth(170)
+        
+        -- Equip button
+        local equipButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+        equipButton:SetSize(80, 22)
+        equipButton:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+        equipButton:SetText("Equip")
+        equipButton:SetScript("OnClick", function()
+            if container.selectedSetID then
+                C_EquipmentSet.UseEquipmentSet(container.selectedSetID)
+                C_Timer.After(0.3, function()
+                    UpdateEquipmentManagerOverlay()
+                end)
+            end
+        end)
+        container.equipButton = equipButton
+        
+        -- Save button
+        local saveButton = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+        saveButton:SetSize(80, 22)
+        saveButton:SetPoint("TOPRIGHT", container, "TOPRIGHT", 0, 0)
+        saveButton:SetText("Save")
+        saveButton:SetScript("OnClick", function()
+            if container.selectedSetID then
+                C_EquipmentSet.SaveEquipmentSet(container.selectedSetID)
+                local setInfo = C_EquipmentSet.GetEquipmentSetInfo(container.selectedSetID)
+                print("Saved current equipment to set: " .. (setInfo or "Unknown"))
+                UpdateEquipmentManagerOverlay()
+            end
+        end)
+        container.saveButton = saveButton
+        
+        -- Scroll frame for sets list
+        local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -28)
+        scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -25, 0)
         
         -- Create scroll child
-        local scrollChild = CreateFrame("Frame", nil, equipmentOverlay)
+        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
         scrollChild:SetWidth(150)
         scrollChild:SetHeight(1)
-        equipmentOverlay:SetScrollChild(scrollChild)
-        equipmentOverlay.scrollChild = scrollChild
+        scrollFrame:SetScrollChild(scrollChild)
         
-        -- Storage for equipment set buttons
-        equipmentOverlay.buttons = {}
-        equipmentOverlay.selectedSetID = nil
+        container.scrollFrame = scrollFrame
+        container.scrollChild = scrollChild
+        container.buttons = {}
+        container.selectedSetID = nil
         
-        print("AbstractUI: Created equipment manager overlay")
+        equipmentOverlay = container
     end
     
     -- Set initial visibility
@@ -1829,6 +1859,27 @@ UpdateEquipmentManagerOverlay = function()
         return string.lower(a.fullName) < string.lower(b.fullName)
     end)
     
+    -- Auto-select first set if none selected, or clear selection if selected set doesn't exist
+    if #sets > 0 then
+        if not equipmentOverlay.selectedSetID then
+            equipmentOverlay.selectedSetID = sets[1].id
+        else
+            -- Check if selected set still exists
+            local found = false
+            for _, setData in ipairs(sets) do
+                if setData.id == equipmentOverlay.selectedSetID then
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                equipmentOverlay.selectedSetID = sets[1].id
+            end
+        end
+    else
+        equipmentOverlay.selectedSetID = nil
+    end
+    
     -- Create/update buttons
     local yOffset = 0
     for i, setData in ipairs(sets) do
@@ -1845,11 +1896,18 @@ UpdateEquipmentManagerOverlay = function()
             icon:SetPoint("LEFT", button, "LEFT", 2, 0)
             button.icon = icon
             
+            -- Equipped indicator (checkmark)
+            local equipped = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            equipped:SetPoint("RIGHT", button, "RIGHT", -2, 0)
+            equipped:SetText("✓")
+            equipped:SetTextColor(0, 1, 0)  -- Green checkmark
+            button.equipped = equipped
+            
             -- Text
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
             text:SetJustifyH("LEFT")
-            text:SetWidth(145)
+            text:SetWidth(130)
             button.text = text
             
             -- Highlight texture
@@ -1865,33 +1923,24 @@ UpdateEquipmentManagerOverlay = function()
         button.text:SetText(setData.name)
         button.setID = setData.id
         
-        -- Highlight equipped set
+        -- Show/hide equipped indicator
         if setData.isEquipped then
-            button.text:SetTextColor(1, 0.82, 0)  -- Gold
+            button.equipped:Show()
+        else
+            button.equipped:Hide()
+        end
+        
+        -- Highlight selected set in gold, others in white
+        if equipmentOverlay.selectedSetID == setData.id then
+            button.text:SetTextColor(1, 0.82, 0)  -- Gold for selected
         else
             button.text:SetTextColor(1, 1, 1)  -- White
         end
         
-        -- Click handler to equip set
-        button:SetScript("OnClick", function(self, mouseButton)
-            if mouseButton == "LeftButton" then
-                -- Equip the set
-                C_EquipmentSet.UseEquipmentSet(self.setID)
-                equipmentOverlay.selectedSetID = self.setID
-                C_Timer.After(0.3, function()
-                    UpdateEquipmentManagerOverlay()
-                end)
-            end
-        end)
-        
-        -- Right-click context menu (save set to current equipment)
-        button:SetScript("OnMouseUp", function(self, mouseButton)
-            if mouseButton == "RightButton" then
-                -- Save current equipment to this set
-                C_EquipmentSet.SaveEquipmentSet(self.setID)
-                print("Saved current equipment to set: " .. setData.fullName)
-                UpdateEquipmentManagerOverlay()
-            end
+        -- Click handler to select set
+        button:SetScript("OnClick", function(self)
+            equipmentOverlay.selectedSetID = self.setID
+            UpdateEquipmentManagerOverlay()
         end)
         
         button:Show()
