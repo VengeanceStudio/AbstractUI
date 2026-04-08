@@ -933,6 +933,24 @@ UpdateStatsOverlayVisibility = function()
             titlesOverlay:Hide()
         end
     end
+    
+    -- Hide Blizzard's content frame when Titles tab is selected
+    -- The first unnamed child of CharacterFrameInsetRight is the content area
+    if CharacterFrameInsetRight then
+        local children = {CharacterFrameInsetRight:GetChildren()}
+        for i, child in ipairs(children) do
+            local name = child:GetName()
+            -- Hide the first unnamed frame (Blizzard's content) when on Titles tab
+            if not name and i == 1 then
+                if selectedSidebarTab == 2 then
+                    child:Hide()
+                else
+                    child:Show()
+                end
+                break
+            end
+        end
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -1566,48 +1584,6 @@ end
 
 local function CreateTitlesOverlay()
     if not CharacterFrameInsetRight then return end
-    
-    -- Debug: Print all children of PaperDollFrame to find Blizzard's titles frame
-    print("PaperDollFrame children:")
-    if PaperDollFrame then
-        local children = {PaperDollFrame:GetChildren()}
-        for i, child in ipairs(children) do
-            if child then
-                local name = child:GetName() or "unnamed"
-                local type = child:GetObjectType()
-                print("  Child", i, ":", name, "-", type)
-                if name:find("Title") or name:find("title") then
-                    print("    ^^ FOUND TITLE FRAME!")
-                end
-            end
-        end
-    end
-    
-    -- Hide Blizzard's titles scroll frame - comprehensive search
-    -- Try all known possible frame names
-    local framesToHide = {
-        PaperDollFrame and PaperDollFrame.TitlesPane,
-        _G["PaperDollTitlesPane"],
-        _G["CharacterFrameTitlePane"],
-        CharacterFrameInsetRight and CharacterFrameInsetRight.TitlesPane,
-    }
-    
-    for _, frame in ipairs(framesToHide) do
-        if frame then
-            print("Hiding frame:", frame:GetName() or "unnamed")
-            frame:Hide()
-            frame:SetAlpha(0)
-            frame:SetParent(nil)
-            -- Also hide all children
-            local children = {frame:GetChildren()}
-            for _, child in ipairs(children) do
-                if child then
-                    child:Hide()
-                    child:SetAlpha(0)
-                end
-            end
-        end
-    end
     
     -- Create our custom titles overlay frame
     if not titlesOverlay then
