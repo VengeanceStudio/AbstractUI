@@ -39,6 +39,7 @@ function Prey:OnInitialize()
                 print("Prey percent shown")
             else
                 print("Prey percent not created yet")
+                self:AttachPercentText()
             end
         elseif msg == "hide" then
             if percentText then
@@ -49,12 +50,29 @@ function Prey:OnInitialize()
             end
         elseif msg == "update" then
             self:UpdatePreyPercent()
-            print("Prey percent updated: " .. preyCount .. "/" .. preyMax)
+        elseif msg == "test" then
+            -- Force create and show with test text
+            self:AttachPercentText()
+            if percentText then
+                percentText:SetText("100%")
+                percentText:SetTextColor(0, 1, 0, 1)
+                percentText:Show()
+                print("|cff00ff00Prey:|r Test text '100%' displayed")
+            end
+        elseif msg == "frame" then
+            local frame = _G["UIWidgetPowerBarContainerFrame"]
+            if frame then
+                print("|cff00ff00Prey:|r Frame found, shown=" .. tostring(frame:IsShown()))
+            else
+                print("|cffff0000Prey:|r Frame not found")
+            end
         else
             print("Prey Debug Commands:")
             print("  /preydebug show - Show percent")
             print("  /preydebug hide - Hide percent")
             print("  /preydebug update - Update prey percent")
+            print("  /preydebug test - Show test '100%' text")
+            print("  /preydebug frame - Check if prey frame exists")
         end
     end
 end
@@ -108,16 +126,21 @@ end
 
 function Prey:AttachPercentText()
     local frame = _G["UIWidgetPowerBarContainerFrame"]
-    if not frame then return end
+    if not frame then 
+        print("|cffff0000Prey:|r UIWidgetPowerBarContainerFrame not found")
+        return 
+    end
     if not self.db.profile.showPercent then return end
     
     -- Create percent text if it doesn't exist
     if not percentText then
         percentText = frame:CreateFontString(nil, "OVERLAY")
         percentText:SetFont("Fonts\\FRIZQT__.TTF", self.db.profile.percentFontSize, "OUTLINE")
-        percentText:SetPoint("TOP", frame, "BOTTOM", 0, -2)
+        percentText:SetPoint("TOP", frame, "BOTTOM", 0, -5)
         percentText:SetTextColor(1, 1, 1, 1)
         percentText:SetJustifyH("CENTER")
+        percentText:SetDrawLayer("OVERLAY", 7)
+        print("|cff00ff00Prey:|r Percentage text attached to prey icon")
     end
     
     -- Update immediately
@@ -125,13 +148,21 @@ function Prey:AttachPercentText()
 end
 
 function Prey:UpdatePreyPercent()
-    if not self.db.profile.showPercent or not percentText then return end
+    if not self.db.profile.showPercent then return end
     
     local frame = _G["UIWidgetPowerBarContainerFrame"]
-    if not frame or not frame:IsShown() then
-        if percentText then
-            percentText:Hide()
-        end
+    if not frame then 
+        return
+    end
+    
+    if not percentText then
+        self:AttachPercentText()
+        if not percentText then return end
+    end
+    
+    -- Only hide if the frame itself is hidden
+    if not frame:IsShown() then
+        percentText:Hide()
         return
     end
     
@@ -141,7 +172,7 @@ function Prey:UpdatePreyPercent()
     if C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo then
         local widgetInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
         
-        if widgetInfo and widgetInfo.barValue and widgetInfo.barMax then
+        if widgetInfo and widgetInfo.barValue ~= nil and widgetInfo.barMax ~= nil then
             preyCount = widgetInfo.barValue or 0
             preyMax = widgetInfo.barMax or 0
             foundWidget = true
@@ -165,8 +196,11 @@ function Prey:UpdatePreyPercent()
         end
     end
     
-    if not foundWidget and percentText then
-        percentText:Hide()
+    -- If no widget found, still show 0% rather than hiding
+    if not foundWidget then
+        percentText:SetText("0%")
+        percentText:SetTextColor(0.5, 0.5, 0.5, 1)
+        percentText:Show()
     end
 end
 
