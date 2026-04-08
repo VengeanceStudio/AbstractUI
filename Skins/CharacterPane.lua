@@ -904,19 +904,12 @@ local UpdateStatsOverlayVisibility
 
 -- Function to update stats overlay visibility based on selected tab
 UpdateStatsOverlayVisibility = function()
-    if not statsOverlay then 
-        print("UpdateStatsOverlayVisibility: statsOverlay is nil")
-        return 
-    end
-    
-    print("Selected sidebar tab:", selectedSidebarTab)
+    if not statsOverlay then return end
     
     -- Show stats overlay only when Stats tab (1) is selected
     if selectedSidebarTab == 1 then
-        print("Showing stats overlay")
         statsOverlay:Show()
     else
-        print("Hiding stats overlay")
         statsOverlay:Hide()
     end
 end
@@ -1318,11 +1311,7 @@ local function FormatStatValue(value)
 end
 
 local function CreateStatsOverlay()
-    print("CreateStatsOverlay called")
-    if not CharacterFrameInsetRight then 
-        print("CharacterFrameInsetRight is nil, cannot create stats overlay")
-        return 
-    end
+    if not CharacterFrameInsetRight then return end
     
     -- Hide all Blizzard stats UI
     if CharacterStatsPane then
@@ -1332,7 +1321,6 @@ local function CreateStatsOverlay()
     
     -- Create our custom overlay frame
     if not statsOverlay then
-        print("Creating new statsOverlay frame")
         statsOverlay = CreateFrame("Frame", "AbstractUI_StatsOverlay", CharacterFrameInsetRight)
         -- Position right below the sidebar tabs
         statsOverlay:SetPoint("TOPRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -10, -12)
@@ -1500,11 +1488,7 @@ local function UpdateStatsOverlay()
 end
 
 local function SkinStatsPane()
-    print("SkinStatsPane called")
-    if not CharacterStatsPane then 
-        print("CharacterStatsPane is nil, skipping stats pane skinning")
-        return 
-    end
+    if not CharacterStatsPane then return end
     
     -- Hide Blizzard's stats pane completely
     CharacterStatsPane:Hide()
@@ -1512,7 +1496,6 @@ local function SkinStatsPane()
     
     -- Create and show our custom overlay
     CreateStatsOverlay()
-    print("After CreateStatsOverlay, statsOverlay is:", statsOverlay)
     UpdateStatsOverlay()
     
     -- Now that statsOverlay exists, set up tab click hooks
@@ -1522,7 +1505,6 @@ local function SkinStatsPane()
         if tab and not tab._abstractStatsHooked then
             local tabNumber = i  -- Capture for closure
             tab:HookScript("OnClick", function(self)
-                print("Tab clicked (stats hook):", self:GetName(), "- tab number:", tabNumber)
                 selectedSidebarTab = tabNumber
                 UpdateStatsOverlayVisibility()
             end)
@@ -1547,11 +1529,9 @@ end
 ---------------------------------------------------------------------------
 
 function CharacterPane:ApplySkin()
-    print("ApplySkin called, skinned =", skinned)
     if not IsEnabled() or skinned then return end
     if not CharacterFrame then return end
     
-    print("Applying character pane skin...")
     -- Apply all skins
     StripBlizzardTextures()
     SkinCharacterFrameBackdrop()
@@ -1566,7 +1546,6 @@ function CharacterPane:ApplySkin()
     end)
     
     skinned = true
-    print("Character pane skin applied")
     
     -- Listen for theme changes
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
