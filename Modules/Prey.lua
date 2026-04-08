@@ -52,36 +52,42 @@ function Prey:OnInitialize()
             self:UpdatePreyPercent()
         elseif msg == "widget" then
             -- Debug widget info
-            if C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo then
-                local widgetInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
-                if widgetInfo then
-                    print("|cff00ff00Prey Widget 7663 Data:|r")
-                    print("  barValue: " .. tostring(widgetInfo.barValue))
-                    print("  barMax: " .. tostring(widgetInfo.barMax))
-                    print("  barMin: " .. tostring(widgetInfo.barMin))
-                    if widgetInfo.barValue and widgetInfo.barMax then
-                        local percent = math.floor((widgetInfo.barValue / widgetInfo.barMax) * 100)
-                        print("  Calculated: " .. percent .. "%")
-                    end
-                else
-                    print("|cffff0000Prey:|r Widget 7663 returned nil")
-                end
+            local frame = _G["UIWidgetPowerBarContainerFrame"]
+            if not frame then
+                print("|cffff0000Prey:|r UIWidgetPowerBarContainerFrame not found")
+                return
+            end
+            
+            print("|cff00ff00Prey Frame widgetSetID:|r " .. tostring(frame.widgetSetID))
+            
+            if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and frame.widgetSetID then
+                local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
                 
-                -- Also try getting all widget info
-                if C_UIWidgetManager.GetAllWidgetsBySetID then
-                    print("|cff00ff00Checking all widgets in prey frame:|r")
-                    local frame = _G["UIWidgetPowerBarContainerFrame"]
-                    if frame and frame.widgetSetID then
-                        local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
-                        if widgets then
-                            for _, widgetID in ipairs(widgets) do
-                                print("  Widget ID: " .. tostring(widgetID))
+                if widgets then
+                    print("|cff00ff00Found " .. #widgets .. " widgets in prey frame:|r")
+                    for i, widgetInfo in ipairs(widgets) do
+                        if widgetInfo and widgetInfo.widgetID then
+                            print("  Widget #" .. i .. " ID: " .. tostring(widgetInfo.widgetID))
+                            
+                            -- Try to get status bar info
+                            local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
+                            if statusBarInfo then
+                                print("    Type: StatusBar")
+                                print("    barValue: " .. tostring(statusBarInfo.barValue))
+                                print("    barMax: " .. tostring(statusBarInfo.barMax))
+                                print("    barMin: " .. tostring(statusBarInfo.barMin))
+                                if statusBarInfo.barValue and statusBarInfo.barMax and statusBarInfo.barMax > 0 then
+                                    local percent = math.floor((statusBarInfo.barValue / statusBarInfo.barMax) * 100)
+                                    print("    Percentage: " .. percent .. "%")
+                                end
                             end
                         end
                     end
+                else
+                    print("|cffff0000Prey:|r No widgets returned")
                 end
             else
-                print("|cffff0000Prey:|r C_UIWidgetManager not available")
+                print("|cffff0000Prey:|r C_UIWidgetManager.GetAllWidgetsBySetID not available")
             end
         elseif msg == "test" then
             -- Force create and show with test text
@@ -206,39 +212,51 @@ function Prey:UpdatePreyPercent()
     
     local foundWidget = false
     
-    -- Try to get prey count from UIWidget
-    if C_UIWidgetManager and C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo then
-        local widgetInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(7663)
+    -- Try to get all widgets in the prey frame
+    if C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID and frame.widgetSetID then
+        local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(frame.widgetSetID)
         
-        if widgetInfo and widgetInfo.barValue ~= nil and widgetInfo.barMax ~= nil then
-            preyCount = widgetInfo.barValue or 0
-            preyMax = widgetInfo.barMax or 0
-            foundWidget = true
-            
-            -- Calculate percentage
-            local percent = (preyMax > 0) and math.floor((preyCount / preyMax) * 100) or 0
-            
-            -- Update display
-            if percent >= 100 then
-                percentText:SetText("Prey Found!")
-                percentText:SetTextColor(1, 0, 0, 1) -- Full red
-            else
-                percentText:SetText(percent .. "%")
-                -- Color gradient from grey to red (0% = grey, 100% = full red)
-                local ratio = percent / 100
-                local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
-                local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-                local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
-                percentText:SetTextColor(r, g, b, 1)
+        if widgets then
+            -- Iterate through all widgets to find the status bar
+            for _, widgetInfo in ipairs(widgets) do
+                if widgetInfo and widgetInfo.widgetID then
+                    local statusBarInfo = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo(widgetInfo.widgetID)
+                    
+                    if statusBarInfo and statusBarInfo.barValue ~= nil and statusBarInfo.barMax ~= nil and statusBarInfo.barMax > 0 then
+                        preyCount = statusBarInfo.barValue or 0
+                        preyMax = statusBarInfo.barMax or 0
+                        foundWidget = true
+                        
+                        -- Calculate percentage
+                        local percent = (preyMax > 0) and math.floor((preyCount / preyMax) * 100) or 0
+                        
+                        -- Update display
+                        if percent >= 100 then
+                            percentText:SetText("Prey Found!")
+                            percentText:SetTextColor(1, 0, 0, 1) -- Full red
+                        else
+                            percentText:SetText(percent .. "%")
+                            -- Color gradient from grey to red (0% = grey, 100% = full red)
+                            local ratio = percent / 100
+                            local r = 0.6 + (ratio * 0.4)  -- 0.6 to 1.0
+                            local g = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                            local b = 0.6 - (ratio * 0.6)  -- 0.6 to 0
+                            percentText:SetTextColor(r, g, b, 1)
+                        end
+                        
+                        percentText:Show()
+                        break -- Found the widget, stop searching
+                    end
+                end
             end
-            
-            percentText:Show()
         end
     end
     
-    -- If no widget found, hide the text
+    -- If no widget data found but frame is visible, assume 100% complete (blood animations stage)
     if not foundWidget then
-        percentText:Hide()
+        percentText:SetText("Prey Found!")
+        percentText:SetTextColor(1, 0, 0, 1) -- Full red
+        percentText:Show()
     end
 end
 
@@ -401,7 +419,7 @@ function Prey:GetOptions()
                 order = 10,
             },
             description = {
-                name = "The Prey tracking icon appears during active Prey events. This module allows you to drag it and displays a percentage (1-100%) below the icon showing your hunt progress.\n\nThe percentage text transitions from grey (0%) to red (100%) to match Blizzard's styling.",
+                name = "The Prey tracking icon appears during active Prey events. This module allows you to drag it and displays progress below the icon:\n\n• 0-99%: Shows percentage with grey-to-red gradient\n• 100%: Shows 'Prey Found!' in red (during blood animation stage)",
                 type = "description",
                 order = 11,
             },
