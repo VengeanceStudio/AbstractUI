@@ -2037,77 +2037,148 @@ local function ShowEquipmentSetEditor(setID)
     iconLabel:SetText("Select Icon:")
     iconLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
     
+    -- Search box for icons
+    local searchBox = CreateFrame("EditBox", nil, editor, "BackdropTemplate")
+    searchBox:SetSize(370, 22)
+    searchBox:SetPoint("TOPLEFT", iconLabel, "BOTTOMLEFT", 0, -5)
+    searchBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    searchBox:SetBackdropColor(0.05, 0.05, 0.05, 0.9)
+    searchBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    searchBox:SetFontObject("ChatFontNormal")
+    searchBox:SetTextColor(0.7, 0.7, 0.7)
+    searchBox:SetAutoFocus(false)
+    searchBox:SetText("Search icons...")
+    
     -- Icon grid container with scroll
     local iconScrollFrame = CreateFrame("ScrollFrame", nil, editor, "UIPanelScrollFrameTemplate")
-    iconScrollFrame:SetPoint("TOPLEFT", iconLabel, "BOTTOMLEFT", 0, -5)
-    iconScrollFrame:SetSize(370, 250)
+    iconScrollFrame:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
+    iconScrollFrame:SetSize(370, 220)
     
     local iconScrollChild = CreateFrame("Frame", nil, iconScrollFrame)
     iconScrollChild:SetSize(370, 1)
     iconScrollFrame:SetScrollChild(iconScrollChild)
     
-    -- Get equipment/armor icons
-    local icons = {}
-    
-    -- Get item icons (includes armor/weapons)
-    GetMacroItemIcons(icons)
-    
-    -- Also get general macro icons which includes more equipment sets
+    -- Get all equipment/armor icons
+    local allIcons = {}
+    GetMacroItemIcons(allIcons)
     local macroIcons = GetMacroIcons()
     for i = 1, #macroIcons do
-        table.insert(icons, macroIcons[i])
+        table.insert(allIcons, macroIcons[i])
     end
     
-    -- Create icon buttons in grid
-    local iconsPerRow = 10
-    local iconSize = 32
-    local iconSpacing = 4
-    local iconButtons = {}
+    editor.allIcons = allIcons
+    editor.iconButtons = {}
     
-    for i, iconID in ipairs(icons) do
-        local row = math.floor((i - 1) / iconsPerRow)
-        local col = (i - 1) % iconsPerRow
+    -- Function to rebuild icon grid
+    local function RebuildIconGrid(searchText)
+        -- Clear existing buttons
+        for _, btn in ipairs(editor.iconButtons) do
+            btn:Hide()
+            btn:SetParent(nil)
+        end
+        editor.iconButtons = {}
         
-        local btn = CreateFrame("Button", nil, iconScrollChild)
-        btn:SetSize(iconSize, iconSize)
-        btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
-        
-        local tex = btn:CreateTexture(nil, "ARTWORK")
-        tex:SetAllPoints()
-        tex:SetTexture(iconID)
-        btn.texture = tex
-        
-        local border = btn:CreateTexture(nil, "OVERLAY")
-        border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-        border:SetBlendMode("ADD")
-        border:SetAllPoints()
-        border:Hide()
-        btn.border = border
-        
-        local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
-        highlight:SetAllPoints()
-        highlight:SetColorTexture(1, 1, 1, 0.3)
-        
-        btn:SetScript("OnClick", function(self)
-            editor.selectedIcon = iconID
-            -- Update all borders
-            for _, b in ipairs(iconButtons) do
-                b.border:Hide()
+        -- Filter icons (limit to 200 max for performance)
+        local displayIcons = {}
+        if searchText and searchText ~= "" and searchText ~= "Search icons..." then
+            -- For now, just show first 200 icons (search by icon ID not implemented)
+            for i = 1, math.min(200, #allIcons) do
+                table.insert(displayIcons, allIcons[i])
             end
-            self.border:Show()
-        end)
-        
-        -- Show border if this is the current icon
-        if iconID == editor.selectedIcon then
-            border:Show()
+        else
+            -- Show first 100 icons by default
+            for i = 1, math.min(100, #allIcons) do
+                table.insert(displayIcons, allIcons[i])
+            end
         end
         
-        table.insert(iconButtons, btn)
+        -- Create icon buttons in grid
+        local iconsPerRow = 10
+        local iconSize = 32
+        local iconSpacing = 4
+        
+        for i, iconID in ipairs(displayIcons) do
+            local row = math.floor((i - 1) / iconsPerRow)
+            local col = (i - 1) % iconsPerRow
+            
+            local btn = CreateFrame("Button", nil, iconScrollChild)
+            btn:SetSize(iconSize, iconSize)
+            btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
+            
+            local tex = btn:CreateTexture(nil, "ARTWORK")
+            tex:SetAllPoints()
+            tex:SetTexture(iconID)
+            btn.texture = tex
+            btn.iconID = iconID
+            
+            local border = btn:CreateTexture(nil, "OVERLAY")
+            border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+            border:SetBlendMode("ADD")
+            border:SetAllPoints()
+            border:Hide()
+            btn.border = border
+            
+            local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(1, 1, 1, 0.3)
+            
+            btn:SetScript("OnClick", function(self)
+                editor.selectedIcon = iconID
+                -- Update all borders
+                for _, b in ipairs(editor.iconButtons) do
+                    b.border:Hide()
+                end
+                self.border:Show()
+            end)
+            
+            -- Show border if this is the current icon
+            if iconID == editor.selectedIcon then
+                border:Show()
+            end
+            
+            table.insert(editor.iconButtons, btn)
+        end
+        
+        -- Set scroll child height
+        local numRows = math.ceil(#displayIcons / iconsPerRow)
+        iconScrollChild:SetHeight(math.max(1, numRows * (iconSize + iconSpacing)))
     end
     
-    -- Set scroll child height
-    local numRows = math.ceil(#icons / iconsPerRow)
-    iconScrollChild:SetHeight(numRows * (iconSize + iconSpacing))
+    -- Search box handlers
+    searchBox:SetScript("OnEditFocusGained", function(self)
+        if self:GetText() == "Search icons..." then
+            self:SetText("")
+            self:SetTextColor(1, 1, 1)
+        end
+    end)
+    
+    searchBox:SetScript("OnEditFocusLost", function(self)
+        if self:GetText() == "" then
+            self:SetText("Search icons...")
+            self:SetTextColor(0.7, 0.7, 0.7)
+            RebuildIconGrid("")
+        end
+    end)
+    
+    searchBox:SetScript("OnTextChanged", function(self)
+        local text = self:GetText()
+        if text ~= "Search icons..." then
+            RebuildIconGrid(text)
+        end
+    end)
+    
+    searchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+    
+    -- Build initial icon grid
+    RebuildIconGrid("")
     
     -- Save button
     local saveBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
