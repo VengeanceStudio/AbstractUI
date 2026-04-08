@@ -896,6 +896,9 @@ end
 -- Declare statsOverlay at module level so all functions can access it
 local statsOverlay = nil
 
+-- Track which sidebar tab is currently selected (1=Stats, 2=Titles, 3=EquipmentManager)
+local selectedSidebarTab = 1  -- Default to Stats tab
+
 -- Forward declare function to be used in SkinCharacterTabs
 local UpdateStatsOverlayVisibility
 
@@ -906,33 +909,14 @@ UpdateStatsOverlayVisibility = function()
         return 
     end
     
-    -- Check which content pane is visible to determine selected tab
-    -- Stats pane (tab 1) = CharacterStatsPane
-    -- Titles pane (tab 2) = PaperDollTitlesPane  
-    -- Equipment Manager (tab 3) = PaperDollEquipmentManagerPane
+    print("Selected sidebar tab:", selectedSidebarTab)
     
-    print("Checking panes:")
-    print("  PaperDollTitlesPane:", PaperDollTitlesPane and "exists" or "nil", PaperDollTitlesPane and PaperDollTitlesPane:IsShown() and "SHOWN" or "hidden")
-    print("  PaperDollEquipmentManagerPane:", PaperDollEquipmentManagerPane and "exists" or "nil", PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() and "SHOWN" or "hidden")
-    
-    local showStats = false
-    
-    -- Check if titles or equipment manager panes are visible
-    if PaperDollTitlesPane and PaperDollTitlesPane:IsShown() then
-        print("Titles pane is shown - hiding stats")
-        showStats = false
-    elseif PaperDollEquipmentManagerPane and PaperDollEquipmentManagerPane:IsShown() then
-        print("Equipment Manager pane is shown - hiding stats")
-        showStats = false
-    else
-        -- Default to showing stats (Stats tab is selected)
-        print("Stats tab active - showing stats")
-        showStats = true
-    end
-    
-    if showStats then
+    -- Show stats overlay only when Stats tab (1) is selected
+    if selectedSidebarTab == 1 then
+        print("Showing stats overlay")
         statsOverlay:Show()
     else
+        print("Hiding stats overlay")
         statsOverlay:Hide()
     end
 end
@@ -1536,8 +1520,10 @@ local function SkinStatsPane()
     for i = 1, numTabs do
         local tab = _G["PaperDollSidebarTab" .. i]
         if tab and not tab._abstractStatsHooked then
+            local tabNumber = i  -- Capture for closure
             tab:HookScript("OnClick", function(self)
-                print("Tab clicked (stats hook):", self:GetName())
+                print("Tab clicked (stats hook):", self:GetName(), "- tab number:", tabNumber)
+                selectedSidebarTab = tabNumber
                 UpdateStatsOverlayVisibility()
             end)
             tab._abstractStatsHooked = true
