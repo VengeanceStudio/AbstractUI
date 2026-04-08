@@ -1864,8 +1864,40 @@ local function CreateEquipmentManagerOverlay()
             self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
         end)
         newButton:SetScript("OnClick", function()
-            -- Open Blizzard's equipment set creation dialog
-            StaticPopup_Show("EQUIPMENT_SET_NAME")
+            -- Create a custom popup dialog for naming the equipment set
+            StaticPopupDialogs["ABSTRACTUI_CREATE_EQUIPMENT_SET"] = {
+                text = "Enter a name for your equipment set:",
+                button1 = "Create",
+                button2 = "Cancel",
+                hasEditBox = true,
+                maxLetters = 31,
+                OnAccept = function(self)
+                    local name = self.editBox:GetText()
+                    if name and name ~= "" then
+                        -- Create the equipment set with current gear
+                        local icon = GetInventoryItemTexture("player", 1) or 134400  -- Use head slot icon or default
+                        C_EquipmentSet.CreateEquipmentSet(name, icon)
+                        UpdateEquipmentManagerOverlay()
+                    end
+                end,
+                EditBoxOnEnterPressed = function(self)
+                    local name = self:GetText()
+                    if name and name ~= "" then
+                        local icon = GetInventoryItemTexture("player", 1) or 134400
+                        C_EquipmentSet.CreateEquipmentSet(name, icon)
+                        UpdateEquipmentManagerOverlay()
+                    end
+                    self:GetParent():Hide()
+                end,
+                EditBoxOnEscapePressed = function(self)
+                    self:GetParent():Hide()
+                end,
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3,
+            }
+            StaticPopup_Show("ABSTRACTUI_CREATE_EQUIPMENT_SET")
         end)
         container.newButton = newButton
         
