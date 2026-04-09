@@ -1300,6 +1300,27 @@ function Movable:MakeBlizzardFrameMovable(frameName)
         }
     end)
     
+    -- Create green highlight overlay (hidden by default)
+    if not frame.movableHighlight then
+        frame.movableHighlight = frame:CreateTexture(nil, "OVERLAY")
+        frame.movableHighlight:SetAllPoints()
+        frame.movableHighlight:SetColorTexture(0, 1, 0, 0.2)
+        frame.movableHighlight:SetDrawLayer("OVERLAY", 7)
+        frame.movableHighlight:Hide()
+    end
+    
+    -- Create label text for move mode
+    if not frame.movableHighlightLabel then
+        frame.movableHighlightLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        frame.movableHighlightLabel:SetPoint("CENTER")
+        frame.movableHighlightLabel:SetText(frameName)
+        frame.movableHighlightLabel:SetTextColor(1, 1, 1, 1)
+        frame.movableHighlightLabel:Hide()
+    end
+    
+    -- Register the frame so it responds to move mode changes
+    table.insert(self.registeredFrames, frame)
+    
     -- Mark as handled
     self.blizzardFrames[frameName] = true
     
@@ -1322,6 +1343,40 @@ function Movable:MakeBlizzardFrameMovable(frameName)
                 end
             end)
         end)
+    end
+    
+    -- Create nudge controls for the frame
+    if not frame.arrows then
+        -- Create database entry for nudge offsets if it doesn't exist
+        if not self.db.profile.blizzardFramePositions[frameName] then
+            self.db.profile.blizzardFramePositions[frameName] = {}
+        end
+        if not self.db.profile.blizzardFramePositions[frameName].offsetX then
+            self.db.profile.blizzardFramePositions[frameName].offsetX = 0
+        end
+        if not self.db.profile.blizzardFramePositions[frameName].offsetY then
+            self.db.profile.blizzardFramePositions[frameName].offsetY = 0
+        end
+        
+        -- Create nudge controls
+        frame.arrows = self:CreateNudgeControls(
+            frame,
+            self.db.profile.blizzardFramePositions[frameName],
+            function()
+                -- Apply nudge offsets
+                if self.db and self.db.profile.blizzardFramePositions and self.db.profile.blizzardFramePositions[frameName] then
+                    local pos = self.db.profile.blizzardFramePositions[frameName]
+                    if pos.point then
+                        frame:ClearAllPoints()
+                        local x = (pos.x or 0) + (pos.offsetX or 0)
+                        local y = (pos.y or 0) + (pos.offsetY or 0)
+                        frame:SetPoint(pos.point, UIParent, pos.relativePoint, x, y)
+                    end
+                end
+            end,
+            nil,
+            frameName
+        )
     end
 end
 
