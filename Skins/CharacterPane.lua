@@ -1239,8 +1239,19 @@ local function SkinCharacterFrameBackdrop()
         scaleBox:SetTextColor(1, 1, 1)
         scaleBox:SetAutoFocus(false)
         scaleBox:SetMaxLetters(4)
-        scaleBox:SetText(string.format("%.2f", CharacterFrame:GetScale()))
+        scaleBox:SetText("1.25")
         scaleBox:SetJustifyH("CENTER")
+        
+        -- Set default scale
+        CharacterFrame:SetScale(1.25)
+        
+        scaleBox:SetScript("OnEditFocusGained", function(self)
+            self:HighlightText()
+        end)
+        
+        scaleBox:SetScript("OnMouseDown", function(self)
+            self:SetFocus()
+        end)
         
         scaleBox:SetScript("OnEscapePressed", function(self)
             self:ClearFocus()
