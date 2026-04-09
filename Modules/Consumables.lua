@@ -33,8 +33,7 @@ local defaults = {
         },
         -- Individual buff tracking toggles
         trackBuffs = {
-            mainhand_enchant = true,
-            offhand_enchant = true,
+            weapon_imbues = true,  -- Tracks both main hand and offhand
             flask = true,
             food = true,
             mainhand_poison = true,
@@ -61,25 +60,29 @@ local defaults = {
 -- Buff/consumable groups to track
 local BUFF_GROUPS = {
     {
-        id = "mainhand_enchant",
+        id = "weapon_imbue_mainhand",
         icon = 7548987,
-        label = "Main Hand Enchant MISSING!",
+        label = "Main Hand Imbue MISSING!",
         checkFunc = function()
             local hasMain = GetWeaponEnchantInfo()
             return not hasMain
         end,
     },
     {
-        id = "offhand_enchant",
+        id = "weapon_imbue_offhand",
         icon = 3622196,
-        label = "Offhand Enchant MISSING!",
+        label = "Offhand Imbue MISSING!",
         checkFunc = function()
-            local _, _, _, _, hasOff = GetWeaponEnchantInfo()
+            -- Check if offhand weapon exists first
             local itemID = GetInventoryItemID("player", 17)
-            if not itemID then return false end
+            if not itemID then return false end  -- No offhand item
             local classID = select(6, GetItemInfoInstant(itemID))
             local isWeapon = (classID == 2) -- 2 == Weapon
-            return isWeapon and not hasOff
+            if not isWeapon then return false end  -- Not a weapon (shield, etc.)
+            
+            -- Now check imbue status
+            local _, _, _, _, hasOff = GetWeaponEnchantInfo()
+            return not hasOff
         end,
     },
     {
@@ -422,14 +425,12 @@ function Consumables:UpdateBuffStatus()
         if trackerFrame then
             trackerFrame:Hide()
         end
-        self:StopJumpAnimation()
         return
     end
     
     -- Check if we should show in current context
     if not self:ShouldShowInCurrentContext() then
         trackerFrame:Hide()
-        self:StopJumpAnimation()
         return
     end
     
@@ -439,7 +440,15 @@ function Consumables:UpdateBuffStatus()
     -- Check each buff group
     for i, iconGroup in ipairs(iconGroups) do
         local group = iconGroup.data
-        local isEnabled = self.db.profile.trackBuffs[group.id]
+        
+        -- Weapon imbues use a single toggle for both slots
+        local isEnabled
+        if group.id == "weapon_imbue_mainhand" or group.id == "weapon_imbue_offhand" then
+            isEnabled = self.db.profile.trackBuffs.weapon_imbues
+        else
+            isEnabled = self.db.profile.trackBuffs[group.id]
+        end
+        
         local isMissing = isEnabled and group.checkFunc(group)
         
         if isMissing then
@@ -454,10 +463,8 @@ function Consumables:UpdateBuffStatus()
     -- Update global text
     if #missingLabels > 0 then
         globalTextLine:SetText(table.concat(missingLabels, ", "))
-        self:PlayJumpAnimation()
     else
         globalTextLine:SetText("")
-        self:StopJumpAnimation()
     end
     
     -- Update frame visibility based on whether anything is missing
@@ -637,6 +644,7 @@ function Consumables:GetOptions()
                 max = 128,
                 step = 1,
                 order = 11,
+                width = "normal",
                 get = function() return self.db.profile.iconSize end,
                 set = function(_, v)
                     self.db.profile.iconSize = v
@@ -651,6 +659,7 @@ function Consumables:GetOptions()
                 max = 30,
                 step = 1,
                 order = 12,
+                width = "normal",
                 get = function() return self.db.profile.iconSpacing end,
                 set = function(_, v)
                     self.db.profile.iconSpacing = v
@@ -665,6 +674,7 @@ function Consumables:GetOptions()
                 max = 32,
                 step = 1,
                 order = 13,
+                width = "normal",
                 get = function() return self.db.profile.textSize end,
                 set = function(_, v)
                     self.db.profile.textSize = v
@@ -687,23 +697,14 @@ function Consumables:GetOptions()
                 name = "What to Track",
                 order = 20,
             },
-            trackMainhandEnchant = {
+            trackWeaponImbues = {
                 type = "toggle",
-                name = "Main Hand Enchant",
-                desc = "Track missing main hand weapon enchant",
+                name = "Weapon Imbues",
+                desc = "Track missing temporary weapon enhancements (Shaman imbues, weapon oils, sharpening stones, etc.)",
                 order = 21,
                 width = "full",
-                get = function() return self.db.profile.trackBuffs.mainhand_enchant end,
-                set = function(_, v) self.db.profile.trackBuffs.mainhand_enchant = v end,
-            },
-            trackOffhandEnchant = {
-                type = "toggle",
-                name = "Offhand Enchant",
-                desc = "Track missing offhand weapon enchant",
-                order = 22,
-                width = "full",
-                get = function() return self.db.profile.trackBuffs.offhand_enchant end,
-                set = function(_, v) self.db.profile.trackBuffs.offhand_enchant = v end,
+                get = function() return self.db.profile.trackBuffs.weapon_imbues end,
+                set = function(_, v) self.db.profile.trackBuffs.weapon_imbues = v end,
             },
             trackFlask = {
                 type = "toggle",
