@@ -1031,7 +1031,7 @@ function Consumables:ShowBuffCustomizationEditor(buffId, title)
     local editor = CreateFrame("Frame", "AbstractUI_ConsumablesCustomizationEditor", UIParent, "BackdropTemplate")
     editor:SetSize(400, 450)
     editor:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    editor:SetFrameStrata("DIALOG")
+    editor:SetFrameStrata("FULLSCREEN_DIALOG")
     editor:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -1039,7 +1039,7 @@ function Consumables:ShowBuffCustomizationEditor(buffId, title)
         edgeSize = 2,
         insets = { left = 2, right = 2, top = 2, bottom = 2 }
     })
-    editor:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+    editor:SetBackdropColor(0.1, 0.1, 0.1, 1.0)
     editor:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
     editor:EnableMouse(true)
     editor:SetMovable(true)
