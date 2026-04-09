@@ -487,6 +487,18 @@ local function CreateEquipmentInfo(slotButton, slotName, side)
     slotButton._infoCreated = true
 end
 
+local function TruncateEnchantStats(text)
+    if not text then return text end
+    
+    -- Replace stat names with abbreviations
+    text = text:gsub("Agility", "Agi")
+    text = text:gsub("Intellect", "Int")
+    text = text:gsub("Strength", "Str")
+    text = text:gsub("Stamina", "Stam")
+    
+    return text
+end
+
 local function UpdateEquipmentInfo(slotButton, slotID)
     local slotName = slotButton:GetName()
     local info = equipmentInfo[slotName]
@@ -606,6 +618,7 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     
     if enchantableSlots[slotID] then
         if hasEnchant then
+            enchantText = TruncateEnchantStats(enchantText)
             info.enchantText:SetText(enchantText)
             info.enchantText:SetTextColor(0, 1, 0, 1) -- Green
         else
