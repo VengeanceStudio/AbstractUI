@@ -517,7 +517,8 @@ function AddonManager:SaveSet(set, name)
     
     for i = 1, GetNumAddOns() do
         if GetAddOnEnableState(UnitGUID("player"), i) > 0 then
-            table.insert(addonSets[set].addons, GetAddOnInfo(i))
+            local addonName = GetAddOnInfo(i)
+            table.insert(addonSets[set].addons, addonName)
         end
     end
 end
