@@ -711,14 +711,14 @@ local function RepositionEquipmentSlots()
     
     if mainHandSlot and not mainHandSlot._abstractRepositioned then
         mainHandSlot:ClearAllPoints()
-        mainHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 150, -370)
+        mainHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 140, -370)
         mainHandSlot._abstractRepositioned = true
         CreateEquipmentInfo(mainHandSlot, "CharacterMainHandSlot", "right")  -- Text goes left
     end
     
     if offHandSlot and not offHandSlot._abstractRepositioned then
         offHandSlot:ClearAllPoints()
-        offHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 210, -370)
+        offHandSlot:SetPoint("TOPLEFT", PaperDollItemsFrame, "TOPLEFT", 200, -370)
         offHandSlot._abstractRepositioned = true
         CreateEquipmentInfo(offHandSlot, "CharacterSecondaryHandSlot", "left")  -- Text goes right
     end
