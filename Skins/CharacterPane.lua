@@ -2117,22 +2117,22 @@ local function ShowEquipmentSetEditor(setID)
             local row = math.floor((i - 1) / iconsPerRow)
             local col = (i - 1) % iconsPerRow
             
-            local btn = CreateFrame("Button", nil, iconScrollChild)
+            local btn = CreateFrame("Button", nil, iconScrollChild, "BackdropTemplate")
             btn:SetSize(iconSize, iconSize)
             btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
+            
+            -- Create border backdrop (hidden by default)
+            btn:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = 2,
+            })
+            btn:SetBackdropBorderColor(1, 0.82, 0, 0)  -- Gold, hidden
             
             local tex = btn:CreateTexture(nil, "ARTWORK")
             tex:SetAllPoints()
             tex:SetTexture(iconID)
             btn.texture = tex
             btn.iconID = iconID
-            
-            local border = btn:CreateTexture(nil, "OVERLAY")
-            border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-            border:SetBlendMode("ADD")
-            border:SetAllPoints()
-            border:Hide()
-            btn.border = border
             
             local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
             highlight:SetAllPoints()
@@ -2142,9 +2142,9 @@ local function ShowEquipmentSetEditor(setID)
                 editor.selectedIcon = iconID
                 -- Update all borders
                 for _, b in ipairs(editor.iconButtons) do
-                    b.border:Hide()
+                    b:SetBackdropBorderColor(1, 0.82, 0, 0)  -- Hide border
                 end
-                self.border:Show()
+                self:SetBackdropBorderColor(1, 0.82, 0, 1)  -- Show gold border
             end)
             
             -- Tooltip with icon name
@@ -2161,7 +2161,7 @@ local function ShowEquipmentSetEditor(setID)
             
             -- Show border if this is the current icon
             if iconID == editor.selectedIcon then
-                border:Show()
+                btn:SetBackdropBorderColor(1, 0.82, 0, 1)  -- Gold border
             end
             
             table.insert(editor.iconButtons, btn)
