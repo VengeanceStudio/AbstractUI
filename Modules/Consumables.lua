@@ -10,12 +10,10 @@ local FrameFactory, ColorPalette, FontKit
 
 -- Module frames
 local trackerFrame
-local globalTextLine
 local iconGroups = {}
 
 -- State tracking
 local readyCheckTimer = nil
-local textJumpAnimation = nil
 local lastUpdate = 0
 local THROTTLE = 0.2
 
@@ -62,7 +60,7 @@ local BUFF_GROUPS = {
     {
         id = "weapon_imbue_mainhand",
         icon = 7548987,
-        label = "Main Hand Imbue MISSING!",
+        label = "Main Hand",
         checkFunc = function()
             local hasMain = GetWeaponEnchantInfo()
             return not hasMain
@@ -71,7 +69,7 @@ local BUFF_GROUPS = {
     {
         id = "weapon_imbue_offhand",
         icon = 3622196,
-        label = "Offhand Imbue MISSING!",
+        label = "Offhand",
         checkFunc = function()
             -- Check if offhand weapon exists first
             local itemID = GetInventoryItemID("player", 17)
@@ -88,7 +86,7 @@ local BUFF_GROUPS = {
     {
         id = "flask",
         icon = 7548903,
-        label = "Flask MISSING!",
+        label = "Flask!",
         spells = { 46376, 1235110, 1235111, 1235057, 1235108 },
         checkFunc = function(self)
             return not Consumables:HasBuffBySpellIDs(self.spells)
@@ -97,7 +95,7 @@ local BUFF_GROUPS = {
     {
         id = "food",
         icon = 136000,
-        label = "Food Buff MISSING!",
+        label = "Food!",
         checkFunc = function()
             return not Consumables:HasFoodBuff()
         end,
@@ -105,7 +103,7 @@ local BUFF_GROUPS = {
     {
         id = "mainhand_poison",
         icon = 136066,
-        label = "Main Hand Poison MISSING!",
+        label = "MH Poison",
         spells = { 315584, 8679 },
         requireClass = "ROGUE",
         checkFunc = function(self)
@@ -117,7 +115,7 @@ local BUFF_GROUPS = {
     {
         id = "offhand_poison",
         icon = 136066,
-        label = "Offhand Poison MISSING!",
+        label = "OH Poison",
         spells = { 3408, 5761 },
         requireClass = "ROGUE",
         checkFunc = function(self)
@@ -133,7 +131,7 @@ local BUFF_GROUPS = {
     {
         id = "healthstone",
         icon = 538745,
-        label = "Healthstone MISSING!",
+        label = "Healthstone",
         itemIDs = { 5512, 224464 },
         checkFunc = function(self)
             if not Consumables:GroupHasWarlock() then return false end
@@ -232,48 +230,21 @@ function Consumables:CreateTrackerFrame()
         border:SetAllPoints()
         border:SetVertexColor(1, 0, 0, 0.3)
         
+        -- Individual text label under this icon
+        local label = iconFrame:CreateFontString(nil, "OVERLAY")
+        label:SetFont(STANDARD_TEXT_FONT, self.db.profile.textSize, "OUTLINE")
+        label:SetPoint("TOP", iconFrame, "BOTTOM", 0, -2)
+        label:SetTextColor(1, 0, 0, 1)
+        label:SetText(group.label)
+        
         iconGroups[i] = {
             frame = iconFrame,
             icon = icon,
             border = border,
+            label = label,
             data = group,
         }
     end
-    
-    -- Global text line (below icons)
-    globalTextLine = trackerFrame:CreateFontString(nil, "OVERLAY")
-    globalTextLine:SetFont(STANDARD_TEXT_FONT, self.db.profile.textSize, "OUTLINE")
-    globalTextLine:SetPoint("TOP", trackerFrame, "BOTTOM", 0, -10)
-    globalTextLine:SetTextColor(1, 0, 0, 1)
-    globalTextLine:SetText("")
-    
-    -- Create jump animation for text
-    self:CreateJumpAnimation()
-end
-
-function Consumables:CreateJumpAnimation()
-    if not globalTextLine then return end
-    
-    textJumpAnimation = globalTextLine:CreateAnimationGroup()
-    textJumpAnimation:SetLooping("REPEAT")
-    
-    local up = textJumpAnimation:CreateAnimation("Translation")
-    up:SetOrder(1)
-    up:SetDuration(0.12)
-    up:SetOffset(0, 18)
-    up:SetSmoothing("OUT")
-    
-    local down = textJumpAnimation:CreateAnimation("Translation")
-    down:SetOrder(2)
-    down:SetDuration(0.18)
-    down:SetOffset(0, -22)
-    down:SetSmoothing("IN")
-    
-    local settle = textJumpAnimation:CreateAnimation("Translation")
-    settle:SetOrder(3)
-    settle:SetDuration(0.10)
-    settle:SetOffset(0, 4)
-    settle:SetSmoothing("OUT")
 end
 
 -- ============================================================================
@@ -434,7 +405,6 @@ function Consumables:UpdateBuffStatus()
         return
     end
     
-    local missingLabels = {}
     local anyMissing = false
     
     -- Check each buff group
@@ -453,37 +423,14 @@ function Consumables:UpdateBuffStatus()
         
         if isMissing then
             iconGroup.frame:Show()
-            table.insert(missingLabels, group.label)
             anyMissing = true
         else
             iconGroup.frame:Hide()
         end
     end
     
-    -- Update global text
-    if #missingLabels > 0 then
-        globalTextLine:SetText(table.concat(missingLabels, ", "))
-    else
-        globalTextLine:SetText("")
-    end
-    
     -- Update frame visibility based on whether anything is missing
     trackerFrame:SetShown(anyMissing)
-end
-
-function Consumables:PlayJumpAnimation()
-    if textJumpAnimation and not textJumpAnimation:IsPlaying() then
-        textJumpAnimation:Play()
-    end
-end
-
-function Consumables:StopJumpAnimation()
-    if textJumpAnimation and textJumpAnimation:IsPlaying() then
-        textJumpAnimation:Stop()
-        if globalTextLine then
-            globalTextLine:SetPoint("TOP", trackerFrame, "BOTTOM", 0, -10)
-        end
-    end
 end
 
 -- ============================================================================
@@ -678,8 +625,11 @@ function Consumables:GetOptions()
                 get = function() return self.db.profile.textSize end,
                 set = function(_, v)
                     self.db.profile.textSize = v
-                    if globalTextLine then
-                        globalTextLine:SetFont(STANDARD_TEXT_FONT, v, "OUTLINE")
+                    -- Update all icon labels
+                    for _, iconGroup in ipairs(iconGroups) do
+                        if iconGroup.label then
+                            iconGroup.label:SetFont(STANDARD_TEXT_FONT, v, "OUTLINE")
+                        end
                     end
                 end,
             },
@@ -883,8 +833,6 @@ function Consumables:RecreateFrame()
         trackerFrame:SetParent(nil)
         trackerFrame = nil
         iconGroups = {}
-        globalTextLine = nil
-        textJumpAnimation = nil
     end
     
     self:CreateTrackerFrame()
