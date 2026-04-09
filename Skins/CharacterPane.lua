@@ -1977,7 +1977,7 @@ local function ShowEquipmentSetEditor(setID)
     -- Create custom equipment set editor dialog
     local editor = CreateFrame("Frame", "AbstractUI_EquipmentSetEditor", UIParent, "BackdropTemplate")
     editor:SetSize(400, 400)
-    editor:SetPoint("CENTER")
+    editor:SetPoint("LEFT", CharacterFrame, "RIGHT", 5, 0)
     editor:SetFrameStrata("DIALOG")
     editor:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
