@@ -934,7 +934,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Main Hand weapon imbue icon and label",
                 order = 52,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("weapon_imbue_mainhand", "Main Hand Weapon Imbue") end,
             },
             customizeOffHandImbue = {
@@ -946,7 +946,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Off Hand weapon imbue icon and label",
                 order = 53,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("weapon_imbue_offhand", "Off Hand Weapon Imbue") end,
             },
             customizeFlask = {
@@ -958,7 +958,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Flask icon and label",
                 order = 54,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("flask", "Flask Buff") end,
             },
             customizeFood = {
@@ -970,7 +970,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Food buff icon and label",
                 order = 55,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("food", "Food Buff") end,
             },
             customizeMainHandPoison = {
@@ -982,7 +982,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Main Hand Poison icon and label",
                 order = 56,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("mainhand_poison", "Main Hand Poison") end,
             },
             customizeOffHandPoison = {
@@ -994,7 +994,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Off Hand Poison icon and label",
                 order = 57,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("offhand_poison", "Off Hand Poison") end,
             },
             customizeHealthstone = {
@@ -1006,7 +1006,7 @@ function Consumables:GetOptions()
                 end,
                 desc = "Customize Healthstone icon and label",
                 order = 58,
-                width = "normal",
+                width = "half",
                 func = function() self:ShowBuffCustomizationEditor("healthstone", "Healthstone") end,
             },
         },
