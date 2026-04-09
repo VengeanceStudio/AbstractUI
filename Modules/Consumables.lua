@@ -17,6 +17,9 @@ local readyCheckTimer = nil
 local lastUpdate = 0
 local THROTTLE = 0.2
 
+-- Reference to ScrollFrame (will be initialized after DB is ready)
+local ScrollFrame
+
 -- Database defaults
 local defaults = {
     profile = {
@@ -37,6 +40,16 @@ local defaults = {
             mainhand_poison = true,
             offhand_poison = true,
             healthstone = true,
+        },
+        -- Custom icons and labels for each buff type
+        customization = {
+            weapon_imbue_mainhand = { icon = 7548987, label = "Main Hand" },
+            weapon_imbue_offhand = { icon = 3622196, label = "Off Hand" },
+            flask = { icon = 7548903, label = "Flask!" },
+            food = { icon = 136000, label = "Food!" },
+            mainhand_poison = { icon = 136066, label = "MH Poison" },
+            offhand_poison = { icon = 136066, label = "OH Poison" },
+            healthstone = { icon = 538745, label = "Healthstone" },
         },
         -- Context-based display options
         showInContext = {
@@ -161,6 +174,7 @@ function Consumables:OnDBReady()
     FrameFactory = AbstractUI.FrameFactory
     ColorPalette = _G.AbstractUI_ColorPalette
     FontKit = AbstractUI.FontKit
+    ScrollFrame = _G.AbstractUI_ScrollFrame
     
     -- Only initialize if module is enabled
     if AbstractUI.db.profile.modules.consumables then
@@ -230,10 +244,15 @@ function Consumables:CreateTrackerFrame()
         iconFrame:SetSize(iconSize, iconSize)
         iconFrame:SetPoint("LEFT", trackerFrame, "LEFT", (i - 1) * (iconSize + spacing), 0)
         
+        -- Get custom icon and label from database, or use defaults
+        local customization = self.db.profile.customization[group.id]
+        local iconTexture = customization.icon or group.icon
+        local labelText = customization.label or group.label
+        
         -- Icon texture
         local icon = iconFrame:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints()
-        icon:SetTexture(group.icon)
+        icon:SetTexture(iconTexture)
         
         -- Border
         local border = iconFrame:CreateTexture(nil, "OVERLAY")
@@ -246,7 +265,7 @@ function Consumables:CreateTrackerFrame()
         label:SetFont(STANDARD_TEXT_FONT, self.db.profile.textSize, "OUTLINE")
         label:SetPoint("TOP", iconFrame, "BOTTOM", 0, -2)
         label:SetTextColor(1, 0, 0, 1)
-        label:SetText(group.label)
+        label:SetText(labelText)
         
         iconGroups[i] = {
             frame = iconFrame,
@@ -894,8 +913,466 @@ function Consumables:GetOptions()
                     self:UpdateBuffStatus()
                 end,
             },
+            
+            -- Customize Icons & Labels
+            customizeHeader = {
+                type = "header",
+                name = "Customize Icons & Labels",
+                order = 50,
+            },
+            customizeDescription = {
+                type = "description",
+                name = "Click Edit to customize the icon and label for each buff type.",
+                order = 51,
+            },
+            customizeMainHandImbue = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.weapon_imbue_mainhand
+                    local icon = custom.icon or 7548987
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Main Hand")
+                end,
+                desc = "Customize Main Hand weapon imbue icon and label",
+                order = 52,
+                func = function() self:ShowBuffCustomizationEditor("weapon_imbue_mainhand", "Main Hand Weapon Imbue") end,
+                width = "full",
+            },
+            customizeOffHandImbue = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.weapon_imbue_offhand
+                    local icon = custom.icon or 3622196
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Off Hand")
+                end,
+                desc = "Customize Off Hand weapon imbue icon and label",
+                order = 53,
+                func = function() self:ShowBuffCustomizationEditor("weapon_imbue_offhand", "Off Hand Weapon Imbue") end,
+                width = "full",
+            },
+            customizeFlask = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.flask
+                    local icon = custom.icon or 7548903
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Flask!")
+                end,
+                desc = "Customize Flask icon and label",
+                order = 54,
+                func = function() self:ShowBuffCustomizationEditor("flask", "Flask Buff") end,
+                width = "full",
+            },
+            customizeFood = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.food
+                    local icon = custom.icon or 136000
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Food!")
+                end,
+                desc = "Customize Food buff icon and label",
+                order = 55,
+                func = function() self:ShowBuffCustomizationEditor("food", "Food Buff") end,
+                width = "full",
+            },
+            customizeMainHandPoison = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.mainhand_poison
+                    local icon = custom.icon or 136066
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "MH Poison")
+                end,
+                desc = "Customize Main Hand Poison icon and label",
+                order = 56,
+                func = function() self:ShowBuffCustomizationEditor("mainhand_poison", "Main Hand Poison") end,
+                width = "full",
+            },
+            customizeOffHandPoison = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.offhand_poison
+                    local icon = custom.icon or 136066
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "OH Poison")
+                end,
+                desc = "Customize Off Hand Poison icon and label",
+                order = 57,
+                func = function() self:ShowBuffCustomizationEditor("offhand_poison", "Off Hand Poison") end,
+                width = "full",
+            },
+            customizeHealthstone = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.healthstone
+                    local icon = custom.icon or 538745
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Healthstone")
+                end,
+                desc = "Customize Healthstone icon and label",
+                order = 58,
+                func = function() self:ShowBuffCustomizationEditor("healthstone", "Healthstone") end,
+                width = "full",
+            },
         },
     }
+end
+
+-- Show buff customization editor dialog
+function Consumables:ShowBuffCustomizationEditor(buffId, title)
+    if not ColorPalette or not ScrollFrame then
+        print("Consumables: Required frameworks not loaded yet")
+        return
+    end
+    
+    -- Get current values from database
+    local currentCustom = self.db.profile.customization[buffId]
+    if not currentCustom then
+        print("Consumables: Invalid buff ID: " .. tostring(buffId))
+        return
+    end
+    
+    -- Create custom editor dialog
+    local editor = CreateFrame("Frame", "AbstractUI_ConsumablesCustomizationEditor", UIParent, "BackdropTemplate")
+    editor:SetSize(400, 450)
+    editor:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    editor:SetFrameStrata("DIALOG")
+    editor:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    editor:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+    editor:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    editor:EnableMouse(true)
+    editor:SetMovable(true)
+    editor:RegisterForDrag("LeftButton")
+    editor:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    editor:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    
+    -- Title
+    local titleText = editor:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", editor, "TOP", 0, -10)
+    titleText:SetText("Customize: " .. title)
+    titleText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Store selected icon
+    editor.selectedIcon = currentCustom.icon
+    editor.buffId = buffId
+    
+    -- Label text label
+    local labelLabel = editor:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelLabel:SetPoint("TOPLEFT", editor, "TOPLEFT", 15, -40)
+    labelLabel:SetText("Label Text:")
+    labelLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Label edit box
+    local labelBox = CreateFrame("EditBox", nil, editor, "BackdropTemplate")
+    labelBox:SetSize(370, 22)
+    labelBox:SetPoint("TOPLEFT", labelLabel, "BOTTOMLEFT", 0, -5)
+    labelBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    labelBox:SetBackdropColor(0.05, 0.05, 0.05, 0.9)
+    labelBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    labelBox:SetFontObject("ChatFontNormal")
+    labelBox:SetTextColor(1, 1, 1)
+    labelBox:SetAutoFocus(false)
+    labelBox:SetMaxLetters(50)
+    labelBox:SetText(currentCustom.label or "")
+    labelBox:SetCursorPosition(0)
+    editor.labelBox = labelBox
+    
+    -- Icon selection label
+    local iconLabel = editor:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    iconLabel:SetPoint("TOPLEFT", labelBox, "BOTTOMLEFT", 0, -10)
+    iconLabel:SetText("Select Icon:")
+    iconLabel:SetTextColor(ColorPalette:GetColor("text-primary"))
+    
+    -- Search box for icons
+    local searchBox = CreateFrame("EditBox", nil, editor, "BackdropTemplate")
+    searchBox:SetSize(370, 22)
+    searchBox:SetPoint("TOPLEFT", iconLabel, "BOTTOMLEFT", 0, -5)
+    searchBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    searchBox:SetBackdropColor(0.05, 0.05, 0.05, 0.9)
+    searchBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    searchBox:SetFontObject("ChatFontNormal")
+    searchBox:SetTextColor(0.7, 0.7, 0.7)
+    searchBox:SetAutoFocus(false)
+    searchBox:SetText("Search icons...")
+    
+    -- Icon grid container with AbstractUI ScrollFrame
+    local iconScrollContainer = CreateFrame("Frame", nil, editor)
+    iconScrollContainer:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
+    iconScrollContainer:SetSize(370, 260)
+    
+    local iconScrollFrame = ScrollFrame:Create(iconScrollContainer)
+    iconScrollFrame:SetPoint("TOPLEFT", iconScrollContainer, "TOPLEFT", 0, 0)
+    iconScrollFrame:SetPoint("BOTTOMRIGHT", iconScrollContainer, "BOTTOMRIGHT", 0, 0)
+    
+    local iconScrollChild = iconScrollFrame:GetScrollChild()
+    iconScrollChild:SetSize(350, 1)  -- Slightly narrower to account for scrollbar
+    
+    -- Get all equipment/armor icons
+    local allIcons = {}
+    GetMacroItemIcons(allIcons)
+    local macroIcons = GetMacroIcons()
+    for i = 1, #macroIcons do
+        table.insert(allIcons, macroIcons[i])
+    end
+    
+    editor.allIcons = allIcons
+    editor.iconButtons = {}
+    
+    -- Function to rebuild icon grid
+    local function RebuildIconGrid(searchText)
+        -- Clear existing buttons
+        for _, btn in ipairs(editor.iconButtons) do
+            btn:Hide()
+            btn:SetParent(nil)
+        end
+        editor.iconButtons = {}
+        
+        -- Filter icons
+        local displayIcons = {}
+        local searchLower = searchText and string.lower(searchText) or ""
+        local usingSearch = searchLower ~= "" and searchLower ~= "search icons..."
+        
+        if usingSearch and _G.ICON_FILE_NAMES then
+            -- Search by icon name
+            for _, iconID in ipairs(allIcons) do
+                local iconName = _G.ICON_FILE_NAMES[iconID]
+                if iconName and string.find(string.lower(iconName), searchLower, 1, true) then
+                    table.insert(displayIcons, iconID)
+                    if #displayIcons >= 200 then break end
+                end
+            end
+        else
+            -- Show first 100 icons by default
+            for i = 1, math.min(100, #allIcons) do
+                table.insert(displayIcons, allIcons[i])
+            end
+        end
+        
+        -- Create icon buttons in grid
+        local iconsPerRow = 9  -- Adjusted for scrollbar width
+        local iconSize = 32
+        local iconSpacing = 4
+        
+        for i, iconID in ipairs(displayIcons) do
+            local row = math.floor((i - 1) / iconsPerRow)
+            local col = (i - 1) % iconsPerRow
+            
+            local btn = CreateFrame("Button", nil, iconScrollChild, "BackdropTemplate")
+            btn:SetSize(iconSize, iconSize)
+            btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
+            
+            -- Selection border (larger background texture)
+            local borderBg = btn:CreateTexture(nil, "BACKGROUND")
+            borderBg:SetTexture("Interface\\Buttons\\WHITE8X8")
+            borderBg:SetVertexColor(1, 0.82, 0, 1)  -- Gold
+            borderBg:SetPoint("TOPLEFT", btn, "TOPLEFT", -2, 2)
+            borderBg:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 2, -2)
+            borderBg:Hide()
+            btn.borderBg = borderBg
+            
+            local tex = btn:CreateTexture(nil, "ARTWORK")
+            tex:SetAllPoints()
+            tex:SetTexture(iconID)
+            btn.texture = tex
+            btn.iconID = iconID
+            
+            local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(1, 1, 1, 0.3)
+            
+            btn:SetScript("OnClick", function(self)
+                editor.selectedIcon = iconID
+                -- Update all borders
+                for _, b in ipairs(editor.iconButtons) do
+                    if b.borderBg then
+                        b.borderBg:Hide()
+                    end
+                end
+                if self.borderBg then
+                    self.borderBg:Show()
+                end
+            end)
+            
+            -- Tooltip with icon name
+            if _G.ICON_FILE_NAMES and _G.ICON_FILE_NAMES[iconID] then
+                btn:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(_G.ICON_FILE_NAMES[iconID])
+                    GameTooltip:Show()
+                end)
+                btn:SetScript("OnLeave", function(self)
+                    GameTooltip:Hide()
+                end)
+            end
+            
+            -- Show border if this is the current icon
+            if iconID == editor.selectedIcon then
+                borderBg:Show()
+            end
+            
+            table.insert(editor.iconButtons, btn)
+        end
+        
+        -- Set scroll child height
+        local numRows = math.ceil(#displayIcons / iconsPerRow)
+        iconScrollChild:SetHeight(math.max(1, numRows * (iconSize + iconSpacing)))
+        
+        -- Update scrollbar
+        if iconScrollFrame.UpdateScroll then
+            iconScrollFrame:UpdateScroll()
+        end
+    end
+    
+    -- Search box handlers
+    searchBox:SetScript("OnEditFocusGained", function(self)
+        if self:GetText() == "Search icons..." then
+            self:SetText("")
+            self:SetTextColor(1, 1, 1)
+        end
+    end)
+    
+    searchBox:SetScript("OnEditFocusLost", function(self)
+        if self:GetText() == "" then
+            self:SetText("Search icons...")
+            self:SetTextColor(0.7, 0.7, 0.7)
+            RebuildIconGrid("")
+        end
+    end)
+    
+    searchBox:SetScript("OnTextChanged", function(self)
+        local text = self:GetText()
+        if text ~= "Search icons..." then
+            RebuildIconGrid(text)
+        end
+    end)
+    
+    searchBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+    
+    -- Build initial icon grid
+    RebuildIconGrid("")
+    
+    -- Save button
+    local saveBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    saveBtn:SetSize(80, 24)
+    saveBtn:SetPoint("BOTTOMLEFT", editor, "BOTTOMLEFT", 15, 15)
+    saveBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    saveBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    saveBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local saveText = saveBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    saveText:SetPoint("CENTER")
+    saveText:SetText("Save")
+    saveText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    saveBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    saveBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    saveBtn:SetScript("OnClick", function()
+        local newLabel = labelBox:GetText()
+        if newLabel and newLabel ~= "" then
+            self.db.profile.customization[buffId].label = newLabel
+            self.db.profile.customization[buffId].icon = editor.selectedIcon
+            self:RecreateFrame()
+        end
+        editor:Hide()
+    end)
+    
+    -- Cancel button
+    local cancelBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    cancelBtn:SetSize(80, 24)
+    cancelBtn:SetPoint("BOTTOMRIGHT", editor, "BOTTOMRIGHT", -15, 15)
+    cancelBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    cancelBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    cancelBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local cancelText = cancelBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    cancelText:SetPoint("CENTER")
+    cancelText:SetText("Cancel")
+    cancelText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    cancelBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    cancelBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    cancelBtn:SetScript("OnClick", function()
+        editor:Hide()
+    end)
+    
+    -- Reset to Default button
+    local resetBtn = CreateFrame("Button", nil, editor, "BackdropTemplate")
+    resetBtn:SetSize(100, 24)
+    resetBtn:SetPoint("BOTTOM", editor, "BOTTOM", 0, 15)
+    resetBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    resetBtn:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    resetBtn:SetBackdropBorderColor(ColorPalette:GetColor("accent-primary"))
+    local resetText = resetBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    resetText:SetPoint("CENTER")
+    resetText:SetText("Reset Default")
+    resetText:SetTextColor(ColorPalette:GetColor("text-primary"))
+    resetBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-hover"))
+    end)
+    resetBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(ColorPalette:GetColor("button-bg"))
+    end)
+    resetBtn:SetScript("OnClick", function()
+        -- Find default icon and label from BUFF_GROUPS
+        for _, group in ipairs(BUFF_GROUPS) do
+            if group.id == buffId then
+                editor.selectedIcon = group.icon
+                labelBox:SetText(group.label)
+                RebuildIconGrid(searchBox:GetText())
+                break
+            end
+        end
+    end)
+    
+    -- ESC to close
+    labelBox:SetScript("OnEscapePressed", function(self)
+        editor:Hide()
+    end)
+    
+    -- Enter to save
+    labelBox:SetScript("OnEnterPressed", function(self)
+        saveBtn:Click()
+    end)
+    
+    editor:Show()
+    labelBox:SetFocus()
 end
 
 -- Recreate frame with new settings
