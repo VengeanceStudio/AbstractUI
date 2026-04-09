@@ -69,7 +69,7 @@ local BUFF_GROUPS = {
     {
         id = "weapon_imbue_offhand",
         icon = 3622196,
-        label = "Offhand",
+        label = "Off Hand",
         checkFunc = function()
             -- Check if offhand weapon exists first
             local itemID = GetInventoryItemID("player", 17)
@@ -167,12 +167,23 @@ function Consumables:OnDBReady()
         self:CreateTrackerFrame()
         self:RegisterEvents()
         self:RegisterSlashCommands()
+        
+        -- Start a periodic update timer (every 5 seconds)
+        -- This ensures the display updates even if events are missed
+        C_Timer.NewTicker(5, function()
+            if not InCombatLockdown() then
+                self:UpdateBuffStatus()
+            end
+        end)
     end
 end
 
 function Consumables:OnEnable()
     if trackerFrame then
-        self:UpdateBuffStatus()
+        -- Delayed initial update to ensure everything is ready
+        C_Timer.After(2, function()
+            self:UpdateBuffStatus()
+        end)
     end
 end
 
@@ -297,7 +308,14 @@ end
 
 function Consumables:PLAYER_ENTERING_WORLD()
     -- Update display when entering world/instances
+    -- Use multiple delayed checks to ensure we catch the proper state
     C_Timer.After(1, function()
+        self:UpdateBuffStatus()
+    end)
+    C_Timer.After(3, function()
+        self:UpdateBuffStatus()
+    end)
+    C_Timer.After(5, function()
         self:UpdateBuffStatus()
     end)
 end
@@ -392,10 +410,13 @@ end
 -- ============================================================================
 
 function Consumables:UpdateBuffStatus()
-    if not trackerFrame or InCombatLockdown() then
-        if trackerFrame then
-            trackerFrame:Hide()
-        end
+    -- Ensure frame exists
+    if not trackerFrame then
+        return
+    end
+    
+    if InCombatLockdown() then
+        trackerFrame:Hide()
         return
     end
     
@@ -654,7 +675,10 @@ function Consumables:GetOptions()
                 order = 21,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.weapon_imbues end,
-                set = function(_, v) self.db.profile.trackBuffs.weapon_imbues = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.weapon_imbues = v
+                    self:UpdateBuffStatus()
+                end,
             },
             trackFlask = {
                 type = "toggle",
@@ -663,7 +687,10 @@ function Consumables:GetOptions()
                 order = 23,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.flask end,
-                set = function(_, v) self.db.profile.trackBuffs.flask = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.flask = v
+                    self:UpdateBuffStatus()
+                end,
             },
             trackFood = {
                 type = "toggle",
@@ -672,7 +699,10 @@ function Consumables:GetOptions()
                 order = 24,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.food end,
-                set = function(_, v) self.db.profile.trackBuffs.food = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.food = v
+                    self:UpdateBuffStatus()
+                end,
             },
             trackMainhandPoison = {
                 type = "toggle",
@@ -681,16 +711,22 @@ function Consumables:GetOptions()
                 order = 25,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.mainhand_poison end,
-                set = function(_, v) self.db.profile.trackBuffs.mainhand_poison = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.mainhand_poison = v
+                    self:UpdateBuffStatus()
+                end,
             },
             trackOffhandPoison = {
                 type = "toggle",
-                name = "Offhand Poison (Rogue)",
-                desc = "Track missing offhand poison (Rogue only)",
+                name = "Off Hand Poison (Rogue)",
+                desc = "Track missing off hand poison (Rogue only)",
                 order = 26,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.offhand_poison end,
-                set = function(_, v) self.db.profile.trackBuffs.offhand_poison = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.offhand_poison = v
+                    self:UpdateBuffStatus()
+                end,
             },
             trackHealthstone = {
                 type = "toggle",
@@ -699,7 +735,10 @@ function Consumables:GetOptions()
                 order = 27,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.healthstone end,
-                set = function(_, v) self.db.profile.trackBuffs.healthstone = v end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.healthstone = v
+                    self:UpdateBuffStatus()
+                end,
             },
             
             -- When to Show
@@ -720,7 +759,10 @@ function Consumables:GetOptions()
                 order = 32,
                 width = "full",
                 get = function() return self.db.profile.alwaysShowOnReadyCheck end,
-                set = function(_, v) self.db.profile.alwaysShowOnReadyCheck = v end,
+                set = function(_, v)
+                    self.db.profile.alwaysShowOnReadyCheck = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInWorld = {
                 type = "toggle",
@@ -729,7 +771,10 @@ function Consumables:GetOptions()
                 order = 33,
                 width = "full",
                 get = function() return self.db.profile.showInContext.world end,
-                set = function(_, v) self.db.profile.showInContext.world = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.world = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInDelves = {
                 type = "toggle",
@@ -738,7 +783,10 @@ function Consumables:GetOptions()
                 order = 34,
                 width = "full",
                 get = function() return self.db.profile.showInContext.delves end,
-                set = function(_, v) self.db.profile.showInContext.delves = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.delves = v
+                    self:UpdateBuffStatus()
+                end,
             },
             dungeonSubHeader = {
                 type = "description",
@@ -752,7 +800,10 @@ function Consumables:GetOptions()
                 order = 36,
                 width = "full",
                 get = function() return self.db.profile.showInContext.normalDungeon end,
-                set = function(_, v) self.db.profile.showInContext.normalDungeon = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.normalDungeon = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInHeroicDungeon = {
                 type = "toggle",
@@ -761,7 +812,10 @@ function Consumables:GetOptions()
                 order = 37,
                 width = "full",
                 get = function() return self.db.profile.showInContext.heroicDungeon end,
-                set = function(_, v) self.db.profile.showInContext.heroicDungeon = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.heroicDungeon = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInMythicDungeon = {
                 type = "toggle",
@@ -770,7 +824,10 @@ function Consumables:GetOptions()
                 order = 38,
                 width = "full",
                 get = function() return self.db.profile.showInContext.mythicDungeon end,
-                set = function(_, v) self.db.profile.showInContext.mythicDungeon = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.mythicDungeon = v
+                    self:UpdateBuffStatus()
+                end,
             },
             raidSubHeader = {
                 type = "description",
@@ -784,7 +841,10 @@ function Consumables:GetOptions()
                 order = 40,
                 width = "full",
                 get = function() return self.db.profile.showInContext.lfr end,
-                set = function(_, v) self.db.profile.showInContext.lfr = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.lfr = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInNormalRaid = {
                 type = "toggle",
@@ -793,7 +853,10 @@ function Consumables:GetOptions()
                 order = 41,
                 width = "full",
                 get = function() return self.db.profile.showInContext.normalRaid end,
-                set = function(_, v) self.db.profile.showInContext.normalRaid = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.normalRaid = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInHeroicRaid = {
                 type = "toggle",
@@ -802,7 +865,10 @@ function Consumables:GetOptions()
                 order = 42,
                 width = "full",
                 get = function() return self.db.profile.showInContext.heroicRaid end,
-                set = function(_, v) self.db.profile.showInContext.heroicRaid = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.heroicRaid = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInMythicRaid = {
                 type = "toggle",
@@ -811,7 +877,10 @@ function Consumables:GetOptions()
                 order = 43,
                 width = "full",
                 get = function() return self.db.profile.showInContext.mythicRaid end,
-                set = function(_, v) self.db.profile.showInContext.mythicRaid = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.mythicRaid = v
+                    self:UpdateBuffStatus()
+                end,
             },
             showInPvP = {
                 type = "toggle",
@@ -820,7 +889,10 @@ function Consumables:GetOptions()
                 order = 44,
                 width = "full",
                 get = function() return self.db.profile.showInContext.pvp end,
-                set = function(_, v) self.db.profile.showInContext.pvp = v end,
+                set = function(_, v)
+                    self.db.profile.showInContext.pvp = v
+                    self:UpdateBuffStatus()
+                end,
             },
         },
     }
