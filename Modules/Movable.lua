@@ -1259,6 +1259,9 @@ local BLIZZARD_FRAMES = {
     "DressUpFrame",
     "InspectFrame",
     "QuestChoiceFrame",
+    
+    -- UI Widgets (Dungeon/Scenario objectives at top center)
+    "UIWidgetTopCenterContainerFrame",
 }
 
 function Movable:MakeBlizzardFrameMovable(frameName)
