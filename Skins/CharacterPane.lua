@@ -608,7 +608,7 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         [6] = false, -- waist
         [7] = true,  -- legs
         [8] = true,  -- feet
-        [9] = true,  -- wrist
+        [9] = false,  -- wrist
         [11] = true, -- finger
         [12] = true, -- finger
         [15] = true, -- back
