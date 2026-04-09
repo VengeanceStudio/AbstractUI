@@ -1214,6 +1214,64 @@ local function SkinCharacterFrameBackdrop()
         CharacterFrame.AbstractCloseButton = closeBtn
     end
     
+    -- Create tiny scale slider
+    if not CharacterFrame.AbstractScaleSlider then
+        local slider = CreateFrame("Slider", nil, CharacterFrame, "BackdropTemplate")
+        slider:SetSize(60, 12)
+        slider:SetPoint("RIGHT", CharacterFrame.AbstractCloseButton, "LEFT", -5, 0)
+        slider:SetOrientation("HORIZONTAL")
+        slider:SetMinMaxValues(1.0, 2.0)
+        slider:SetValueStep(0.05)
+        slider:SetObeyStepOnDrag(true)
+        
+        -- Backdrop for slider track
+        slider:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        slider:SetBackdropColor(bgr, bgg, bgb, 0.5)
+        slider:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+        
+        -- Slider thumb
+        local thumb = slider:CreateTexture(nil, "OVERLAY")
+        thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+        thumb:SetSize(16, 16)
+        slider:SetThumbTexture(thumb)
+        
+        -- Value text (percentage)
+        local valueText = slider:CreateFontString(nil, "OVERLAY")
+        valueText:SetPoint("TOP", slider, "BOTTOM", 0, -2)
+        valueText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+        valueText:SetTextColor(0.9, 0.9, 0.9, 1)
+        slider.valueText = valueText
+        
+        -- Set initial value
+        slider:SetValue(CharacterFrame:GetScale())
+        valueText:SetText(math.floor(CharacterFrame:GetScale() * 100) .. "%")
+        
+        -- On value changed
+        slider:SetScript("OnValueChanged", function(self, value)
+            CharacterFrame:SetScale(value)
+            self.valueText:SetText(math.floor(value * 100) .. "%")
+        end)
+        
+        -- Tooltip
+        slider:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Character Panel Scale")
+            GameTooltip:AddLine("Drag to resize the panel (100%-200%)", 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        
+        slider:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+        
+        CharacterFrame.AbstractScaleSlider = slider
+    end
+    
     -- Hide Blizzard's level text (we'll create our own)
     if CharacterLevelText then
         CharacterLevelText:Hide()
