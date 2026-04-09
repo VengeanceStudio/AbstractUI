@@ -2533,7 +2533,7 @@ UpdateEquipmentManagerOverlay = function()
             
             -- Spec icon indicator (small circle overlaying equipment icon)
             local specIcon = button:CreateTexture(nil, "OVERLAY")
-            specIcon:SetSize(14, 14)
+            specIcon:SetSize(8, 8)
             specIcon:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, -2)
             specIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)  -- Crop texture to remove border
             button.specIcon = specIcon
@@ -2542,7 +2542,7 @@ UpdateEquipmentManagerOverlay = function()
             local specIconBg = button:CreateTexture(nil, "OVERLAY")
             specIconBg:SetTexture("Interface\\Buttons\\WHITE8X8")
             specIconBg:SetVertexColor(0, 0, 0, 0.8)
-            specIconBg:SetSize(16, 16)
+            specIconBg:SetSize(10, 10)
             specIconBg:SetPoint("CENTER", specIcon, "CENTER", 0, 0)
             button.specIconBg = specIconBg
             
