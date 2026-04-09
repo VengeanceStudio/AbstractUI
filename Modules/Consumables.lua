@@ -1288,6 +1288,8 @@ function Consumables:ShowBuffCustomizationEditor(buffId, title)
             self.db.profile.customization[buffId].label = newLabel
             self.db.profile.customization[buffId].icon = editor.selectedIcon
             self:RecreateFrame()
+            -- Notify AceConfig to refresh the options display
+            LibStub("AceConfigRegistry-3.0"):NotifyChange("AbstractUI")
         end
         editor:Hide()
     end)
@@ -1349,6 +1351,12 @@ function Consumables:ShowBuffCustomizationEditor(buffId, title)
                 editor.selectedIcon = group.icon
                 labelBox:SetText(group.label)
                 RebuildIconGrid(searchBox:GetText())
+                -- Save the defaults back to the database
+                self.db.profile.customization[buffId].label = group.label
+                self.db.profile.customization[buffId].icon = group.icon
+                self:RecreateFrame()
+                -- Notify AceConfig to refresh the options display
+                LibStub("AceConfigRegistry-3.0"):NotifyChange("AbstractUI")
                 break
             end
         end
