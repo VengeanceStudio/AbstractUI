@@ -2055,14 +2055,17 @@ local function ShowEquipmentSetEditor(setID)
     searchBox:SetAutoFocus(false)
     searchBox:SetText("Search icons...")
     
-    -- Icon grid container with scroll
-    local iconScrollFrame = CreateFrame("ScrollFrame", nil, editor, "UIPanelScrollFrameTemplate")
-    iconScrollFrame:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
-    iconScrollFrame:SetSize(370, 220)
+    -- Icon grid container with AbstractUI ScrollFrame
+    local iconScrollContainer = CreateFrame("Frame", nil, editor)
+    iconScrollContainer:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
+    iconScrollContainer:SetSize(370, 220)
     
-    local iconScrollChild = CreateFrame("Frame", nil, iconScrollFrame)
-    iconScrollChild:SetSize(370, 1)
-    iconScrollFrame:SetScrollChild(iconScrollChild)
+    local iconScrollFrame = ScrollFrame:Create(iconScrollContainer)
+    iconScrollFrame:SetPoint("TOPLEFT", iconScrollContainer, "TOPLEFT", 0, 0)
+    iconScrollFrame:SetPoint("BOTTOMRIGHT", iconScrollContainer, "BOTTOMRIGHT", 0, 0)
+    
+    local iconScrollChild = iconScrollFrame:GetScrollChild()
+    iconScrollChild:SetSize(350, 1)  -- Slightly narrower to account for scrollbar
     
     -- Get all equipment/armor icons
     local allIcons = {}
@@ -2106,7 +2109,7 @@ local function ShowEquipmentSetEditor(setID)
         end
         
         -- Create icon buttons in grid
-        local iconsPerRow = 10
+        local iconsPerRow = 9  -- Adjusted for scrollbar width
         local iconSize = 32
         local iconSpacing = 4
         
@@ -2168,8 +2171,10 @@ local function ShowEquipmentSetEditor(setID)
         local numRows = math.ceil(#displayIcons / iconsPerRow)
         iconScrollChild:SetHeight(math.max(1, numRows * (iconSize + iconSpacing)))
         
-        -- Scroll to top
-        iconScrollFrame:SetVerticalScroll(0)
+        -- Update scrollbar
+        if iconScrollFrame.UpdateScroll then
+            iconScrollFrame:UpdateScroll()
+        end
     end
     
     -- Search box handlers
