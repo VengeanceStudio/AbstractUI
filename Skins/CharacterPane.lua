@@ -1214,62 +1214,68 @@ local function SkinCharacterFrameBackdrop()
         CharacterFrame.AbstractCloseButton = closeBtn
     end
     
-    -- Create tiny scale slider
-    if not CharacterFrame.AbstractScaleSlider then
-        local slider = CreateFrame("Slider", nil, CharacterFrame, "BackdropTemplate")
-        slider:SetSize(60, 12)
-        slider:SetPoint("RIGHT", CharacterFrame.AbstractCloseButton, "LEFT", -5, 0)
-        slider:SetOrientation("HORIZONTAL")
-        slider:SetMinMaxValues(1.0, 2.0)
-        slider:SetValueStep(0.05)
-        slider:SetObeyStepOnDrag(true)
+    -- Create scale input box
+    if not CharacterFrame.AbstractScaleBox then
+        -- Label
+        local scaleLabel = CharacterFrame:CreateFontString(nil, "OVERLAY")
+        scaleLabel:SetPoint("RIGHT", CharacterFrame.AbstractCloseButton, "LEFT", -35, 0)
+        scaleLabel:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        scaleLabel:SetText("Scale:")
+        scaleLabel:SetTextColor(0.9, 0.9, 0.9, 1)
         
-        -- Backdrop for slider track
-        slider:SetBackdrop({
+        -- Input box
+        local scaleBox = CreateFrame("EditBox", nil, CharacterFrame, "BackdropTemplate")
+        scaleBox:SetSize(30, 14)
+        scaleBox:SetPoint("RIGHT", CharacterFrame.AbstractCloseButton, "LEFT", -5, 0)
+        scaleBox:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
             edgeSize = 1,
-            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+            insets = { left = 2, right = 2, top = 2, bottom = 2 }
         })
-        slider:SetBackdropColor(bgr, bgg, bgb, 0.5)
-        slider:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+        scaleBox:SetBackdropColor(bgr, bgg, bgb, 0.7)
+        scaleBox:SetBackdropBorderColor(pr * 0.5, pg * 0.5, pb * 0.5, 0.8)
+        scaleBox:SetFontObject("ChatFontSmall")
+        scaleBox:SetTextColor(1, 1, 1)
+        scaleBox:SetAutoFocus(false)
+        scaleBox:SetMaxLetters(4)
+        scaleBox:SetText(string.format("%.2f", CharacterFrame:GetScale()))
+        scaleBox:SetJustifyH("CENTER")
         
-        -- Slider thumb
-        local thumb = slider:CreateTexture(nil, "OVERLAY")
-        thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
-        thumb:SetSize(16, 16)
-        slider:SetThumbTexture(thumb)
+        scaleBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
         
-        -- Value text (percentage)
-        local valueText = slider:CreateFontString(nil, "OVERLAY")
-        valueText:SetPoint("TOP", slider, "BOTTOM", 0, -2)
-        valueText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
-        valueText:SetTextColor(0.9, 0.9, 0.9, 1)
-        slider.valueText = valueText
+        scaleBox:SetScript("OnEnterPressed", function(self)
+            local value = tonumber(self:GetText())
+            if value then
+                value = math.max(1.0, math.min(2.0, value))  -- Clamp between 1.0 and 2.0
+                CharacterFrame:SetScale(value)
+                self:SetText(string.format("%.2f", value))
+            else
+                self:SetText(string.format("%.2f", CharacterFrame:GetScale()))
+            end
+            self:ClearFocus()
+        end)
         
-        -- Set initial value
-        slider:SetValue(CharacterFrame:GetScale())
-        valueText:SetText(math.floor(CharacterFrame:GetScale() * 100) .. "%")
-        
-        -- On value changed
-        slider:SetScript("OnValueChanged", function(self, value)
-            CharacterFrame:SetScale(value)
-            self.valueText:SetText(math.floor(value * 100) .. "%")
+        scaleBox:SetScript("OnEditFocusLost", function(self)
+            self:SetText(string.format("%.2f", CharacterFrame:GetScale()))
         end)
         
         -- Tooltip
-        slider:SetScript("OnEnter", function(self)
+        scaleBox:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Character Panel Scale")
-            GameTooltip:AddLine("Drag to resize the panel (100%-200%)", 1, 1, 1, true)
+            GameTooltip:AddLine("Enter value (1.0 to 2.0)", 1, 1, 1, true)
             GameTooltip:Show()
         end)
         
-        slider:SetScript("OnLeave", function(self)
+        scaleBox:SetScript("OnLeave", function(self)
             GameTooltip:Hide()
         end)
         
-        CharacterFrame.AbstractScaleSlider = slider
+        CharacterFrame.AbstractScaleBox = scaleBox
+        CharacterFrame.AbstractScaleLabel = scaleLabel
     end
     
     -- Hide Blizzard's level text (we'll create our own)
