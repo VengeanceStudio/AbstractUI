@@ -40,6 +40,7 @@ local defaults = {
             mainhand_poison = true,
             offhand_poison = true,
             healthstone = true,
+            augment_rune = true,
         },
         -- Custom icons and labels for each buff type
         customization = {
@@ -50,6 +51,7 @@ local defaults = {
             mainhand_poison = { icon = 136066, label = "MH Poison" },
             offhand_poison = { icon = 136066, label = "OH Poison" },
             healthstone = { icon = 538745, label = "Healthstone" },
+            augment_rune = { icon = 237556, label = "Augment Rune" },
         },
         -- Context-based display options
         showInContext = {
@@ -149,6 +151,14 @@ local BUFF_GROUPS = {
         checkFunc = function(self)
             if not Consumables:GroupHasWarlock() then return false end
             return not Consumables:PlayerHasHealthstone(self.itemIDs)
+        end,
+    },
+    {
+        id = "augment_rune",
+        icon = 237556,
+        label = "Augment Rune",
+        checkFunc = function()
+            return not Consumables:HasRuneBuff()
         end,
     },
 }
@@ -387,6 +397,17 @@ function Consumables:HasFoodBuff()
     local found = false
     self:ForEachAuraSafe("player", "HELPFUL", nil, function(aura)
         if aura.name and aura.name:find("Well Fed") then
+            found = true
+            return true
+        end
+    end)
+    return found
+end
+
+function Consumables:HasRuneBuff()
+    local found = false
+    self:ForEachAuraSafe("player", "HELPFUL", nil, function(aura)
+        if aura.name and aura.name:find("Augment Rune") then
             found = true
             return true
         end
@@ -759,6 +780,18 @@ function Consumables:GetOptions()
                     self:UpdateBuffStatus()
                 end,
             },
+            trackAugmentRune = {
+                type = "toggle",
+                name = "Augment Rune",
+                desc = "Track missing Augment Rune buff",
+                order = 28,
+                width = "full",
+                get = function() return self.db.profile.trackBuffs.augment_rune end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.augment_rune = v
+                    self:UpdateBuffStatus()
+                end,
+            },
             
             -- When to Show
             contextHeader = {
@@ -1008,6 +1041,18 @@ function Consumables:GetOptions()
                 order = 58,
                 width = "half",
                 func = function() self:ShowBuffCustomizationEditor("healthstone", "Healthstone") end,
+            },
+            customizeAugmentRune = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.augment_rune
+                    local icon = custom.icon or 237556
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Augment Rune")
+                end,
+                desc = "Customize Augment Rune icon and label",
+                order = 59,
+                width = "half",
+                func = function() self:ShowBuffCustomizationEditor("augment_rune", "Augment Rune") end,
             },
         },
     }
