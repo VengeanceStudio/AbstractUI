@@ -986,6 +986,15 @@ function Movable:UpdateNudgeArrows(container)
     
     -- Get container position - calculate from anchor points to avoid scale issues
     local point, relativeTo, relativePoint, xOfs, yOfs = container:GetPoint()
+    
+    -- If frame doesn't have valid anchor points, hide arrows and return
+    if not point or not xOfs or not yOfs then
+        for _, arrow in pairs(container.arrows) do
+            arrow:Hide()
+        end
+        return
+    end
+    
     local screenWidth = UIParent:GetWidth()
     local screenHeight = UIParent:GetHeight()
     
