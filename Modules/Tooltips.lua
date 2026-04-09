@@ -1004,7 +1004,7 @@ function Tooltips:OnTooltipSetUnit(tooltip)
         local mountID = self:GetUnitMountID(unit)
         if mountID then
             local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, 
-                  faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountID)
+                  faction, shouldHideOnChar, isCollected = C_MountJournal.GetMountInfoByID(mountID)
             if name then
                 local collectedText = isCollected and "|cff00ff00(Collected)|r" or "|cffff0000(Not Collected)|r"
                 tooltip:AddLine("Mount: " .. name .. " " .. collectedText, 1, 0.82, 0)
