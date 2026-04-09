@@ -2383,19 +2383,6 @@ local function ShowEquipmentSetContextMenu(setID, anchorFrame)
         end
     end
     
-    -- Add "None" option to unassign
-    local noneItem = CreateMenuItem("None", function()
-        C_EquipmentSet.UnassignEquipmentSetSpec(setID)
-        UpdateEquipmentManagerOverlay()
-    end)
-    
-    if not currentAssignedSpec or currentAssignedSpec == 0 then
-        local check = noneItem:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        check:SetPoint("LEFT", noneItem, "LEFT", 0, 0)
-        check:SetText("✓")
-        check:SetTextColor(0, 1, 0)
-    end
-    
     -- Set final height
     menu:SetHeight(math.abs(yOffset) + 4)
     
@@ -2448,6 +2435,10 @@ UpdateEquipmentManagerOverlay = function()
             if string.len(name) > 25 then
                 displayName = string.sub(name, 1, 22) .. "..."
             end
+            
+            -- Get assigned spec for this set
+            local assignedSpec = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID)
+            
             table.insert(sets, {
                 id = setID,
                 name = displayName,
@@ -2455,7 +2446,8 @@ UpdateEquipmentManagerOverlay = function()
                 icon = iconTexture,
                 isEquipped = isEquipped,
                 numEquipped = numEquipped,
-                numItems = numItems
+                numItems = numItems,
+                assignedSpec = assignedSpec
             })
         end
     end
@@ -2539,6 +2531,21 @@ UpdateEquipmentManagerOverlay = function()
             equipped:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")  -- Green checkmark
             button.equipped = equipped
             
+            -- Spec icon indicator (small circle overlaying equipment icon)
+            local specIcon = button:CreateTexture(nil, "OVERLAY")
+            specIcon:SetSize(14, 14)
+            specIcon:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, -2)
+            specIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)  -- Crop texture to remove border
+            button.specIcon = specIcon
+            
+            -- Spec icon background circle
+            local specIconBg = button:CreateTexture(nil, "OVERLAY")
+            specIconBg:SetTexture("Interface\\Buttons\\WHITE8X8")
+            specIconBg:SetVertexColor(0, 0, 0, 0.8)
+            specIconBg:SetSize(16, 16)
+            specIconBg:SetPoint("CENTER", specIcon, "CENTER", 0, 0)
+            button.specIconBg = specIconBg
+            
             -- Text
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             text:SetPoint("LEFT", icon, "RIGHT", 5, 0)
@@ -2564,6 +2571,22 @@ UpdateEquipmentManagerOverlay = function()
             button.equipped:Show()
         else
             button.equipped:Hide()
+        end
+        
+        -- Show/hide spec icon indicator
+        if setData.assignedSpec and setData.assignedSpec > 0 then
+            local _, _, _, specIcon = GetSpecializationInfo(setData.assignedSpec)
+            if specIcon then
+                button.specIcon:SetTexture(specIcon)
+                button.specIcon:Show()
+                button.specIconBg:Show()
+            else
+                button.specIcon:Hide()
+                button.specIconBg:Hide()
+            end
+        else
+            button.specIcon:Hide()
+            button.specIconBg:Hide()
         end
         
         -- Highlight selected set in gold, others in white
