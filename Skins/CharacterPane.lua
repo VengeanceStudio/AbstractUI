@@ -2121,12 +2121,14 @@ local function ShowEquipmentSetEditor(setID)
             btn:SetSize(iconSize, iconSize)
             btn:SetPoint("TOPLEFT", iconScrollChild, "TOPLEFT", col * (iconSize + iconSpacing), -row * (iconSize + iconSpacing))
             
-            -- Create border backdrop (hidden by default)
-            btn:SetBackdrop({
-                edgeFile = "Interface\\Buttons\\WHITE8X8",
-                edgeSize = 2,
-            })
-            btn:SetBackdropBorderColor(1, 0.82, 0, 0)  -- Gold, hidden
+            -- Selection border (larger background texture)
+            local borderBg = btn:CreateTexture(nil, "BACKGROUND")
+            borderBg:SetTexture("Interface\\Buttons\\WHITE8X8")
+            borderBg:SetVertexColor(1, 0.82, 0, 1)  -- Gold
+            borderBg:SetPoint("TOPLEFT", btn, "TOPLEFT", -2, 2)
+            borderBg:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 2, -2)
+            borderBg:Hide()
+            btn.borderBg = borderBg
             
             local tex = btn:CreateTexture(nil, "ARTWORK")
             tex:SetAllPoints()
@@ -2142,9 +2144,13 @@ local function ShowEquipmentSetEditor(setID)
                 editor.selectedIcon = iconID
                 -- Update all borders
                 for _, b in ipairs(editor.iconButtons) do
-                    b:SetBackdropBorderColor(1, 0.82, 0, 0)  -- Hide border
+                    if b.borderBg then
+                        b.borderBg:Hide()
+                    end
                 end
-                self:SetBackdropBorderColor(1, 0.82, 0, 1)  -- Show gold border
+                if self.borderBg then
+                    self.borderBg:Show()
+                end
             end)
             
             -- Tooltip with icon name
@@ -2161,7 +2167,7 @@ local function ShowEquipmentSetEditor(setID)
             
             -- Show border if this is the current icon
             if iconID == editor.selectedIcon then
-                btn:SetBackdropBorderColor(1, 0.82, 0, 1)  -- Gold border
+                borderBg:Show()
             end
             
             table.insert(editor.iconButtons, btn)
