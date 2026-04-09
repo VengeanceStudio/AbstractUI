@@ -599,11 +599,11 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         end
     end
     
-    -- Check if slot can be enchanted (weapons, rings, neck, back, chest, wrist, feet, legs)
+    -- Check if slot can be enchanted (weapons, rings, neck, back, chest, wrist, feet, legs, shoulders)
     local enchantableSlots = {
         [1] = false, -- head
         [2] = true,  -- neck
-        [3] = false, -- shoulder
+        [3] = true,  -- shoulder
         [5] = true,  -- chest
         [6] = false, -- waist
         [7] = true,  -- legs
