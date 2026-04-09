@@ -1344,40 +1344,6 @@ function Movable:MakeBlizzardFrameMovable(frameName)
             end)
         end)
     end
-    
-    -- Create nudge controls for the frame
-    if not frame.arrows then
-        -- Create database entry for nudge offsets if it doesn't exist
-        if not self.db.profile.blizzardFramePositions[frameName] then
-            self.db.profile.blizzardFramePositions[frameName] = {}
-        end
-        if not self.db.profile.blizzardFramePositions[frameName].offsetX then
-            self.db.profile.blizzardFramePositions[frameName].offsetX = 0
-        end
-        if not self.db.profile.blizzardFramePositions[frameName].offsetY then
-            self.db.profile.blizzardFramePositions[frameName].offsetY = 0
-        end
-        
-        -- Create nudge controls
-        frame.arrows = self:CreateNudgeControls(
-            frame,
-            self.db.profile.blizzardFramePositions[frameName],
-            function()
-                -- Apply nudge offsets
-                if self.db and self.db.profile.blizzardFramePositions and self.db.profile.blizzardFramePositions[frameName] then
-                    local pos = self.db.profile.blizzardFramePositions[frameName]
-                    if pos.point then
-                        frame:ClearAllPoints()
-                        local x = (pos.x or 0) + (pos.offsetX or 0)
-                        local y = (pos.y or 0) + (pos.offsetY or 0)
-                        frame:SetPoint(pos.point, UIParent, pos.relativePoint, x, y)
-                    end
-                end
-            end,
-            nil,
-            frameName
-        )
-    end
 end
 
 function Movable:InitializeBlizzardFrames()
