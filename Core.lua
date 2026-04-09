@@ -57,7 +57,8 @@ local defaults = {
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true,
-            prey = true
+            prey = true,
+            consumables = true,
         }
     }
 }
@@ -2014,7 +2015,11 @@ function AbstractUI:GetOptions()
                     macroIconSelector = { name = "Macro Icon Selector", type = "toggle", order = 9.4, width = "normal",
                         desc = "Enhanced macro icon selection with search and filtering capabilities",
                         get = function() return self.db.profile.modules.macroIconSelector end,
-                        set = function(_, v) self.db.profile.modules.macroIconSelector = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
+                        set = function(_, v) self.db.profile.modules.macroIconSelector = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
+                    consumables = { name = "Consumables Tracker", type = "toggle", order = 9.5, width = "normal",
+                        desc = "Track missing buffs and consumables (enchants, flasks, food, healthstones). Shows on ready checks.",
+                        get = function() return self.db.profile.modules.consumables end,
+                        set = function(_, v) self.db.profile.modules.consumables = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end }
                 }  -- closes args table for general
             },  -- closes general group
             themes = {
