@@ -2581,6 +2581,8 @@ UpdateEquipmentManagerOverlay = function()
                 equipmentOverlay.selectedSetID = self.setID
                 UpdateEquipmentManagerOverlay()
             elseif mouseButton == "RightButton" then
+                equipmentOverlay.selectedSetID = self.setID
+                UpdateEquipmentManagerOverlay()
                 ShowEquipmentSetContextMenu(self.setID, self)
             end
         end)
