@@ -1324,11 +1324,14 @@ function Movable:MakeBlizzardFrameMovable(frameName)
     -- Mark as handled
     self.blizzardFrames[frameName] = true
     
-    -- Restore saved position if it exists
+    -- Restore saved position if it exists and has valid data
     if self.db and self.db.profile.blizzardFramePositions and self.db.profile.blizzardFramePositions[frameName] then
         local pos = self.db.profile.blizzardFramePositions[frameName]
-        frame:ClearAllPoints()
-        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+        -- Only restore if we have valid position data from a previous drag
+        if pos.point and pos.relativePoint and pos.x and pos.y then
+            frame:ClearAllPoints()
+            frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+        end
     end
     
     -- Special handling for UIWidget frames - they get repositioned by Blizzard code
@@ -1338,8 +1341,11 @@ function Movable:MakeBlizzardFrameMovable(frameName)
             C_Timer.After(0.1, function()
                 if Movable.db and Movable.db.profile.blizzardFramePositions and Movable.db.profile.blizzardFramePositions[frameName] then
                     local pos = Movable.db.profile.blizzardFramePositions[frameName]
-                    self:ClearAllPoints()
-                    self:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+                    -- Only restore if we have valid position data
+                    if pos.point and pos.relativePoint and pos.x and pos.y then
+                        self:ClearAllPoints()
+                        self:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+                    end
                 end
             end)
         end)
