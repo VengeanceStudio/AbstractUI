@@ -2206,6 +2206,8 @@ function AbstractUI:GetOptions()
             dbKey = "timePlayed"
         elseif name == "CursorAnimate" then
             dbKey = "cursorTrail"
+        elseif name == "Consumables" then
+            dbKey = "consumables"
         elseif name == "Skin" then
             dbKey = "skins"
         else
@@ -2237,6 +2239,8 @@ function AbstractUI:GetOptions()
                 displayName = "Cursor Animate"
             elseif name == "TimePlayed" then
                 displayName = "Time Played"
+            elseif name == "Consumables" then
+                displayName = "Consumables Tracker"
             elseif name == "Prey" then
                 displayName = "Prey Icon"
             end
@@ -2273,6 +2277,8 @@ function AbstractUI:GetOptions()
                 moduleOrder = 13.5
             elseif name == "TimePlayed" then
                 moduleOrder = 13.6
+            elseif name == "Consumables" then
+                moduleOrder = 13.65
             elseif name == "Prey" then
                 moduleOrder = 13.7
             elseif name == "AddonManager" then
