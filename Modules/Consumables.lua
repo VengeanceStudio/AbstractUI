@@ -264,11 +264,11 @@ function Consumables:CreateTrackerFrame()
         icon:SetAllPoints()
         icon:SetTexture(iconTexture)
         
-        -- Border
+        -- Border (no color overlay)
         local border = iconFrame:CreateTexture(nil, "OVERLAY")
         border:SetTexture("Interface\\Buttons\\WHITE8X8")
         border:SetAllPoints()
-        border:SetVertexColor(1, 0, 0, 0.3)
+        border:SetVertexColor(1, 1, 1, 0)  -- Transparent, no red overlay
         
         -- Individual text label under this icon
         local label = iconFrame:CreateFontString(nil, "OVERLAY")
