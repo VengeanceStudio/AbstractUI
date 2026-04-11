@@ -2261,8 +2261,14 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
-        castbar.value = (GetTime() - (startTime / 1000))
-        castbar.maxValue = (endTime - startTime) / 1000
+        -- Protect against tainted values in combat/dungeons
+        local success, value, maxValue = pcall(function()
+            return (GetTime() - (startTime / 1000)), (endTime - startTime) / 1000
+        end)
+        if not success then return end
+        
+        castbar.value = value
+        castbar.maxValue = maxValue
         castbar.casting = true
         castbar.channeling = nil
         castbar.notInterruptible = notInterruptible
@@ -2360,10 +2366,16 @@ end
         if castbar.casting then
             local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
             if spell then
-                castbar.value = (GetTime() - (startTime / 1000))
-                castbar.maxValue = (endTime - startTime) / 1000
-                castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
-                castbar.statusBar:SetValue(castbar.value)
+                -- Protect against tainted values in combat/dungeons
+                local success, value, maxValue = pcall(function()
+                    return (GetTime() - (startTime / 1000)), (endTime - startTime) / 1000
+                end)
+                if success then
+                    castbar.value = value
+                    castbar.maxValue = maxValue
+                    castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+                    castbar.statusBar:SetValue(castbar.value)
+                end
             end
         end
     end
@@ -2380,8 +2392,14 @@ end
         local spell, _, texture, startTime, endTime, _, notInterruptible, spellID = UnitChannelInfo(unit)
         if not spell then return end
         
-        castbar.value = (endTime - startTime) / 1000
-        castbar.maxValue = castbar.value
+        -- Protect against tainted values in combat/dungeons
+        local success, value = pcall(function()
+            return (endTime - startTime) / 1000
+        end)
+        if not success then return end
+        
+        castbar.value = value
+        castbar.maxValue = value
         castbar.casting = nil
         castbar.channeling = true
         castbar.notInterruptible = notInterruptible
@@ -2435,10 +2453,16 @@ end
         if castbar.channeling then
             local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
             if spell then
-                castbar.value = (endTime - startTime) / 1000
-                castbar.maxValue = castbar.value
-                castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
-                castbar.statusBar:SetValue(castbar.value)
+                -- Protect against tainted values in combat/dungeons
+                local success, value = pcall(function()
+                    return (endTime - startTime) / 1000
+                end)
+                if success then
+                    castbar.value = value
+                    castbar.maxValue = value
+                    castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+                    castbar.statusBar:SetValue(castbar.value)
+                end
             end
         end
     end
