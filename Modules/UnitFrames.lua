@@ -2273,8 +2273,8 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
         end
         
-        -- Set default casting color
-        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+        -- Set default casting color (INTERRUPTIBLE/NOT_INTERRUPTIBLE events may override)
+        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))\
         
         -- Shield visibility based on interruptibility
         if castbar.shield and castbar.shield.texture and notInterruptible ~= nil then
@@ -2399,7 +2399,7 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
         end
         
-        -- Set default channeling color
+        -- Set default channeling color (INTERRUPTIBLE/NOT_INTERRUPTIBLE events may override)
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
         -- Shield visibility based on interruptibility
@@ -2458,13 +2458,33 @@ end
     end
     
     function UnitFrames:UNIT_SPELLCAST_INTERRUPTIBLE(event, unit)
-        -- Re-run START logic to re-fetch notInterruptible value (like Platynator does)
-        self:UNIT_SPELLCAST_START(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        -- Interruptible: use normal cast/channel color
+        if castbar.casting then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+        elseif castbar.channeling then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+        end
     end
     
     function UnitFrames:UNIT_SPELLCAST_NOT_INTERRUPTIBLE(event, unit)
-        -- Re-run START logic to re-fetch notInterruptible value (like Platynator does)
-        self:UNIT_SPELLCAST_START(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        -- Non-interruptible: use grey color
+        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
     end
     
     local defaults = {
@@ -3134,7 +3154,7 @@ end
                         -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
                         local shieldFrame = CreateFrame("Frame", nil, castbar)
                         shieldFrame:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
-                        shieldFrame:SetSize(castbarDB.height + 10, castbarDB.height + 10)
+                        shieldFrame:SetSize(castbarDB.height + 18, castbarDB.height + 18)
                         
                         local shieldTexture = shieldFrame:CreateTexture(nil, "OVERLAY")
                         shieldTexture:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
