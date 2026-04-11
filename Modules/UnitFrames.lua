@@ -2261,6 +2261,8 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
+        print("[CASTBAR DEBUG] Cast started:", spell, "notInterruptible=", tostring(notInterruptible))  -- DEBUG
+        
         castbar.spell = spell
         castbar.texture = texture
         castbar.casting = true
@@ -2276,18 +2278,10 @@ end
         -- Set casting color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Shield visibility indicates interruptibility - use SetAlphaFromBoolean or SetShown (handles secret booleans)
-        if castbar.shield then
-            if notInterruptible ~= nil then
-                if castbar.shield.SetAlphaFromBoolean then
-                    castbar.shield:Show()
-                    castbar.shield:SetAlphaFromBoolean(notInterruptible)
-                else
-                    castbar.shield:SetShown(notInterruptible)
-                end
-            else
-                castbar.shield:Hide()
-            end
+        -- Shield visibility indicates non-interruptibility - SetShown accepts secret booleans
+        if castbar.shield and notInterruptible ~= nil then
+            castbar.shield:SetShown(notInterruptible)
+            print("[CASTBAR DEBUG] Shield SetShown called with:", tostring(notInterruptible))  -- DEBUG
         end
         
         -- Set icon
@@ -2407,18 +2401,9 @@ end
         -- Set channeling color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Shield visibility indicates interruptibility - use SetAlphaFromBoolean or SetShown (handles secret booleans)
-        if castbar.shield then
-            if notInterruptible ~= nil then
-                if castbar.shield.SetAlphaFromBoolean then
-                    castbar.shield:Show()
-                    castbar.shield:SetAlphaFromBoolean(notInterruptible)
-                else
-                    castbar.shield:SetShown(notInterruptible)
-                end
-            else
-                castbar.shield:Hide()
-            end
+        -- Shield visibility indicates non-interruptibility - SetShown accepts secret booleans
+        if castbar.shield and notInterruptible ~= nil then
+            castbar.shield:SetShown(notInterruptible)
         end
         
         -- Set icon
