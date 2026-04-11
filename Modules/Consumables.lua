@@ -189,9 +189,9 @@ local CLASS_BUFF_ICONS = {
 local defaults = {
     profile = {
         enabled = true,
-        font = "Friz Quadrata TT",
+        font = "Arial Narrow",
         fontSize = 14,
-        iconSize = 64,
+        iconSize = 60,
         iconSpacing = 10,
         position = {
             point = "CENTER",
@@ -205,8 +205,8 @@ local defaults = {
             food = true,
             mainhand_poison = true,
             offhand_poison = true,
-            healthstone = true,
-            augment_rune = true,
+            healthstone = false,
+            augment_rune = false,
             class_buff = true,  -- Track class/raid buffs (Mark of the Wild, etc.)
         },
         -- Custom icons and labels for each buff type
@@ -224,14 +224,14 @@ local defaults = {
         -- Context-based display options
         showInContext = {
             world = false,          -- Open world
-            delves = true,          -- Delves
+            delves = false,         -- Delves
             normalDungeon = false,  -- Normal dungeons
             heroicDungeon = false,  -- Heroic dungeons
             mythicDungeon = true,   -- Mythic/M+ dungeons
-            normalRaid = false,     -- Normal raids
+            normalRaid = true,      -- Normal raids
             heroicRaid = true,      -- Heroic raids
             mythicRaid = true,      -- Mythic raids
-            lfr = false,            -- LFR
+            lfr = true,             -- LFR
             pvp = false,            -- PvP (Arenas/BGs)
         },
         alwaysShowOnReadyCheck = true,  -- Override context and always show on ready check
