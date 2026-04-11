@@ -2273,12 +2273,16 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
         end
         
-        -- Set default casting color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
+        -- Set default casting color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Shield visibility based on interruptibility - SetShown() accepts secret booleans!
-        if castbar.shield and notInterruptible ~= nil then
-            castbar.shield:SetShown(notInterruptible)  -- true=show (non-interruptible), false=hide (interruptible)
+        -- Shield visibility based on interruptibility
+        if castbar.shield and castbar.shield.texture and notInterruptible ~= nil then
+            if castbar.shield.texture.SetAlphaFromBoolean then
+                -- Retail: SetAlphaFromBoolean handles secret booleans (0 for false, 1 for true)
+                castbar.shield:Show()
+                castbar.shield.texture:SetAlphaFromBoolean(notInterruptible)
+            end
         end
         
         -- Set icon
@@ -2395,12 +2399,16 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
         end
         
-        -- Set default channeling color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
+        -- Set default channeling color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Shield visibility based on interruptibility - SetShown() accepts secret booleans!
-        if castbar.shield and notInterruptible ~= nil then
-            castbar.shield:SetShown(notInterruptible)  -- true=show (non-interruptible), false=hide (interruptible)
+        -- Shield visibility based on interruptibility
+        if castbar.shield and castbar.shield.texture and notInterruptible ~= nil then
+            if castbar.shield.texture.SetAlphaFromBoolean then
+                -- Retail: SetAlphaFromBoolean handles secret booleans (0 for false, 1 for true)
+                castbar.shield:Show()
+                castbar.shield.texture:SetAlphaFromBoolean(notInterruptible)
+            end
         end
         
         -- Set icon
