@@ -2261,8 +2261,6 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
-        print("[CASTBAR DEBUG] Cast started:", spell, "notInterruptible=", tostring(notInterruptible))  -- DEBUG
-        
         castbar.spell = spell
         castbar.texture = texture
         castbar.casting = true
@@ -2278,10 +2276,17 @@ end
         -- Set casting color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Shield visibility indicates non-interruptibility - SetShown accepts secret booleans
+        -- Shield visibility for non-interruptible casts - match Platynator pattern
         if castbar.shield and notInterruptible ~= nil then
-            castbar.shield:SetShown(notInterruptible)
-            print("[CASTBAR DEBUG] Shield SetShown called with:", tostring(notInterruptible))  -- DEBUG
+            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
+                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
+                castbar.shield:SetAlpha(alpha)
+                if alpha > 0 then
+                    castbar.shield:Show()
+                else
+                    castbar.shield:Hide()
+                end
+            end
         end
         
         -- Set icon
@@ -2401,9 +2406,17 @@ end
         -- Set channeling color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Shield visibility indicates non-interruptibility - SetShown accepts secret booleans
+        -- Shield visibility for non-interruptible channels - match Platynator pattern
         if castbar.shield and notInterruptible ~= nil then
-            castbar.shield:SetShown(notInterruptible)
+            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
+                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
+                castbar.shield:SetAlpha(alpha)
+                if alpha > 0 then
+                    castbar.shield:Show()
+                else
+                    castbar.shield:Hide()
+                end
+            end
         end
         
         -- Set icon
