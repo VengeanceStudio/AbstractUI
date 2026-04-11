@@ -2284,10 +2284,14 @@ end
         
         -- Control grey overlay bar alpha based on interruptibility
         if castbar.overlayBar and notInterruptible ~= nil then
+            castbar.overlayBar:Show()
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
             if overlayTexture and overlayTexture.SetAlphaFromBoolean then
                 -- Alpha 0 for interruptible (yellow shows), alpha 1 for non-interruptible (grey shows)
                 overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            elseif overlayTexture then
+                -- Fallback: manually set alpha if SetAlphaFromBoolean not available
+                overlayTexture:SetAlpha(notInterruptible and 1 or 0)
             end
         end
         
@@ -2425,10 +2429,14 @@ end
         
         -- Control grey overlay bar alpha based on interruptibility
         if castbar.overlayBar and notInterruptible ~= nil then
+            castbar.overlayBar:Show()
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
             if overlayTexture and overlayTexture.SetAlphaFromBoolean then
                 -- Alpha 0 for interruptible (blue shows), alpha 1 for non-interruptible (grey shows)
                 overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            elseif overlayTexture then
+                -- Fallback: manually set alpha if SetAlphaFromBoolean not available
+                overlayTexture:SetAlpha(notInterruptible and 1 or 0)
             end
         end
         
@@ -3190,6 +3198,7 @@ end
                         overlayBar:SetValue(0)
                         overlayBar:SetFrameLevel(statusBar:GetFrameLevel())  -- Same level - text OVERLAY layer will be on top
                         overlayBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+                        overlayBar:Hide()  -- Start hidden, will be shown during cast events
                         castbar.overlayBar = overlayBar
                         
                         -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
