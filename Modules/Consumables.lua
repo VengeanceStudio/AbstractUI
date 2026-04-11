@@ -17,8 +17,173 @@ local readyCheckTimer = nil
 local lastUpdate = 0
 local THROTTLE = 0.2
 
+-- Buff state cache (persists when live data unavailable due to secret values)
+local buffCache = {
+    flask = { active = false, expiresAt = 0 },
+    food = { active = false, expiresAt = 0 },
+    rune = { active = false, expiresAt = 0 },
+    weaponMH = { active = false, expiresAt = 0 },
+    weaponOH = { active = false, expiresAt = 0 },
+    rogueMHPoison = { active = false, expiresAt = 0 },
+    rogueOHPoison = { active = false, expiresAt = 0 },
+    classBuff = { active = false, expiresAt = 0 },
+}
+
+-- Buffs that persist through death
+-- Note: Modern "Hearty" food variants persist through death, so food is marked as persistent
+local PERSISTS_THROUGH_DEATH = {
+    flask = true,
+    rune = true,
+    weaponMH = true,
+    weaponOH = true,
+    rogueMHPoison = true,
+    rogueOHPoison = true,
+    food = true,  -- Hearty food buffs persist through death (TWW+)
+    classBuff = false,  -- Class buffs (Mark of the Wild, etc.) are lost on death
+}
+
 -- Reference to ScrollFrame (will be initialized after DB is ready)
 local ScrollFrame
+
+-- ============================================================================
+-- COMPREHENSIVE CONSUMABLE DETECTION DATA
+-- Based on ReadyCheckConsumables for accurate multi-expansion support
+-- ============================================================================
+
+-- Flask Buff Spell IDs (detects active flask auras)
+local FLASK_BUFF_IDS = {
+    -- 12.0.0 - Midnight
+    [1235057] = true, -- Flask of Thalassian Resistance (Vers)
+    [1235108] = true, -- Flask of the Magisters (Mastery)
+    [1235110] = true, -- Flask of the Blood Knights (Haste)
+    [1235111] = true, -- Flask of the Shattered Sun (Crit)
+    
+    -- 11.0.0 - The War Within
+    [432021] = true, -- Flask of Alchemical Chaos
+    [432473] = true, -- Flask of Saving Graces
+    [431971] = true, -- Flask of Tempered Aggression
+    [431972] = true, -- Flask of Tempered Swiftness
+    [431974] = true, -- Flask of Tempered Mastery
+    [431973] = true, -- Flask of Tempered Versatility
+    
+    -- 10.0.0 - Dragonflight
+    [371339] = true, -- Phial of Elemental Chaos
+    [374000] = true, -- Iced Phial of Corrupting Rage
+    [371354] = true, -- Phial of the Eye in the Storm
+    [371204] = true, -- Phial of Still Air
+    [370662] = true, -- Phial of Icy Preservation
+    [373257] = true, -- Phial of Glacial Fury
+    [371386] = true, -- Phial of Charged Isolation
+    [370652] = true, -- Phial of Static Empowerment
+    [371172] = true, -- Phial of Tepid Versatility
+    [371186] = true, -- Charged Phial of Alacrity
+    
+    -- 9.0.1 - Shadowlands
+    [307187] = true, -- Spectral Stamina Flask
+    [307185] = true, -- Spectral Flask of Power
+    [307166] = true, -- Eternal Flask
+    
+    -- 8.0.1 - Battle for Azeroth
+    [251838] = true, [251837] = true, [251836] = true, [251839] = true,
+    [298839] = true, [298837] = true, [298836] = true, [298841] = true,
+}
+
+-- Food Buff Spell IDs (detects active food buffs)
+local FOOD_BUFF_IDS = {
+    -- 8.0.1 - Battle for Azeroth
+    [257413] = true, [257415] = true, [297034] = true, [257418] = true,
+    [257420] = true, [297035] = true, [257408] = true, [257410] = true,
+    [297039] = true, [185736] = true, [257422] = true, [257424] = true,
+    [297037] = true, [259449] = true, [259455] = true, [290468] = true,
+    [297117] = true, [259452] = true, [259456] = true, [290469] = true,
+    [297118] = true, [259448] = true, [259454] = true, [290467] = true,
+    [297116] = true, [259453] = true, [259457] = true, [288074] = true,
+    [288075] = true, [297119] = true, [297040] = true, [285719] = true,
+    [285720] = true, [285721] = true, [286171] = true,
+    
+    -- 10.0.0 - Dragonflight
+    [308488] = true, [308506] = true, [308434] = true, [308514] = true,
+    [327708] = true, [327706] = true, [327709] = true, [308525] = true,
+    [327707] = true, [308637] = true, [308474] = true, [308504] = true,
+    [308430] = true, [308509] = true, [327704] = true, [327701] = true,
+    [327705] = true, [327702] = true, [382145] = true, [382150] = true,
+    [382146] = true, [382149] = true, [396092] = true, [382246] = true,
+    [382247] = true, [382152] = true, [382153] = true, [382157] = true,
+    [382230] = true, [382231] = true,
+    
+    -- 11.0.0 - The War Within
+    [456960] = true, [456961] = true, [456962] = true, [456963] = true,
+    [456964] = true, [456965] = true, [456966] = true, [456967] = true,
+    [456999] = true, [457001] = true, [457003] = true, [457005] = true,
+    [457006] = true, [457120] = true, [457139] = true, [457244] = true,
+    [457297] = true, [462206] = true, [462207] = true, [462211] = true,
+    [462212] = true, [462213] = true, [462214] = true, [462215] = true,
+    
+    -- 12.0.0 - Midnight
+    [1237881] = true, [1237884] = true, [1237883] = true, [1237885] = true,
+    [1237890] = true, [1237891] = true, [1237895] = true, [1237896] = true,
+    [1237902] = true, [1237903] = true, [1237908] = true, [1237910] = true,
+    [1237914] = true, [1237915] = true, [1237918] = true, [1237919] = true,
+}
+
+-- Food Icon IDs (fallback detection when spell ID is unknown)
+local FOOD_ICON_IDS = {
+    [136000] = true, -- Well Fed icon (canonical)
+    [132805] = true, -- Drinking
+    [133950] = true, -- Eating
+}
+
+-- Augment Rune Buff Spell IDs (detects active rune buffs)
+local RUNE_BUFF_IDS = {
+    [1264426] = true, -- 12.0.0: Void-Touched Augment Rune
+    [1242347] = true, -- 11.2.0: Soulgorged Augmentation
+    [1234969] = true, -- 11.2.0: Ethereal Augmentation
+    [453250]  = true, -- 11.0.0: Crystallization
+    [393438]  = true, -- 10.0.0: Draconic Augmentation
+    [367405]  = true, -- 9.2.0:  Eternal Augmentation
+    [347901]  = true, -- 9.0.2:  Veiled Augmentation
+    [317065]  = true, -- 8.3.0:  Battle-Scarred Augmentation
+    [270058]  = true, -- 8.1.0:  Battle-Scarred Augmentation
+    [224001]  = true, -- 7.0.3:  Defiled Augmentation
+}
+
+-- Healthstone Item IDs
+local HEALTHSTONE_ITEM_IDS = {
+    [5512]   = true, -- Healthstone
+    [224464] = true, -- Demonic Healthstone
+}
+
+-- Rogue Poison Spell IDs
+local ROGUE_DEADLY_POISON_IDS = { 2823, 315584 }  -- Deadly Poison (MH)
+local ROGUE_WOUND_POISON_IDS = { 8679 }  -- Wound Poison (MH)
+local ROGUE_CRIPPLING_POISON_IDS = { 3408 }  -- Crippling Poison (OH)
+local ROGUE_ATROPHIC_POISON_IDS = { 381637 }  -- Atrophic Poison (OH)
+local ROGUE_NUMBING_POISON_IDS = { 5761 }  -- Numbing Poison (OH)
+
+-- Class/Raid Buff Spell IDs (lost on death, need reapplication)
+local CLASS_BUFF_IDS = {
+    -- Druid: Mark of the Wild
+    [1126] = true,   -- Mark of the Wild
+    
+    -- Priest: Power Word: Fortitude
+    [21562] = true,  -- Power Word: Fortitude
+    
+    -- Mage: Arcane Intellect
+    [1459] = true,   -- Arcane Intellect
+    
+    -- Warrior: Battle Shout
+    [6673] = true,   -- Battle Shout
+    
+    -- Monk: Legacy of the White Tiger (older) / Legacy of the Crane (newer)
+    [116781] = true, -- Legacy of the White Tiger
+    [388193] = true, -- Legacy of the Crane
+    
+    -- Paladin: Devotion Aura (passive)
+    [465] = true,    -- Devotion Aura
+    
+    -- DH: Chaos Brand (applied by DH, received by raid)
+    [1490] = true,   -- Chaos Brand (debuff on target but shows as raid benefit)
+}
 
 -- Database defaults
 local defaults = {
@@ -41,6 +206,7 @@ local defaults = {
             offhand_poison = true,
             healthstone = true,
             augment_rune = true,
+            class_buff = true,  -- Track class/raid buffs (Mark of the Wild, etc.)
         },
         -- Custom icons and labels for each buff type
         customization = {
@@ -52,6 +218,7 @@ local defaults = {
             offhand_poison = { icon = 136066, label = "OH Poison" },
             healthstone = { icon = 538745, label = "Healthstone" },
             augment_rune = { icon = 237556, label = "Augment Rune" },
+            class_buff = { icon = 136116, label = "Buff!" },  -- Spell_nature_regeneration icon
         },
         -- Context-based display options
         showInContext = {
@@ -77,8 +244,7 @@ local BUFF_GROUPS = {
         icon = 7548987,
         label = "Main Hand",
         checkFunc = function()
-            local hasMain = GetWeaponEnchantInfo()
-            return not hasMain
+            return not Consumables:HasWeaponMHEnchant()
         end,
     },
     {
@@ -94,17 +260,15 @@ local BUFF_GROUPS = {
             if not isWeapon then return false end  -- Not a weapon (shield, etc.)
             
             -- Now check imbue status
-            local _, _, _, _, hasOff = GetWeaponEnchantInfo()
-            return not hasOff
+            return not Consumables:HasWeaponOHEnchant()
         end,
     },
     {
         id = "flask",
         icon = 7548903,
         label = "Flask!",
-        spells = { 46376, 1235110, 1235111, 1235057, 1235108 },
-        checkFunc = function(self)
-            return not Consumables:HasBuffBySpellIDs(self.spells)
+        checkFunc = function()
+            return not Consumables:HasFlaskBuff()
         end,
     },
     {
@@ -119,38 +283,35 @@ local BUFF_GROUPS = {
         id = "mainhand_poison",
         icon = 136066,
         label = "MH Poison",
-        spells = { 315584, 8679 },
         requireClass = "ROGUE",
-        checkFunc = function(self)
+        checkFunc = function()
             local _, playerClass = UnitClass("player")
             if playerClass ~= "ROGUE" then return false end
-            return not Consumables:HasBuffBySpellIDs(self.spells)
+            return not Consumables:HasRogueMHPoisonBuff()
         end,
     },
     {
         id = "offhand_poison",
         icon = 136066,
         label = "OH Poison",
-        spells = { 3408, 5761 },
         requireClass = "ROGUE",
-        checkFunc = function(self)
+        checkFunc = function()
             local _, playerClass = UnitClass("player")
             if playerClass ~= "ROGUE" then return false end
             local itemID = GetInventoryItemID("player", 17)
             if not itemID then return false end
             local classID = select(6, GetItemInfoInstant(itemID))
             local isWeapon = (classID == 2)
-            return isWeapon and not Consumables:HasBuffBySpellIDs(self.spells)
+            return isWeapon and not Consumables:HasRogueOHPoisonBuff()
         end,
     },
     {
         id = "healthstone",
         icon = 538745,
         label = "Healthstone",
-        itemIDs = { 5512, 224464 },
-        checkFunc = function(self)
+        checkFunc = function()
             if not Consumables:GroupHasWarlock() then return false end
-            return not Consumables:PlayerHasHealthstone(self.itemIDs)
+            return not Consumables:PlayerHasHealthstone()
         end,
     },
     {
@@ -159,6 +320,14 @@ local BUFF_GROUPS = {
         label = "Augment Rune",
         checkFunc = function()
             return not Consumables:HasRuneBuff()
+        end,
+    },
+    {
+        id = "class_buff",
+        icon = 136116,
+        label = "Buff!",
+        checkFunc = function()
+            return not Consumables:HasClassBuff()
         end,
     },
 }
@@ -297,6 +466,7 @@ function Consumables:RegisterEvents()
     self:RegisterEvent("UNIT_INVENTORY_CHANGED")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    self:RegisterEvent("PLAYER_DEAD")
 end
 
 function Consumables:READY_CHECK()
@@ -356,6 +526,22 @@ function Consumables:ZONE_CHANGED_NEW_AREA()
     end)
 end
 
+function Consumables:PLAYER_DEAD()
+    -- Clear buffs that don't persist through death
+    local now = GetTime()
+    for buffType, persists in pairs(PERSISTS_THROUGH_DEATH) do
+        if not persists and buffCache[buffType] then
+            buffCache[buffType].active = false
+            buffCache[buffType].expiresAt = now
+        end
+    end
+    
+    -- Update display after death
+    C_Timer.After(0.5, function()
+        self:UpdateBuffStatus()
+    end)
+end
+
 function Consumables:ThrottledUpdate()
     local now = GetTime()
     if now - lastUpdate >= THROTTLE then
@@ -366,58 +552,259 @@ end
 
 -- ============================================================================
 -- BUFF CHECKING FUNCTIONS
+-- Using C_UnitAuras for comprehensive detection across all expansions
+-- Caches buff states to handle secret values during instance transitions
 -- ============================================================================
 
-function Consumables:ForEachAuraSafe(unit, filter, maxCount, func)
-    if not AuraUtil or not AuraUtil.ForEachAura then return end
-    pcall(function()
-        AuraUtil.ForEachAura(unit, filter, maxCount, function(...)
-            local name, _, _, _, _, _, _, _, _, spellId = ...
-            if func({ name = name, spellId = spellId }) then
-                return true
+-- Scans player auras using direct C_UnitAuras API for maximum compatibility
+function Consumables:ScanPlayerAuras()
+    local now = GetTime()
+    local buffs = {
+        hasFlask = false,
+        hasFood = false,
+        hasRune = false,
+        hasRogueMHPoison = false,
+        hasRogueOHPoison = false,
+        hasClassBuff = false,
+    }
+    
+    local foundAnyValidAura = false
+    local hadSecretValues = false
+    
+    -- Scan up to 60 buff slots
+    for i = 1, 60 do
+        local auraData = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+        
+        if not auraData then
+            break
+        end
+        
+        local spellId = auraData.spellId
+        local icon = auraData.icon
+        local expirationTime = auraData.expirationTime or 0
+        
+        -- Skip secret values (occurs during M+ countdown and instance transitions)
+        if issecretvalue and issecretvalue(spellId) then
+            hadSecretValues = true
+        else
+            foundAnyValidAura = true
+            
+            -- Check flask buffs by spell ID
+            if FLASK_BUFF_IDS[spellId] then
+                buffs.hasFlask = true
+                buffCache.flask.active = true
+                buffCache.flask.expiresAt = expirationTime
             end
-        end)
-    end)
-end
-
-function Consumables:HasBuffBySpellIDs(spellIDs)
-    local found = false
-    self:ForEachAuraSafe("player", "HELPFUL", nil, function(aura)
-        for _, id in ipairs(spellIDs) do
-            if aura.spellId == id then
-                found = true
-                return true
+            
+            -- Check food buffs by spell ID
+            if FOOD_BUFF_IDS[spellId] then
+                buffs.hasFood = true
+                buffCache.food.active = true
+                buffCache.food.expiresAt = expirationTime
+            end
+            
+            -- Check food buffs by icon ID (fallback)
+            if FOOD_ICON_IDS[icon] then
+                buffs.hasFood = true
+                buffCache.food.active = true
+                buffCache.food.expiresAt = expirationTime
+            end
+            
+            -- Check rune buffs by spell ID
+            if RUNE_BUFF_IDS[spellId] then
+                buffs.hasRune = true
+                buffCache.rune.active = true
+                buffCache.rune.expiresAt = expirationTime
+            end
+            
+            -- Check class/raid buff by spell ID
+            if CLASS_BUFF_IDS[spellId] then
+                buffs.hasClassBuff = true
+                buffCache.classBuff.active = true
+                buffCache.classBuff.expiresAt = expirationTime
+            end
+            
+            -- Check rogue poison buffs
+            for _, poisonId in ipairs(ROGUE_DEADLY_POISON_IDS) do
+                if spellId == poisonId then
+                    buffs.hasRogueMHPoison = true
+                    buffCache.rogueMHPoison.active = true
+                    buffCache.rogueMHPoison.expiresAt = expirationTime
+                end
+            end
+            for _, poisonId in ipairs(ROGUE_WOUND_POISON_IDS) do
+                if spellId == poisonId then
+                    buffs.hasRogueMHPoison = true
+                    buffCache.rogueMHPoison.active = true
+                    buffCache.rogueMHPoison.expiresAt = expirationTime
+                end
+            end
+            for _, poisonId in ipairs(ROGUE_CRIPPLING_POISON_IDS) do
+                if spellId == poisonId then
+                    buffs.hasRogueOHPoison = true
+                    buffCache.rogueOHPoison.active = true
+                    buffCache.rogueOHPoison.expiresAt = expirationTime
+                end
+            end
+            for _, poisonId in ipairs(ROGUE_ATROPHIC_POISON_IDS) do
+                if spellId == poisonId then
+                    buffs.hasRogueOHPoison = true
+                    buffCache.rogueOHPoison.active = true
+                    buffCache.rogueOHPoison.expiresAt = expirationTime
+                end
+            end
+            for _, poisonId in ipairs(ROGUE_NUMBING_POISON_IDS) do
+                if spellId == poisonId then
+                    buffs.hasRogueOHPoison = true
+                    buffCache.rogueOHPoison.active = true
+                    buffCache.rogueOHPoison.expiresAt = expirationTime
+                end
             end
         end
-    end)
-    return found
+    end
+    
+    -- Scan weapon enchants (separate system from auras)
+    local hasMainHandEnchant, mainHandExpiration, _, _,
+          hasOffHandEnchant, offHandExpiration = GetWeaponEnchantInfo()
+    
+    if hasMainHandEnchant then
+        buffCache.weaponMH.active = true
+        -- Weapon enchant expiration is in milliseconds from now
+        buffCache.weaponMH.expiresAt = now + ((mainHandExpiration or 0) / 1000)
+    end
+    
+    if hasOffHandEnchant then
+        buffCache.weaponOH.active = true
+        buffCache.weaponOH.expiresAt = now + ((offHandExpiration or 0) / 1000)
+    end
+    
+    -- If we had secret values or no valid auras, use cached data
+    if hadSecretValues or not foundAnyValidAura then
+        -- Use cached data if it hasn't expired
+        if buffCache.flask.active and buffCache.flask.expiresAt > now then
+            buffs.hasFlask = true
+        else
+            buffCache.flask.active = false
+        end
+        
+        if buffCache.food.active and buffCache.food.expiresAt > now then
+            buffs.hasFood = true
+        else
+            buffCache.food.active = false
+        end
+        
+        if buffCache.rune.active and buffCache.rune.expiresAt > now then
+            buffs.hasRune = true
+        else
+            buffCache.rune.active = false
+        end
+        
+        if buffCache.rogueMHPoison.active and buffCache.rogueMHPoison.expiresAt > now then
+            buffs.hasRogueMHPoison = true
+        else
+            buffCache.rogueMHPoison.active = false
+        end
+        
+        if buffCache.rogueOHPoison.active and buffCache.rogueOHPoison.expiresAt > now then
+            buffs.hasRogueOHPoison = true
+        else
+            buffCache.rogueOHPoison.active = false
+        end
+        
+        if buffCache.classBuff.active and buffCache.classBuff.expiresAt > now then
+            buffs.hasClassBuff = true
+        else
+            buffCache.classBuff.active = false
+        end
+    else
+        -- Clear cache entries for buffs we didn't find (they expired or were removed)
+        if not buffs.hasFlask then
+            buffCache.flask.active = false
+            buffCache.flask.expiresAt = now
+        end
+        if not buffs.hasFood then
+            buffCache.food.active = false
+            buffCache.food.expiresAt = now
+        end
+        if not buffs.hasRune then
+            buffCache.rune.active = false
+            buffCache.rune.expiresAt = now
+        end
+        if not buffs.hasRogueMHPoison then
+            buffCache.rogueMHPoison.active = false
+            buffCache.rogueMHPoison.expiresAt = now
+        end
+        if not buffs.hasRogueOHPoison then
+            buffCache.rogueOHPoison.active = false
+            buffCache.rogueOHPoison.expiresAt = now
+        end
+        if not buffs.hasClassBuff then
+            buffCache.classBuff.active = false
+            buffCache.classBuff.expiresAt = now
+        end
+    end
+    
+    -- Always use cached weapon enchant data (checked separately above)
+    if buffCache.weaponMH.active and buffCache.weaponMH.expiresAt > now then
+        buffs.hasWeaponMH = true
+    else
+        buffCache.weaponMH.active = false
+        buffs.hasWeaponMH = false
+    end
+    
+    if buffCache.weaponOH.active and buffCache.weaponOH.expiresAt > now then
+        buffs.hasWeaponOH = true
+    else
+        buffCache.weaponOH.active = false
+        buffs.hasWeaponOH = false
+    end
+    
+    return buffs
+end
+
+function Consumables:HasFlaskBuff()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasFlask
 end
 
 function Consumables:HasFoodBuff()
-    local found = false
-    self:ForEachAuraSafe("player", "HELPFUL", nil, function(aura)
-        if aura.name and aura.name:find("Well Fed") then
-            found = true
-            return true
-        end
-    end)
-    return found
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasFood
 end
 
 function Consumables:HasRuneBuff()
-    local found = false
-    self:ForEachAuraSafe("player", "HELPFUL", nil, function(aura)
-        if aura.name and aura.name:find("Augment Rune") then
-            found = true
-            return true
-        end
-    end)
-    return found
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasRune
 end
 
-function Consumables:PlayerHasHealthstone(itemIDs)
-    for _, id in ipairs(itemIDs) do
-        if GetItemCount(id, true) > 0 then
+function Consumables:HasRogueMHPoisonBuff()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasRogueMHPoison
+end
+
+function Consumables:HasRogueOHPoisonBuff()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasRogueOHPoison
+end
+
+function Consumables:HasWeaponMHEnchant()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasWeaponMH
+end
+
+function Consumables:HasWeaponOHEnchant()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasWeaponOH
+end
+
+function Consumables:HasClassBuff()
+    local buffs = self:ScanPlayerAuras()
+    return buffs.hasClassBuff
+end
+
+function Consumables:PlayerHasHealthstone()
+    for itemID in pairs(HEALTHSTONE_ITEM_IDS) do
+        if GetItemCount(itemID, true) > 0 then
             return true
         end
     end
@@ -527,12 +914,22 @@ function Consumables:RegisterSlashCommands()
         elseif msg == "reset" then
             self:ResetPosition()
             self:Print("Position reset to center")
+        elseif msg == "debug" or msg == "cache" then
+            -- Debug command to show cache state
+            local now = GetTime()
+            self:Print("=== Buff Cache Status ===")
+            for buffType, data in pairs(buffCache) do
+                local status = data.active and "ACTIVE" or "INACTIVE"
+                local timeLeft = data.expiresAt > now and string.format("%.1fm", (data.expiresAt - now) / 60) or "EXPIRED"
+                self:Print(string.format("%s: %s (%s)", buffType, status, timeLeft))
+            end
         else
             self:Print("Consumables Commands:")
             self:Print("/abscon show - Show tracker")
             self:Print("/abscon hide - Hide tracker")
             self:Print("/abscon toggle - Toggle visibility")
             self:Print("/abscon reset - Reset position")
+            self:Print("/abscon debug - Show buff cache status")
         end
     end
 end
@@ -789,6 +1186,18 @@ function Consumables:GetOptions()
                 get = function() return self.db.profile.trackBuffs.augment_rune end,
                 set = function(_, v)
                     self.db.profile.trackBuffs.augment_rune = v
+                    self:UpdateBuffStatus()
+                end,
+            },
+            trackClassBuff = {
+                type = "toggle",
+                name = "Class/Raid Buffs",
+                desc = "Track missing class/raid buffs (Mark of the Wild, Power Word: Fortitude, Arcane Intellect, Battle Shout, etc.)",
+                order = 29,
+                width = "full",
+                get = function() return self.db.profile.trackBuffs.class_buff end,
+                set = function(_, v)
+                    self.db.profile.trackBuffs.class_buff = v
                     self:UpdateBuffStatus()
                 end,
             },
@@ -1053,6 +1462,18 @@ function Consumables:GetOptions()
                 order = 59,
                 width = "half",
                 func = function() self:ShowBuffCustomizationEditor("augment_rune", "Augment Rune") end,
+            },
+            customizeClassBuff = {
+                type = "execute",
+                name = function()
+                    local custom = self.db.profile.customization.class_buff
+                    local icon = custom.icon or 136116
+                    return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Buff!")
+                end,
+                desc = "Customize Class/Raid Buff icon and label",
+                order = 60,
+                width = "half",
+                func = function() self:ShowBuffCustomizationEditor("class_buff", "Class/Raid Buff") end,
             },
         },
     }
