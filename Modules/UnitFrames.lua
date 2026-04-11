@@ -281,6 +281,15 @@ local LSM = LibStub("LibSharedMedia-3.0")
 -- DEBUG: Track frame creation counts
 local frameCreationCounts = {}
 
+-- DEBUG: Command to reset counters
+SLASH_RESETFRAMECOUNTS1 = "/resetframecounts"
+SlashCmdList["RESETFRAMECOUNTS"] = function()
+    for k in pairs(frameCreationCounts) do
+        frameCreationCounts[k] = nil
+    end
+    print("|cff00FF00[DEBUG]|r Frame creation counters reset")
+end
+
 -- Utility: Sanitize a color table to ensure all values are plain numbers (not secret values)
 local function SanitizeColorTable(color, fallback)
     fallback = fallback or {1, 1, 1, 1}
@@ -959,6 +968,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         end
         self.updatingFrames[frameGlobal] = true
         print("|cffFFFF00[DEBUG]|r update() called for " .. frameGlobal)
+        print("|cff00FFFF[STACK]|r " .. debugstack(2, 3, 3)) -- Show 3 levels of call stack
         
         local existingFrame = _G[frameGlobal]
         if existingFrame then 
