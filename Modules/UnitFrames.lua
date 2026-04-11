@@ -2276,14 +2276,9 @@ end
         -- Set default casting color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Set shield alpha (0=invisible for interruptible, 1=visible for non-interruptible)
-        -- We can pass secret alpha to SetAlpha but can't do arithmetic with it
+        -- Shield visibility based on interruptibility - SetShown() accepts secret booleans!
         if castbar.shield and notInterruptible ~= nil then
-            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
-                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-                castbar.shield:Show()  -- Must be shown for alpha to take effect
-                castbar.shield:SetAlpha(alpha)  -- Pass secret value directly, no arithmetic
-            end
+            castbar.shield:SetShown(notInterruptible)  -- true=show (non-interruptible), false=hide (interruptible)
         end
         
         -- Set icon
@@ -2403,14 +2398,9 @@ end
         -- Set default channeling color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Set shield alpha (0=invisible for interruptible, 1=visible for non-interruptible)
-        -- We can pass secret alpha to SetAlpha but can't do arithmetic with it
+        -- Shield visibility based on interruptibility - SetShown() accepts secret booleans!
         if castbar.shield and notInterruptible ~= nil then
-            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
-                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-                castbar.shield:Show()  -- Must be shown for alpha to take effect
-                castbar.shield:SetAlpha(alpha)  -- Pass secret value directly, no arithmetic
-            end
+            castbar.shield:SetShown(notInterruptible)  -- true=show (non-interruptible), false=hide (interruptible)
         end
         
         -- Set icon
@@ -3133,13 +3123,18 @@ end
                         statusBar:SetValue(0)
                         castbar.statusBar = statusBar
                         
-                        -- Shield icon for non-interruptible casts
-                        local shield = castbar:CreateTexture(nil, "OVERLAY")
-                        shield:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
-                        shield:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
-                        shield:SetSize(castbarDB.height + 10, castbarDB.height + 10)
-                        shield:Hide()
-                        castbar.shield = shield
+                        -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
+                        local shieldFrame = CreateFrame("Frame", nil, castbar)
+                        shieldFrame:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
+                        shieldFrame:SetSize(castbarDB.height + 10, castbarDB.height + 10)
+                        
+                        local shieldTexture = shieldFrame:CreateTexture(nil, "OVERLAY")
+                        shieldTexture:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
+                        shieldTexture:SetAllPoints(shieldFrame)
+                        
+                        shieldFrame:Hide()
+                        shieldFrame.texture = shieldTexture
+                        castbar.shield = shieldFrame
                         
                         -- Spell icon
                         if castbarDB.showIcon then
