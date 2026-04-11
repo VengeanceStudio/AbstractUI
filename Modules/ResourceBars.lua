@@ -285,7 +285,7 @@ function ResourceBars:SetupPrimaryResourceBar()
     self:SetupDragging(frame, "primary")
     
     -- Add nudge arrows
-    local Movable = AbstractUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable", true)
     if Movable and Movable.CreateNudgeArrows then
         Movable:CreateNudgeArrows(frame, db, function()
             -- Reset callback: center the frame
@@ -606,7 +606,7 @@ function ResourceBars:SetupSecondaryResourceBar()
     self:SetupDragging(frame, "secondary")
     
     -- Add nudge arrows
-    local Movable = AbstractUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable", true)
     if Movable and Movable.CreateNudgeArrows then
         Movable:CreateNudgeArrows(frame, db, function()
             -- Reset callback: center the frame
@@ -751,7 +751,8 @@ end
 function ResourceBars:SetupDragging(frame, barType)
     if not frame then return end
     
-    local Movable = AbstractUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable", true)
+    if not Movable then return end
     
     Movable:MakeFrameDraggable(
         frame,
@@ -765,7 +766,7 @@ function ResourceBars:SetupDragging(frame, barType)
 end
 
 function ResourceBars:OnMoveModeChanged(event, enabled)
-    local Movable = AbstractUI:GetModule("Movable")
+    local Movable = AbstractUI:GetModule("Movable", true)
     
     if self.primaryBar then
         self.primaryBar:EnableMouse(enabled)
