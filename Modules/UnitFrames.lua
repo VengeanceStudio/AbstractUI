@@ -2266,12 +2266,12 @@ end
         castbar.casting = true
         castbar.channeling = nil
         
-        -- Do arithmetic IMMEDIATELY (while values are fresh)
-        local castDuration = (endTime - startTime) / 1000
-        local currentCast = GetTime() - (startTime / 1000)
-        
-        castbar.statusBar:SetMinMaxValues(0, castDuration)
-        castbar.statusBar:SetValue(currentCast)
+        -- Use Retail API: UnitCastDuration returns duration object (no arithmetic on secret values)
+        local castDuration = UnitCastDuration(unit)
+        if castDuration then
+            -- SetTimerDuration handles the animation internally (Retail API)
+            castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
+        end
         
         -- Use WoW API to handle potentially-secret boolean
         local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
@@ -2363,14 +2363,13 @@ end
         local castbar = frame.castbar
         
         if castbar.casting then
-            local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
+            local spell = UnitCastingInfo(unit)
             if spell then
-                -- Recalculate on delay - do arithmetic immediately
-                local castDuration = (endTime - startTime) / 1000
-                local currentCast = GetTime() - (startTime / 1000)
-                
-                castbar.statusBar:SetMinMaxValues(0, castDuration)
-                castbar.statusBar:SetValue(currentCast)
+                -- Use Retail API: UnitCastDuration returns duration object
+                local castDuration = UnitCastDuration(unit)
+                if castDuration then
+                    castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
+                end
             end
         end
     end
@@ -2392,11 +2391,12 @@ end
         castbar.casting = nil
         castbar.channeling = true
         
-        -- Do arithmetic IMMEDIATELY (while values are fresh)
-        local castDuration = (endTime - startTime) / 1000
-        
-        castbar.statusBar:SetMinMaxValues(0, castDuration)
-        castbar.statusBar:SetValue(castDuration)  -- Channels start at full
+        -- Use Retail API: UnitChannelDuration returns duration object (no arithmetic on secret values)
+        local castDuration = UnitChannelDuration(unit)
+        if castDuration then
+            -- SetTimerDuration handles the animation internally (Retail API)
+            castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
+        end
         
         -- Use WoW API to handle potentially-secret boolean
         local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
@@ -2444,13 +2444,13 @@ end
         local castbar = frame.castbar
         
         if castbar.channeling then
-            local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
+            local spell = UnitChannelInfo(unit)
             if spell then
-                -- Recalculate on channel update - do arithmetic immediately
-                local castDuration = (endTime - startTime) / 1000
-                
-                castbar.statusBar:SetMinMaxValues(0, castDuration)
-                castbar.statusBar:SetValue(castDuration)
+                -- Use Retail API: UnitChannelDuration returns duration object
+                local castDuration = UnitChannelDuration(unit)
+                if castDuration then
+                    castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
+                end
             end
         end
     end
@@ -3219,20 +3219,8 @@ end
                             castbar.castTime = castTime
                         end
                         
-                        -- OnUpdate handler - just animates existing bar like Platynator
-                        castbar:SetScript("OnUpdate", function(self, elapsed)
-                            if not self.casting and not self.channeling then return end
-                            
-                            if self.casting then
-                                -- Increment by elapsed time
-                                local currentValue = self.statusBar:GetValue()
-                                self.statusBar:SetValue(currentValue + elapsed)
-                            elseif self.channeling then
-                                -- Decrement by elapsed time
-                                local currentValue = self.statusBar:GetValue()
-                                self.statusBar:SetValue(currentValue - elapsed)
-                            end
-                        end)
+                        -- OnUpdate not needed - SetTimerDuration handles animation automatically
+                        castbar:SetScript("OnUpdate", nil)
                         
                         frame.castbar = castbar
                     end
