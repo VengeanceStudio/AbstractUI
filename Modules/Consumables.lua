@@ -3,7 +3,8 @@
 -- Based on ConsumableWatcher implementation
 
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
-local Consumables = AbstractUI:NewModule("Consumables", "AceEvent-3.0")
+local Consumables = AbstractUI:NewModule("Consumables", "AceEvent-3.0", "AceConsole-3.0")
+local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Cache framework systems
 local FrameFactory, ColorPalette, FontKit
@@ -180,7 +181,8 @@ local CLASS_BUFF_IDS = {
 local defaults = {
     profile = {
         enabled = true,
-        textSize = 14,
+        font = "Friz Quadrata TT",
+        fontSize = 14,
         iconSize = 64,
         iconSpacing = 10,
         position = {
@@ -444,9 +446,14 @@ function Consumables:CreateTrackerFrame()
         
         -- Individual text label under this icon
         local label = iconFrame:CreateFontString(nil, "OVERLAY")
-        label:SetFont(STANDARD_TEXT_FONT, self.db.profile.textSize, "OUTLINE")
+        local fontPath = LSM:Fetch("font", self.db.profile.font or "Friz Quadrata TT")
+        label:SetFont(fontPath, self.db.profile.fontSize, "OUTLINE")
         label:SetPoint("TOP", iconFrame, "BOTTOM", 0, -2)
         label:SetTextColor(1, 0, 0, 1)
+        -- Set width for word wrapping (icon width + 4px for slight overflow into spacing)
+        label:SetWidth(iconSize + 4)
+        label:SetWordWrap(true)
+        label:SetJustifyH("CENTER")
         label:SetText(labelText)
         
         iconGroups[i] = {
@@ -1098,22 +1105,50 @@ function Consumables:GetOptions()
                     self:RecreateFrame()
                 end,
             },
-            textSize = {
+            font = {
+                type = "select",
+                name = "Font",
+                desc = "Font for warning text below icons",
+                order = 13,
+                width = "normal",
+                dialogControl = "LSM30_Font",
+                values = function()
+                    local fonts = LSM:List("font")
+                    local out = {}
+                    for _, font in ipairs(fonts) do
+                        out[font] = font
+                    end
+                    return out
+                end,
+                get = function() return self.db.profile.font end,
+                set = function(_, v)
+                    self.db.profile.font = v
+                    -- Update all icon labels
+                    local fontPath = LSM:Fetch("font", v)
+                    for _, iconGroup in ipairs(iconGroups) do
+                        if iconGroup.label then
+                            iconGroup.label:SetFont(fontPath, self.db.profile.fontSize, "OUTLINE")
+                        end
+                    end
+                end,
+            },
+            fontSize = {
                 type = "range",
-                name = "Text Size",
+                name = "Font Size",
                 desc = "Size of warning text below icons",
                 min = 8,
                 max = 32,
                 step = 1,
-                order = 13,
+                order = 14,
                 width = "normal",
-                get = function() return self.db.profile.textSize end,
+                get = function() return self.db.profile.fontSize end,
                 set = function(_, v)
-                    self.db.profile.textSize = v
+                    self.db.profile.fontSize = v
                     -- Update all icon labels
+                    local fontPath = LSM:Fetch("font", self.db.profile.font or "Friz Quadrata TT")
                     for _, iconGroup in ipairs(iconGroups) do
                         if iconGroup.label then
-                            iconGroup.label:SetFont(STANDARD_TEXT_FONT, v, "OUTLINE")
+                            iconGroup.label:SetFont(fontPath, v, "OUTLINE")
                         end
                     end
                 end,
@@ -1122,14 +1157,14 @@ function Consumables:GetOptions()
                 type = "execute",
                 name = "Reset Position",
                 desc = "Reset tracker position to center of screen",
-                order = 14,
+                order = 15,
                 func = function() self:ResetPosition() end,
             },
             previewMode = {
                 type = "toggle",
                 name = "Preview Mode",
                 desc = "Show all icons regardless of buff status. Useful for previewing and customizing icons.",
-                order = 15,
+                order = 16,
                 width = "full",
                 get = function() return self.db.profile.previewMode end,
                 set = function(_, v)
