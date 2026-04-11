@@ -2266,8 +2266,8 @@ end
         castbar.casting = true
         castbar.channeling = nil
         
-        -- Use Retail API: UnitCastDuration returns duration object (no arithmetic on secret values)
-        local castDuration = UnitCastDuration(unit)
+        -- Use Retail API: UnitCastingDuration returns duration object (no arithmetic on secret values)
+        local castDuration = UnitCastingDuration(unit)
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
@@ -2365,8 +2365,8 @@ end
         if castbar.casting then
             local spell = UnitCastingInfo(unit)
             if spell then
-                -- Use Retail API: UnitCastDuration returns duration object
-                local castDuration = UnitCastDuration(unit)
+                -- Use Retail API: UnitCastingDuration returns duration object
+                local castDuration = UnitCastingDuration(unit)
                 if castDuration then
                     castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
                 end
