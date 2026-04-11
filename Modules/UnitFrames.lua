@@ -960,6 +960,18 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         return self.db and self.db.profile and self.db.profile[frameKey] or {}
     end
     
+    -- Helper to create set handlers that only update when value changes
+    local function makeSetHandler(key)
+        return function(_, value)
+            local db = getDB()
+            if db[key] == value then
+                return  -- Value unchanged, skip update
+            end
+            db[key] = value
+            update()
+        end
+    end
+    
     local function update()
         -- Guard against recursive calls
         if self.updatingFrames[frameGlobal] then
@@ -968,7 +980,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         end
         self.updatingFrames[frameGlobal] = true
         print("|cffFFFF00[DEBUG]|r update() called for " .. frameGlobal)
-        print("|cff00FFFF[STACK]|r " .. debugstack(2, 3, 3)) -- Show 3 levels of call stack
+        -- Stack trace removed - we know the cause now
         
         local existingFrame = _G[frameGlobal]
         if existingFrame then 
@@ -1129,7 +1141,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 min = 16, max = 64, step = 1,
                 order = 0.92,
                 get = function() local db = getDB(); return db.raidTargetIconSize or 32 end,
-                set = function(_, v) local db = getDB(); db.raidTargetIconSize = v; update() end,
+                set = makeSetHandler("raidTargetIconSize"),
             },
             raidTargetIconOffsetX = {
                 type = "range",
@@ -1139,7 +1151,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 min = -100, max = 100, step = 1,
                 order = 0.93,
                 get = function() local db = getDB(); return db.raidTargetIconOffsetX or 0 end,
-                set = function(_, v) local db = getDB(); db.raidTargetIconOffsetX = v; update() end,
+                set = makeSetHandler("raidTargetIconOffsetX"),
             },
             raidTargetIconOffsetY = {
                 type = "range",
@@ -1149,7 +1161,7 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 min = -100, max = 100, step = 1,
                 order = 0.94,
                 get = function() local db = getDB(); return db.raidTargetIconOffsetY or 0 end,
-                set = function(_, v) local db = getDB(); db.raidTargetIconOffsetY = v; update() end,
+                set = makeSetHandler("raidTargetIconOffsetY"),
             },
         }
     }
@@ -1203,6 +1215,33 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         return self.db and self.db.profile and self.db.profile[frameKey] or {}
     end
     
+    -- Helper to create set handlers that only update when value changes
+    local function makeBarSetHandler(property)
+        return function(_, value)
+            local db = getDB()
+            if not db[barType] then db[barType] = {} end
+            if db[barType][property] == value then
+                return  -- Value unchanged, skip update
+            end
+            db[barType][property] = value
+            update()
+        end
+    end
+    
+    -- Helper for color set handlers (r,g,b,a)
+    local function makeColorSetHandler(property)
+        return function(_, r, g, b, a)
+            local db = getDB()
+            if not db[barType] then db[barType] = {} end
+            local oldColor = db[barType][property]
+            if oldColor and oldColor[1] == r and oldColor[2] == g and oldColor[3] == b and oldColor[4] == a then
+                return  -- Color unchanged, skip update
+            end
+            db[barType][property] = {r, g, b, a}
+            update()
+        end
+    end
+    
     local options = {
         enabled = {
             type = "toggle",
@@ -1210,7 +1249,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             order = 1,
             width = "inline",
             get = function() local db = getDB(); return db[barType] and db[barType].enabled end,
-            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].enabled = v; update() end,
+            set = makeBarSetHandler("enabled"),
         },
         width = {
             type = "range",
@@ -1219,7 +1258,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             min = 50, max = 600, step = 1,
             order = 2,
             get = function() local db = getDB(); return db[barType] and db[barType].width or 220 end,
-            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].width = v; update() end,
+            set = makeBarSetHandler("width"),
         },
         height = {
             type = "range",
@@ -1232,7 +1271,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
                 local defaults = {health = 24, power = 12, info = 10}
                 return db[barType] and db[barType].height or defaults[barType] or 20
             end,
-            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].height = v; update() end,
+            set = makeBarSetHandler("height"),
         },
     }
     
@@ -1274,7 +1313,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             local defaults = {health = "", power = "", info = "[name]"}
             return db[barType] and db[barType].textLeft or defaults[barType] or ""
         end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textLeft = v; update() end,
+        set = makeBarSetHandler("textLeft"),
     }
     
     options.textCenter = {
@@ -1288,7 +1327,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             local defaults = {health = "[curhp] / [maxhp] ([perhp]%)", power = "", info = "[level]"}
             return db[barType] and db[barType].textCenter or defaults[barType] or ""
         end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textCenter = v; update() end,
+        set = makeBarSetHandler("textCenter"),
     }
     
     options.textRight = {
@@ -1298,7 +1337,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         order = 3.45,
         width = "full",
         get = function() local db = getDB(); return db[barType] and db[barType].textRight or "" end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textRight = v; update() end,
+        set = makeBarSetHandler("textRight"),
     }
     
     -- Add attachTo for power and info bars
@@ -1311,7 +1350,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             width = "inline",
             values = { health = "Health Bar", power = "Power Bar", info = "Info Bar", none = "None" },
             get = function() local db = getDB(); return db[barType] and db[barType].attachTo or "health" end,
-            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].attachTo = v; update() end,
+            set = makeBarSetHandler("attachTo"),
         }
     end
     
@@ -1323,7 +1362,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         order = 3.9,
         width = "inline",
         get = function() local db = getDB(); return db[barType] and db[barType].classColor end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].classColor = v; update() end,
+        set = makeBarSetHandler("classColor"),
     }
     
     -- Add hostility color option for health bars
@@ -1335,7 +1374,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             order = 3.91,
             width = "inline",
             get = function() local db = getDB(); return db[barType] and db[barType].hostilityColor end,
-            set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].hostilityColor = v; update() end,
+            set = makeBarSetHandler("hostilityColor"),
         }
     end
     
@@ -1349,7 +1388,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             local defaults = {health = {0.2,0.8,0.2,1}, power = {0.2,0.4,0.8,1}, info = {0.8,0.8,0.2,1}}
             return unpack(db[barType] and db[barType].color or defaults[barType] or {1,1,1,1})
         end,
-        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].color = {r,g,b,a}; update() end,
+        set = makeColorSetHandler("color"),
     }
     
     options.alpha = {
@@ -1366,6 +1405,10 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             local db = getDB()
             if not db[barType] then db[barType] = {} end
             local alpha = v / 100
+            -- Check if value unchanged
+            if db[barType].alpha == alpha then
+                return  -- Value unchanged, skip update
+            end
             db[barType].alpha = alpha
             if db[barType] and db[barType].color then
                 db[barType].color[4] = alpha
@@ -1385,7 +1428,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         order = 9.5,
         width = "inline",
         get = function() local db = getDB(); return db[barType] and db[barType].fontClassColor end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontClassColor = v; update() end,
+        set = makeBarSetHandler("fontClassColor"),
     }
     
     options.bgColor = {
@@ -1394,7 +1437,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         hasAlpha = true,
         order = 5,
         get = function() local db = getDB(); return unpack(db[barType] and db[barType].bgColor or {0,0,0,0.5}) end,
-        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].bgColor = {r,g,b,a}; update() end,
+        set = makeColorSetHandler("bgColor"),
     }
     
     options.font = {
@@ -1409,7 +1452,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             return out
         end,
         get = function() local db = getDB(); return db[barType] and db[barType].font or "Friz Quadrata TT" end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].font = v; update() end,
+        set = makeBarSetHandler("font"),
     }
     
     options.fontSize = {
@@ -1423,7 +1466,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             local defaults = {health = 14, power = 12, info = 10}
             return db[barType] and db[barType].fontSize or defaults[barType] or 12
         end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontSize = v; update() end,
+        set = makeBarSetHandler("fontSize"),
     }
     
     options.fontOutline = {
@@ -1433,7 +1476,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         width = "inline",
         values = { NONE = "None", OUTLINE = "Outline", THICKOUTLINE = "Thick Outline" },
         get = function() local db = getDB(); return db[barType] and db[barType].fontOutline or "OUTLINE" end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontOutline = v; update() end,
+        set = makeBarSetHandler("fontOutline"),
     }
     
     options.fontColor = {
@@ -1442,7 +1485,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         hasAlpha = true,
         order = 9,
         get = function() local db = getDB(); return unpack(db[barType] and db[barType].fontColor or {1,1,1,1}) end,
-        set = function(_, r,g,b,a) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].fontColor = {r,g,b,a}; update() end,
+        set = makeColorSetHandler("fontColor"),
     }
     
     options.textPos = {
@@ -1452,7 +1495,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
         width = "inline",
         values = { LEFT = "Left", CENTER = "Center", RIGHT = "Right" },
         get = function() local db = getDB(); return db[barType] and db[barType].textPos or "CENTER" end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].textPos = v; update() end,
+        set = makeBarSetHandler("textPos"),
     }
     
     options.texture = {
@@ -1468,7 +1511,7 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             return out
         end,
         get = function() local db = getDB(); return db[barType] and db[barType].texture or "Blizzard Raid Bar" end,
-        set = function(_, v) local db = getDB(); if not db[barType] then db[barType] = {} end; db[barType].texture = v; update() end,
+        set = makeBarSetHandler("texture"),
     }
     
     return options
