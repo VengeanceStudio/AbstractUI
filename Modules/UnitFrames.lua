@@ -2276,16 +2276,12 @@ end
         -- Set casting color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Shield visibility for non-interruptible casts - match Platynator pattern
+        -- Shield alpha for non-interruptible casts - use converted value directly, NO comparison
         if castbar.shield and notInterruptible ~= nil then
+            castbar.shield:Show()  -- Must be shown for alpha to work
             if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
                 local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-                castbar.shield:SetAlpha(alpha)
-                if alpha > 0 then
-                    castbar.shield:Show()
-                else
-                    castbar.shield:Hide()
-                end
+                castbar.shield:SetAlpha(alpha)  -- 0 = invisible (interruptible), 1 = visible (non-interruptible)
             end
         end
         
@@ -2406,16 +2402,12 @@ end
         -- Set channeling color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Shield visibility for non-interruptible channels - match Platynator pattern
+        -- Shield alpha for non-interruptible channels - use converted value directly, NO comparison
         if castbar.shield and notInterruptible ~= nil then
+            castbar.shield:Show()  -- Must be shown for alpha to work
             if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
                 local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-                castbar.shield:SetAlpha(alpha)
-                if alpha > 0 then
-                    castbar.shield:Show()
-                else
-                    castbar.shield:Hide()
-                end
+                castbar.shield:SetAlpha(alpha)  -- 0 = invisible (interruptible), 1 = visible (non-interruptible)
             end
         end
         
