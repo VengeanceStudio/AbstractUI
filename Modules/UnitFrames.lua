@@ -944,7 +944,23 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
     end
     
     local function update()
-        if _G[frameGlobal] then _G[frameGlobal]:Hide(); _G[frameGlobal]:SetParent(nil) end
+        if _G[frameGlobal] then 
+            -- Unregister from Movable before destroying frame
+            local Movable = AbstractUI:GetModule("Movable", true)
+            if Movable and Movable.registeredFrames and _G[frameGlobal].movableHighlightFrame then
+                for i = #Movable.registeredFrames, 1, -1 do
+                    if Movable.registeredFrames[i] == _G[frameGlobal].movableHighlightFrame then
+                        table.remove(Movable.registeredFrames, i)
+                    end
+                end
+                -- Clean up the highlight frame
+                _G[frameGlobal].movableHighlightFrame:Hide()
+                _G[frameGlobal].movableHighlightFrame:SetParent(nil)
+            end
+            
+            _G[frameGlobal]:Hide()
+            _G[frameGlobal]:SetParent(nil)
+        end
         if self and self[createFunc] then self[createFunc](self) end
     end
     
@@ -2065,6 +2081,20 @@ end
                     if frames[key] then
                         -- Critical: Stop OnUpdate script to prevent memory leaks
                         frames[key]:SetScript("OnUpdate", nil)
+                        
+                        -- Unregister old frame from Movable to prevent duplicates
+                        local Movable = AbstractUI:GetModule("Movable", true)
+                        if Movable and Movable.registeredFrames and frames[key].movableHighlightFrame then
+                            for i = #Movable.registeredFrames, 1, -1 do
+                                if Movable.registeredFrames[i] == frames[key].movableHighlightFrame then
+                                    table.remove(Movable.registeredFrames, i)
+                                end
+                            end
+                            -- Clean up the old highlight frame
+                            frames[key].movableHighlightFrame:Hide()
+                            frames[key].movableHighlightFrame:SetParent(nil)
+                        end
+                        
                         frames[key]:Hide()
                         frames[key]:SetParent(nil)
                         frames[key] = nil
