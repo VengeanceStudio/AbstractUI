@@ -2868,7 +2868,7 @@ end
                         castbar:SetSize(castbarDB.width, castbarDB.height)
                         
                         -- Position below the main frame with extra spacing for visual separation
-                        castbar:SetPoint("TOP", frame, "BOTTOM", 0, -8)
+                        castbar:SetPoint("TOP", frame, "BOTTOM", 0, -4)
                         
                         castbar:SetBackdrop({
                             bgFile = "Interface\\Buttons\\WHITE8X8",
