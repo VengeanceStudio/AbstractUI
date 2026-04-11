@@ -287,7 +287,6 @@ SlashCmdList["RESETFRAMECOUNTS"] = function()
     for k in pairs(frameCreationCounts) do
         frameCreationCounts[k] = nil
     end
-    print("|cff00FF00[DEBUG]|r Frame creation counters reset")
 end
 
 -- Utility: Sanitize a color table to ensure all values are plain numbers (not secret values)
@@ -975,12 +974,9 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
     local function update()
         -- Guard against recursive calls
         if self.updatingFrames[frameGlobal] then
-            print("|cffFF9900[DEBUG]|r update() for " .. frameGlobal .. " blocked (already updating)")
             return
         end
         self.updatingFrames[frameGlobal] = true
-        print("|cffFFFF00[DEBUG]|r update() called for " .. frameGlobal)
-        -- Stack trace removed - we know the cause now
         
         local existingFrame = _G[frameGlobal]
         if existingFrame then 
@@ -1013,7 +1009,6 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         end
         
         if self and self[createFunc] then
-            print("|cffFF00FF[DEBUG]|r Calling " .. createFunc .. " from update()")
             self[createFunc](self) 
         end
         
@@ -1698,18 +1693,6 @@ end
         if self.db.profile.showPlayer and _G["AbstractUI_PlayerFrame"] then
             self:UpdatePlayerStatusIcons(nil, "PLAYER_ENTERING_WORLD")
         end
-        
-        -- DEBUG: Print summary of frame creation counts after a delay
-        C_Timer.After(2, function()
-            print("|cffFF0000[DEBUG]|r Frame Creation Summary:")
-            for frameKey, count in pairs(frameCreationCounts) do
-                if count > 1 then
-                    print(string.format("  |cffFF0000%s: %d times (DUPLICATE!)|r", frameKey, count))
-                else
-                    print(string.format("  |cff00FF00%s: %d time|r", frameKey, count))
-                end
-            end
-        end)
     end
 
     function UnitFrames:PLAYER_REGEN_ENABLED()
@@ -2190,9 +2173,8 @@ end
                 -- ============================================================================
                 
                 function UnitFrames:CreateUnitFrame(key, unit, anchor, anchorTo, anchorPoint, x, y)
-                    -- DEBUG: Track creation count
+                    -- Track creation count for debugging
                     frameCreationCounts[key] = (frameCreationCounts[key] or 0) + 1
-                    print(string.format("|cffFF0000[DEBUG]|r Creating %s (count: %d)", key, frameCreationCounts[key]))
                     
                     -- Clean up ANY existing frame (check both frames table and global)
                     local existingFrame = frames[key] or _G["AbstractUI_"..key]

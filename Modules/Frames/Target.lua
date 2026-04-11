@@ -46,6 +46,5 @@ end
 -- ============================================================================
 
 function UnitFrames:GetTargetOptions_Real()
-    print("|cffFFFF00[DEBUG]|r GetTargetOptions_Real called - generating options")
     return self:GenerateFrameOptions("Target Frame", "target", "CreateTargetFrame", "AbstractUI_TargetFrame")
 end
