@@ -2271,10 +2271,23 @@ end
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
+            -- Sync overlay bar animation
+            if castbar.overlayBar then
+                castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
+            end
         end
         
-        -- Set default casting color (INTERRUPTIBLE/NOT_INTERRUPTIBLE events may override)
-        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))\
+        -- Set casting color on base bar
+        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+        
+        -- Control grey overlay bar alpha based on interruptibility
+        if castbar.overlayBar and notInterruptible ~= nil then
+            local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
+            if overlayTexture and overlayTexture.SetAlphaFromBoolean then
+                -- Alpha 0 for interruptible (yellow shows), alpha 1 for non-interruptible (grey shows)
+                overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            end
+        end
         
         -- Shield visibility based on interruptibility
         if castbar.shield and castbar.shield.texture and notInterruptible ~= nil then
@@ -2397,10 +2410,23 @@ end
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
+            -- Sync overlay bar animation
+            if castbar.overlayBar then
+                castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
+            end
         end
         
-        -- Set default channeling color (INTERRUPTIBLE/NOT_INTERRUPTIBLE events may override)
+        -- Set channeling color on base bar
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+        
+        -- Control grey overlay bar alpha based on interruptibility
+        if castbar.overlayBar and notInterruptible ~= nil then
+            local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
+            if overlayTexture and overlayTexture.SetAlphaFromBoolean then
+                -- Alpha 0 for interruptible (blue shows), alpha 1 for non-interruptible (grey shows)
+                overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            end
+        end
         
         -- Shield visibility based on interruptibility
         if castbar.shield and castbar.shield.texture and notInterruptible ~= nil then
@@ -3151,10 +3177,21 @@ end
                         statusBar:SetValue(0)
                         castbar.statusBar = statusBar
                         
+                        -- Non-interruptible overlay bar (grey) - overlays on top, controlled by alpha
+                        local overlayBar = CreateFrame("StatusBar", nil, castbar)
+                        overlayBar:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
+                        overlayBar:SetPoint("BOTTOMRIGHT", castbar, "BOTTOMRIGHT", -1, 1)
+                        overlayBar:SetStatusBarTexture(LSM:Fetch("statusbar", castbarDB.texture))
+                        overlayBar:SetMinMaxValues(0, 1)
+                        overlayBar:SetValue(0)
+                        overlayBar:SetFrameLevel(statusBar:GetFrameLevel() + 1)
+                        overlayBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+                        castbar.overlayBar = overlayBar
+                        
                         -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
                         local shieldFrame = CreateFrame("Frame", nil, castbar)
                         shieldFrame:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
-                        shieldFrame:SetSize(castbarDB.height + 18, castbarDB.height + 18)
+                        shieldFrame:SetSize(castbarDB.height * 2, castbarDB.height * 2)
                         
                         local shieldTexture = shieldFrame:CreateTexture(nil, "OVERLAY")
                         shieldTexture:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
