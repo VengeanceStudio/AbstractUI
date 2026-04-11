@@ -944,33 +944,34 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
     end
     
     local function update()
-        if _G[frameGlobal] then 
+        local existingFrame = _G[frameGlobal]
+        if existingFrame then 
             -- Unregister from Movable before destroying frame
             local Movable = AbstractUI:GetModule("Movable", true)
-            if Movable and Movable.registeredFrames and _G[frameGlobal].movableHighlightFrame then
+            if Movable and Movable.registeredFrames and existingFrame.movableHighlightFrame then
                 for i = #Movable.registeredFrames, 1, -1 do
-                    if Movable.registeredFrames[i] == _G[frameGlobal].movableHighlightFrame then
+                    if Movable.registeredFrames[i] == existingFrame.movableHighlightFrame then
                         table.remove(Movable.registeredFrames, i)
                     end
                 end
                 -- Clean up the highlight frame
-                _G[frameGlobal].movableHighlightFrame:Hide()
-                _G[frameGlobal].movableHighlightFrame:SetParent(nil)
+                existingFrame.movableHighlightFrame:Hide()
+                existingFrame.movableHighlightFrame:SetParent(nil)
             end
             
             -- Clean up nudge arrows
-            if _G[frameGlobal].arrows then
-                for _, arrow in pairs(_G[frameGlobal].arrows) do
+            if existingFrame.arrows then
+                for _, arrow in pairs(existingFrame.arrows) do
                     if arrow and arrow.Hide then
                         arrow:Hide()
                         arrow:SetParent(nil)
                     end
                 end
-                _G[frameGlobal].arrows = nil
+                existingFrame.arrows = nil
             end
             
-            _G[frameGlobal]:Hide()
-            _G[frameGlobal]:SetParent(nil)
+            existingFrame:Hide()
+            existingFrame:SetParent(nil)
         end
         if self and self[createFunc] then self[createFunc](self) end
     end
@@ -2089,36 +2090,38 @@ end
                 
                 function UnitFrames:CreateUnitFrame(key, unit, anchor, anchorTo, anchorPoint, x, y)
                                         -- ...existing code...
-                    if frames[key] then
+                    -- Clean up ANY existing frame (check both frames table and global)
+                    local existingFrame = frames[key] or _G["AbstractUI_"..key]
+                    if existingFrame then
                         -- Critical: Stop OnUpdate script to prevent memory leaks
-                        frames[key]:SetScript("OnUpdate", nil)
+                        existingFrame:SetScript("OnUpdate", nil)
                         
                         -- Unregister old frame from Movable to prevent duplicates
                         local Movable = AbstractUI:GetModule("Movable", true)
-                        if Movable and Movable.registeredFrames and frames[key].movableHighlightFrame then
+                        if Movable and Movable.registeredFrames and existingFrame.movableHighlightFrame then
                             for i = #Movable.registeredFrames, 1, -1 do
-                                if Movable.registeredFrames[i] == frames[key].movableHighlightFrame then
+                                if Movable.registeredFrames[i] == existingFrame.movableHighlightFrame then
                                     table.remove(Movable.registeredFrames, i)
                                 end
                             end
                             -- Clean up the old highlight frame
-                            frames[key].movableHighlightFrame:Hide()
-                            frames[key].movableHighlightFrame:SetParent(nil)
+                            existingFrame.movableHighlightFrame:Hide()
+                            existingFrame.movableHighlightFrame:SetParent(nil)
                         end
                         
                         -- Clean up nudge arrows
-                        if frames[key].arrows then
-                            for _, arrow in pairs(frames[key].arrows) do
+                        if existingFrame.arrows then
+                            for _, arrow in pairs(existingFrame.arrows) do
                                 if arrow and arrow.Hide then
                                     arrow:Hide()
                                     arrow:SetParent(nil)
                                 end
                             end
-                            frames[key].arrows = nil
+                            existingFrame.arrows = nil
                         end
                         
-                        frames[key]:Hide()
-                        frames[key]:SetParent(nil)
+                        existingFrame:Hide()
+                        existingFrame:SetParent(nil)
                         frames[key] = nil
                     end
                     local db = self.db.profile
