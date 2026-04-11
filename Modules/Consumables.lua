@@ -177,6 +177,14 @@ local CLASS_BUFF_IDS = {
     [6673] = "WARRIOR",
 }
 
+-- Class-specific buff icons
+local CLASS_BUFF_ICONS = {
+    DRUID = 136078,   -- Mark of the Wild icon
+    PRIEST = 135987,  -- Power Word: Fortitude icon
+    MAGE = 135932,    -- Arcane Intellect icon
+    WARRIOR = 132333, -- Battle Shout icon
+}
+
 -- Database defaults
 local defaults = {
     profile = {
@@ -432,6 +440,14 @@ function Consumables:CreateTrackerFrame()
         local customization = self.db.profile.customization[group.id]
         local iconTexture = customization.icon or group.icon
         local labelText = customization.label or group.label
+        
+        -- For class buffs, use the class-specific icon
+        if group.id == "class_buff" then
+            local _, playerClass = UnitClass("player")
+            if CLASS_BUFF_ICONS[playerClass] then
+                iconTexture = customization.icon or CLASS_BUFF_ICONS[playerClass]
+            end
+        end
         
         -- Icon texture
         local icon = iconFrame:CreateTexture(nil, "ARTWORK")
@@ -870,9 +886,10 @@ function Consumables:UpdateBuffStatus()
         return
     end
     
+    -- First pass: determine which icons should be visible
+    local visibleIcons = {}
     local anyMissing = false
     
-    -- Check each buff group
     for i, iconGroup in ipairs(iconGroups) do
         local group = iconGroup.data
         
@@ -894,15 +911,40 @@ function Consumables:UpdateBuffStatus()
         end
         
         if shouldShow then
-            iconGroup.frame:Show()
+            table.insert(visibleIcons, iconGroup)
             anyMissing = true
-        else
-            iconGroup.frame:Hide()
         end
     end
     
-    -- Update frame visibility based on whether anything is missing
-    trackerFrame:SetShown(anyMissing)
+    -- Hide all icons first
+    for i, iconGroup in ipairs(iconGroups) do
+        iconGroup.frame:Hide()
+    end
+    
+    -- If there are visible icons, position and show them centered
+    if anyMissing then
+        local iconSize = self.db.profile.iconSize
+        local spacing = self.db.profile.iconSpacing
+        local numVisible = #visibleIcons
+        
+        -- Calculate total width of visible icons
+        local totalWidth = (numVisible * iconSize) + ((numVisible - 1) * spacing)
+        
+        -- Calculate starting offset to center the group
+        local startOffset = -totalWidth / 2
+        
+        -- Position each visible icon
+        for i, iconGroup in ipairs(visibleIcons) do
+            iconGroup.frame:ClearAllPoints()
+            iconGroup.frame:SetPoint("CENTER", trackerFrame, "CENTER", 
+                startOffset + ((i - 1) * (iconSize + spacing)) + (iconSize / 2), 0)
+            iconGroup.frame:Show()
+        end
+        
+        trackerFrame:Show()
+    else
+        trackerFrame:Hide()
+    end
 end
 
 -- ============================================================================
