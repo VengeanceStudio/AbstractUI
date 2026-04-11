@@ -3177,7 +3177,7 @@ end
                         statusBar:SetValue(0)
                         castbar.statusBar = statusBar
                         
-                        -- Non-interruptible overlay bar (grey) - overlays on top, controlled by alpha
+                        -- Non-interruptible overlay bar (grey) - higher level so it shows, but text is above it
                         local overlayBar = CreateFrame("StatusBar", nil, castbar)
                         overlayBar:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
                         overlayBar:SetPoint("BOTTOMRIGHT", castbar, "BOTTOMRIGHT", -1, 1)
@@ -3191,7 +3191,7 @@ end
                         -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
                         local shieldFrame = CreateFrame("Frame", nil, castbar)
                         shieldFrame:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
-                        shieldFrame:SetSize(castbarDB.height * 2, castbarDB.height * 2)
+                        shieldFrame:SetSize(castbarDB.height * 2.4, castbarDB.height * 2.4)
                         
                         local shieldTexture = shieldFrame:CreateTexture(nil, "OVERLAY")
                         shieldTexture:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
@@ -3226,9 +3226,9 @@ end
                             castbar.icon = iconFrame
                         end
                         
-                        -- Spell name text
+                        -- Spell name text - create on castbar so it's above both status bars
                         if castbarDB.showSpellName then
-                            local spellName = statusBar:CreateFontString(nil, "OVERLAY")
+                            local spellName = castbar:CreateFontString(nil, "OVERLAY")
                             spellName:SetPoint("LEFT", statusBar, "LEFT", 4, 0)
                             spellName:SetWidth(castbarDB.width - 25)
                             local font = LSM:Fetch("font", castbarDB.font)
@@ -3241,9 +3241,9 @@ end
                             castbar.spellName = spellName
                         end
                         
-                        -- Cast time text
+                        -- Cast time text - create on castbar so it's above both status bars
                         if castbarDB.showCastTime then
-                            local castTime = statusBar:CreateFontString(nil, "OVERLAY")
+                            local castTime = castbar:CreateFontString(nil, "OVERLAY")
                             castTime:SetPoint("LEFT", statusBar, "CENTER", 4, 0)
                             castTime:SetPoint("RIGHT", statusBar, "RIGHT", -4, 0)
                             local font = LSM:Fetch("font", castbarDB.font)
