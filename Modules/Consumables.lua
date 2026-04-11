@@ -161,28 +161,19 @@ local ROGUE_ATROPHIC_POISON_IDS = { 381637 }  -- Atrophic Poison (OH)
 local ROGUE_NUMBING_POISON_IDS = { 5761 }  -- Numbing Poison (OH)
 
 -- Class/Raid Buff Spell IDs (lost on death, need reapplication)
+-- Only checked if player is the specified class
 local CLASS_BUFF_IDS = {
     -- Druid: Mark of the Wild
-    [1126] = true,   -- Mark of the Wild
+    [1126] = "DRUID",
     
     -- Priest: Power Word: Fortitude
-    [21562] = true,  -- Power Word: Fortitude
+    [21562] = "PRIEST",
     
     -- Mage: Arcane Intellect
-    [1459] = true,   -- Arcane Intellect
+    [1459] = "MAGE",
     
     -- Warrior: Battle Shout
-    [6673] = true,   -- Battle Shout
-    
-    -- Monk: Legacy of the White Tiger (older) / Legacy of the Crane (newer)
-    [116781] = true, -- Legacy of the White Tiger
-    [388193] = true, -- Legacy of the Crane
-    
-    -- Paladin: Devotion Aura (passive)
-    [465] = true,    -- Devotion Aura
-    
-    -- DH: Chaos Brand (applied by DH, received by raid)
-    [1490] = true,   -- Chaos Brand (debuff on target but shows as raid benefit)
+    [6673] = "WARRIOR",
 }
 
 -- Database defaults
@@ -234,6 +225,7 @@ local defaults = {
             pvp = false,            -- PvP (Arenas/BGs)
         },
         alwaysShowOnReadyCheck = true,  -- Override context and always show on ready check
+        previewMode = false,  -- Show all icons regardless of buff status (for customization preview)
     }
 }
 
@@ -327,6 +319,17 @@ local BUFF_GROUPS = {
         icon = 136116,
         label = "Buff!",
         checkFunc = function()
+            -- Only check if player class has a personal buff
+            local _, playerClass = UnitClass("player")
+            local hasClassBuff = (playerClass == "DRUID" or 
+                                  playerClass == "PRIEST" or 
+                                  playerClass == "MAGE" or 
+                                  playerClass == "WARRIOR")
+            
+            if not hasClassBuff then
+                return false  -- Class doesn't have a personal buff, don't show
+            end
+            
             return not Consumables:HasClassBuff()
         end,
     },
@@ -617,11 +620,15 @@ function Consumables:ScanPlayerAuras()
                 buffCache.rune.expiresAt = expirationTime
             end
             
-            -- Check class/raid buff by spell ID
-            if CLASS_BUFF_IDS[spellId] then
-                buffs.hasClassBuff = true
-                buffCache.classBuff.active = true
-                buffCache.classBuff.expiresAt = expirationTime
+            -- Check class/raid buff by spell ID (only if player is that class)
+            local buffClass = CLASS_BUFF_IDS[spellId]
+            if buffClass then
+                local _, playerClass = UnitClass("player")
+                if playerClass == buffClass then
+                    buffs.hasClassBuff = true
+                    buffCache.classBuff.active = true
+                    buffCache.classBuff.expiresAt = expirationTime
+                end
             end
             
             -- Check rogue poison buffs
@@ -847,8 +854,11 @@ function Consumables:UpdateBuffStatus()
         return
     end
     
-    -- Check if we should show in current context
-    if not self:ShouldShowInCurrentContext() then
+    -- Preview mode shows all icons regardless of context
+    local inPreviewMode = self.db.profile.previewMode
+    
+    -- Check if we should show in current context (skip check in preview mode)
+    if not inPreviewMode and not self:ShouldShowInCurrentContext() then
         trackerFrame:Hide()
         return
     end
@@ -867,9 +877,16 @@ function Consumables:UpdateBuffStatus()
             isEnabled = self.db.profile.trackBuffs[group.id]
         end
         
-        local isMissing = isEnabled and group.checkFunc(group)
+        -- In preview mode, show all enabled buffs. Otherwise check if missing
+        local shouldShow
+        if inPreviewMode then
+            shouldShow = isEnabled
+        else
+            local isMissing = isEnabled and group.checkFunc(group)
+            shouldShow = isMissing
+        end
         
-        if isMissing then
+        if shouldShow then
             iconGroup.frame:Show()
             anyMissing = true
         else
@@ -923,12 +940,22 @@ function Consumables:RegisterSlashCommands()
                 local timeLeft = data.expiresAt > now and string.format("%.1fm", (data.expiresAt - now) / 60) or "EXPIRED"
                 self:Print(string.format("%s: %s (%s)", buffType, status, timeLeft))
             end
+        elseif msg == "preview" then
+            -- Toggle preview mode
+            self.db.profile.previewMode = not self.db.profile.previewMode
+            if self.db.profile.previewMode then
+                self:Print("Preview mode enabled - showing all icons")
+            else
+                self:Print("Preview mode disabled")
+            end
+            self:UpdateBuffStatus()
         else
             self:Print("Consumables Commands:")
             self:Print("/abscon show - Show tracker")
             self:Print("/abscon hide - Hide tracker")
             self:Print("/abscon toggle - Toggle visibility")
             self:Print("/abscon reset - Reset position")
+            self:Print("/abscon preview - Toggle preview mode (show all icons)")
             self:Print("/abscon debug - Show buff cache status")
         end
     end
@@ -1098,6 +1125,18 @@ function Consumables:GetOptions()
                 order = 14,
                 func = function() self:ResetPosition() end,
             },
+            previewMode = {
+                type = "toggle",
+                name = "Preview Mode",
+                desc = "Show all icons regardless of buff status. Useful for previewing and customizing icons.",
+                order = 15,
+                width = "full",
+                get = function() return self.db.profile.previewMode end,
+                set = function(_, v)
+                    self.db.profile.previewMode = v
+                    self:UpdateBuffStatus()
+                end,
+            },
             
             -- What to Track
             trackingHeader = {
@@ -1192,7 +1231,7 @@ function Consumables:GetOptions()
             trackClassBuff = {
                 type = "toggle",
                 name = "Class/Raid Buffs",
-                desc = "Track missing class/raid buffs (Mark of the Wild, Power Word: Fortitude, Arcane Intellect, Battle Shout, etc.)",
+                desc = "Track missing personal class buffs (Druid: Mark of the Wild | Priest: Power Word: Fortitude | Mage: Arcane Intellect | Warrior: Battle Shout). Only applies to these classes.",
                 order = 29,
                 width = "full",
                 get = function() return self.db.profile.trackBuffs.class_buff end,
@@ -1470,7 +1509,7 @@ function Consumables:GetOptions()
                     local icon = custom.icon or 136116
                     return string.format("|T%d:20:20:0:0:64:64:4:60:4:60|t  %s", icon, custom.label or "Buff!")
                 end,
-                desc = "Customize Class/Raid Buff icon and label",
+                desc = "Customize personal class buff icon and label (Druid/Priest/Mage/Warrior/Monk only)",
                 order = 60,
                 width = "half",
                 func = function() self:ShowBuffCustomizationEditor("class_buff", "Class/Raid Buff") end,
