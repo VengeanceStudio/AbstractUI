@@ -2273,9 +2273,14 @@ end
         castbar.statusBar:SetMinMaxValues(startTime, endTime)
         castbar.statusBar:SetValue(GetTime() * 1000)  -- Current time in milliseconds
         
-        -- Set initial color (default to interruptible - events will update if not)
+        -- Set default color (yellow for casting) - events will update immediately if non-interruptible
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-        if castbar.shield then castbar.shield:Hide() end
+        if castbar.shield then 
+            castbar.shield:Hide()
+            print("[DEBUG] START: Shield exists and hidden")  -- DEBUG
+        else
+            print("[DEBUG] START: Shield does NOT exist!")  -- DEBUG
+        end
         
         -- Set icon
         if castbar.icon then
@@ -2467,6 +2472,8 @@ end
         
         local castbar = frame.castbar
         local castbarDB = self.db.profile.target.castbar
+        
+        print("[DEBUG] NOT_INTERRUPTIBLE event fired - showing shield")  -- DEBUG
         
         if castbar.casting or castbar.channeling then
             castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
