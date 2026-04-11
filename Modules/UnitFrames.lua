@@ -2262,22 +2262,13 @@ end
         if not spell then return end
         
         -- Store raw values without arithmetic (avoid taint issues)
+        -- Don't test notInterruptible here - will be handled in OnUpdate
         castbar.spell = spell
         castbar.texture = texture
         castbar.startTime = startTime
         castbar.endTime = endTime
         castbar.casting = true
         castbar.channeling = nil
-        castbar.notInterruptible = notInterruptible
-        
-        -- Set color
-        if notInterruptible then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-            if castbar.shield then castbar.shield:Show() end
-        else
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-            if castbar.shield then castbar.shield:Hide() end
-        end
         
         -- Set icon
         if castbar.icon then
@@ -2380,22 +2371,13 @@ end
         if not spell then return end
         
         -- Store raw values without arithmetic (avoid taint issues)
+        -- Don't test notInterruptible here - will be handled in OnUpdate
         castbar.spell = spell
         castbar.texture = texture
         castbar.startTime = startTime
         castbar.endTime = endTime
         castbar.casting = nil
         castbar.channeling = true
-        castbar.notInterruptible = notInterruptible
-        
-        -- Set color
-        if notInterruptible then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-            if castbar.shield then castbar.shield:Show() end
-        else
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
-            if castbar.shield then castbar.shield:Hide() end
-        end
         
         -- Set icon
         if castbar.icon then
@@ -3207,11 +3189,23 @@ end
                             
                             if self.casting then
                                 -- Query fresh casting info to avoid taint issues
-                                local spell, _, _, startTime, endTime = UnitCastingInfo("target")
+                                local spell, _, _, startTime, endTime, _, _, notInterruptible = UnitCastingInfo("target")
                                 if not spell then
                                     self:Hide()
                                     self.casting = nil
                                     return
+                                end
+                                
+                                -- Get castbar settings
+                                local castbarDB = UnitFrames.db.profile.target.castbar
+                                
+                                -- Set color and shield based on interruptibility
+                                if notInterruptible then
+                                    self.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+                                    if self.shield then self.shield:Show() end
+                                else
+                                    self.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+                                    if self.shield then self.shield:Hide() end
                                 end
                                 
                                 -- Calculate progress in protected context (OnUpdate is safe)
@@ -3233,11 +3227,23 @@ end
                                 end
                             elseif self.channeling then
                                 -- Query fresh channeling info to avoid taint issues
-                                local spell, _, _, startTime, endTime = UnitChannelInfo("target")
+                                local spell, _, _, startTime, endTime, _, notInterruptible = UnitChannelInfo("target")
                                 if not spell then
                                     self:Hide()
                                     self.channeling = nil
                                     return
+                                end
+                                
+                                -- Get castbar settings
+                                local castbarDB = UnitFrames.db.profile.target.castbar
+                                
+                                -- Set color and shield based on interruptibility
+                                if notInterruptible then
+                                    self.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+                                    if self.shield then self.shield:Show() end
+                                else
+                                    self.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+                                    if self.shield then self.shield:Hide() end
                                 end
                                 
                                 -- Calculate progress in protected context (OnUpdate is safe)
