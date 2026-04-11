@@ -3209,14 +3209,8 @@ end
                             
                             if self.casting then
                                 -- Update progress - just set current time, bar calculates the percentage
+                                -- StatusBar will clamp to max automatically if we exceed it
                                 self.statusBar:SetValue(currentTime)
-                                
-                                -- Check if finished
-                                if currentTime >= (self.endTime or 0) then
-                                    self:Hide()
-                                    self.casting = nil
-                                    return
-                                end
                                 
                                 -- Try to show timer - may be blank if values are secret in combat
                                 if self.castTime and self.endTime then
@@ -3228,16 +3222,11 @@ end
                                         end
                                     end)
                                 end
+                                -- Note: UNIT_SPELLCAST_STOP event will hide the castbar when done
                             elseif self.channeling then
                                 -- For channels, countdown from endTime
+                                -- StatusBar will clamp to max automatically if we exceed it
                                 self.statusBar:SetValue(currentTime)
-                                
-                                -- Check if finished  
-                                if currentTime >= (self.endTime or 0) then
-                                    self:Hide()
-                                    self.channeling = nil
-                                    return
-                                end
                                 
                                 -- Try to show timer - may be blank if values are secret in combat
                                 if self.castTime and self.endTime then
@@ -3249,6 +3238,7 @@ end
                                         end
                                     end)
                                 end
+                                -- Note: UNIT_SPELLCAST_CHANNEL_STOP event will hide the castbar when done
                             end
                         end)
                         
