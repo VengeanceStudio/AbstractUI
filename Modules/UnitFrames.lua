@@ -1004,8 +1004,42 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 existingFrame.arrows = nil
             end
             
+            -- Clean up castbar and its children
+            if existingFrame.castbar then
+                if existingFrame.castbar.icon then
+                    existingFrame.castbar.icon:Hide()
+                    existingFrame.castbar.icon:SetParent(nil)
+                end
+                if existingFrame.castbar.statusBar then
+                    existingFrame.castbar.statusBar:Hide()
+                    existingFrame.castbar.statusBar:SetParent(nil)
+                end
+                existingFrame.castbar:SetScript("OnUpdate", nil)
+                existingFrame.castbar:Hide()
+                existingFrame.castbar:SetParent(nil)
+                existingFrame.castbar = nil
+            end
+            
+            -- Clean up bars
+            if existingFrame.healthBar then
+                existingFrame.healthBar:Hide()
+                existingFrame.healthBar:SetParent(nil)
+                existingFrame.healthBar = nil
+            end
+            if existingFrame.powerBar then
+                existingFrame.powerBar:Hide()
+                existingFrame.powerBar:SetParent(nil)
+                existingFrame.powerBar = nil
+            end
+            if existingFrame.infoBar then
+                existingFrame.infoBar:Hide()
+                existingFrame.infoBar:SetParent(nil)
+                existingFrame.infoBar = nil
+            end
+            
             existingFrame:Hide()
             existingFrame:SetParent(nil)
+            _G[frameGlobal] = nil
         end
         
         if self and self[createFunc] then
@@ -2659,9 +2693,43 @@ end
                             existingFrame.arrows = nil
                         end
                         
+                        -- Clean up castbar and its children
+                        if existingFrame.castbar then
+                            if existingFrame.castbar.icon then
+                                existingFrame.castbar.icon:Hide()
+                                existingFrame.castbar.icon:SetParent(nil)
+                            end
+                            if existingFrame.castbar.statusBar then
+                                existingFrame.castbar.statusBar:Hide()
+                                existingFrame.castbar.statusBar:SetParent(nil)
+                            end
+                            existingFrame.castbar:SetScript("OnUpdate", nil)
+                            existingFrame.castbar:Hide()
+                            existingFrame.castbar:SetParent(nil)
+                            existingFrame.castbar = nil
+                        end
+                        
+                        -- Clean up bars
+                        if existingFrame.healthBar then
+                            existingFrame.healthBar:Hide()
+                            existingFrame.healthBar:SetParent(nil)
+                            existingFrame.healthBar = nil
+                        end
+                        if existingFrame.powerBar then
+                            existingFrame.powerBar:Hide()
+                            existingFrame.powerBar:SetParent(nil)
+                            existingFrame.powerBar = nil
+                        end
+                        if existingFrame.infoBar then
+                            existingFrame.infoBar:Hide()
+                            existingFrame.infoBar:SetParent(nil)
+                            existingFrame.infoBar = nil
+                        end
+                        
                         existingFrame:Hide()
                         existingFrame:SetParent(nil)
                         frames[key] = nil
+                        _G["AbstractUI_"..key] = nil
                     end
                     local db = self.db.profile
                     local spacing = db.spacing
