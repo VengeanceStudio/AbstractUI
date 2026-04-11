@@ -2273,13 +2273,21 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
         end
         
-        -- Set casting color (can't branch on notInterruptible in combat)
+        -- Set casting color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Shield alpha indicates interruptibility (0=interruptible, 1=non-interruptible)
+        -- Shield visibility indicates interruptibility - use SetAlphaFromBoolean or SetShown (handles secret booleans)
         if castbar.shield then
-            local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
-            castbar.shield:SetAlpha(shieldAlpha)
+            if notInterruptible ~= nil then
+                if castbar.shield.SetAlphaFromBoolean then
+                    castbar.shield:Show()
+                    castbar.shield:SetAlphaFromBoolean(notInterruptible)
+                else
+                    castbar.shield:SetShown(notInterruptible)
+                end
+            else
+                castbar.shield:Hide()
+            end
         end
         
         -- Set icon
@@ -2396,13 +2404,21 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
         end
         
-        -- Set channeling color (can't branch on notInterruptible in combat)
+        -- Set channeling color
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         
-        -- Shield alpha indicates interruptibility (0=interruptible, 1=non-interruptible)
+        -- Shield visibility indicates interruptibility - use SetAlphaFromBoolean or SetShown (handles secret booleans)
         if castbar.shield then
-            local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
-            castbar.shield:SetAlpha(shieldAlpha)
+            if notInterruptible ~= nil then
+                if castbar.shield.SetAlphaFromBoolean then
+                    castbar.shield:Show()
+                    castbar.shield:SetAlphaFromBoolean(notInterruptible)
+                else
+                    castbar.shield:SetShown(notInterruptible)
+                end
+            else
+                castbar.shield:Hide()
+            end
         end
         
         -- Set icon
