@@ -377,6 +377,11 @@ function AbstractOptionsPanel:SelectNode(node)
         end
     end
     
+    -- Reset scroll position to top when switching tabs
+    if self.frame.contentPanel and self.frame.contentPanel.scrollFrame and self.frame.contentPanel.scrollFrame.scrollArea then
+        self.frame.contentPanel.scrollFrame.scrollArea:SetVerticalScroll(0)
+    end
+    
     -- Render content for selected node
     self:RenderContent(node)
 end
