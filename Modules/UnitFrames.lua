@@ -2261,39 +2261,27 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
-        -- Store raw values - NO arithmetic! Pass secret values directly to UI widgets
         castbar.spell = spell
         castbar.texture = texture
-        castbar.startTime = startTime  -- milliseconds (potentially secret)
-        castbar.endTime = endTime      -- milliseconds (potentially secret)
         castbar.casting = true
         castbar.channeling = nil
         
-        -- Pass raw millisecond values to status bar - it handles the math internally
-        castbar.statusBar:SetMinMaxValues(startTime, endTime)
-        castbar.statusBar:SetValue(GetTime() * 1000)  -- Current time in milliseconds
+        -- Do arithmetic IMMEDIATELY (while values are fresh)
+        local castDuration = (endTime - startTime) / 1000
+        local currentCast = GetTime() - (startTime / 1000)
         
-        -- Try to detect interruptibility (may be secret, so use pcall)
-        local isNonInterruptible = false
-        pcall(function()
-            isNonInterruptible = notInterruptible
-        end)
+        castbar.statusBar:SetMinMaxValues(0, castDuration)
+        castbar.statusBar:SetValue(currentCast)
         
-        print("[DEBUG] START: isNonInterruptible =", isNonInterruptible)  -- DEBUG
+        -- Use WoW API to handle potentially-secret boolean
+        local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
         
-        -- Set initial color based on interruptibility
-        if isNonInterruptible then
+        if shieldAlpha > 0 then
             castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-            if castbar.shield then 
-                castbar.shield:Show()
-                print("[DEBUG] START: Showing shield (non-interruptible)")  -- DEBUG
-            end
+            if castbar.shield then castbar.shield:Show() end
         else
             castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-            if castbar.shield then 
-                castbar.shield:Hide()
-                print("[DEBUG] START: Hiding shield (interruptible)")  -- DEBUG
-            end
+            if castbar.shield then castbar.shield:Hide() end
         end
         
         -- Set icon
@@ -2377,11 +2365,12 @@ end
         if castbar.casting then
             local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
             if spell then
-                -- Update raw values on delay - NO arithmetic!
-                castbar.startTime = startTime
-                castbar.endTime = endTime
-                castbar.statusBar:SetMinMaxValues(startTime, endTime)
-                castbar.statusBar:SetValue(GetTime() * 1000)
+                -- Recalculate on delay - do arithmetic immediately
+                local castDuration = (endTime - startTime) / 1000
+                local currentCast = GetTime() - (startTime / 1000)
+                
+                castbar.statusBar:SetMinMaxValues(0, castDuration)
+                castbar.statusBar:SetValue(currentCast)
             end
         end
     end
@@ -2398,28 +2387,21 @@ end
         local spell, _, texture, startTime, endTime, _, notInterruptible, spellID = UnitChannelInfo(unit)
         if not spell then return end
         
-        -- Store raw values - NO arithmetic! Pass secret values directly to UI widgets
         castbar.spell = spell
         castbar.texture = texture
-        castbar.startTime = startTime  -- milliseconds (potentially secret)
-        castbar.endTime = endTime      -- milliseconds (potentially secret)
         castbar.casting = nil
         castbar.channeling = true
         
-        -- For channels, bar goes from endTime down to startTime
-        castbar.statusBar:SetMinMaxValues(startTime, endTime)
-        castbar.statusBar:SetValue(endTime)  -- Start at full for channels
+        -- Do arithmetic IMMEDIATELY (while values are fresh)
+        local castDuration = (endTime - startTime) / 1000
         
-        -- Try to detect interruptibility (may be secret, so use pcall)
-        local isNonInterruptible = false
-        pcall(function()
-            isNonInterruptible = notInterruptible
-        end)
+        castbar.statusBar:SetMinMaxValues(0, castDuration)
+        castbar.statusBar:SetValue(castDuration)  -- Channels start at full
         
-        print("[DEBUG] CHANNEL START: isNonInterruptible =", isNonInterruptible)  -- DEBUG
+        -- Use WoW API to handle potentially-secret boolean
+        local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
         
-        -- Set initial color based on interruptibility
-        if isNonInterruptible then
+        if shieldAlpha > 0 then
             castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
             if castbar.shield then castbar.shield:Show() end
         else
@@ -2464,11 +2446,11 @@ end
         if castbar.channeling then
             local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
             if spell then
-                -- Update raw values on channel update - NO arithmetic!
-                castbar.startTime = startTime
-                castbar.endTime = endTime
-                castbar.statusBar:SetMinMaxValues(startTime, endTime)
-                castbar.statusBar:SetValue(endTime)  -- Reset to full
+                -- Recalculate on channel update - do arithmetic immediately
+                local castDuration = (endTime - startTime) / 1000
+                
+                castbar.statusBar:SetMinMaxValues(0, castDuration)
+                castbar.statusBar:SetValue(castDuration)
             end
         end
     end
@@ -3237,44 +3219,18 @@ end
                             castbar.castTime = castTime
                         end
                         
-                        -- OnUpdate handler for castbar animation
+                        -- OnUpdate handler - just animates existing bar like Platynator
                         castbar:SetScript("OnUpdate", function(self, elapsed)
                             if not self.casting and not self.channeling then return end
                             
-                            local currentTime = GetTime() * 1000  -- Current time in milliseconds
-                            
                             if self.casting then
-                                -- Update progress - just set current time, bar calculates the percentage
-                                -- StatusBar will clamp to max automatically if we exceed it
-                                self.statusBar:SetValue(currentTime)
-                                
-                                -- Try to show timer - may be blank if values are secret in combat
-                                if self.castTime and self.endTime then
-                                    -- This may fail silently if endTime is secret
-                                    pcall(function()
-                                        local remaining = (self.endTime - currentTime) / 1000
-                                        if remaining > 0 then
-                                            self.castTime:SetFormattedText("%.1f", remaining)
-                                        end
-                                    end)
-                                end
-                                -- Note: UNIT_SPELLCAST_STOP event will hide the castbar when done
+                                -- Increment by elapsed time
+                                local currentValue = self.statusBar:GetValue()
+                                self.statusBar:SetValue(currentValue + elapsed)
                             elseif self.channeling then
-                                -- For channels, countdown from endTime
-                                -- StatusBar will clamp to max automatically if we exceed it
-                                self.statusBar:SetValue(currentTime)
-                                
-                                -- Try to show timer - may be blank if values are secret in combat
-                                if self.castTime and self.endTime then
-                                    -- This may fail silently if endTime is secret
-                                    pcall(function()
-                                        local remaining = (self.endTime - currentTime) / 1000
-                                        if remaining > 0 then
-                                            self.castTime:SetFormattedText("%.1f", remaining)
-                                        end
-                                    end)
-                                end
-                                -- Note: UNIT_SPELLCAST_CHANNEL_STOP event will hide the castbar when done
+                                -- Decrement by elapsed time
+                                local currentValue = self.statusBar:GetValue()
+                                self.statusBar:SetValue(currentValue - elapsed)
                             end
                         end)
                         
