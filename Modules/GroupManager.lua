@@ -143,8 +143,9 @@ function GroupManager:CreateToggleIcon()
     
     -- Movable system integration
     if Movable then
-        local highlight = CreateFrame("Frame", nil, managerFrame, "BackdropTemplate")
-        highlight:SetAllPoints(managerFrame)
+        local highlight = CreateFrame("Frame", "AbstractUI_GroupManagerHighlight", UIParent, "BackdropTemplate")
+        highlight:SetSize(managerFrame:GetSize())
+        highlight:SetPoint(managerFrame:GetPoint())
         highlight:SetFrameStrata("HIGH")
         highlight:SetFrameLevel(100)
         
@@ -166,12 +167,13 @@ function GroupManager:CreateToggleIcon()
         highlight.text:SetShadowOffset(2, -2)
         highlight.text:SetShadowColor(0, 0, 0, 1)
         
-        managerFrame.movableHighlight = highlight:CreateTexture(nil, "OVERLAY")
-        managerFrame.movableHighlight:SetAllPoints(highlight)
-        managerFrame.movableHighlight:SetColorTexture(0, 1, 0, 0.2)
-        managerFrame.movableHighlight:Hide()
+        -- Create movableHighlight texture for Movable system compatibility
+        highlight.movableHighlight = highlight:CreateTexture(nil, "OVERLAY")
+        highlight.movableHighlight:SetAllPoints(highlight)
+        highlight.movableHighlight:SetColorTexture(0, 1, 0, 0.2)
+        highlight.movableHighlight:Hide()
         
-        managerFrame.movableHighlightLabel = highlight.text
+        highlight.movableHighlightLabel = highlight.text
         highlight:Hide()
         
         Movable:MakeFrameDraggable(
