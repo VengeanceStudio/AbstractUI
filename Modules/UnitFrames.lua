@@ -2261,13 +2261,29 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
-        -- Store raw values without arithmetic (avoid taint issues)
+        -- Calculate initial values (protect against taint)
+        local success, duration, current = pcall(function()
+            local dur = (endTime - startTime) / 1000
+            local cur = GetTime() - (startTime / 1000)
+            return dur, cur
+        end)
+        
+        if not success then
+            -- If tainted, just hide and return
+            castbar:Hide()
+            return
+        end
+        
         castbar.spell = spell
         castbar.texture = texture
-        castbar.startTime = startTime
-        castbar.endTime = endTime
+        castbar.value = current
+        castbar.maxValue = duration
         castbar.casting = true
         castbar.channeling = nil
+        
+        -- Set up progress bar
+        castbar.statusBar:SetMinMaxValues(0, duration)
+        castbar.statusBar:SetValue(current)
         
         -- Set initial color (default to interruptible - events will update if not)
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
@@ -2354,9 +2370,18 @@ end
         if castbar.casting then
             local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
             if spell then
-                -- Update stored values (OnUpdate will handle display)
-                castbar.startTime = startTime
-                castbar.endTime = endTime
+                -- Recalculate on delay (protect against taint)
+                local success, duration, current = pcall(function()
+                    local dur = (endTime - startTime) / 1000
+                    local cur = GetTime() - (startTime / 1000)
+                    return dur, cur
+                end)
+                if success then
+                    castbar.value = current
+                    castbar.maxValue = duration
+                    castbar.statusBar:SetMinMaxValues(0, duration)
+                    castbar.statusBar:SetValue(current)
+                end
             end
         end
     end
@@ -2373,13 +2398,27 @@ end
         local spell, _, texture, startTime, endTime, _, notInterruptible, spellID = UnitChannelInfo(unit)
         if not spell then return end
         
-        -- Store raw values without arithmetic (avoid taint issues)
+        -- Calculate initial values (protect against taint)
+        local success, duration = pcall(function()
+            return (endTime - startTime) / 1000
+        end)
+        
+        if not success then
+            -- If tainted, just hide and return
+            castbar:Hide()
+            return
+        end
+        
         castbar.spell = spell
         castbar.texture = texture
-        castbar.startTime = startTime
-        castbar.endTime = endTime
+        castbar.value = duration  -- Channels count down from full
+        castbar.maxValue = duration
         castbar.casting = nil
         castbar.channeling = true
+        
+        -- Set up progress bar
+        castbar.statusBar:SetMinMaxValues(0, duration)
+        castbar.statusBar:SetValue(duration)
         
         -- Set initial color (default to interruptible - events will update if not)
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
@@ -2422,9 +2461,16 @@ end
         if castbar.channeling then
             local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
             if spell then
-                -- Update stored values (OnUpdate will handle display)
-                castbar.startTime = startTime
-                castbar.endTime = endTime
+                -- Recalculate on update (protect against taint)
+                local success, duration = pcall(function()
+                    return (endTime - startTime) / 1000
+                end)
+                if success then
+                    castbar.value = duration
+                    castbar.maxValue = duration
+                    castbar.statusBar:SetMinMaxValues(0, duration)
+                    castbar.statusBar:SetValue(duration)
+                end
             end
         end
     end
@@ -3194,55 +3240,35 @@ end
                             if not self.casting and not self.channeling then return end
                             
                             if self.casting then
-                                -- Query fresh casting info for timing only (don't use notInterruptible - events handle that)
-                                local spell, _, _, startTime, endTime = UnitCastingInfo("target")
-                                if not spell then
+                                -- Increment value based on elapsed time (no API queries!)
+                                self.value = (self.value or 0) + elapsed
+                                
+                                if self.value >= self.maxValue then
                                     self:Hide()
                                     self.casting = nil
                                     return
                                 end
                                 
-                                -- Calculate progress (OnUpdate is safe for arithmetic)
-                                local duration = (endTime - startTime) / 1000
-                                local current = GetTime() - (startTime / 1000)
-                                
-                                if current >= duration then
-                                    self:Hide()
-                                    self.casting = nil
-                                    return
-                                end
-                                
-                                self.statusBar:SetMinMaxValues(0, duration)
-                                self.statusBar:SetValue(current)
+                                self.statusBar:SetValue(self.value)
                                 
                                 if self.castTime then
-                                    local remaining = duration - current
+                                    local remaining = self.maxValue - self.value
                                     self.castTime:SetFormattedText("%.1f", remaining)
                                 end
                             elseif self.channeling then
-                                -- Query fresh channeling info for timing only (don't use notInterruptible - events handle that)
-                                local spell, _, _, startTime, endTime = UnitChannelInfo("target")
-                                if not spell then
+                                -- Decrement value based on elapsed time (no API queries!)
+                                self.value = (self.value or 0) - elapsed
+                                
+                                if self.value <= 0 then
                                     self:Hide()
                                     self.channeling = nil
                                     return
                                 end
                                 
-                                -- Calculate progress (OnUpdate is safe for arithmetic)
-                                local duration = (endTime - startTime) / 1000
-                                local remaining = (endTime / 1000) - GetTime()
-                                
-                                if remaining <= 0 then
-                                    self:Hide()
-                                    self.channeling = nil
-                                    return
-                                end
-                                
-                                self.statusBar:SetMinMaxValues(0, duration)
-                                self.statusBar:SetValue(remaining)
+                                self.statusBar:SetValue(self.value)
                                 
                                 if self.castTime then
-                                    self.castTime:SetFormattedText("%.1f", remaining)
+                                    self.castTime:SetFormattedText("%.1f", self.value)
                                 end
                             end
                         end)
