@@ -2867,8 +2867,8 @@ end
                         local castbar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
                         castbar:SetSize(castbarDB.width, castbarDB.height)
                         
-                        -- Position below the main frame with spacing
-                        castbar:SetPoint("TOP", frame, "BOTTOM", 0, -spacing)
+                        -- Position below the main frame with extra spacing for visual separation
+                        castbar:SetPoint("TOP", frame, "BOTTOM", 0, -8)
                         
                         castbar:SetBackdrop({
                             bgFile = "Interface\\Buttons\\WHITE8X8",
