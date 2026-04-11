@@ -3190,11 +3190,6 @@ end
                         overlayBar:SetValue(0)
                         overlayBar:SetFrameLevel(statusBar:GetFrameLevel())  -- Same level - text OVERLAY layer will be on top
                         overlayBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-                        -- Initialize overlay texture alpha to 0 (transparent) - will be set to 1 for non-interruptible
-                        local overlayTexture = overlayBar:GetStatusBarTexture()
-                        if overlayTexture then
-                            overlayTexture:SetAlpha(0)
-                        end
                         castbar.overlayBar = overlayBar
                         
                         -- Shield icon for non-interruptible casts - wrap in Frame for SetShown()
