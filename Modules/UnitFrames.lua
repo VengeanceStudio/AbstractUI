@@ -944,14 +944,17 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
     end
     
     local function update()
+        AbstractUI:Print("UPDATE called for: " .. frameGlobal)
         local existingFrame = _G[frameGlobal]
         if existingFrame then 
+            AbstractUI:Print("  Found existing frame, cleaning up...")
             -- Unregister from Movable before destroying frame
             local Movable = AbstractUI:GetModule("Movable", true)
             if Movable and Movable.registeredFrames and existingFrame.movableHighlightFrame then
                 for i = #Movable.registeredFrames, 1, -1 do
                     if Movable.registeredFrames[i] == existingFrame.movableHighlightFrame then
                         table.remove(Movable.registeredFrames, i)
+                        AbstractUI:Print("    Removed from Movable.registeredFrames")
                     end
                 end
                 -- Clean up the highlight frame
@@ -961,17 +964,24 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
             
             -- Clean up nudge arrows
             if existingFrame.arrows then
+                local arrowCount = 0
                 for _, arrow in pairs(existingFrame.arrows) do
                     if arrow and arrow.Hide then
                         arrow:Hide()
                         arrow:SetParent(nil)
+                        arrowCount = arrowCount + 1
                     end
                 end
+                AbstractUI:Print("    Cleaned up " .. arrowCount .. " arrows")
                 existingFrame.arrows = nil
+            else
+                AbstractUI:Print("    No arrows to clean up")
             end
             
             existingFrame:Hide()
             existingFrame:SetParent(nil)
+        else
+            AbstractUI:Print("  No existing frame found")
         end
         if self and self[createFunc] then self[createFunc](self) end
     end
@@ -2089,10 +2099,11 @@ end
                 -- ============================================================================
                 
                 function UnitFrames:CreateUnitFrame(key, unit, anchor, anchorTo, anchorPoint, x, y)
-                                        -- ...existing code...
+                    AbstractUI:Print("CreateUnitFrame called for: " .. key)
                     -- Clean up ANY existing frame (check both frames table and global)
                     local existingFrame = frames[key] or _G["AbstractUI_"..key]
                     if existingFrame then
+                        AbstractUI:Print("  Found existing " .. key .. ", cleaning up...")
                         -- Critical: Stop OnUpdate script to prevent memory leaks
                         existingFrame:SetScript("OnUpdate", nil)
                         
@@ -2102,6 +2113,7 @@ end
                             for i = #Movable.registeredFrames, 1, -1 do
                                 if Movable.registeredFrames[i] == existingFrame.movableHighlightFrame then
                                     table.remove(Movable.registeredFrames, i)
+                                    AbstractUI:Print("    Removed from Movable.registeredFrames")
                                 end
                             end
                             -- Clean up the old highlight frame
@@ -2111,18 +2123,25 @@ end
                         
                         -- Clean up nudge arrows
                         if existingFrame.arrows then
+                            local arrowCount = 0
                             for _, arrow in pairs(existingFrame.arrows) do
                                 if arrow and arrow.Hide then
                                     arrow:Hide()
                                     arrow:SetParent(nil)
+                                    arrowCount = arrowCount + 1
                                 end
                             end
+                            AbstractUI:Print("    Cleaned up " .. arrowCount .. " arrows from " .. key)
                             existingFrame.arrows = nil
+                        else
+                            AbstractUI:Print("    No arrows found on " .. key)
                         end
                         
                         existingFrame:Hide()
                         existingFrame:SetParent(nil)
                         frames[key] = nil
+                    else
+                        AbstractUI:Print("  No existing " .. key .. " found")
                     end
                     local db = self.db.profile
                     local spacing = db.spacing
