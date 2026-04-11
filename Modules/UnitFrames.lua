@@ -2270,9 +2270,11 @@ end
         local castDuration = UnitCastingDuration(unit)
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
+            castbar.statusBar:Show()
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
             -- Sync overlay bar animation
             if castbar.overlayBar then
+                castbar.overlayBar:Show()
                 castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
             end
         end
@@ -2409,9 +2411,11 @@ end
         local castDuration = UnitChannelDuration(unit)
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
+            castbar.statusBar:Show()
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
             -- Sync overlay bar animation
             if castbar.overlayBar then
+                castbar.overlayBar:Show()
                 castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
             end
         end
