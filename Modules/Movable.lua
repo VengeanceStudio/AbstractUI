@@ -780,10 +780,31 @@ function Movable:CreateNudgeArrows(container, db, resetCallback, updateCallback)
         
         btn:SetScript("OnEnter", function(self)
             self:SetBackdropColor(0.3, 0.3, 0.3, 1)
+            
+            -- Show tooltip with container info
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine("Nudge Arrow: " .. direction, 1, 1, 1)
+            
+            local containerName = container:GetName() or "Unknown"
+            GameTooltip:AddLine("Container: " .. containerName, 0, 1, 0)
+            
+            -- Show if container still exists and is valid
+            if container and container:IsShown then
+                if container:IsShown() then
+                    GameTooltip:AddLine("Status: |cff00ff00Visible|r", 1, 1, 1)
+                else
+                    GameTooltip:AddLine("Status: |cffff0000Hidden|r", 1, 1, 1)
+                end
+            else
+                GameTooltip:AddLine("Status: |cffff0000ORPHANED - Container destroyed!|r", 1, 1, 1)
+            end
+            
+            GameTooltip:Show()
         end)
         
         btn:SetScript("OnLeave", function(self)
             self:SetBackdropColor(0.2, 0.2, 0.2, 0.8)
+            GameTooltip:Hide()
         end)
         
         btn:SetScript("OnClick", function()
@@ -868,7 +889,11 @@ function Movable:CreateNudgeArrows(container, db, resetCallback, updateCallback)
     resetBtn:SetScript("OnEnter", function(self)
         self:SetBackdropColor(0.5, 0.2, 0.2, 1)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Reset Position", 1, 1, 1)
+        GameTooltip:AddLine("Reset Position", 1, 1, 1)
+        
+        local containerName = container:GetName() or "Unknown"
+        GameTooltip:AddLine("Container: " .. containerName, 0, 1, 0)
+        
         GameTooltip:Show()
     end)
     
