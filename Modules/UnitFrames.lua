@@ -2273,13 +2273,27 @@ end
         castbar.statusBar:SetMinMaxValues(startTime, endTime)
         castbar.statusBar:SetValue(GetTime() * 1000)  -- Current time in milliseconds
         
-        -- Set default color (yellow for casting) - events will update immediately if non-interruptible
-        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-        if castbar.shield then 
-            castbar.shield:Hide()
-            print("[DEBUG] START: Shield exists and hidden")  -- DEBUG
+        -- Try to detect interruptibility (may be secret, so use pcall)
+        local isNonInterruptible = false
+        pcall(function()
+            isNonInterruptible = notInterruptible
+        end)
+        
+        print("[DEBUG] START: isNonInterruptible =", isNonInterruptible)  -- DEBUG
+        
+        -- Set initial color based on interruptibility
+        if isNonInterruptible then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            if castbar.shield then 
+                castbar.shield:Show()
+                print("[DEBUG] START: Showing shield (non-interruptible)")  -- DEBUG
+            end
         else
-            print("[DEBUG] START: Shield does NOT exist!")  -- DEBUG
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+            if castbar.shield then 
+                castbar.shield:Hide()
+                print("[DEBUG] START: Hiding shield (interruptible)")  -- DEBUG
+            end
         end
         
         -- Set icon
@@ -2396,9 +2410,22 @@ end
         castbar.statusBar:SetMinMaxValues(startTime, endTime)
         castbar.statusBar:SetValue(endTime)  -- Start at full for channels
         
-        -- Set initial color (default to interruptible - events will update if not)
-        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
-        if castbar.shield then castbar.shield:Hide() end
+        -- Try to detect interruptibility (may be secret, so use pcall)
+        local isNonInterruptible = false
+        pcall(function()
+            isNonInterruptible = notInterruptible
+        end)
+        
+        print("[DEBUG] CHANNEL START: isNonInterruptible =", isNonInterruptible)  -- DEBUG
+        
+        -- Set initial color based on interruptibility
+        if isNonInterruptible then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            if castbar.shield then castbar.shield:Show() end
+        else
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+            if castbar.shield then castbar.shield:Hide() end
+        end
         
         -- Set icon
         if castbar.icon then
@@ -2454,6 +2481,8 @@ end
         
         local castbar = frame.castbar
         local castbarDB = self.db.profile.target.castbar
+        
+        print("[DEBUG] INTERRUPTIBLE event fired - hiding shield")  -- DEBUG
         
         if castbar.casting then
             castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
