@@ -789,7 +789,7 @@ function Movable:CreateNudgeArrows(container, db, resetCallback, updateCallback)
             GameTooltip:AddLine("Container: " .. containerName, 0, 1, 0)
             
             -- Show if container still exists and is valid
-            if container and container:IsShown then
+            if container then
                 if container:IsShown() then
                     GameTooltip:AddLine("Status: |cff00ff00Visible|r", 1, 1, 1)
                 else
