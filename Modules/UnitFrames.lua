@@ -2261,29 +2261,17 @@ end
         local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
         if not spell then return end
         
-        -- Calculate initial values (protect against taint)
-        local success, duration, current = pcall(function()
-            local dur = (endTime - startTime) / 1000
-            local cur = GetTime() - (startTime / 1000)
-            return dur, cur
-        end)
-        
-        if not success then
-            -- If tainted, just hide and return
-            castbar:Hide()
-            return
-        end
-        
+        -- Store raw values - NO arithmetic! Pass secret values directly to UI widgets
         castbar.spell = spell
         castbar.texture = texture
-        castbar.value = current
-        castbar.maxValue = duration
+        castbar.startTime = startTime  -- milliseconds (potentially secret)
+        castbar.endTime = endTime      -- milliseconds (potentially secret)
         castbar.casting = true
         castbar.channeling = nil
         
-        -- Set up progress bar
-        castbar.statusBar:SetMinMaxValues(0, duration)
-        castbar.statusBar:SetValue(current)
+        -- Pass raw millisecond values to status bar - it handles the math internally
+        castbar.statusBar:SetMinMaxValues(startTime, endTime)
+        castbar.statusBar:SetValue(GetTime() * 1000)  -- Current time in milliseconds
         
         -- Set initial color (default to interruptible - events will update if not)
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
@@ -2370,18 +2358,11 @@ end
         if castbar.casting then
             local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
             if spell then
-                -- Recalculate on delay (protect against taint)
-                local success, duration, current = pcall(function()
-                    local dur = (endTime - startTime) / 1000
-                    local cur = GetTime() - (startTime / 1000)
-                    return dur, cur
-                end)
-                if success then
-                    castbar.value = current
-                    castbar.maxValue = duration
-                    castbar.statusBar:SetMinMaxValues(0, duration)
-                    castbar.statusBar:SetValue(current)
-                end
+                -- Update raw values on delay - NO arithmetic!
+                castbar.startTime = startTime
+                castbar.endTime = endTime
+                castbar.statusBar:SetMinMaxValues(startTime, endTime)
+                castbar.statusBar:SetValue(GetTime() * 1000)
             end
         end
     end
@@ -2398,27 +2379,17 @@ end
         local spell, _, texture, startTime, endTime, _, notInterruptible, spellID = UnitChannelInfo(unit)
         if not spell then return end
         
-        -- Calculate initial values (protect against taint)
-        local success, duration = pcall(function()
-            return (endTime - startTime) / 1000
-        end)
-        
-        if not success then
-            -- If tainted, just hide and return
-            castbar:Hide()
-            return
-        end
-        
+        -- Store raw values - NO arithmetic! Pass secret values directly to UI widgets
         castbar.spell = spell
         castbar.texture = texture
-        castbar.value = duration  -- Channels count down from full
-        castbar.maxValue = duration
+        castbar.startTime = startTime  -- milliseconds (potentially secret)
+        castbar.endTime = endTime      -- milliseconds (potentially secret)
         castbar.casting = nil
         castbar.channeling = true
         
-        -- Set up progress bar
-        castbar.statusBar:SetMinMaxValues(0, duration)
-        castbar.statusBar:SetValue(duration)
+        -- For channels, bar goes from endTime down to startTime
+        castbar.statusBar:SetMinMaxValues(startTime, endTime)
+        castbar.statusBar:SetValue(endTime)  -- Start at full for channels
         
         -- Set initial color (default to interruptible - events will update if not)
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
@@ -2461,16 +2432,11 @@ end
         if castbar.channeling then
             local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
             if spell then
-                -- Recalculate on update (protect against taint)
-                local success, duration = pcall(function()
-                    return (endTime - startTime) / 1000
-                end)
-                if success then
-                    castbar.value = duration
-                    castbar.maxValue = duration
-                    castbar.statusBar:SetMinMaxValues(0, duration)
-                    castbar.statusBar:SetValue(duration)
-                end
+                -- Update raw values on channel update - NO arithmetic!
+                castbar.startTime = startTime
+                castbar.endTime = endTime
+                castbar.statusBar:SetMinMaxValues(startTime, endTime)
+                castbar.statusBar:SetValue(endTime)  -- Reset to full
             end
         end
     end
@@ -3239,36 +3205,49 @@ end
                         castbar:SetScript("OnUpdate", function(self, elapsed)
                             if not self.casting and not self.channeling then return end
                             
+                            local currentTime = GetTime() * 1000  -- Current time in milliseconds
+                            
                             if self.casting then
-                                -- Increment value based on elapsed time (no API queries!)
-                                self.value = (self.value or 0) + elapsed
+                                -- Update progress - just set current time, bar calculates the percentage
+                                self.statusBar:SetValue(currentTime)
                                 
-                                if self.value >= self.maxValue then
+                                -- Check if finished
+                                if currentTime >= (self.endTime or 0) then
                                     self:Hide()
                                     self.casting = nil
                                     return
                                 end
                                 
-                                self.statusBar:SetValue(self.value)
-                                
-                                if self.castTime then
-                                    local remaining = self.maxValue - self.value
-                                    self.castTime:SetFormattedText("%.1f", remaining)
+                                -- Try to show timer - may be blank if values are secret in combat
+                                if self.castTime and self.endTime then
+                                    -- This may fail silently if endTime is secret
+                                    pcall(function()
+                                        local remaining = (self.endTime - currentTime) / 1000
+                                        if remaining > 0 then
+                                            self.castTime:SetFormattedText("%.1f", remaining)
+                                        end
+                                    end)
                                 end
                             elseif self.channeling then
-                                -- Decrement value based on elapsed time (no API queries!)
-                                self.value = (self.value or 0) - elapsed
+                                -- For channels, countdown from endTime
+                                self.statusBar:SetValue(currentTime)
                                 
-                                if self.value <= 0 then
+                                -- Check if finished  
+                                if currentTime >= (self.endTime or 0) then
                                     self:Hide()
                                     self.channeling = nil
                                     return
                                 end
                                 
-                                self.statusBar:SetValue(self.value)
-                                
-                                if self.castTime then
-                                    self.castTime:SetFormattedText("%.1f", self.value)
+                                -- Try to show timer - may be blank if values are secret in combat
+                                if self.castTime and self.endTime then
+                                    -- This may fail silently if endTime is secret
+                                    pcall(function()
+                                        local remaining = (self.endTime - currentTime) / 1000
+                                        if remaining > 0 then
+                                            self.castTime:SetFormattedText("%.1f", remaining)
+                                        end
+                                    end)
                                 end
                             end
                         end)
