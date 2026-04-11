@@ -2273,15 +2273,21 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
         end
         
-        -- Use WoW API to handle potentially-secret boolean
-        local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
+        -- Handle notInterruptible: check the original boolean, use EvaluateColorValueFromBoolean result directly
+        if notInterruptible ~= nil then
+            if notInterruptible == true then
+                -- Non-interruptible: gray color
+                castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            else
+                -- Interruptible: yellow color
+                castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+            end
+        end
         
-        if shieldAlpha > 0 then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-            if castbar.shield then castbar.shield:Show() end
-        else
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-            if castbar.shield then castbar.shield:Hide() end
+        -- Shield alpha from boolean (can't compare result, use directly)
+        if castbar.shield then
+            local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
+            castbar.shield:SetAlpha(shieldAlpha)
         end
         
         -- Set icon
@@ -2398,15 +2404,21 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
         end
         
-        -- Use WoW API to handle potentially-secret boolean
-        local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
+        -- Handle notInterruptible: check the original boolean, use EvaluateColorValueFromBoolean result directly
+        if notInterruptible ~= nil then
+            if notInterruptible == true then
+                -- Non-interruptible: gray color
+                castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            else
+                -- Interruptible: blue color
+                castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+            end
+        end
         
-        if shieldAlpha > 0 then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-            if castbar.shield then castbar.shield:Show() end
-        else
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
-            if castbar.shield then castbar.shield:Hide() end
+        -- Shield alpha from boolean (can't compare result, use directly)
+        if castbar.shield then
+            local shieldAlpha = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1) or 0
+            castbar.shield:SetAlpha(shieldAlpha)
         end
         
         -- Set icon
