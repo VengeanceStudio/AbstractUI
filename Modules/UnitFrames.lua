@@ -2273,27 +2273,17 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
         end
         
-        -- Use alpha to blend between interruptible and non-interruptible colors
-        if notInterruptible ~= nil and C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
-            local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-            
-            -- Interpolate color: alpha=0 (interruptible) uses castingColor, alpha=1 (non-int) uses notInterruptibleColor
-            local r1, g1, b1 = unpack(castbarDB.castingColor)
-            local r2, g2, b2 = unpack(castbarDB.notInterruptibleColor)
-            castbar.statusBar:SetStatusBarColor(
-                r1 + alpha * (r2 - r1),
-                g1 + alpha * (g2 - g1),
-                b1 + alpha * (b2 - b1)
-            )
-            
-            -- Shield alpha: 0=invisible (interruptible), 1=visible (non-interruptible)
-            if castbar.shield then
-                castbar.shield:Show()
-                castbar.shield:SetAlpha(alpha)
+        -- Set default casting color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
+        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+        
+        -- Set shield alpha (0=invisible for interruptible, 1=visible for non-interruptible)
+        -- We can pass secret alpha to SetAlpha but can't do arithmetic with it
+        if castbar.shield and notInterruptible ~= nil then
+            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
+                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
+                castbar.shield:Show()  -- Must be shown for alpha to take effect
+                castbar.shield:SetAlpha(alpha)  -- Pass secret value directly, no arithmetic
             end
-        else
-            -- Fallback if no notInterruptible info
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         end
         
         -- Set icon
@@ -2410,27 +2400,17 @@ end
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
         end
         
-        -- Use alpha to blend between interruptible and non-interruptible colors
-        if notInterruptible ~= nil and C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
-            local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
-            
-            -- Interpolate color: alpha=0 (interruptible) uses channelingColor, alpha=1 (non-int) uses notInterruptibleColor
-            local r1, g1, b1 = unpack(castbarDB.channelingColor)
-            local r2, g2, b2 = unpack(castbarDB.notInterruptibleColor)
-            castbar.statusBar:SetStatusBarColor(
-                r1 + alpha * (r2 - r1),
-                g1 + alpha * (g2 - g1),
-                b1 + alpha * (b2 - b1)
-            )
-            
-            -- Shield alpha: 0=invisible (interruptible), 1=visible (non-interruptible)
-            if castbar.shield then
-                castbar.shield:Show()
-                castbar.shield:SetAlpha(alpha)
+        -- Set default channeling color - INTERRUPTIBLE/NOT_INTERRUPTIBLE events will override if needed
+        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+        
+        -- Set shield alpha (0=invisible for interruptible, 1=visible for non-interruptible)
+        -- We can pass secret alpha to SetAlpha but can't do arithmetic with it
+        if castbar.shield and notInterruptible ~= nil then
+            if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
+                local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, 0, 1)
+                castbar.shield:Show()  -- Must be shown for alpha to take effect
+                castbar.shield:SetAlpha(alpha)  -- Pass secret value directly, no arithmetic
             end
-        else
-            -- Fallback if no notInterruptible info
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
         end
         
         -- Set icon
@@ -2480,42 +2460,13 @@ end
     end
     
     function UnitFrames:UNIT_SPELLCAST_INTERRUPTIBLE(event, unit)
-        if unit ~= "target" then return end
-        
-        local frame = _G["AbstractUI_TargetFrame"]
-        if not frame or not frame.castbar then return end
-        
-        local castbar = frame.castbar
-        local castbarDB = self.db.profile.target.castbar
-        
-        -- Interruptible: use normal cast color and hide shield
-        if castbar.casting then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
-        elseif castbar.channeling then
-            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
-        end
-        
-        if castbar.shield then
-            castbar.shield:SetAlpha(0)
-        end
+        -- Re-run START logic to re-fetch notInterruptible value (like Platynator does)
+        self:UNIT_SPELLCAST_START(event, unit)
     end
     
     function UnitFrames:UNIT_SPELLCAST_NOT_INTERRUPTIBLE(event, unit)
-        if unit ~= "target" then return end
-        
-        local frame = _G["AbstractUI_TargetFrame"]
-        if not frame or not frame.castbar then return end
-        
-        local castbar = frame.castbar
-        local castbarDB = self.db.profile.target.castbar
-        
-        -- Non-interruptible: use grey color and show shield
-        castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
-        
-        if castbar.shield then
-            castbar.shield:Show()
-            castbar.shield:SetAlpha(1)
-        end
+        -- Re-run START logic to re-fetch notInterruptible value (like Platynator does)
+        self:UNIT_SPELLCAST_START(event, unit)
     end
     
     local defaults = {
