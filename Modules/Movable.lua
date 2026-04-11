@@ -286,12 +286,6 @@ function Movable:OnMoveModeChanged(event, enabled)
             if frame.arrows then
                 self:UpdateNudgeArrows(frame)
             end
-            
-            -- Start hover detection animation for Blizzard frames
-            if frame.arrowUpdateHandler and not frame.arrowUpdateHandler:IsPlaying() then
-                frame.lastMouseOverState = false
-                frame.arrowUpdateHandler:Play()
-            end
         end
     else
         self:HideGrid()
@@ -327,12 +321,6 @@ function Movable:OnMoveModeChanged(event, enabled)
             -- Hide container arrows if this frame has them
             if frame.arrows then
                 self:HideNudgeArrows(frame)
-            end
-            
-            -- Stop hover detection animation for Blizzard frames
-            if frame.arrowUpdateHandler and frame.arrowUpdateHandler:IsPlaying() then
-                frame.arrowUpdateHandler:Stop()
-                frame.lastMouseOverState = false
             end
         end
     end
@@ -1400,74 +1388,6 @@ function Movable:MakeBlizzardFrameMovable(frameName)
                 end
             end)
         end)
-    end
-    
-    -- Create nudge arrows for the frame
-    if not frame.arrows then
-        frame.arrows = self:CreateNudgeArrows(
-            frame,
-            self.db.profile.blizzardFramePositions[frameName],
-            function()
-                -- Reset position
-                if self.db and self.db.profile.blizzardFramePositions then
-                    self.db.profile.blizzardFramePositions[frameName] = nil
-                end
-                frame:ClearAllPoints()
-                -- Let frame return to default position
-                frame:SetUserPlaced(false)
-            end,
-            function(point, x, y)
-                -- Update callback when arrows move the frame
-                if not self.db then return end
-                if not self.db.profile.blizzardFramePositions then
-                    self.db.profile.blizzardFramePositions = {}
-                end
-                if not self.db.profile.blizzardFramePositions[frameName] then
-                    self.db.profile.blizzardFramePositions[frameName] = {}
-                end
-                self.db.profile.blizzardFramePositions[frameName].point = point
-                self.db.profile.blizzardFramePositions[frameName].relativePoint = point
-                self.db.profile.blizzardFramePositions[frameName].x = x
-                self.db.profile.blizzardFramePositions[frameName].y = y
-            end
-        )
-        
-        -- Backup hover detection using OnUpdate for frames that don't properly handle OnEnter/OnLeave
-        frame.arrowUpdateHandler = frame:CreateAnimationGroup()
-        frame.arrowUpdateAnim = frame.arrowUpdateHandler:CreateAnimation()
-        frame.arrowUpdateAnim:SetDuration(0.1)
-        frame.arrowUpdateHandler:SetLooping("REPEAT")
-        frame.lastMouseOverState = false
-        
-        frame.arrowUpdateHandler:SetScript("OnLoop", function()
-            local isOver = MouseIsOver(frame)
-            if isOver ~= frame.lastMouseOverState then
-                frame.lastMouseOverState = isOver
-                if isOver then
-                    -- Mouse entered
-                    if frame.arrowHideTimer then
-                        frame.arrowHideTimer:Cancel()
-                        frame.arrowHideTimer = nil
-                    end
-                    if frame.arrows then
-                        Movable:UpdateNudgeArrows(frame)
-                    end
-                else
-                    -- Mouse left
-                    if frame.arrowHideTimer then
-                        frame.arrowHideTimer:Cancel()
-                    end
-                    frame.arrowHideTimer = C_Timer.NewTimer(0.3, function()
-                        if frame.arrows then
-                            Movable:HideNudgeArrows(frame)
-                        end
-                        frame.arrowHideTimer = nil
-                    end)
-                end
-            end
-        end)
-        
-        -- Don't start the loop yet - it will start when move mode is enabled
     end
 end
 
