@@ -958,6 +958,17 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 _G[frameGlobal].movableHighlightFrame:SetParent(nil)
             end
             
+            -- Clean up nudge arrows
+            if _G[frameGlobal].arrows then
+                for _, arrow in pairs(_G[frameGlobal].arrows) do
+                    if arrow and arrow.Hide then
+                        arrow:Hide()
+                        arrow:SetParent(nil)
+                    end
+                end
+                _G[frameGlobal].arrows = nil
+            end
+            
             _G[frameGlobal]:Hide()
             _G[frameGlobal]:SetParent(nil)
         end
@@ -2093,6 +2104,17 @@ end
                             -- Clean up the old highlight frame
                             frames[key].movableHighlightFrame:Hide()
                             frames[key].movableHighlightFrame:SetParent(nil)
+                        end
+                        
+                        -- Clean up nudge arrows
+                        if frames[key].arrows then
+                            for _, arrow in pairs(frames[key].arrows) do
+                                if arrow and arrow.Hide then
+                                    arrow:Hide()
+                                    arrow:SetParent(nil)
+                                end
+                            end
+                            frames[key].arrows = nil
                         end
                         
                         frames[key]:Hide()
