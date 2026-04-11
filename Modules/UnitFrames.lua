@@ -3177,14 +3177,14 @@ end
                         statusBar:SetValue(0)
                         castbar.statusBar = statusBar
                         
-                        -- Non-interruptible overlay bar (grey) - higher level so it shows, but text is above it
+                        -- Non-interruptible overlay bar (grey) - same level as base bar, drawn after it
                         local overlayBar = CreateFrame("StatusBar", nil, castbar)
                         overlayBar:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
                         overlayBar:SetPoint("BOTTOMRIGHT", castbar, "BOTTOMRIGHT", -1, 1)
                         overlayBar:SetStatusBarTexture(LSM:Fetch("statusbar", castbarDB.texture))
                         overlayBar:SetMinMaxValues(0, 1)
                         overlayBar:SetValue(0)
-                        overlayBar:SetFrameLevel(statusBar:GetFrameLevel() + 1)
+                        overlayBar:SetFrameLevel(statusBar:GetFrameLevel())  -- Same level - text OVERLAY layer will be on top
                         overlayBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
                         castbar.overlayBar = overlayBar
                         
@@ -3226,9 +3226,14 @@ end
                             castbar.icon = iconFrame
                         end
                         
-                        -- Spell name text - create on castbar so it's above both status bars
+                        -- Create text container frame at highest level to ensure text is always visible
+                        local textFrame = CreateFrame("Frame", nil, castbar)
+                        textFrame:SetAllPoints(castbar)
+                        textFrame:SetFrameLevel(castbar:GetFrameLevel() + 10)  -- Way above status bars
+                        
+                        -- Spell name text - create on high-level text frame
                         if castbarDB.showSpellName then
-                            local spellName = castbar:CreateFontString(nil, "OVERLAY")
+                            local spellName = textFrame:CreateFontString(nil, "OVERLAY")
                             spellName:SetPoint("LEFT", statusBar, "LEFT", 4, 0)
                             spellName:SetWidth(castbarDB.width - 25)
                             local font = LSM:Fetch("font", castbarDB.font)
@@ -3241,9 +3246,9 @@ end
                             castbar.spellName = spellName
                         end
                         
-                        -- Cast time text - create on castbar so it's above both status bars
+                        -- Cast time text - create on high-level text frame
                         if castbarDB.showCastTime then
-                            local castTime = castbar:CreateFontString(nil, "OVERLAY")
+                            local castTime = textFrame:CreateFontString(nil, "OVERLAY")
                             castTime:SetPoint("LEFT", statusBar, "CENTER", 4, 0)
                             castTime:SetPoint("RIGHT", statusBar, "RIGHT", -4, 0)
                             local font = LSM:Fetch("font", castbarDB.font)
