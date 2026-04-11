@@ -1052,6 +1052,136 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         end)
     end
     
+    -- Update properties on existing frame without recreation (for cosmetic changes only)
+    local function updateProperties()
+        local frame = _G[frameGlobal]
+        if not frame then return end
+        
+        local db = getDB()
+        local LSM = LibStub:GetLibrary("LibSharedMedia-3.0")
+        
+        -- Update health bar properties
+        if frame.healthBar and db.health then
+            -- Update color
+            if db.health.color then
+                frame.healthBar:SetStatusBarColor(unpack(db.health.color))
+            end
+            -- Update background color  
+            if db.health.bgColor and frame.healthBar.bg then
+                frame.healthBar.bg:SetVertexColor(unpack(db.health.bgColor))
+            end
+            -- Update texture
+            if db.health.texture then
+                frame.healthBar:SetStatusBarTexture(LSM:Fetch("statusbar", db.health.texture))
+            end
+            -- Update text font properties (if text string exists)
+            if frame.healthBar.text and db.health.font then
+                local font = LSM:Fetch("font", db.health.font)
+                frame.healthBar.text:SetFont(font, db.health.fontSize or 12, db.health.fontOutline or "OUTLINE")
+                if db.health.fontColor then
+                    frame.healthBar.text:SetTextColor(unpack(db.health.fontColor))
+                end
+            end
+        end
+        
+        -- Update power bar properties
+        if frame.powerBar and db.power then
+            if db.power.color then
+                frame.powerBar:SetStatusBarColor(unpack(db.power.color))
+            end
+            if db.power.bgColor and frame.powerBar.bg then
+                frame.powerBar.bg:SetVertexColor(unpack(db.power.bgColor))
+            end
+            if db.power.texture then
+                frame.powerBar:SetStatusBarTexture(LSM:Fetch("statusbar", db.power.texture))
+            end
+            if frame.powerBar.text and db.power.font then
+                local font = LSM:Fetch("font", db.power.font)
+                frame.powerBar.text:SetFont(font, db.power.fontSize or 12, db.power.fontOutline or "OUTLINE")
+                if db.power.fontColor then
+                    frame.powerBar.text:SetTextColor(unpack(db.power.fontColor))
+                end
+            end
+        end
+        
+        -- Update info bar properties
+        if frame.infoBar and db.info then
+            if db.info.color then
+                frame.infoBar:SetStatusBarColor(unpack(db.info.color))
+            end
+            if db.info.bgColor and frame.infoBar.bg then
+                frame.infoBar.bg:SetVertexColor(unpack(db.info.bgColor))
+            end
+            if db.info.texture then
+                frame.infoBar:SetStatusBarTexture(LSM:Fetch("statusbar", db.info.texture))
+            end
+            if frame.infoBar.text and db.info.font then
+                local font = LSM:Fetch("font", db.info.font)
+                frame.infoBar.text:SetFont(font, db.info.fontSize or 10, db.info.fontOutline or "OUTLINE")
+                if db.info.fontColor then
+                    frame.infoBar.text:SetTextColor(unpack(db.info.fontColor))
+                end
+            end
+        end
+        
+        -- Update castbar properties (target frame only)
+        if frame.castbar and db.castbar then
+            -- Update size (when changed via options, we recreate - this is just defensive)
+            if db.castbar.width and db.castbar.height then
+                frame.castbar:SetSize(db.castbar.width, db.castbar.height)
+            end
+            -- Update colors
+            if db.castbar.backgroundColor then
+                frame.castbar:SetBackdropColor(unpack(db.castbar.backgroundColor))
+            end
+            if db.castbar.borderColor then
+                frame.castbar:SetBackdropBorderColor(unpack(db.castbar.borderColor))
+            end
+            -- Update texture
+            if db.castbar.texture and frame.castbar.statusBar then
+                frame.castbar.statusBar:SetStatusBarTexture(LSM:Fetch("statusbar", db.castbar.texture))
+            end
+            -- Update font
+            if db.castbar.font then
+                local font = LSM:Fetch("font", db.castbar.font)
+                if frame.castbar.spellName then
+                    frame.castbar.spellName:SetFont(font, db.castbar.fontSize or 12, db.castbar.fontOutline or "OUTLINE")
+                end
+                if frame.castbar.castTime then
+                    frame.castbar.castTime:SetFont(font, db.castbar.fontSize or 12, db.castbar.fontOutline or "OUTLINE")
+                end
+            end
+            -- Update icon visibility
+            if frame.castbar.icon then
+                if db.castbar.showIcon then
+                    frame.castbar.icon:Show()
+                else
+                    frame.castbar.icon:Hide()
+                end
+            end
+            -- Update text visibility
+            if frame.castbar.spellName then
+                if db.castbar.showSpellName then
+                    frame.castbar.spellName:Show()
+                else
+                    frame.castbar.spellName:Hide()
+                end
+            end
+            if frame.castbar.castTime then
+                if db.castbar.showCastTime then
+                    frame.castbar.castTime:Show()
+                else
+                    frame.castbar.castTime:Hide()
+                end
+            end
+        end
+        
+        -- Force a visual update
+        if self.UpdateUnitFrame then
+            self:UpdateUnitFrame(frameKey, unit)
+        end
+    end
+    
     local result = {
         type = "group",
         name = frameName,
@@ -1252,7 +1382,26 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                     return  -- Value unchanged, skip update
                 end
                 db.castbar[property] = value
-                update()
+                
+                -- SMART UPDATE: For Target frame, detect structural vs cosmetic changes
+                if frameKey == "target" then
+                    local structuralProperties = {
+                        ["enabled"] = true,
+                        ["width"] = true,
+                        ["height"] = true,
+                    }
+                    
+                    if structuralProperties[property] then
+                        -- Structural change: recreate frame
+                        update()
+                    else
+                        -- Cosmetic change: update properties only
+                        updateProperties()
+                    end
+                else
+                    -- Other frames don't have castbar, but be defensive
+                    update()
+                end
             end
         end
         
@@ -1265,7 +1414,13 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                     return  -- Color unchanged, skip update
                 end
                 db.castbar[property] = {r, g, b, a}
-                update()
+                
+                -- SMART UPDATE: Colors are always cosmetic changes
+                if frameKey == "target" then
+                    updateProperties()
+                else
+                    update()
+                end
             end
         end
         
@@ -1456,7 +1611,28 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
                 return  -- Value unchanged, skip update
             end
             db[barType][property] = value
-            update()
+            
+            -- SMART UPDATE: For Target frame, detect structural vs cosmetic changes
+            if frameKey == "target" then
+                local structuralProperties = {
+                    ["enabled"] = true,
+                    ["width"] = true,
+                    ["height"] = true,
+                    ["attachTo"] = true,  -- Changing attachment affects layout
+                }
+                
+                if structuralProperties[property] then
+                    -- Structural change: recreate frame
+                    update()
+                else
+                    -- Cosmetic change: update properties only
+                    -- (includes: texture, font, fontSize, fontOutline, classColor, textLeft, textCenter, textRight, etc.)
+                    updateProperties()
+                end
+            else
+                -- Other frames: use existing behavior (always recreate)
+                update()
+            end
         end
     end
     
@@ -1470,7 +1646,13 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
                 return  -- Color unchanged, skip update
             end
             db[barType][property] = {r, g, b, a}
-            update()
+            
+            -- SMART UPDATE: Colors are always cosmetic changes
+            if frameKey == "target" then
+                updateProperties()
+            else
+                update()
+            end
         end
     end
     
@@ -3399,7 +3581,7 @@ end
                         local fontSize = h.fontSize or 12
                         local fontOutline = h.fontOutline or "OUTLINE"
                         local color
-                        if h.fontClassColor then
+                        if h.fontClassColor and UnitIsPlayer(unit) then
                             local _, classToken = UnitClass(unit)
                             if classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken] then
                                 local classColorValue = RAID_CLASS_COLORS[classToken]
@@ -3446,7 +3628,7 @@ end
 
                     -- Set health bar color: class color if enabled, else hostility color, else custom/static color (no gradient, no arithmetic)
                     local colorSet = false
-                    if h.classColor then
+                    if h.classColor and UnitIsPlayer(unit) then
                         local _, classToken = UnitClass(unit)
                         if classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken] then
                             local classColorValue = RAID_CLASS_COLORS[classToken]
@@ -3497,7 +3679,7 @@ end
                         frame.powerBar:SetMinMaxValues(0, maxpp)
                         frame.powerBar:SetValue(curpp)
                         frame.powerBar.text:SetFont(LSM:Fetch("font", p.font), p.fontSize, p.fontOutline)
-                        if p.fontClassColor then
+                        if p.fontClassColor and UnitIsPlayer(unit) then
                             local _, classToken = UnitClass(unit)
                             if classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken] then
                                 local classColorValue = RAID_CLASS_COLORS[classToken]
@@ -3512,7 +3694,7 @@ end
                         local powerColor = p.color
                         local useClassColor = p.classColor
                         local safePowerColor
-                        if useClassColor then
+                        if useClassColor and UnitIsPlayer(unit) then
                             local _, classToken = UnitClass(unit)
                             if classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken] then
                                 local classColorValue = RAID_CLASS_COLORS[classToken]
@@ -3551,7 +3733,7 @@ end
                         local fontSize = p.fontSize or 12
                         local fontOutline = p.fontOutline or "OUTLINE"
                         local color
-                        if p.fontClassColor then
+                        if p.fontClassColor and UnitIsPlayer(unit) then
                             local _, classToken = UnitClass(unit)
                             if classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken] then
                                 local classColorValue = RAID_CLASS_COLORS[classToken]
