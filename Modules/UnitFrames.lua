@@ -1200,6 +1200,209 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
         result.args["info_" .. key] = option
     end
     
+    -- Add Castbar options (Target frame only)
+    if frameKey == "target" then
+        local castbarHeader = {
+            type = "header",
+            name = "Castbar",
+            order = 4.0,
+        }
+        result.args.castbarHeader = castbarHeader
+        
+        -- Helper to create castbar set handlers
+        local function makeCastbarSetHandler(property)
+            return function(_, value)
+                local db = getDB()
+                if not db.castbar then db.castbar = {} end
+                if db.castbar[property] == value then
+                    return  -- Value unchanged, skip update
+                end
+                db.castbar[property] = value
+                update()
+            end
+        end
+        
+        local function makeCastbarColorSetHandler(property)
+            return function(_, r, g, b, a)
+                local db = getDB()
+                if not db.castbar then db.castbar = {} end
+                local oldColor = db.castbar[property]
+                if oldColor and oldColor[1] == r and oldColor[2] == g and oldColor[3] == b and oldColor[4] == a then
+                    return  -- Color unchanged, skip update
+                end
+                db.castbar[property] = {r, g, b, a}
+                update()
+            end
+        end
+        
+        result.args.castbar_enabled = {
+            type = "toggle",
+            name = "Show Castbar",
+            desc = "Display target's casting bar below the target frame.",
+            order = 4.01,
+            get = function() local db = getDB(); return db.castbar and db.castbar.enabled end,
+            set = makeCastbarSetHandler("enabled"),
+        }
+        
+        result.args.castbar_width = {
+            type = "range",
+            name = "Width",
+            min = 100, max = 400, step = 1,
+            order = 4.02,
+            get = function() local db = getDB(); return db.castbar and db.castbar.width or 220 end,
+            set = makeCastbarSetHandler("width"),
+        }
+        
+        result.args.castbar_height = {
+            type = "range",
+            name = "Height",
+            min = 10, max = 40, step = 1,
+            order = 4.03,
+            get = function() local db = getDB(); return db.castbar and db.castbar.height or 20 end,
+            set = makeCastbarSetHandler("height"),
+        }
+        
+        result.args.castbar_showIcon = {
+            type = "toggle",
+            name = "Show Spell Icon",
+            order = 4.04,
+            get = function() local db = getDB(); return db.castbar and db.castbar.showIcon end,
+            set = makeCastbarSetHandler("showIcon"),
+        }
+        
+        result.args.castbar_iconPosition = {
+            type = "select",
+            name = "Icon Position",
+            values = { LEFT = "Left", RIGHT = "Right" },
+            order = 4.05,
+            get = function() local db = getDB(); return db.castbar and db.castbar.iconPosition or "LEFT" end,
+            set = makeCastbarSetHandler("iconPosition"),
+        }
+        
+        result.args.castbar_showSpellName = {
+            type = "toggle",
+            name = "Show Spell Name",
+            order = 4.06,
+            get = function() local db = getDB(); return db.castbar and db.castbar.showSpellName end,
+            set = makeCastbarSetHandler("showSpellName"),
+        }
+        
+        result.args.castbar_showCastTime = {
+            type = "toggle",
+            name = "Show Cast Time",
+            order = 4.07,
+            get = function() local db = getDB(); return db.castbar and db.castbar.showCastTime end,
+            set = makeCastbarSetHandler("showCastTime"),
+        }
+        
+        result.args.castbar_font = {
+            type = "select",
+            dialogControl = "LSM30_Font",
+            name = "Font",
+            values = AceGUIWidgetLSMlists.font,
+            order = 4.08,
+            get = function() local db = getDB(); return db.castbar and db.castbar.font or "Friz Quadrata TT" end,
+            set = makeCastbarSetHandler("font"),
+        }
+        
+        result.args.castbar_fontSize = {
+            type = "range",
+            name = "Font Size",
+            min = 8, max = 24, step = 1,
+            order = 4.09,
+            get = function() local db = getDB(); return db.castbar and db.castbar.fontSize or 12 end,
+            set = makeCastbarSetHandler("fontSize"),
+        }
+        
+        result.args.castbar_texture = {
+            type = "select",
+            dialogControl = "LSM30_Statusbar",
+            name = "Texture",
+            values = AceGUIWidgetLSMlists.statusbar,
+            order = 4.10,
+            get = function() local db = getDB(); return db.castbar and db.castbar.texture or "Flat" end,
+            set = makeCastbarSetHandler("texture"),
+        }
+        
+        result.args.castbar_castingColor = {
+            type = "color",
+            name = "Casting Color",
+            hasAlpha = true,
+            order = 4.11,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.castingColor or {0.9, 0.8, 0.3, 1}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("castingColor"),
+        }
+        
+        result.args.castbar_channelingColor = {
+            type = "color",
+            name = "Channeling Color",
+            hasAlpha = true,
+            order = 4.12,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.channelingColor or {0.5, 0.3, 0.9, 1}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("channelingColor"),
+        }
+        
+        result.args.castbar_notInterruptibleColor = {
+            type = "color",
+            name = "Not Interruptible Color",
+            hasAlpha = true,
+            order = 4.13,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.notInterruptibleColor or {0.7, 0.7, 0.7, 1}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("notInterruptibleColor"),
+        }
+        
+        result.args.castbar_failedColor = {
+            type = "color",
+            name = "Failed/Interrupted Color",
+            hasAlpha = true,
+            order = 4.14,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.failedColor or {1.0, 0.2, 0.2, 1.0}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("failedColor"),
+        }
+        
+        result.args.castbar_backgroundColor = {
+            type = "color",
+            name = "Background Color",
+            hasAlpha = true,
+            order = 4.15,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.backgroundColor or {0, 0, 0, 0.5}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("backgroundColor"),
+        }
+        
+        result.args.castbar_borderColor = {
+            type = "color",
+            name = "Border Color",
+            hasAlpha = true,
+            order = 4.16,
+            get = function() 
+                local db = getDB()
+                local c = db.castbar and db.castbar.borderColor or {0, 0, 0, 1}
+                return c[1], c[2], c[3], c[4]
+            end,
+            set = makeCastbarColorSetHandler("borderColor"),
+        }
+    end
+    
     return result
 end
 
@@ -1826,6 +2029,237 @@ end
         end
     end
     
+    -- =================================================================
+    -- CASTBAR EVENT HANDLERS (Target Castbar)
+    -- =================================================================
+    
+    function UnitFrames:UNIT_SPELLCAST_START(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        local spell, _, texture, startTime, endTime, _, _, notInterruptible, spellID = UnitCastingInfo(unit)
+        if not spell then return end
+        
+        castbar.value = (GetTime() - (startTime / 1000))
+        castbar.maxValue = (endTime - startTime) / 1000
+        castbar.casting = true
+        castbar.channeling = nil
+        castbar.notInterruptible = notInterruptible
+        
+        castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+        castbar.statusBar:SetValue(castbar.value)
+        
+        -- Set color
+        if notInterruptible then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            if castbar.shield then castbar.shield:Show() end
+        else
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+            if castbar.shield then castbar.shield:Hide() end
+        end
+        
+        -- Set icon
+        if castbar.icon then
+            castbar.icon.texture:SetTexture(texture)
+        end
+        
+        -- Set spell name
+        if castbar.spellName then
+            castbar.spellName:SetText(spell)
+        end
+        
+        castbar:Show()
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_STOP(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        if castbar.casting then
+            castbar:Hide()
+            castbar.casting = nil
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_FAILED(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        if castbar.casting then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.failedColor))
+            castbar.casting = nil
+            
+            -- Hide after brief moment
+            C_Timer.After(0.3, function()
+                if not castbar.casting and not castbar.channeling then
+                    castbar:Hide()
+                end
+            end)
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_INTERRUPTED(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        if castbar.casting then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.failedColor))
+            castbar.casting = nil
+            
+            -- Hide after brief moment
+            C_Timer.After(0.3, function()
+                if not castbar.casting and not castbar.channeling then
+                    castbar:Hide()
+                end
+            end)
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_DELAYED(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        
+        if castbar.casting then
+            local spell, _, texture, startTime, endTime = UnitCastingInfo(unit)
+            if spell then
+                castbar.value = (GetTime() - (startTime / 1000))
+                castbar.maxValue = (endTime - startTime) / 1000
+                castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+                castbar.statusBar:SetValue(castbar.value)
+            end
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_CHANNEL_START(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        local spell, _, texture, startTime, endTime, _, notInterruptible, spellID = UnitChannelInfo(unit)
+        if not spell then return end
+        
+        castbar.value = (endTime - startTime) / 1000
+        castbar.maxValue = castbar.value
+        castbar.casting = nil
+        castbar.channeling = true
+        castbar.notInterruptible = notInterruptible
+        
+        castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+        castbar.statusBar:SetValue(castbar.value)
+        
+        -- Set color
+        if notInterruptible then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            if castbar.shield then castbar.shield:Show() end
+        else
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+            if castbar.shield then castbar.shield:Hide() end
+        end
+        
+        -- Set icon
+        if castbar.icon then
+            castbar.icon.texture:SetTexture(texture)
+        end
+        
+        -- Set spell name
+        if castbar.spellName then
+            castbar.spellName:SetText(spell)
+        end
+        
+        castbar:Show()
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_CHANNEL_STOP(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        if castbar.channeling then
+            castbar:Hide()
+            castbar.channeling = nil
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_CHANNEL_UPDATE(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        
+        if castbar.channeling then
+            local spell, _, texture, startTime, endTime = UnitChannelInfo(unit)
+            if spell then
+                castbar.value = (endTime - startTime) / 1000
+                castbar.maxValue = castbar.value
+                castbar.statusBar:SetMinMaxValues(0, castbar.maxValue)
+                castbar.statusBar:SetValue(castbar.value)
+            end
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_INTERRUPTIBLE(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        if castbar.casting then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
+            if castbar.shield then castbar.shield:Hide() end
+        elseif castbar.channeling then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.channelingColor))
+            if castbar.shield then castbar.shield:Hide() end
+        end
+    end
+    
+    function UnitFrames:UNIT_SPELLCAST_NOT_INTERRUPTIBLE(event, unit)
+        if unit ~= "target" then return end
+        
+        local frame = _G["AbstractUI_TargetFrame"]
+        if not frame or not frame.castbar then return end
+        
+        local castbar = frame.castbar
+        local castbarDB = self.db.profile.target.castbar
+        
+        if castbar.casting or castbar.channeling then
+            castbar.statusBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
+            if castbar.shield then castbar.shield:Show() end
+        end
+    end
+    
     local defaults = {
         profile = {
             enabled = true,
@@ -1910,6 +2344,25 @@ end
                     textCenter = "[name] [level] [class]",
                     textRight = nil,
                     texture = "Flat"
+                },
+                castbar = {
+                    enabled = true,
+                    width = 220,
+                    height = 20,
+                    showIcon = true,
+                    iconPosition = "LEFT", -- LEFT or RIGHT
+                    showSpellName = true,
+                    showCastTime = true,
+                    font = "Friz Quadrata TT",
+                    fontSize = 12,
+                    fontOutline = "OUTLINE",
+                    texture = "Flat",
+                    castingColor = {0.9, 0.8, 0.3, 1}, -- Yellow for target casts
+                    channelingColor = {0.5, 0.3, 0.9, 1}, -- Purple for channeling
+                    notInterruptibleColor = {0.7, 0.7, 0.7, 1}, -- Gray
+                    failedColor = {1.0, 0.2, 0.2, 1.0}, -- Red
+                    backgroundColor = {0, 0, 0, 0.5},
+                    borderColor = {0, 0, 0, 1},
                 }
             },
             targettarget = {
@@ -2403,6 +2856,136 @@ end
                         end
                         frame.infoBar = infoBar
                         barRefs.info = infoBar
+                    end
+
+                    -- Create castbar for target frame if enabled
+                    if key == "TargetFrame" and frameDB.castbar and frameDB.castbar.enabled then
+                        local castbarDB = frameDB.castbar
+                        local LSM = LibStub:GetLibrary("LibSharedMedia-3.0")
+                        
+                        -- Create castbar frame
+                        local castbar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+                        castbar:SetSize(castbarDB.width, castbarDB.height)
+                        
+                        -- Position below the main frame with spacing
+                        castbar:SetPoint("TOP", frame, "BOTTOM", 0, -spacing)
+                        
+                        castbar:SetBackdrop({
+                            bgFile = "Interface\\Buttons\\WHITE8X8",
+                            edgeFile = "Interface\\Buttons\\WHITE8X8",
+                            tile = false,
+                            edgeSize = 1,
+                            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                        })
+                        castbar:SetBackdropColor(unpack(castbarDB.backgroundColor))
+                        castbar:SetBackdropBorderColor(unpack(castbarDB.borderColor))
+                        castbar:Hide() -- Hidden until casting
+                        
+                        -- Status bar
+                        local statusBar = CreateFrame("StatusBar", nil, castbar)
+                        statusBar:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
+                        statusBar:SetPoint("BOTTOMRIGHT", castbar, "BOTTOMRIGHT", -1, 1)
+                        statusBar:SetStatusBarTexture(LSM:Fetch("statusbar", castbarDB.texture))
+                        statusBar:SetMinMaxValues(0, 1)
+                        statusBar:SetValue(0)
+                        castbar.statusBar = statusBar
+                        
+                        -- Shield icon for non-interruptible casts
+                        local shield = castbar:CreateTexture(nil, "OVERLAY")
+                        shield:SetTexture("Interface\\CastingBar\\UI-CastingBar-Arena-Shield")
+                        shield:SetPoint("CENTER", statusBar, "LEFT", -8, 0)
+                        shield:SetSize(castbarDB.height + 10, castbarDB.height + 10)
+                        shield:Hide()
+                        castbar.shield = shield
+                        
+                        -- Spell icon
+                        if castbarDB.showIcon then
+                            local iconFrame = CreateFrame("Frame", nil, castbar, "BackdropTemplate")
+                            iconFrame:SetSize(castbarDB.height, castbarDB.height)
+                            
+                            if castbarDB.iconPosition == "LEFT" then
+                                iconFrame:SetPoint("RIGHT", castbar, "LEFT", -4, 0)
+                            else
+                                iconFrame:SetPoint("LEFT", castbar, "RIGHT", 4, 0)
+                            end
+                            
+                            iconFrame:SetBackdrop({
+                                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                                edgeSize = 1,
+                            })
+                            iconFrame:SetBackdropBorderColor(0, 0, 0, 1)
+                            
+                            local icon = iconFrame:CreateTexture(nil, "ARTWORK")
+                            icon:SetAllPoints()
+                            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            iconFrame.texture = icon
+                            
+                            castbar.icon = iconFrame
+                        end
+                        
+                        -- Spell name text
+                        if castbarDB.showSpellName then
+                            local spellName = statusBar:CreateFontString(nil, "OVERLAY")
+                            spellName:SetPoint("LEFT", statusBar, "LEFT", 4, 0)
+                            spellName:SetWidth(castbarDB.width - 25)
+                            local font = LSM:Fetch("font", castbarDB.font)
+                            spellName:SetFont(font, castbarDB.fontSize, castbarDB.fontOutline)
+                            spellName:SetTextColor(1, 1, 1, 1)
+                            spellName:SetShadowOffset(1, -1)
+                            spellName:SetShadowColor(0, 0, 0, 1)
+                            spellName:SetJustifyH("LEFT")
+                            spellName:SetWordWrap(false)
+                            castbar.spellName = spellName
+                        end
+                        
+                        -- Cast time text
+                        if castbarDB.showCastTime then
+                            local castTime = statusBar:CreateFontString(nil, "OVERLAY")
+                            castTime:SetPoint("LEFT", statusBar, "CENTER", 4, 0)
+                            castTime:SetPoint("RIGHT", statusBar, "RIGHT", -4, 0)
+                            local font = LSM:Fetch("font", castbarDB.font)
+                            castTime:SetFont(font, castbarDB.fontSize, castbarDB.fontOutline)
+                            castTime:SetTextColor(1, 1, 1, 1)
+                            castTime:SetShadowOffset(1, -1)
+                            castTime:SetShadowColor(0, 0, 0, 1)
+                            castTime:SetJustifyH("RIGHT")
+                            castTime:SetWordWrap(false)
+                            castbar.castTime = castTime
+                        end
+                        
+                        -- OnUpdate handler for castbar animation
+                        castbar:SetScript("OnUpdate", function(self, elapsed)
+                            if not self.casting and not self.channeling then return end
+                            
+                            if self.casting then
+                                self.value = self.value + elapsed
+                                if self.value >= self.maxValue then
+                                    self:Hide()
+                                    self.casting = nil
+                                    return
+                                end
+                                self.statusBar:SetValue(self.value)
+                                
+                                if self.castTime then
+                                    local remaining = self.maxValue - self.value
+                                    self.castTime:SetFormattedText("%.1f", remaining)
+                                end
+                            elseif self.channeling then
+                                self.value = self.value - elapsed
+                                if self.value <= 0 then
+                                    self:Hide()
+                                    self.channeling = nil
+                                    return
+                                end
+                                self.statusBar:SetValue(self.value)
+                                
+                                if self.castTime then
+                                    self.castTime:SetFormattedText("%.1f", self.value)
+                                end
+                            end
+                        end)
+                        
+                        frame.castbar = castbar
                     end
 
                     -- Create status icons
@@ -3261,6 +3844,16 @@ end
                     self:UnregisterEvent("PLAYER_STOPPED_MOVING")
                     self:UnregisterEvent("ENCOUNTER_START")
                     self:UnregisterEvent("ENCOUNTER_END")
+                    self:UnregisterEvent("UNIT_SPELLCAST_START")
+                    self:UnregisterEvent("UNIT_SPELLCAST_STOP")
+                    self:UnregisterEvent("UNIT_SPELLCAST_FAILED")
+                    self:UnregisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+                    self:UnregisterEvent("UNIT_SPELLCAST_DELAYED")
+                    self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+                    self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+                    self:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
+                    self:UnregisterEvent("UNIT_SPELLCAST_INTERRUPTIBLE")
+                    self:UnregisterEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE")
                     
                     -- Now register them cleanly
                     self:RegisterEvent("UNIT_HEALTH")
@@ -3279,6 +3872,16 @@ end
                     self:RegisterEvent("PLAYER_STOPPED_MOVING")
                     self:RegisterEvent("ENCOUNTER_START")
                     self:RegisterEvent("ENCOUNTER_END")
+                    self:RegisterEvent("UNIT_SPELLCAST_START")
+                    self:RegisterEvent("UNIT_SPELLCAST_STOP")
+                    self:RegisterEvent("UNIT_SPELLCAST_FAILED")
+                    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+                    self:RegisterEvent("UNIT_SPELLCAST_DELAYED")
+                    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+                    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+                    self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE")
+                    self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTIBLE")
+                    self:RegisterEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE")
                     self:PLAYER_ENTERING_WORLD()
                 end
                 
