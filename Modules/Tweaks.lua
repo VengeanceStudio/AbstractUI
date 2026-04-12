@@ -135,10 +135,6 @@ function Tweaks:OnDBReady()
     self:RegisterEvent("MERCHANT_CLOSED")
     self:RegisterEvent("ADDON_LOADED")
     
-    if self.db.profile.autoInsertKey then
-        self:RegisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
-    end
-    
     if self.db.profile.autoScreenshot then
         self:RegisterEvent("ACHIEVEMENT_EARNED")
     end
@@ -176,6 +172,11 @@ function Tweaks:OnDBReady()
         C_Timer.After(2, function() 
             self:SetupTalentImportHook()
         end)
+    end
+    
+    -- Setup auto keystone insertion (will hook when Blizzard_ChallengesUI loads)
+    if self.db.profile.autoInsertKey then
+        self:HookKeystoneFrame()
     end
     
     -- Setup delve pin recoloring
@@ -609,34 +610,57 @@ end
 -- AUTO INSERT MYTHIC KEYSTONE
 -- ============================================================================
 
-function Tweaks:CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN()
-    if self.db.profile.autoInsertKey then
-        C_Timer.After(0.1, function()
-            self:AutoInsertKeystone()
+function Tweaks:HookKeystoneFrame()
+    if self.keystoneHooked then return end
+    
+    -- Wait for Blizzard_ChallengesUI to load
+    if not ChallengesKeystoneFrame then
+        -- Hook ADDON_LOADED to catch when it loads
+        local frame = CreateFrame("Frame")
+        frame:RegisterEvent("ADDON_LOADED")
+        frame:SetScript("OnEvent", function(self, event, addon)
+            if addon == "Blizzard_ChallengesUI" and ChallengesKeystoneFrame then
+                Tweaks:HookKeystoneFrame()
+                frame:UnregisterEvent("ADDON_LOADED")
+            end
         end)
+        return
     end
+    
+    -- Hook the frame's Show event
+    self:SecureHookScript(ChallengesKeystoneFrame, "OnShow", function()
+        if self.db.profile.autoInsertKey then
+            C_Timer.After(0.1, function()
+                self:AutoInsertKeystone()
+            end)
+        end
+    end)
+    
+    self.keystoneHooked = true
 end
 
 function Tweaks:AutoInsertKeystone()
-    -- Check if we're in a Mythic+ dungeon or can access the keystone slot
+    -- Check if we can access the keystone slot
     if not C_ChallengeMode or not C_ChallengeMode.SlotKeystone then return end
     
     -- Don't try if a keystone is already slotted
     local hasKeystone = C_ChallengeMode.HasSlottedKeystone()
     if hasKeystone then return end
     
-    -- Search bags for a keystone (Item ID: 180653 for Shadowlands+, 158923 for BFA)
+    -- Use class/subclass instead of hardcoded IDs (works for all expansions)
+    local ReagentClass = Enum.ItemClass.Reagent
+    local KeystoneClass = Enum.ItemReagentSubclass.Keystone
+    
     for bag = 0, NUM_BAG_SLOTS do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
-            if itemInfo then
-                local itemLink = itemInfo.hyperlink
-                if itemLink then
-                    local itemID = C_Item.GetItemInfoInstant(itemLink)
-                    -- Check if it's a Mythic Keystone (180653 = Titan Keystone, 158923 = Mythic Keystone)
-                    if itemID == 180653 or itemID == 158923 then
-                        -- Try to slot the keystone
-                        C_Container.PickupContainerItem(bag, slot)
+            local itemID = C_Container.GetContainerItemID(bag, slot)
+            if itemID then
+                local itemClass, itemSubClass = select(12, C_Item.GetItemInfo(itemID))
+                -- Check if it's a Mythic Keystone by class/subclass
+                if itemClass == ReagentClass and itemSubClass == KeystoneClass then
+                    C_Container.PickupContainerItem(bag, slot)
+                    -- Verify item is on cursor before slotting
+                    if C_Cursor.GetCursorItem() then
                         C_ChallengeMode.SlotKeystone()
                         return
                     end
@@ -1043,9 +1067,7 @@ function Tweaks:GetOptions()
                 set = function(_, v)
                     self.db.profile.autoInsertKey = v
                     if v then
-                        self:RegisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
-                    else
-                        self:UnregisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
+                        self:HookKeystoneFrame()
                     end
                 end,
             },
