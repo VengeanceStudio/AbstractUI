@@ -2271,10 +2271,12 @@ end
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
             castbar.statusBar:Show()
+            castbar.statusBar:SetValue(1)  -- Set to full initially
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
             -- Sync overlay bar animation
             if castbar.overlayBar then
                 castbar.overlayBar:Show()
+                castbar.overlayBar:SetValue(1)  -- Set to full initially
                 castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.ElapsedTime)
             end
         end
@@ -2284,14 +2286,10 @@ end
         
         -- Control grey overlay bar alpha based on interruptibility
         if castbar.overlayBar and notInterruptible ~= nil then
-            castbar.overlayBar:Show()
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
             if overlayTexture and overlayTexture.SetAlphaFromBoolean then
                 -- Alpha 0 for interruptible (yellow shows), alpha 1 for non-interruptible (grey shows)
                 overlayTexture:SetAlphaFromBoolean(notInterruptible)
-            elseif overlayTexture then
-                -- Fallback: manually set alpha if SetAlphaFromBoolean not available
-                overlayTexture:SetAlpha(notInterruptible and 1 or 0)
             end
         end
         
@@ -2416,10 +2414,12 @@ end
         if castDuration then
             -- SetTimerDuration handles the animation internally (Retail API)
             castbar.statusBar:Show()
+            castbar.statusBar:SetValue(1)  -- Set to full initially
             castbar.statusBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
             -- Sync overlay bar animation
             if castbar.overlayBar then
                 castbar.overlayBar:Show()
+                castbar.overlayBar:SetValue(1)  -- Set to full initially
                 castbar.overlayBar:SetTimerDuration(castDuration, nil, Enum.StatusBarTimerDirection.RemainingTime)
             end
         end
@@ -2429,14 +2429,10 @@ end
         
         -- Control grey overlay bar alpha based on interruptibility
         if castbar.overlayBar and notInterruptible ~= nil then
-            castbar.overlayBar:Show()
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
             if overlayTexture and overlayTexture.SetAlphaFromBoolean then
                 -- Alpha 0 for interruptible (blue shows), alpha 1 for non-interruptible (grey shows)
                 overlayTexture:SetAlphaFromBoolean(notInterruptible)
-            elseif overlayTexture then
-                -- Fallback: manually set alpha if SetAlphaFromBoolean not available
-                overlayTexture:SetAlpha(notInterruptible and 1 or 0)
             end
         end
         
