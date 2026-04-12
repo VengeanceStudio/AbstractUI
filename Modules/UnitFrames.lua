@@ -3184,14 +3184,14 @@ end
                         statusBar:SetValue(0)
                         castbar.statusBar = statusBar
                         
-                        -- Non-interruptible overlay bar (grey) - same level as base bar, drawn after it
+                        -- Non-interruptible overlay bar (grey) - ABOVE base bar
                         local overlayBar = CreateFrame("StatusBar", nil, castbar)
                         overlayBar:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
                         overlayBar:SetPoint("BOTTOMRIGHT", castbar, "BOTTOMRIGHT", -1, 1)
                         overlayBar:SetStatusBarTexture(LSM:Fetch("statusbar", castbarDB.texture))
                         overlayBar:SetMinMaxValues(0, 1)
                         overlayBar:SetValue(0)
-                        overlayBar:SetFrameLevel(statusBar:GetFrameLevel())  -- Same level - text OVERLAY layer will be on top
+                        overlayBar:SetFrameLevel(statusBar:GetFrameLevel() + 1)  -- One level higher to draw on top
                         overlayBar:SetStatusBarColor(unpack(castbarDB.notInterruptibleColor))
                         overlayBar:Hide()  -- Start hidden, will be shown during cast events
                         castbar.overlayBar = overlayBar
