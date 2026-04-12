@@ -27,6 +27,10 @@ local defaults = {
         questFrameX = 0,
         questFrameY = 0,
         questFrameCustomPosition = false,
+        groupFinderScale = 1.0,
+        groupFinderX = 0,
+        groupFinderY = 0,
+        groupFinderCustomPosition = false,
         recolorDelvePins = true,
         delvePinColor = { r = 0.2, g = 1.0, b = 0.8, a = 1.0 },
         bountifulDelvePinColor = { r = 1.0, g = 0.84, b = 0.0, a = 1.0 },
@@ -206,13 +210,44 @@ function Tweaks:OnDBReady()
     self:RegisterEvent("QUEST_GREETING")
     self:RegisterEvent("GOSSIP_SHOW")
     
+    -- Hook Group Finder frame for scaling
+    if PVEFrame then
+        self:HookScript(PVEFrame, "OnShow", "ApplyGroupFinderScale")
+    else
+        -- Wait for it to load
+        C_Timer.After(2, function()
+            if PVEFrame then
+                self:HookScript(PVEFrame, "OnShow", "ApplyGroupFinderScale")
+            end
+        end)
+    end
+    
     -- Apply quest frame scaling on load
     self:ApplyQuestFrameScale()
+    
+    -- Apply group finder scaling on load
+    self:ApplyGroupFinderScale()
 end
 
 function Tweaks:UPDATE_INVENTORY_DURABILITY()
     if self.db.profile.hideBagBar then
         self:HideBagBar()
+    end
+end
+
+function Tweaks:ApplyGroupFinderScale()
+    local scale = self.db.profile.groupFinderScale or 1.0
+    local useCustomPos = self.db.profile.groupFinderCustomPosition
+    local x = self.db.profile.groupFinderX
+    local y = self.db.profile.groupFinderY
+    
+    -- Apply to PVEFrame (Group Finder)
+    if PVEFrame then
+        PVEFrame:SetScale(scale)
+        if useCustomPos then
+            PVEFrame:ClearAllPoints()
+            PVEFrame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+        end
     end
 end
 
@@ -1136,11 +1171,62 @@ function Tweaks:GetOptions()
                     self:ApplyQuestFrameScale()
                 end,
             },
+            groupFinderScale = {
+                name = "Group Finder Frame Scale",
+                desc = "Adjust the size of the Group Finder (LFG/LFR) window (1.0 = default, 1.5 = 50% larger)",
+                type = "range",
+                min = 0.5,
+                max = 2.0,
+                step = 0.05,
+                order = 18,
+                set = function(_, v)
+                    self.db.profile.groupFinderScale = v
+                    self:ApplyGroupFinderScale()
+                end,
+            },
+            groupFinderCustomPosition = {
+                name = "Use Custom Group Finder Position",
+                desc = "Enable to set a custom default position for the Group Finder window",
+                type = "toggle",
+                order = 19,
+                set = function(_, v)
+                    self.db.profile.groupFinderCustomPosition = v
+                    self:ApplyGroupFinderScale()
+                end,
+            },
+            groupFinderX = {
+                name = "Group Finder Horizontal Position",
+                desc = "Horizontal offset from center of screen (negative = left, positive = right)",
+                type = "range",
+                min = -1200,
+                max = 1200,
+                step = 1,
+                order = 20,
+                disabled = function() return not self.db.profile.groupFinderCustomPosition end,
+                set = function(_, v)
+                    self.db.profile.groupFinderX = v
+                    self:ApplyGroupFinderScale()
+                end,
+            },
+            groupFinderY = {
+                name = "Group Finder Vertical Position",
+                desc = "Vertical offset from center of screen (negative = down, positive = up)",
+                type = "range",
+                min = -500,
+                max = 500,
+                step = 1,
+                order = 21,
+                disabled = function() return not self.db.profile.groupFinderCustomPosition end,
+                set = function(_, v)
+                    self.db.profile.groupFinderY = v
+                    self:ApplyGroupFinderScale()
+                end,
+            },
             recolorDelvePins = {
                 name = "Recolor Delve Pins",
                 desc = "Makes Delve entrance pins on the world map more visible with a custom color",
                 type = "toggle",
-                order = 18,
+                order = 22,
                 set = function(_, v)
                     self.db.profile.recolorDelvePins = v
                     if v then
@@ -1153,7 +1239,7 @@ function Tweaks:GetOptions()
                 name = "Delve Pin Color",
                 desc = "Color to use for Delve entrance pins on the world map",
                 type = "color",
-                order = 19,
+                order = 23,
                 hasAlpha = false,
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
@@ -1193,7 +1279,7 @@ function Tweaks:GetOptions()
                 name = "Bountiful Delve Pin Color",
                 desc = "Color to use for Bountiful Delve entrance pins on the world map (delves with a weekly bonus reward)",
                 type = "color",
-                order = 19.5,
+                order = 23.5,
                 hasAlpha = false,
                 disabled = function() return not self.db.profile.recolorDelvePins end,
                 get = function()
@@ -1237,7 +1323,7 @@ function Tweaks:GetOptions()
                        "2. Press once to cast your fishing line\n" ..
                        "3. Hover over the fishing bobber and press again to hook the fish",
                 type = "toggle",
-                order = 20,
+                order = 24,
                 set = function(_, v)
                     self.db.profile.oneKeyFishing = v
                     if v then
@@ -1251,7 +1337,7 @@ function Tweaks:GetOptions()
                 name = "Custom Whisper Sound",
                 desc = "Replace the default whisper notification sound with a custom sound",
                 type = "toggle",
-                order = 21,
+                order = 25,
                 set = function(_, v)
                     self.db.profile.customWhisperSound = v
                     if v then
@@ -1270,7 +1356,7 @@ function Tweaks:GetOptions()
                 name = "Whisper Sound",
                 desc = "Select a sound to play when receiving a whisper",
                 type = "select",
-                order = 22,
+                order = 26,
                 hidden = function() return not self.db.profile.customWhisperSound end,
                 values = {
                     default = "Default Whisper (TellMessage)",
@@ -1322,7 +1408,7 @@ function Tweaks:GetOptions()
                 desc = "Enter a custom sound file data ID from wowhead.com/sounds\n\nYou can search for sounds on wowhead, preview them, and copy the ID from the URL.\nExample: wowhead.com/sound=567482 → enter 567482\n\nClick 'Test Sound' after entering.",
                 type = "input",
                 width = "inline",
-                order = 23,
+                order = 27,
                 hidden = function() 
                     return not self.db.profile.customWhisperSound or self.db.profile.whisperSoundPreset ~= "custom"
                 end,
@@ -1342,7 +1428,7 @@ function Tweaks:GetOptions()
                 desc = "Play the currently selected whisper sound",
                 type = "execute",
                 width = "inline",
-                order = 24,
+                order = 28,
                 hidden = function() return not self.db.profile.customWhisperSound end,
                 func = function()
                     if self.db.profile.whisperSoundID then
