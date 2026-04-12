@@ -2284,11 +2284,17 @@ end
         -- Set casting color on base bar
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- TEMP TEST: Always show grey overlay to verify it works
-        if castbar.overlayBar then
+        -- Control grey overlay bar alpha based on interruptibility
+        if castbar.overlayBar and notInterruptible ~= nil then
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
             if overlayTexture then
-                overlayTexture:SetAlpha(1)  -- Force full opacity to test visibility
+                if overlayTexture.SetAlphaFromBoolean then
+                    -- Try Retail API for taint-safe alpha setting
+                    overlayTexture:SetAlphaFromBoolean(notInterruptible)
+                else
+                    -- Fallback: manual alpha (works when not tainted)
+                    overlayTexture:SetAlpha(notInterruptible and 1 or 0)
+                end
             end
         end
         
@@ -2429,9 +2435,14 @@ end
         -- Control grey overlay bar alpha based on interruptibility
         if castbar.overlayBar and notInterruptible ~= nil then
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
-            if overlayTexture and overlayTexture.SetAlphaFromBoolean then
-                -- Alpha 0 for interruptible (blue shows), alpha 1 for non-interruptible (grey shows)
-                overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            if overlayTexture then
+                if overlayTexture.SetAlphaFromBoolean then
+                    -- Try Retail API for taint-safe alpha setting
+                    overlayTexture:SetAlphaFromBoolean(notInterruptible)
+                else
+                    -- Fallback: manual alpha (works when not tainted)
+                    overlayTexture:SetAlpha(notInterruptible and 1 or 0)
+                end
             end
         end
         
