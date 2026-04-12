@@ -461,8 +461,15 @@ local function GetTagValue(tagName, unit)
             end
             
             if ok and pct ~= nil then
-                -- Format to whole number (%.0f handles secret values properly)
-                return string.format("%.0f", pct)
+                -- Try to convert to number first
+                local pctNum = tonumber(pct)
+                if pctNum and type(pctNum) == "number" then
+                    -- Format to whole number
+                    local okFormat, result = pcall(string.format, "%.0f", pctNum)
+                    if okFormat and result then
+                        return result
+                    end
+                end
             end
         end
         
@@ -2087,6 +2094,9 @@ end
         if not self.db or not self.db.profile then
             return
         end
+        
+        -- Set flag for first target after login to use longer delay
+        self.firstTargetAfterLogin = true
         
         -- Only run initialization once, not on every zone change
         if not self.unitFramesInitialized then
@@ -3897,11 +3907,24 @@ end
                                 end
                             end
                         end
+                        
+                        -- Use longer delay for first target after login to ensure data is ready
+                        local delay = (self.firstTargetAfterLogin and 0.2) or 0.05
+                        self.firstTargetAfterLogin = false
+                        
                         -- Delay update slightly to allow unit data to populate
-                        C_Timer.After(0.05, function()
+                        C_Timer.After(delay, function()
                             local hasTarget = pcall(UnitExists, "target")
                             if hasTarget then
                                 self:UpdateUnitFrame("TargetFrame", "target")
+                                -- Force a second update after brief delay to catch any late-loading data
+                                if delay > 0.05 then
+                                    C_Timer.After(0.1, function()
+                                        if UnitExists("target") then
+                                            self:UpdateUnitFrame("TargetFrame", "target")
+                                        end
+                                    end)
+                                end
                             end
                         end)
                     end
