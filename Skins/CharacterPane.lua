@@ -629,8 +629,20 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         info.enchantText:SetText("")
     end
     
-    -- Get gem info
-    -- Try to get socket information by checking each potential socket
+    -- Get gem info and socket info
+    -- First, determine total number of empty sockets from item stats
+    local stats = C_Item.GetItemStats(itemLink)
+    local emptySocketsRemaining = 0
+    
+    if stats then
+        for statKey, statValue in pairs(stats) do
+            if statKey and statKey:match("EMPTY_SOCKET") and statValue then
+                emptySocketsRemaining = emptySocketsRemaining + statValue
+            end
+        end
+    end
+    
+    -- Display gems (filled) and empty socket indicators
     for i = 1, 3 do
         local gemName, gemLink = GetItemGem(itemLink, i)
         if gemLink then
@@ -640,6 +652,7 @@ local function UpdateEquipmentInfo(slotButton, slotID)
                 local gemTexture = C_Item.GetItemIconByID(gemItemID)
                 if gemTexture then
                     info.gems[i]:SetTexture(gemTexture)
+                    info.gems[i]:SetAlpha(1.0)  -- Full opacity for filled gems
                     info.gems[i]:Show()
                 else
                     info.gems[i]:Hide()
@@ -647,7 +660,14 @@ local function UpdateEquipmentInfo(slotButton, slotID)
             else
                 info.gems[i]:Hide()
             end
+        elseif emptySocketsRemaining > 0 then
+            -- No gem at this position, but item has empty sockets - show empty indicator
+            info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic")
+            info.gems[i]:SetAlpha(0.4)  -- Dimmed to indicate it needs a gem
+            info.gems[i]:Show()
+            emptySocketsRemaining = emptySocketsRemaining - 1
         else
+            -- No socket at this position
             info.gems[i]:Hide()
         end
     end
