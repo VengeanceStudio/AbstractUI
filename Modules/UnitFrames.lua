@@ -1390,24 +1390,19 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 end
                 db.castbar[property] = value
                 
-                -- SMART UPDATE: For Target frame, detect structural vs cosmetic changes
-                if frameKey == "target" then
-                    local structuralProperties = {
-                        ["enabled"] = true,
-                        ["width"] = true,
-                        ["height"] = true,
-                    }
-                    
-                    if structuralProperties[property] then
-                        -- Structural change: recreate frame
-                        update()
-                    else
-                        -- Cosmetic change: update properties only
-                        updateProperties()
-                    end
-                else
-                    -- Other frames don't have castbar, but be defensive
+                -- SMART UPDATE: Detect structural vs cosmetic changes for castbar
+                local structuralProperties = {
+                    ["enabled"] = true,
+                    ["width"] = true,
+                    ["height"] = true,
+                }
+                
+                if structuralProperties[property] then
+                    -- Structural change: recreate frame
                     update()
+                else
+                    -- Cosmetic change: update properties only
+                    updateProperties()
                 end
             end
         end
@@ -1422,12 +1417,8 @@ function UnitFrames:GenerateFrameOptions(frameName, frameKey, createFunc, frameG
                 end
                 db.castbar[property] = {r, g, b, a}
                 
-                -- SMART UPDATE: Colors are always cosmetic changes
-                if frameKey == "target" then
-                    updateProperties()
-                else
-                    update()
-                end
+                -- SMART UPDATE: Colors are always cosmetic changes for castbar
+                updateProperties()
             end
         end
         
@@ -1619,26 +1610,21 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             end
             db[barType][property] = value
             
-            -- SMART UPDATE: For Target frame, detect structural vs cosmetic changes
-            if frameKey == "target" then
-                local structuralProperties = {
-                    ["enabled"] = true,
-                    ["width"] = true,
-                    ["height"] = true,
-                    ["attachTo"] = true,  -- Changing attachment affects layout
-                }
-                
-                if structuralProperties[property] then
-                    -- Structural change: recreate frame
-                    update()
-                else
-                    -- Cosmetic change: update properties only
-                    -- (includes: texture, font, fontSize, fontOutline, classColor, textLeft, textCenter, textRight, etc.)
-                    updateProperties()
-                end
-            else
-                -- Other frames: use existing behavior (always recreate)
+            -- SMART UPDATE: Detect structural vs cosmetic changes for all frames
+            local structuralProperties = {
+                ["enabled"] = true,
+                ["width"] = true,
+                ["height"] = true,
+                ["attachTo"] = true,  -- Changing attachment affects layout
+            }
+            
+            if structuralProperties[property] then
+                -- Structural change: recreate frame
                 update()
+            else
+                -- Cosmetic change: update properties only
+                -- (includes: texture, font, fontSize, fontOutline, classColor, textLeft, textCenter, textRight, etc.)
+                updateProperties()
             end
         end
     end
@@ -1654,12 +1640,8 @@ function UnitFrames:GetBarOptions(barType, frameKey, update)
             end
             db[barType][property] = {r, g, b, a}
             
-            -- SMART UPDATE: Colors are always cosmetic changes
-            if frameKey == "target" then
-                updateProperties()
-            else
-                update()
-            end
+            -- SMART UPDATE: Colors are always cosmetic changes for all frames
+            updateProperties()
         end
     end
     

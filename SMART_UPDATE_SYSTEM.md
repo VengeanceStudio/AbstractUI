@@ -7,7 +7,11 @@ The Smart Update System optimizes how AbstractUI handles configuration changes f
 ## Implementation Status
 
 - ✅ **Target Frame**: Fully implemented with smart updates
-- ⏳ **Other Frames**: Still use full recreation (to be migrated later)
+- ✅ **Player Frame**: Fully implemented with smart updates
+- ✅ **Pet Frame**: Fully implemented with smart updates
+- ✅ **Focus Frame**: Fully implemented with smart updates
+- ✅ **TargetTarget Frame**: Fully implemented with smart updates
+- ✅ **Boss Frames**: Fully implemented with smart updates
 
 ## Architecture
 
@@ -223,21 +227,15 @@ Similar logic in `makeCastbarSetHandler()` and `makeCastbarColorSetHandler()`:
 1. Monitor for any edge cases where property updates don't fully apply
 2. Verify no duplicate frames appear during testing
 3. Confirm all cosmetic properties update correctly
+4. Test smart updates on all frame types (Player, Pet, Focus, TargetTarget, Boss)
 
 ### Long Term
-1. **Extend to Other Frames**: Apply smart update system to:
-   - Player frame
-   - Pet frame
-   - Focus frame
-   - Target of Target frame
-   - Boss frames
-
-2. **Further Optimization**: Consider making width/height cosmetic by:
+1. **Further Optimization**: Consider making width/height cosmetic by:
    - Updating bar sizes directly
    - Recalculating positions of dependent bars
    - Only recreating if attachment changes
 
-3. **Event-Driven Updates**: Explore using WoW events more extensively:
+2. **Event-Driven Updates**: Explore using WoW events more extensively:
    - Listen for UNIT_HEALTH, UNIT_POWER_UPDATE already done
    - Add listeners for setting changes to trigger updates
    - Reduce need for explicit update calls
