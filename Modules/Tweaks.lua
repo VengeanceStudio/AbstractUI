@@ -135,6 +135,10 @@ function Tweaks:OnDBReady()
     self:RegisterEvent("MERCHANT_CLOSED")
     self:RegisterEvent("ADDON_LOADED")
     
+    if self.db.profile.autoInsertKey then
+        self:RegisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
+    end
+    
     if self.db.profile.autoScreenshot then
         self:RegisterEvent("ACHIEVEMENT_EARNED")
     end
@@ -277,10 +281,6 @@ end
 function Tweaks:BAG_UPDATE_DELAYED()
     if self.db.profile.hideBagBar then
         self:HideBagBar()
-    end
-    
-    if self.db.profile.autoInsertKey then
-        self:AutoInsertKeystone()
     end
 end
 
@@ -608,6 +608,14 @@ end
 -- ============================================================================
 -- AUTO INSERT MYTHIC KEYSTONE
 -- ============================================================================
+
+function Tweaks:CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN()
+    if self.db.profile.autoInsertKey then
+        C_Timer.After(0.1, function()
+            self:AutoInsertKeystone()
+        end)
+    end
+end
 
 function Tweaks:AutoInsertKeystone()
     -- Check if we're in a Mythic+ dungeon or can access the keystone slot
@@ -1032,6 +1040,14 @@ function Tweaks:GetOptions()
                 desc = "Automatically places Mythic Keystones from your bags into the keystone font",
                 type = "toggle",
                 order = 12,
+                set = function(_, v)
+                    self.db.profile.autoInsertKey = v
+                    if v then
+                        self:RegisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
+                    else
+                        self:UnregisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTACLE_OPEN")
+                    end
+                end,
             },
             importOverwriteEnabled = { 
                 name = "Enable Talent Import Overwrite", 
