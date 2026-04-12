@@ -452,12 +452,14 @@ function CursorTrail:OnDisable()
         updateFrame:SetScript("OnUpdate", nil)
         updateFrame:Hide()
     end
-    -- Hide all cursor effect frames
+    -- Hide all cursor effect frames and clear references for GC
     if highlightFrame then
         highlightFrame:Hide()
+        highlightFrame:ClearAllPoints()
     end
     if ringFrame then
         ringFrame:Hide()
+        ringFrame:ClearAllPoints()
         if ringFrame.outerCastRing then
             ringFrame.outerCastRing:SetVertexColor(0, 0, 0, 0)
         end
@@ -467,9 +469,13 @@ function CursorTrail:OnDisable()
     end
     for _, frame in ipairs(trailFrames) do
         frame:Hide()
+        frame:ClearAllPoints()
+        frame.age = 0
     end
     for _, frame in ipairs(sparkleFrames) do
         frame:Hide()
+        frame:ClearAllPoints()
+        frame.age = 0
     end
 end
 
@@ -704,6 +710,16 @@ function CursorTrail:CreateUpdateFrame()
     local sparkleTimer = 0
     local lastX, lastY = 0, 0
     
+    -- Pre-allocated variables to reduce garbage collection
+    local x, y, scale, cursorMoved
+    local alertR, alertG, alertB
+    local color, r, g, b, a
+    local progress, alpha
+    local currentTime, pulse, pulseAlpha
+    local size, frameSize
+    local shouldShowHighlight, shouldShowTrail, shouldShowSparkles
+    local showRegularRing, showCastRing
+    
     -- Store the update function so we can re-enable it later
     updateFrame.updateScript = function(self, elapsed)
         -- Check general module toggle FIRST - if disabled in general settings, hide everything and exit
@@ -719,18 +735,21 @@ function CursorTrail:CreateUpdateFrame()
             for _, frame in ipairs(sparkleFrames) do frame:Hide() end
             return
         end
-        
+       
         if not CursorTrail.db then 
             return 
         end
         
-        local x, y = GetCursorPosition()
-        local scale = UIParent:GetEffectiveScale()
+        -- Cache frequently accessed values to reduce table lookups
+        local db = CursorTrail.db.profile
+        
+        x, y = GetCursorPosition()
+        scale = UIParent:GetEffectiveScale()
         x = x / scale
         y = y / scale
         
-        -- Check if cursor moved
-        local cursorMoved = (math.abs(x - lastX) > 2 or math.abs(y - lastY) > 2)
+        -- Check if cursor moved (reuse variables)
+        cursorMoved = (math.abs(x - lastX) > 2 or math.abs(y - lastY) > 2)
         if cursorMoved then
             idleTime = 0
             lastX, lastY = x, y
@@ -739,29 +758,32 @@ function CursorTrail:CreateUpdateFrame()
         end
         
         -- Update combat/health alerts
-        if CursorTrail.db.profile.alertsEnabled then
+        if db.alertsEnabled then
             CursorTrail:UpdateAlerts()
         end
         
         -- Determine active color (alert color overrides normal color)
-        local alertR, alertG, alertB = CursorTrail:GetAlertColor()
+        alertR, alertG, alertB = CursorTrail:GetAlertColor()
+        
+        -- Cache current time for pulse calculations
+        currentTime = GetTime()
         
         -- Update highlight
-        if CursorTrail.db.profile.highlightEnabled and highlightFrame then
-            local shouldShowHighlight = true
+        if db.highlightEnabled and highlightFrame then
+            shouldShowHighlight = true
             
-            if CursorTrail.db.profile.hideInCombat and isInCombat then
+            if db.hideInCombat and isInCombat then
                 shouldShowHighlight = false
-            elseif CursorTrail.db.profile.combatOnlyHighlight and not isInCombat then
+            elseif db.combatOnlyHighlight and not isInCombat then
                 shouldShowHighlight = false
             end
             
             if shouldShowHighlight then
                 highlightFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
                 
-                -- Use alert color if available, safely extract components
-                local color = CursorTrail.db.profile.highlightColor
-                local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                -- Use alert color if available, safely extract components (reuse vars)
+                color = db.highlightColor
+                r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                 
                 -- Override with alert colors if available
                 if alertR then r = alertR end
@@ -769,9 +791,9 @@ function CursorTrail:CreateUpdateFrame()
                 if alertB then b = alertB end
                 
                 -- Pulse effect
-                if CursorTrail.db.profile.highlightPulse then
+                if db.highlightPulse then
                     pulseTime = pulseTime + elapsed * 2
-                    local pulseAlpha = (math.sin(pulseTime) + 1) / 2
+                    pulseAlpha = (math.sin(pulseTime) + 1) / 2
                     a = a * (0.5 + pulseAlpha * 0.5)
                 end
                 
@@ -786,25 +808,25 @@ function CursorTrail:CreateUpdateFrame()
         
         -- Update ring
         if ringFrame then
-            local showRegularRing = CursorTrail.db.profile.ringEnabled and not (CursorTrail.db.profile.hideInCombat and isInCombat)
-            local showCastRing = CursorTrail.db.profile.castbarRingEnabled and (isCasting or isChanneling) and not (CursorTrail.db.profile.hideInCombat and isInCombat)
+            showRegularRing = db.ringEnabled and not (db.hideInCombat and isInCombat)
+            showCastRing = db.castbarRingEnabled and (isCasting or isChanneling) and not (db.hideInCombat and isInCombat)
             
             -- Show ringFrame if either regular ring OR cast ring should be visible
             if showRegularRing or showCastRing then
                 -- Position at cursor
                 ringFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
                 
-                -- Size the frame to the larger of the two rings so both fit
-                local frameSize = math.max(
-                    showRegularRing and CursorTrail.db.profile.ringSize or 0,
-                    showCastRing and CursorTrail.db.profile.castbarRingSize or 0
+                -- Size the frame to the larger of the two rings so both fit (reuse vars)
+                frameSize = math.max(
+                    showRegularRing and db.ringSize or 0,
+                    showCastRing and db.castbarRingSize or 0
                 )
                 
                 -- Apply pulse to frame size if regular ring has pulse enabled
-                if showRegularRing and CursorTrail.db.profile.ringPulse then
-                    local pulse = (math.sin(GetTime() * 3) + 1) / 2
-                    local regularRingSize = CursorTrail.db.profile.ringSize * (0.9 + pulse * 0.2)
-                    frameSize = math.max(frameSize, regularRingSize)
+                if showRegularRing and db.ringPulse then
+                    pulse = (math.sin(currentTime * 3) + 1) / 2
+                    size = db.ringSize * (0.9 + pulse * 0.2)
+                    frameSize = math.max(frameSize, size)
                 end
                 
                 ringFrame:SetSize(frameSize, frameSize)
@@ -812,8 +834,8 @@ function CursorTrail:CreateUpdateFrame()
                 
                 -- Update regular ring
                 if showRegularRing then
-                    local color = CursorTrail.db.profile.ringColor
-                    local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                    color = db.ringColor
+                    r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                     
                     -- Override with alert colors if available
                     if alertR then r = alertR end
@@ -821,16 +843,16 @@ function CursorTrail:CreateUpdateFrame()
                     if alertB then b = alertB end
                     
                     -- Size the regular ring texture
-                    local size = CursorTrail.db.profile.ringSize
-                    if CursorTrail.db.profile.ringPulse then
-                        local pulse = (math.sin(GetTime() * 3) + 1) / 2
+                    size = db.ringSize
+                    if db.ringPulse then
+                        pulse = (math.sin(currentTime * 3) + 1) / 2
                         size = size * (0.9 + pulse * 0.2)
                     end
                     ringFrame.texture:SetSize(size, size)
                     ringFrame.texture:SetVertexColor(r, g, b, a)
                     
                     -- Update GCD cooldown
-                    if CursorTrail.db.profile.ringShowGCD then
+                    if db.ringShowGCD then
                         CursorTrail:UpdateGCD()
                     end
                 else
@@ -841,19 +863,19 @@ function CursorTrail:CreateUpdateFrame()
                 -- Update cast cooldown
                 if showCastRing and ringFrame.castCooldown then
                     -- The cooldown swipe (with SetReverse=true) will be the cast ring animation
-                    local color = CursorTrail.db.profile.castbarRingColor
+                    color = db.castbarRingColor
                     if not color or type(color) ~= "table" then
                         color = { r = 0.2, g = 0.8, b = 1.0, a = 0.8 }
                     end
                     
-                    -- Handle color components that might be tables or numbers
-                    local r = (type(color.r) == "table" and color.r[1]) or color.r or 0.2
-                    local g = (type(color.g) == "table" and color.g[1]) or color.g or 0.8
-                    local b = (type(color.b) == "table" and color.b[1]) or color.b or 1.0
-                    local a = (type(color.a) == "table" and color.a[1]) or color.a or 0.8
+                    -- Handle color components that might be tables or numbers (reuse vars)
+                    r = (type(color.r) == "table" and color.r[1]) or color.r or 0.2
+                    g = (type(color.g) == "table" and color.g[1]) or color.g or 0.8
+                    b = (type(color.b) == "table" and color.b[1]) or color.b or 1.0
+                    a = (type(color.a) == "table" and color.a[1]) or color.a or 0.8
                     
                     -- Set size to match the configured cast ring size
-                    local size = CursorTrail.db.profile.castbarRingSize
+                    size = db.castbarRingSize
                     ringFrame.castCooldown:SetSize(size, size)
                     
                     if ringFrame.castCooldown.SetSwipeColor then
@@ -872,13 +894,13 @@ function CursorTrail:CreateUpdateFrame()
         end
         
         -- Update trail
-        if CursorTrail.db.profile.trailEnabled then
-            local shouldShowTrail = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+        if db.trailEnabled then
+            shouldShowTrail = not (db.hideInCombat and isInCombat)
             
             if shouldShowTrail and cursorMoved then
                 frameCount = frameCount + 1
                 
-                if frameCount >= CursorTrail.db.profile.trailSpacing then
+                if frameCount >= db.trailSpacing then
                     frameCount = 0
                     CursorTrail:AddTrailParticle(x, y, alertR, alertG, alertB)
                 end
@@ -889,24 +911,25 @@ function CursorTrail:CreateUpdateFrame()
                 if frame:IsShown() then
                     frame.age = frame.age + elapsed
                     
-                    if frame.age >= frame.maxAge then
+                   if frame.age >= frame.maxAge then
                         frame:Hide()
+                        frame:ClearAllPoints() -- Help GC
+                        frame.age = 0
                     else
-                        local progress = frame.age / frame.maxAge
-                        local alpha = (1 - progress)
+                        progress = frame.age / frame.maxAge
+                        alpha = (1 - progress)
                         
-                        -- Apply style-specific coloring
-                        local r, g, b
-                        if CursorTrail.db.profile.trailStyle == "rainbow" then
+                        -- Apply style-specific coloring (reuse r, g, b vars)
+                        if db.trailStyle == "rainbow" then
                             rainbowPhase = rainbowPhase + elapsed * 0.5
                             local hue = (rainbowPhase + frame.index * 0.05) % 1
                             r, g, b = CursorTrail:HSVtoRGB(hue, 1, 1)
-                        elseif CursorTrail.db.profile.trailStyle == "comet" then
-                            local color = CursorTrail.db.profile.trailColor
+                        elseif db.trailStyle == "comet" then
+                            color = db.trailColor
                             local cr, cg, cb = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                             r, g, b = cr * (1 + progress), cg * (1 + progress), cb
                         else -- classic
-                            local color = CursorTrail.db.profile.trailColor
+                            color = db.trailColor
                             r, g, b = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                             
                             -- Override with alert colors if available
@@ -915,7 +938,7 @@ function CursorTrail:CreateUpdateFrame()
                             if alertB then b = alertB end
                         end
                         
-                        local _, _, _, colorA = CursorTrail:GetColorComponents(CursorTrail.db.profile.trailColor, 1, 1, 1, 0.8)
+                        local _, _, _, colorA = CursorTrail:GetColorComponents(db.trailColor, 1, 1, 1, 0.8)
                         frame.texture:SetVertexColor(r, g, b, alpha * colorA)
                     end
                 end
@@ -927,13 +950,13 @@ function CursorTrail:CreateUpdateFrame()
         end
         
         -- Update sparkles (idle effect)
-        if CursorTrail.db.profile.sparklesEnabled then
-            local shouldShowSparkles = not (CursorTrail.db.profile.hideInCombat and isInCombat)
+        if db.sparklesEnabled then
+            shouldShowSparkles = not (db.hideInCombat and isInCombat)
             
-            if shouldShowSparkles and idleTime >= CursorTrail.db.profile.sparklesIdleDelay then
+            if shouldShowSparkles and idleTime >= db.sparklesIdleDelay then
                 sparkleTimer = sparkleTimer + elapsed
                 
-                if sparkleTimer >= CursorTrail.db.profile.sparklesSpawnRate then
+                if sparkleTimer >= db.sparklesSpawnRate then
                     sparkleTimer = 0
                     CursorTrail:SpawnSparkle(x, y)
                 end
@@ -946,20 +969,24 @@ function CursorTrail:CreateUpdateFrame()
                     
                     if frame.age >= frame.maxAge then
                         frame:Hide()
+                        frame:ClearAllPoints() -- Help GC
+                        frame.age = 0
+                        frame.velocityX = 0
+                        frame.velocityY = 0
                         table.insert(sparkleFreeList, i)
                     else
-                        local progress = frame.age / frame.maxAge
-                        local alpha = (1 - progress)
+                        progress = frame.age / frame.maxAge
+                        alpha = (1 - progress)
                         
-                        -- Move sparkle
+                        -- Move sparkle (reuse vars)
                         local currentX = select(4, frame:GetPoint())
                         local currentY = select(5, frame:GetPoint())
                         frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", 
                             currentX + frame.velocityX * elapsed, 
                             currentY + frame.velocityY * elapsed)
                         
-                        local color = CursorTrail.db.profile.sparklesColor
-                        local r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
+                        color = db.sparklesColor
+                        r, g, b, a = CursorTrail:GetColorComponents(color, 1, 1, 1, 0.8)
                         frame.texture:SetVertexColor(r, g, b, alpha * a)
                     end
                 end
