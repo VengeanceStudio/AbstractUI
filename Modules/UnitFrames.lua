@@ -3909,7 +3909,7 @@ end
                         end
                         
                         -- Use longer delay for first target after login to ensure data is ready
-                        local delay = (self.firstTargetAfterLogin and 0.2) or 0.05
+                        local delay = (self.firstTargetAfterLogin and 0.1) or 0.05
                         self.firstTargetAfterLogin = false
                         
                         -- Delay update slightly to allow unit data to populate
