@@ -2284,12 +2284,11 @@ end
         -- Set casting color on base bar
         castbar.statusBar:SetStatusBarColor(unpack(castbarDB.castingColor))
         
-        -- Control grey overlay bar alpha based on interruptibility
-        if castbar.overlayBar and notInterruptible ~= nil then
+        -- TEMP TEST: Always show grey overlay to verify it works
+        if castbar.overlayBar then
             local overlayTexture = castbar.overlayBar:GetStatusBarTexture()
-            if overlayTexture and overlayTexture.SetAlphaFromBoolean then
-                -- Alpha 0 for interruptible (yellow shows), alpha 1 for non-interruptible (grey shows)
-                overlayTexture:SetAlphaFromBoolean(notInterruptible)
+            if overlayTexture then
+                overlayTexture:SetAlpha(1)  -- Force full opacity to test visibility
             end
         end
         
