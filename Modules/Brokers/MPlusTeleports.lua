@@ -243,39 +243,7 @@ teleportObj = LDB:NewDataObject("AbstractMPlusTeleports", {
     text = "M+ Ports",
     icon = "Interface\\Icons\\Spell_Arcane_Portaldalaran", -- Portal icon
     OnEnter = function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_NONE")
-        SmartAnchor(GameTooltip, self)
-        local r, g, b = GetColor()
-        GameTooltip:AddLine("M+ Teleports", r, g, b)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Midnight Season 1 Dungeons", 1, 1, 1)
-        
-        -- Count learned teleports
-        local learned = 0
-        local total = 0
-        for _, dungeon in ipairs(DUNGEON_TELEPORTS) do
-            if dungeon.spellID > 0 then
-                total = total + 1
-                if IsSpellKnown(dungeon.spellID) then
-                    learned = learned + 1
-                end
-            end
-        end
-        
-        if total > 0 then
-            GameTooltip:AddDoubleLine("Teleports Learned:", string.format("%d / %d", learned, total), 0.7, 0.7, 0.7, 1, 1, 1)
-        end
-        
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("|cff00ff00Click to open teleport menu|r", 0.7, 0.7, 0.7)
-        
-        ApplyTooltipStyle(GameTooltip)
-        GameTooltip:Show()
-    end,
-    OnLeave = function()
-        GameTooltip:Hide()
-    end,
-    OnClick = function(self, button)
+        -- Open the teleport menu on hover
         if not teleportFrame then
             CreateTeleportFrame()
         end
@@ -283,6 +251,13 @@ teleportObj = LDB:NewDataObject("AbstractMPlusTeleports", {
         teleportFrame.owner = self
         SmartAnchor(teleportFrame, self)
         teleportFrame:Show()
+    end,
+    OnLeave = function()
+        -- Keep frame open if mouse moves into it, handled by frame's OnUpdate
+    end,
+    OnClick = function(self, button)
+        -- Optional: can still add click functionality if desired
+        -- For now, just keep the hover behavior
     end,
 })
 
