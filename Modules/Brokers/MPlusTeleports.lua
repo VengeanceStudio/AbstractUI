@@ -53,6 +53,9 @@ local function CreateTeleportFrame()
     scrollFrame:SetScrollChild(scrollChild)
     teleportFrame.scrollChild = scrollChild
     
+    -- Create all teleport buttons NOW (in secure context)
+    UpdateTeleportButtons()
+    
     -- OnShow script to update fonts/colors dynamically
     teleportFrame:SetScript("OnShow", function(self)
         -- Refresh backdrop with current theme
@@ -85,8 +88,13 @@ local function CreateTeleportFrame()
         -- Update subtitle
         self.subtitle:SetFont(bodyFont, bodySize - 2, fontFlags)
         
-        -- Update all dungeon buttons
-        UpdateTeleportButtons()
+        -- Don't recreate buttons - they were created in secure context
+        -- Just update their fonts if needed
+        for _, child in ipairs({self.scrollChild:GetChildren()}) do
+            if child.nameText then
+                child.nameText:SetFont(bodyFont, bodySize, "OUTLINE")
+            end
+        end
     end)
     
     -- Auto-hide on mouse leave
@@ -102,14 +110,9 @@ local function CreateTeleportFrame()
     end)
 end
 
--- Update the teleport button list
+-- Update the teleport button list (called once during frame creation)
 function UpdateTeleportButtons()
     if not teleportFrame or not teleportFrame.scrollChild then return end
-    
-    -- Clear existing buttons
-    for _, child in ipairs({teleportFrame.scrollChild:GetChildren()}) do
-        child:Hide()
-    end
     
     local db = BrokerBar.db.profile
     local fontPath = LSM:Fetch("font", db.font) or "Fonts\\FRIZQT__.ttf"
@@ -183,6 +186,7 @@ function UpdateTeleportButtons()
         nameText:SetPoint("RIGHT", -5, 0)
         nameText:SetJustifyH("LEFT")
         nameText:SetText(dungeon.name)
+        btn.nameText = nameText  -- Store reference for later font updates
         
         if hasSpell then
             nameText:SetTextColor(1, 1, 1)
@@ -206,16 +210,9 @@ function UpdateTeleportButtons()
                 GameTooltip:Hide()
             end)
             
-            -- Debug: Check if button is being clicked
-            btn:SetScript("PreClick", function(self)
-                print("Teleport button clicked: " .. (spellName or "Unknown"))
-                print("Macro text: " .. (self:GetAttribute("macrotext") or "None"))
-            end)
-            
             -- Secure button handles the spell cast automatically
             -- Add PostClick to hide the frame after casting
             btn:SetScript("PostClick", function(self)
-                print("PostClick triggered")
                 -- Hide the popup after casting
                 if teleportFrame then
                     teleportFrame:Hide()
@@ -279,9 +276,9 @@ teleportObj = LDB:NewDataObject("AbstractMPlusTeleports", {
     end,
 })
 
--- Initialize on load
+-- Initialize on load - Create the frame immediately in secure context
 C_Timer.After(1, function()
-    -- Initial setup if needed
+    CreateTeleportFrame()
 end)
 
 -- Slash command to help find spell IDs
