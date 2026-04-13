@@ -228,7 +228,7 @@ function UpdateTeleportButtons()
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                     GameTooltip:AddLine(dungeon.name, 1, 1, 1)
                     GameTooltip:AddLine("Teleport not learned", 0.8, 0.2, 0.2)
-                    GameTooltip:AddLine("Complete this dungeon on Mythic+ difficulty to unlock", 0.7, 0.7, 0.7)
+                    GameTooltip:AddLine("Complete this dungeon on Mythic +10 difficulty to unlock", 0.7, 0.7, 0.7)
                     GameTooltip:Show()
                 end
             end)
