@@ -138,34 +138,63 @@ function UpdateTeleportButtons()
         local btn
         if hasSpell and dungeon.spellID > 0 then
             -- Create secure button that can cast spells
-            btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "SecureActionButtonTemplate, BackdropTemplate")
+            -- Don't mix templates - just use SecureActionButtonTemplate
+            btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "SecureActionButtonTemplate")
             btn:RegisterForClicks("AnyUp")
-            -- Use macro to cast spell by name (more reliable than ID)
-            btn:SetAttribute("type", "macro")
-            btn:SetAttribute("macrotext", "/cast " .. (spellName or dungeon.spellID))
+            btn:SetAttribute("type", "spell")
+            btn:SetAttribute("spell", dungeon.spellID)
         else
             -- Regular button for unlearned spells
-            btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "BackdropTemplate")
+            btn = CreateFrame("Button", nil, teleportFrame.scrollChild)
         end
         
         btn:SetSize(260, 30)
         btn:SetPoint("TOPLEFT", 0, yOffset)
         
-        -- Button backdrop
-        btn:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        })
+        -- Create backdrop manually using textures (not BackdropTemplate)
+        local bg = btn:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints(btn)
+        bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
+        btn.bg = bg
+        
+        -- Create border textures
+        local borderSize = 1
+        local borderColor = {0.3, 0.3, 0.3, 1}
+        
+        local borderTop = btn:CreateTexture(nil, "BORDER")
+        borderTop:SetColorTexture(unpack(borderColor))
+        borderTop:SetPoint("TOPLEFT")
+        borderTop:SetPoint("TOPRIGHT")
+        borderTop:SetHeight(borderSize)
+        
+        local borderBottom = btn:CreateTexture(nil, "BORDER")
+        borderBottom:SetColorTexture(unpack(borderColor))
+        borderBottom:SetPoint("BOTTOMLEFT")
+        borderBottom:SetPoint("BOTTOMRIGHT")
+        borderBottom:SetHeight(borderSize)
+        
+        local borderLeft = btn:CreateTexture(nil, "BORDER")
+        borderLeft:SetColorTexture(unpack(borderColor))
+        borderLeft:SetPoint("TOPLEFT")
+        borderLeft:SetPoint("BOTTOMLEFT")
+        borderLeft:SetWidth(borderSize)
+        
+        local borderRight = btn:CreateTexture(nil, "BORDER")
+        borderRight:SetColorTexture(unpack(borderColor))
+        borderRight:SetPoint("TOPRIGHT")
+        borderRight:SetPoint("BOTTOMRIGHT")
+        borderRight:SetWidth(borderSize)
         
         if hasSpell then
             -- Learned spell - normal appearance
-            btn:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
-            btn:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+            bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
         else
             -- Unlearned spell - grayed out
-            btn:SetBackdropColor(0.05, 0.05, 0.05, 0.6)
-            btn:SetBackdropBorderColor(0.2, 0.2, 0.2, 0.8)
+            bg:SetColorTexture(0.05, 0.05, 0.05, 0.6)
+            borderTop:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+            borderBottom:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+            borderLeft:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+            borderRight:SetColorTexture(0.2, 0.2, 0.2, 0.8)
         end
         
         -- Icon
@@ -197,7 +226,7 @@ function UpdateTeleportButtons()
         -- Button functionality
         if hasSpell and dungeon.spellID > 0 then
             btn:SetScript("OnEnter", function(self)
-                self:SetBackdropColor(0.2, 0.2, 0.3, 0.9)
+                self.bg:SetColorTexture(0.2, 0.2, 0.3, 0.9)
                 
                 -- Show tooltip with spell info
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -206,7 +235,7 @@ function UpdateTeleportButtons()
             end)
             
             btn:SetScript("OnLeave", function(self)
-                self:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+                self.bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
                 GameTooltip:Hide()
             end)
             
