@@ -24,8 +24,9 @@ local DUNGEON_TELEPORTS = {
 local function CreateTeleportFrame()
     if teleportFrame then return end
     
+    -- Size for exactly 8 dungeons: header (45px) + 8 buttons (30px each) + spacing (7 * 1px) + padding (15px top/bottom)
     teleportFrame = CreateFrame("Frame", "AbstractMPlusTeleportsPopup", UIParent, "BackdropTemplate")
-    teleportFrame:SetSize(300, 340)
+    teleportFrame:SetSize(220, 305)
     teleportFrame:SetFrameStrata("DIALOG")
     teleportFrame:EnableMouse(true)
     teleportFrame:Hide()
@@ -38,20 +39,16 @@ local function CreateTeleportFrame()
     
     -- Subtitle
     local subtitleText = teleportFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    subtitleText:SetPoint("TOP", 0, -28)
+    subtitleText:SetPoint("TOP", 0, -26)
     subtitleText:SetText("Midnight Dungeons")
     subtitleText:SetTextColor(0.7, 0.7, 0.7)
     teleportFrame.subtitle = subtitleText
     
-    -- Scroll frame for dungeon list
-    local scrollFrame = CreateFrame("ScrollFrame", nil, teleportFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 10, -55)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -25, 10)
-    
-    local scrollChild = CreateFrame("Frame")
-    scrollChild:SetSize(260, 1)
-    scrollFrame:SetScrollChild(scrollChild)
-    teleportFrame.scrollChild = scrollChild
+    -- Container for dungeon list (no scroll needed for only 8 dungeons)
+    local buttonContainer = CreateFrame("Frame", nil, teleportFrame)
+    buttonContainer:SetPoint("TOPLEFT", 10, -48)
+    buttonContainer:SetPoint("BOTTOMRIGHT", -10, 10)
+    teleportFrame.scrollChild = buttonContainer
     
     -- Create all teleport buttons NOW (in secure context)
     UpdateTeleportButtons()
@@ -118,6 +115,9 @@ function UpdateTeleportButtons()
     local fontPath = "Fonts\\FRIZQT__.ttf"
     local fontSize = 12
     local yOffset = 0
+    local buttonWidth = 200  -- Compact width for sleek appearance
+    local buttonHeight = 30
+    local buttonSpacing = 31  -- 1px gap between buttons
     
     for i, dungeon in ipairs(DUNGEON_TELEPORTS) do
         local hasSpell = false
@@ -148,7 +148,7 @@ function UpdateTeleportButtons()
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild)
         end
         
-        btn:SetSize(260, 30)
+        btn:SetSize(buttonWidth, buttonHeight)
         btn:SetPoint("TOPLEFT", 0, yOffset)
         
         -- Create backdrop manually using textures (not BackdropTemplate)
@@ -274,11 +274,8 @@ function UpdateTeleportButtons()
             btn:SetScript("OnClick", nil)
         end
         
-        yOffset = yOffset - 32
+        yOffset = yOffset - buttonSpacing
     end
-    
-    -- Update scroll child height
-    teleportFrame.scrollChild:SetHeight(math.abs(yOffset))
 end
 
 -- Register the broker
