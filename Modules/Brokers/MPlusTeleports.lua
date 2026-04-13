@@ -126,7 +126,7 @@ function UpdateTeleportButtons()
         
         -- Check if player knows the teleport spell
         if dungeon.spellID and dungeon.spellID > 0 then
-            hasSpell = IsSpellKnown(dungeon.spellID)
+            hasSpell = C_SpellBook.IsSpellInSpellBook(dungeon.spellID)
             local spellInfo = C_Spell.GetSpellInfo(dungeon.spellID)
             if spellInfo then
                 spellName = spellInfo.name or dungeon.name
@@ -140,7 +140,7 @@ function UpdateTeleportButtons()
             -- Create secure button that can cast spells
             -- Don't mix templates - just use SecureActionButtonTemplate
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "SecureActionButtonTemplate")
-            btn:RegisterForClicks("AnyUp")
+            btn:RegisterForClicks("AnyUp", "AnyDown")
             btn:SetAttribute("type", "spell")
             btn:SetAttribute("spell", dungeon.spellID)
         else
@@ -305,9 +305,14 @@ teleportObj = LDB:NewDataObject("AbstractMPlusTeleports", {
     end,
 })
 
--- Initialize on load - Create the frame immediately in secure context
-C_Timer.After(1, function()
-    CreateTeleportFrame()
+-- Initialize on PLAYER_LOGIN to maintain secure context
+local initFrame = CreateFrame("Frame")
+initFrame:RegisterEvent("PLAYER_LOGIN")
+initFrame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_LOGIN" then
+        CreateTeleportFrame()
+        self:UnregisterAllEvents()
+    end
 end)
 
 -- Slash command to help find spell IDs
@@ -320,7 +325,7 @@ SlashCmdList["MPLUSTELEPORT"] = function(msg)
             local status
             if dungeon.spellID == 0 then
                 status = "|cffff0000Unknown|r"
-            elseif IsSpellKnown(dungeon.spellID) then
+            elseif C_SpellBook.IsSpellInSpellBook(dungeon.spellID) then
                 status = "|cff00ff00Learned|r"
             else
                 status = "|cffffff00Not Learned|r"
@@ -341,7 +346,7 @@ SlashCmdList["MPLUSTELEPORT"] = function(msg)
         if spellID then
             local spellInfo = C_Spell.GetSpellInfo(spellID)
             if spellInfo then
-                local known = IsSpellKnown(spellID)
+                local known = C_SpellBook.IsSpellInSpellBook(spellID)
                 print("|cff00ff00Spell ID " .. spellID .. ":|r")
                 print("  Name: " .. (spellInfo.name or "Unknown"))
                 print("  Known: " .. (known and "|cff00ff00Yes|r" or "|cffff0000No|r"))
