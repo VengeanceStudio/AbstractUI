@@ -39,7 +39,7 @@ local function CreateTeleportFrame()
     
     -- Subtitle
     local subtitleText = teleportFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    subtitleText:SetPoint("TOP", 0, -26)
+    subtitleText:SetPoint("TOP", 0, -29)
     subtitleText:SetText("Midnight Dungeons")
     subtitleText:SetTextColor(0.7, 0.7, 0.7)
     teleportFrame.subtitle = subtitleText
