@@ -196,7 +196,7 @@ function UpdateTeleportButtons()
             
             btn:SetScript("OnClick", function(self)
                 -- Cast the teleport spell
-                C_Spell.CastSpell(dungeon.spellID)
+                CastSpellByID(dungeon.spellID)
                 
                 -- Hide the popup after casting
                 teleportFrame:Hide()
