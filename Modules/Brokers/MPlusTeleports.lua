@@ -136,10 +136,10 @@ function UpdateTeleportButtons()
         if hasSpell and dungeon.spellID > 0 then
             -- Create secure button that can cast spells
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "SecureActionButtonTemplate, BackdropTemplate")
-            btn:RegisterForClicks("LeftButtonUp")
-            btn:SetAttribute("type", "spell")
-            btn:SetAttribute("spell", dungeon.spellID)
-            btn:Enable()
+            btn:RegisterForClicks("AnyUp")
+            -- Use macro to cast spell by name (more reliable than ID)
+            btn:SetAttribute("type", "macro")
+            btn:SetAttribute("macrotext", "/cast " .. (spellName or dungeon.spellID))
         else
             -- Regular button for unlearned spells
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "BackdropTemplate")
@@ -206,9 +206,16 @@ function UpdateTeleportButtons()
                 GameTooltip:Hide()
             end)
             
+            -- Debug: Check if button is being clicked
+            btn:SetScript("PreClick", function(self)
+                print("Teleport button clicked: " .. (spellName or "Unknown"))
+                print("Macro text: " .. (self:GetAttribute("macrotext") or "None"))
+            end)
+            
             -- Secure button handles the spell cast automatically
             -- Add PostClick to hide the frame after casting
             btn:SetScript("PostClick", function(self)
+                print("PostClick triggered")
                 -- Hide the popup after casting
                 if teleportFrame then
                     teleportFrame:Hide()
