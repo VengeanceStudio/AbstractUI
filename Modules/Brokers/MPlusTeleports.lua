@@ -136,8 +136,10 @@ function UpdateTeleportButtons()
         if hasSpell and dungeon.spellID > 0 then
             -- Create secure button that can cast spells
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "SecureActionButtonTemplate, BackdropTemplate")
+            btn:RegisterForClicks("LeftButtonUp")
             btn:SetAttribute("type", "spell")
             btn:SetAttribute("spell", dungeon.spellID)
+            btn:Enable()
         else
             -- Regular button for unlearned spells
             btn = CreateFrame("Button", nil, teleportFrame.scrollChild, "BackdropTemplate")
@@ -212,8 +214,6 @@ function UpdateTeleportButtons()
                     teleportFrame:Hide()
                 end
             end)
-            
-            btn:RegisterForClicks("LeftButtonUp")
         else
             -- Spell not learned - show tooltip explaining
             btn:SetScript("OnEnter", function(self)
