@@ -114,9 +114,9 @@ end
 function UpdateTeleportButtons()
     if not teleportFrame or not teleportFrame.scrollChild then return end
     
-    local db = BrokerBar.db.profile
-    local fontPath = LSM:Fetch("font", db.font) or "Fonts\\FRIZQT__.ttf"
-    local fontSize = db.fontSize
+    -- Use safe defaults during PLAYER_LOGIN (BrokerBar.db may not be ready yet)
+    local fontPath = "Fonts\\FRIZQT__.ttf"
+    local fontSize = 12
     local yOffset = 0
     
     for i, dungeon in ipairs(DUNGEON_TELEPORTS) do
