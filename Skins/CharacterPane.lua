@@ -646,13 +646,13 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     
     -- Get gem info and socket info
     local stats = C_Item.GetItemStats(itemLink)
-    local emptySockets = 0
+    local totalSockets = 0
     
-    -- Count empty sockets from item stats
+    -- Count total sockets from item stats (EMPTY_SOCKET is total socket count, not current empties)
     if stats then
         for statKey, statValue in pairs(stats) do
             if statKey and statKey:match("EMPTY_SOCKET") and statValue then
-                emptySockets = emptySockets + statValue
+                totalSockets = totalSockets + statValue
             end
         end
     end
@@ -672,25 +672,36 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         end
     end
     
-    -- Total sockets = filled gems + empty sockets
-    local totalSockets = #gems + emptySockets
+    -- Calculate actual empty sockets (total sockets - filled gems)
+    local filledCount = #gems
+    local emptyCount = totalSockets - filledCount
     
     -- Display gems and empty socket indicators
-    for i = 1, 3 do
-        if i <= #gems then
-            -- Show filled gem
-            info.gems[i]:SetTexture(gems[i])
-            info.gems[i]:SetAlpha(1.0)
-            info.gems[i]:Show()
-        elseif i <= totalSockets then
-            -- Show empty socket indicator
-            info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic")
-            info.gems[i]:SetAlpha(0.4)
-            info.gems[i]:Show()
-        else
-            -- No socket at this position
-            info.gems[i]:Hide()
+    local displayIndex = 1
+    
+    -- First, show all filled gems
+    for i = 1, filledCount do
+        if displayIndex <= 3 then
+            info.gems[displayIndex]:SetTexture(gems[i])
+            info.gems[displayIndex]:SetAlpha(1.0)
+            info.gems[displayIndex]:Show()
+            displayIndex = displayIndex + 1
         end
+    end
+    
+    -- Then show empty socket indicators for actual empty sockets
+    for i = 1, emptyCount do
+        if displayIndex <= 3 then
+            info.gems[displayIndex]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic")
+            info.gems[displayIndex]:SetAlpha(0.4)
+            info.gems[displayIndex]:Show()
+            displayIndex = displayIndex + 1
+        end
+    end
+    
+    -- Hide remaining display slots
+    for i = displayIndex, 3 do
+        info.gems[i]:Hide()
     end
 end
 
