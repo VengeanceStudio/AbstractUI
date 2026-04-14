@@ -630,42 +630,48 @@ local function UpdateEquipmentInfo(slotButton, slotID)
     end
     
     -- Get gem info and socket info
-    -- First, determine total number of empty sockets from item stats
     local stats = C_Item.GetItemStats(itemLink)
-    local emptySocketsRemaining = 0
+    local emptySockets = 0
     
+    -- Count empty sockets from item stats
     if stats then
         for statKey, statValue in pairs(stats) do
             if statKey and statKey:match("EMPTY_SOCKET") and statValue then
-                emptySocketsRemaining = emptySocketsRemaining + statValue
+                emptySockets = emptySockets + statValue
             end
         end
     end
     
-    -- Display gems (filled) and empty socket indicators
+    -- Collect all filled gem positions
+    local gems = {}
     for i = 1, 3 do
         local gemName, gemLink = GetItemGem(itemLink, i)
         if gemLink then
-            -- Socket is filled with a gem
             local gemItemID = tonumber(string.match(gemLink, "item:(%d+)"))
             if gemItemID then
                 local gemTexture = C_Item.GetItemIconByID(gemItemID)
                 if gemTexture then
-                    info.gems[i]:SetTexture(gemTexture)
-                    info.gems[i]:SetAlpha(1.0)  -- Full opacity for filled gems
-                    info.gems[i]:Show()
-                else
-                    info.gems[i]:Hide()
+                    table.insert(gems, gemTexture)
                 end
-            else
-                info.gems[i]:Hide()
             end
-        elseif emptySocketsRemaining > 0 then
-            -- No gem at this position, but item has empty sockets - show empty indicator
-            info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic")
-            info.gems[i]:SetAlpha(0.4)  -- Dimmed to indicate it needs a gem
+        end
+    end
+    
+    -- Total sockets = filled gems + empty sockets
+    local totalSockets = #gems + emptySockets
+    
+    -- Display gems and empty socket indicators
+    for i = 1, 3 do
+        if i <= #gems then
+            -- Show filled gem
+            info.gems[i]:SetTexture(gems[i])
+            info.gems[i]:SetAlpha(1.0)
             info.gems[i]:Show()
-            emptySocketsRemaining = emptySocketsRemaining - 1
+        elseif i <= totalSockets then
+            -- Show empty socket indicator
+            info.gems[i]:SetTexture("Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic")
+            info.gems[i]:SetAlpha(0.4)
+            info.gems[i]:Show()
         else
             -- No socket at this position
             info.gems[i]:Hide()
