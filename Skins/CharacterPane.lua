@@ -599,7 +599,7 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         end
     end
     
-    -- Check if slot can be enchanted (weapons, rings, neck, back, chest, wrist, feet, legs, shoulders, head)
+    -- Check if slot can be enchanted (weapons, rings, chest, feet, legs, shoulders, head)
     local enchantableSlots = {
         [1] = true,  -- head
         [2] = false,  -- neck
@@ -611,7 +611,7 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         [9] = false,  -- wrist
         [11] = true, -- finger
         [12] = true, -- finger
-        [15] = true, -- back
+        [15] = false, -- back (not enchantable in WoW 12.0+)
         [16] = true, -- main hand
         [17] = true, -- off hand
     }
