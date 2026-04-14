@@ -554,19 +554,34 @@ local function UpdateEquipmentInfo(slotButton, slotID)
                 -- Look for upgrade level in the item (this is a simplified approach)
                 local tooltipData = C_TooltipInfo.GetInventoryItem("player", slotID)
                 if tooltipData and tooltipData.lines then
+                    local isCrafted = false
+                    local upgradeInfo = nil
+                    
                     for _, line in ipairs(tooltipData.lines) do
                         if line.leftText then
                             local text = line.leftText
+                            
+                            -- Check if item is crafted
+                            if text:match("Crafted") then
+                                isCrafted = true
+                            end
+                            
                             -- Look for patterns like "Champion 1/6", "Hero 4/6", etc.
                             -- The pattern is usually: TrackName Number/Number
                             local track, curr, maxUp = text:match("^(.-)%s+(%d+)/(%d+)$")
                             if track and curr and maxUp and tonumber(maxUp) > 0 then
                                 -- Strip "Upgrade Level: " prefix if present
                                 track = track:gsub("^Upgrade Level:%s*", "")
-                                levelText = levelText .. " (" .. track .. " " .. curr .. "/" .. maxUp .. ")"
-                                break
+                                upgradeInfo = " (" .. track .. " " .. curr .. "/" .. maxUp .. ")"
                             end
                         end
+                    end
+                    
+                    -- Apply upgrade info or crafted label
+                    if upgradeInfo then
+                        levelText = levelText .. upgradeInfo
+                    elseif isCrafted then
+                        levelText = levelText .. " (Crafted)"
                     end
                 end
             end
