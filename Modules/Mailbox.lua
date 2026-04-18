@@ -559,11 +559,25 @@ function Mailbox:BulkSelect_Initialize()
     self.bulkSelectFrames = {}
     self.bulkSelectChecked = {}
     
+    -- Shift mail items to the right to make room for checkboxes
+    for i = 1, 7 do
+        local mailItem = _G["MailItem" .. i]
+        if mailItem and not mailItem.abstractUIShifted then
+            mailItem:ClearAllPoints()
+            if i == 1 then
+                mailItem:SetPoint("TOPLEFT", InboxFrame, "TOPLEFT", 45, -80)
+            else
+                mailItem:SetPoint("TOPLEFT", _G["MailItem" .. (i-1)], "BOTTOMLEFT", 0, 0)
+            end
+            mailItem.abstractUIShifted = true
+        end
+    end
+    
     -- Create checkboxes for each inbox slot
     for i = 1, 7 do
         local checkbox = CreateFrame("CheckButton", "MailboxBulkCheck" .. i, InboxFrame, "UICheckButtonTemplate")
         checkbox:SetSize(18, 18)
-        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -12, 0)
+        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -24, 0)
         checkbox:SetScript("OnClick", function(self) Mailbox:BulkSelect_OnCheckClick(i, self:GetChecked()) end)
         
         -- Add number text
