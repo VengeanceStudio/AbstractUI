@@ -1011,10 +1011,10 @@ function Mailbox:CarbonCopy_Initialize()
         return
     end
     
-    -- Create copy button on open mail frame
+    -- Create copy button on open mail frame - positioned to the left of Reply button
     local button = CreateFrame("Button", nil, OpenMailFrame, "UIPanelButtonTemplate")
     button:SetSize(60, 22)
-    button:SetPoint("TOPRIGHT", OpenMailFrame, "TOPRIGHT", -40, -30)
+    button:SetPoint("RIGHT", OpenMailReplyButton, "LEFT", -5, 0)
     button:SetText("Copy")
     button:SetScript("OnClick", function()
         Mailbox:CarbonCopy_ShowFrame()
@@ -1022,20 +1022,11 @@ function Mailbox:CarbonCopy_Initialize()
     
     self.carbonCopyButton = button
     
-    -- Hook to show/hide based on mail content
+    -- Always show the button when mail is open
     hooksecurefunc("OpenMail_Update", function()
         C_Timer.After(0, function()
             if OpenMailFrame:IsShown() and Mailbox.carbonCopyButton then
-                -- OpenMailBodyText is a ScrollingMessageFrame, not a FontString
-                local bodyText = ""
-                if OpenMailBodyText and OpenMailBodyText.GetText then
-                    bodyText = OpenMailBodyText:GetText() or ""
-                end
-                if bodyText and bodyText ~= "" then
-                    Mailbox.carbonCopyButton:Show()
-                else
-                    Mailbox.carbonCopyButton:Hide()
-                end
+                Mailbox.carbonCopyButton:Show()
             end
         end)
     end)
