@@ -549,18 +549,48 @@ function Mailbox:OpenAll_Finish()
 end
 
 function Mailbox:OpenAll_ShowFilterMenu(button)
-    local menu = CreateFrame("Frame", "MailboxFilterMenu", button, "UIDropDownMenuTemplate")
+    if not self.openAllFilterMenuFrame then
+        self.openAllFilterMenuFrame = CreateFrame("Frame", "MailboxFilterMenu", UIParent, "UIDropDownMenuTemplate")
+    end
     
-    local menuData = {
-        {text = "AH Won", checked = function() return self.db.profile.openAll.ahWon end, func = function() self.db.profile.openAll.ahWon = not self.db.profile.openAll.ahWon end},
-        {text = "AH Sold", checked = function() return self.db.profile.openAll.ahSuccess end, func = function() self.db.profile.openAll.ahSuccess = not self.db.profile.openAll.ahSuccess end},
-        {text = "AH Outbid", checked = function() return self.db.profile.openAll.ahOutbid end, func = function() self.db.profile.openAll.ahOutbid = not self.db.profile.openAll.ahOutbid end},
-        {text = "AH Cancelled", checked = function() return self.db.profile.openAll.ahCancelled end, func = function() self.db.profile.openAll.ahCancelled = not self.db.profile.openAll.ahCancelled end},
-        {text = "AH Expired", checked = function() return self.db.profile.openAll.ahExpired end, func = function() self.db.profile.openAll.ahExpired = not self.db.profile.openAll.ahExpired end},
-        {text = "Postmaster", checked = function() return self.db.profile.openAll.postmaster end, func = function() self.db.profile.openAll.postmaster = not self.db.profile.openAll.postmaster end},
-    }
+    local function InitializeMenu(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        info.text = "AH Won"
+        info.checked = Mailbox.db.profile.openAll.ahWon
+        info.func = function() Mailbox.db.profile.openAll.ahWon = not Mailbox.db.profile.openAll.ahWon end
+        info.isNotRadio = true
+        info.keepShownOnClick = true
+        UIDropDownMenu_AddButton(info)
+        
+        info.text = "AH Sold"
+        info.checked = Mailbox.db.profile.openAll.ahSuccess
+        info.func = function() Mailbox.db.profile.openAll.ahSuccess = not Mailbox.db.profile.openAll.ahSuccess end
+        UIDropDownMenu_AddButton(info)
+        
+        info.text = "AH Outbid"
+        info.checked = Mailbox.db.profile.openAll.ahOutbid
+        info.func = function() Mailbox.db.profile.openAll.ahOutbid = not Mailbox.db.profile.openAll.ahOutbid end
+        UIDropDownMenu_AddButton(info)
+        
+        info.text = "AH Cancelled"
+        info.checked = Mailbox.db.profile.openAll.ahCancelled
+        info.func = function() Mailbox.db.profile.openAll.ahCancelled = not Mailbox.db.profile.openAll.ahCancelled end
+        UIDropDownMenu_AddButton(info)
+        
+        info.text = "AH Expired"
+        info.checked = Mailbox.db.profile.openAll.ahExpired
+        info.func = function() Mailbox.db.profile.openAll.ahExpired = not Mailbox.db.profile.openAll.ahExpired end
+        UIDropDownMenu_AddButton(info)
+        
+        info.text = "Postmaster"
+        info.checked = Mailbox.db.profile.openAll.postmaster
+        info.func = function() Mailbox.db.profile.openAll.postmaster = not Mailbox.db.profile.openAll.postmaster end
+        UIDropDownMenu_AddButton(info)
+    end
     
-    EasyMenu(menuData, menu, "cursor", 0, 0, "MENU")
+    UIDropDownMenu_Initialize(self.openAllFilterMenuFrame, InitializeMenu, "MENU")
+    ToggleDropDownMenu(1, nil, self.openAllFilterMenuFrame, button, 0, 0)
 end
 
 -- ============================================================================
@@ -818,36 +848,54 @@ function Mailbox:AddressBook_AutoFill()
 end
 
 function Mailbox:AddressBook_ShowMenu(button)
-    local menu = CreateFrame("Frame", "MailboxAddressMenu", button, "UIDropDownMenuTemplate")
-    
-    local menuData = {}
-    
-    -- Add alts
-    table.insert(menuData, {text = "Alts", isTitle = true})
-    for key, alt in pairs(self.db.global.alts) do
-        table.insert(menuData, {
-            text = alt.name,
-            func = function()
-                SendMailNameEditBox:SetText(alt.name)
-            end
-        })
+    if not self.addressBookMenuFrame then
+        self.addressBookMenuFrame = CreateFrame("Frame", "MailboxAddressMenu", UIParent, "UIDropDownMenuTemplate")
     end
     
-    -- Add recent
-    local recentList = self.db.global.recent[GetRealmName()] or {}
-    if #recentList > 0 then
-        table.insert(menuData, {text = "Recent", isTitle = true})
-        for _, name in ipairs(recentList) do
-            table.insert(menuData, {
-                text = name,
-                func = function()
+    local function InitializeMenu(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        -- Add alts header
+        info.text = "Alts"
+        info.isTitle = true
+        info.notCheckable = true
+        UIDropDownMenu_AddButton(info)
+        
+        info.isTitle = false
+        
+        -- Add alts
+        for key, alt in pairs(Mailbox.db.global.alts) do
+            info.text = alt.name
+            info.func = function()
+                SendMailNameEditBox:SetText(alt.name)
+            end
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info)
+        end
+        
+        -- Add recent
+        local recentList = Mailbox.db.global.recent[GetRealmName()] or {}
+        if #recentList > 0 then
+            info.text = "Recent"
+            info.isTitle = true
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info)
+            
+            info.isTitle = false
+            
+            for _, name in ipairs(recentList) do
+                info.text = name
+                info.func = function()
                     SendMailNameEditBox:SetText(name)
                 end
-            })
+                info.notCheckable = true
+                UIDropDownMenu_AddButton(info)
+            end
         end
     end
     
-    EasyMenu(menuData, menu, "cursor", 0, 0, "MENU")
+    UIDropDownMenu_Initialize(self.addressBookMenuFrame, InitializeMenu, "MENU")
+    ToggleDropDownMenu(1, nil, self.addressBookMenuFrame, button, 0, 0)
 end
 
 function Mailbox:TrackRecent(name)
