@@ -1276,7 +1276,7 @@ function Mailbox:QuickAttach_Initialize()
     
     -- Category data: classID, subclassID, icon, name
     local categories = {
-        {5, 0, 132904, "Cloth"},              -- Cloth
+        {5, 0, 132907, "Cloth"},              -- Cloth
         {7, 6, 134366, "Leather/Hide"},        -- Leather
         {7, 7, 134567, "Metal/Stone"},         -- Metal & Stone
         {7, 5, 133971, "Cooking"},             -- Meat / Cooking
