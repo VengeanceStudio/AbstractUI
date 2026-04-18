@@ -564,14 +564,14 @@ function Mailbox:BulkSelect_Initialize()
     for i = 1, 7 do
         local mailItem = _G["MailItem" .. i]
         if mailItem and not mailItem.abstractUIShifted then
-            -- Get original position
-            local point, relativeTo, relativePoint, xOfs, yOfs = mailItem:GetPoint(1)
+            -- Only shift the first item; others are anchored to it
+            if i == 1 then
+                local point, relativeTo, relativePoint, xOfs, yOfs = mailItem:GetPoint(1)
+                mailItem:ClearAllPoints()
+                mailItem:SetPoint(point, relativeTo, relativePoint, xOfs + shiftAmount, yOfs)
+            end
             
-            -- Shift horizontally only, keep vertical position
-            mailItem:ClearAllPoints()
-            mailItem:SetPoint(point, relativeTo, relativePoint, xOfs + shiftAmount, yOfs)
-            
-            -- Make frame narrower to compensate
+            -- Make all frames narrower to compensate
             local width = mailItem:GetWidth()
             mailItem:SetWidth(width - shiftAmount)
             
