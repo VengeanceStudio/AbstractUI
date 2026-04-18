@@ -51,6 +51,12 @@ local lastState = {
     diffPlayers = -1, vol = -1, token = -1, ilvl = -1
 }
 
+-- Combat state tracking
+local pendingLayoutUpdates = {}
+
+-- Re-entrancy protection for UpdateBarLayout
+local inUpdateBarLayout = {}
+
 -- Mappings
 local LABEL_MAP_FULL = { 
     AbstractDiff = "Difficulty", AbstractVolume = "Volume", AbstractDura = "Durability", 
@@ -737,6 +743,16 @@ function BrokerBar:UpdateBarLayout(barID)
     local db = self.db.profile.bars[barID]
     if not bar or not db then return end
     
+    -- If in combat, defer layout update to avoid taint
+    if InCombatLockdown() then
+        pendingLayoutUpdates[barID] = true
+        return
+    end
+    
+    -- Prevent re-entrant calls that can cause duplicates in layoutCache
+    if inUpdateBarLayout[barID] then return end
+    inUpdateBarLayout[barID] = true
+    
     -- Ensure bar has proper size before positioning widgets
     local barWidth, barHeight = bar:GetSize()
     if barWidth == 0 or barHeight == 0 then
@@ -892,6 +908,9 @@ function BrokerBar:UpdateBarLayout(barID)
             first = false
         end
     end
+    
+    -- Clear re-entrancy flag
+    inUpdateBarLayout[barID] = nil
 end
 
 function BrokerBar:CreateBarFrame(id)
@@ -1139,6 +1158,8 @@ function BrokerBar:OnDBReady()
     self:RegisterEvent("BN_FRIEND_ACCOUNT_OFFLINE", "UpdateFriendsCount")
     self:RegisterEvent("BN_FRIEND_INFO_CHANGED", "UpdateFriendsCount")
     self:RegisterEvent("FRIENDLIST_UPDATE", "UpdateFriendsCount")
+    self:RegisterEvent("PLAYER_REGEN_DISABLED")  -- Entering combat
+    self:RegisterEvent("PLAYER_REGEN_ENABLED")   -- Leaving combat
     
     self:UpdateGoldData()
     
@@ -1176,6 +1197,18 @@ function BrokerBar:PLAYER_ENTERING_WORLD()
         self:UpdateFriendsCount()
         self:UpdateDurability()
     end)
+end
+
+function BrokerBar:PLAYER_REGEN_DISABLED()
+    -- Entering combat - layout updates will be deferred automatically
+end
+
+function BrokerBar:PLAYER_REGEN_ENABLED()
+    -- Leaving combat - process any pending layout updates
+    for barID in pairs(pendingLayoutUpdates) do
+        self:UpdateBarLayout(barID)
+    end
+    wipe(pendingLayoutUpdates)
 end
 
 function BrokerBar:UpdateGoldDisplay()
