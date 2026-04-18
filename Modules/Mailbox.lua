@@ -560,15 +560,21 @@ function Mailbox:BulkSelect_Initialize()
     self.bulkSelectChecked = {}
     
     -- Shift mail items to the right to make room for checkboxes
+    local shiftAmount = 22
     for i = 1, 7 do
         local mailItem = _G["MailItem" .. i]
         if mailItem and not mailItem.abstractUIShifted then
+            -- Get original position
+            local point, relativeTo, relativePoint, xOfs, yOfs = mailItem:GetPoint(1)
+            
+            -- Shift horizontally only, keep vertical position
             mailItem:ClearAllPoints()
-            if i == 1 then
-                mailItem:SetPoint("TOPLEFT", InboxFrame, "TOPLEFT", 45, -80)
-            else
-                mailItem:SetPoint("TOPLEFT", _G["MailItem" .. (i-1)], "BOTTOMLEFT", 0, 0)
-            end
+            mailItem:SetPoint(point, relativeTo, relativePoint, xOfs + shiftAmount, yOfs)
+            
+            -- Make frame narrower to compensate
+            local width = mailItem:GetWidth()
+            mailItem:SetWidth(width - shiftAmount)
+            
             mailItem.abstractUIShifted = true
         end
     end
