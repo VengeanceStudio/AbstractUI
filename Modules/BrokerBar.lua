@@ -749,10 +749,6 @@ function BrokerBar:UpdateBarLayout(barID)
         return
     end
     
-    -- Prevent re-entrant calls that can cause duplicates in layoutCache
-    if inUpdateBarLayout[barID] then return end
-    inUpdateBarLayout[barID] = true
-    
     -- Ensure bar has proper size before positioning widgets
     local barWidth, barHeight = bar:GetSize()
     if barWidth == 0 or barHeight == 0 then
@@ -760,6 +756,11 @@ function BrokerBar:UpdateBarLayout(barID)
         self:ApplyBarSettings(barID)
         return  -- ApplyBarSettings will call UpdateBarLayout again
     end
+    
+    -- Prevent re-entrant calls that can cause duplicates in layoutCache
+    -- IMPORTANT: Must be AFTER early returns to avoid permanently locking the update
+    if inUpdateBarLayout[barID] then return end
+    inUpdateBarLayout[barID] = true
     
     wipe(layoutCache.LEFT)
     wipe(layoutCache.CENTER)
