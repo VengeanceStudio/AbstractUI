@@ -388,10 +388,10 @@ function Mailbox:OpenAll_Initialize()
         return
     end
     
-    -- Create main button
+    -- Create main button at bottom between Prev/Next
     local button = CreateFrame("Button", "AbstractUI_MailOpenAll", InboxFrame, "UIPanelButtonTemplate")
-    button:SetSize(100, 22)
-    button:SetPoint("CENTER", InboxFrame, "TOP", -30, -35)
+    button:SetSize(120, 22)
+    button:SetPoint("BOTTOM", InboxFrame, "BOTTOM", -30, 80)
     button:SetText("Open All")
     button:SetScript("OnClick", function(self, btn)
         if btn == "LeftButton" then
@@ -404,10 +404,10 @@ function Mailbox:OpenAll_Initialize()
     end)
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     
-    -- Create filter menu button
+    -- Create filter menu button next to Open All
     local filterButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
     filterButton:SetSize(22, 22)
-    filterButton:SetPoint("LEFT", button, "RIGHT", 3, 0)
+    filterButton:SetPoint("LEFT", button, "RIGHT", 2, 0)
     filterButton:SetText("▼")
     filterButton:SetScript("OnClick", function(self, btn)
         Mailbox:OpenAll_ShowFilterMenu(self)
@@ -574,16 +574,16 @@ function Mailbox:BulkSelect_Initialize()
         self.bulkSelectFrames[i] = checkbox
     end
     
-    -- Create action buttons
+    -- Create action buttons at top
     local openButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
-    openButton:SetSize(110, 22)
-    openButton:SetPoint("BOTTOMLEFT", InboxFrame, "BOTTOMLEFT", 25, 95)
+    openButton:SetSize(145, 22)
+    openButton:SetPoint("TOP", InboxFrame, "TOP", -80, -35)
     openButton:SetText("Open Selected")
     openButton:SetScript("OnClick", function() self:BulkSelect_OpenSelected() end)
     
     local returnButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
-    returnButton:SetSize(110, 22)
-    returnButton:SetPoint("LEFT", openButton, "RIGHT", 4, 0)
+    returnButton:SetSize(145, 22)
+    returnButton:SetPoint("LEFT", openButton, "RIGHT", 5, 0)
     returnButton:SetText("Return Selected")
     returnButton:SetScript("OnClick", function() self:BulkSelect_ReturnSelected() end)
     
