@@ -1011,13 +1011,21 @@ function Mailbox:CarbonCopy_Initialize()
         return
     end
     
-    -- Create copy button on open mail frame - positioned to the left of Reply button
+    -- Create copy button on open mail frame - positioned to the left of Forward button
     local button = CreateFrame("Button", nil, OpenMailFrame, "UIPanelButtonTemplate")
     button:SetSize(60, 22)
-    button:SetPoint("RIGHT", OpenMailReplyButton, "LEFT", -5, 0)
     button:SetText("Copy")
     button:SetScript("OnClick", function()
         Mailbox:CarbonCopy_ShowFrame()
+    end)
+    
+    -- Position relative to Forward button if it exists, otherwise relative to Reply button
+    C_Timer.After(0.15, function()
+        if Mailbox.forwardButton then
+            button:SetPoint("RIGHT", Mailbox.forwardButton, "LEFT", -2, 0)
+        else
+            button:SetPoint("RIGHT", OpenMailReplyButton, "LEFT", -90, 0)
+        end
     end)
     
     self.carbonCopyButton = button
