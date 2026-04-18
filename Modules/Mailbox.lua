@@ -978,7 +978,8 @@ function Mailbox:CarbonCopy_Initialize()
     hooksecurefunc("OpenMail_Update", function()
         C_Timer.After(0, function()
             if OpenMailFrame:IsShown() and Mailbox.carbonCopyButton then
-                local bodyText = OpenMailBodyText:GetText()
+                -- OpenMailBodyText is a ScrollingMessageFrame, not a FontString
+                local bodyText = OpenMailBodyText:GetText and OpenMailBodyText:GetText() or ""
                 if bodyText and bodyText ~= "" then
                     Mailbox.carbonCopyButton:Show()
                 else
@@ -1034,7 +1035,12 @@ function Mailbox:CarbonCopy_ShowFrame()
     if not mailID then return end
     
     local _, _, sender, subject = GetInboxHeaderInfo(mailID)
-    local bodyText = OpenMailBodyText:GetText() or ""
+    local bodyText = ""
+    
+    -- OpenMailBodyText is a ScrollingMessageFrame, get text safely
+    if OpenMailBodyText.GetText then
+        bodyText = OpenMailBodyText:GetText() or ""
+    end
     
     local text = "From: " .. (sender or "Unknown") .. "\n"
     text = text .. "Subject: " .. (subject or "(No Subject)") .. "\n\n"
@@ -1176,8 +1182,11 @@ function Mailbox:Forward_DoForward()
     end
     
     -- Copy body
-    local bodyText = OpenMailBodyText:GetText()
-    if bodyText then
+    local bodyText = ""
+    if OpenMailBodyText.GetText then
+        bodyText = OpenMailBodyText:GetText() or ""
+    end
+    if bodyText and bodyText ~= "" then
         SendMailBodyEditBox:SetText(bodyText)
     end
     
