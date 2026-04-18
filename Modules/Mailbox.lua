@@ -1197,6 +1197,7 @@ function Mailbox:Forward_Initialize()
     if OpenMailReplyButton then OpenMailReplyButton:SetSize(55, 22) end
     if OpenMailReturnButton then OpenMailReturnButton:SetSize(65, 22) end
     if OpenMailDeleteButton then OpenMailDeleteButton:SetSize(60, 22) end
+    if OpenMailCancelButton then OpenMailCancelButton:SetSize(60, 22) end
 end
 
 function Mailbox:Forward_UpdateButton()
