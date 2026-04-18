@@ -33,6 +33,7 @@ function MinimapButtons:OnInitialize()
     SlashCmdList["MINIMAPBUTTONS"] = function(msg)
         if MinimapButtons.buttonBar then
             MinimapButtons:CollectMinimapButtons()
+            print("|cff00ff00AbstractUI:|r Re-collecting minimap buttons. Hidden buttons (Show Minimap Button = OFF) will be skipped.")
         end
     end
 end
@@ -461,7 +462,40 @@ function MinimapButtons:CollectMinimapButtons()
             -- Only collect frames with a name (or LibDBIcon pattern)
             -- Unnamed frames are usually Blizzard UI elements we don't want
             if hasScript and name then
-                table.insert(buttons, frameToCollect)
+                -- IMPORTANT: Don't collect buttons that are deliberately hidden
+                -- Many addons hide their minimap buttons via "Show Minimap Button = OFF" setting
+                -- Respect that choice by checking if the button is actually shown
+                local shouldCollect = true
+                
+                -- Check if button is currently visible (most common method)
+                if not frameToCollect:IsShown() then
+                    shouldCollect = false
+                end
+                
+                -- Check if button has zero alpha (another hiding method)
+                if shouldCollect and frameToCollect:GetAlpha() < 0.01 then
+                    shouldCollect = false
+                end
+                
+                -- Check LibDBIcon hide property (used by many addons via LibDataBroker)
+                if shouldCollect and frameToCollect.dataObject then
+                    local obj = frameToCollect.dataObject
+                    if obj.hide then
+                        shouldCollect = false
+                    end
+                end
+                
+                -- Check if frame is completely off-screen (intentionally hidden far away)
+                if shouldCollect then
+                    local point, relativeTo, relativePoint, xOfs, yOfs = frameToCollect:GetPoint(1)
+                    if xOfs and yOfs and (math.abs(xOfs) > 10000 or math.abs(yOfs) > 10000) then
+                        shouldCollect = false
+                    end
+                end
+                
+                if shouldCollect then
+                    table.insert(buttons, frameToCollect)
+                end
             end
         end
     end
@@ -590,7 +624,9 @@ function MinimapButtons:CollectMinimapButtons()
             button._abstractPositionLocked = true
         end
         
-        -- Force button to be visible and interactable
+        -- Make button visible and interactable in our bar
+        -- Note: We only reach this point for buttons that passed the visibility filter above,
+        -- so this won't force-show buttons that addons intentionally hid
         button:Show()
         button:EnableMouse(true)
         button:SetAlpha(1)
