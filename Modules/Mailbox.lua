@@ -98,6 +98,13 @@ local defaults = {
             qualityColors = false,
         },
         inboxBar = { enabled = false },  -- Optional status bar
+        
+        -- Font Settings
+        fontCustomization = {
+            enabled = false,
+            fontFace = "Fonts\\FRIZQT__.TTF",
+            fontSize = 13,
+        },
     },
     global = {
         alts = {},  -- Character registry
@@ -218,6 +225,11 @@ function Mailbox:MAIL_SHOW()
     if self.db.profile.inboxBar.enabled then
         C_Timer.After(0.1, function() self:InboxBar_Initialize() end)
     end
+    
+    -- Apply font customization
+    if self.db.profile.fontCustomization.enabled then
+        C_Timer.After(0.1, function() self:ApplyMailFonts() end)
+    end
 end
 
 function Mailbox:MAIL_CLOSED()
@@ -255,6 +267,11 @@ function Mailbox:MAIL_INBOX_UPDATE()
     
     if self.db.profile.inboxBar.enabled and self.inboxBarFrame then
         C_Timer.After(0, function() self:InboxBar_Update() end)
+    end
+    
+    -- Reapply custom fonts when inbox updates
+    if self.db.profile.fontCustomization.enabled then
+        C_Timer.After(0, function() self:ApplyMailFonts() end)
     end
 end
 
@@ -362,6 +379,9 @@ function Mailbox:HookMailFunctions()
             end
             if Mailbox.db.profile.doNotWant.enabled then
                 Mailbox:DoNotWant_UpdateIcons()
+            end
+            if Mailbox.db.profile.fontCustomization.enabled then
+                Mailbox:ApplyMailFonts()
             end
         end)
     end)
@@ -585,11 +605,6 @@ function Mailbox:BulkSelect_Initialize()
         checkbox:SetSize(18, 18)
         checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -24, 0)
         checkbox:SetScript("OnClick", function(self) Mailbox:BulkSelect_OnCheckClick(i, self:GetChecked()) end)
-        
-        -- Add number text
-        local text = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        text:SetPoint("CENTER", checkbox, "CENTER", 1, 0)
-        text:SetText(i)
         
         self.bulkSelectFrames[i] = checkbox
     end
@@ -1404,6 +1419,38 @@ function Mailbox:InboxBar_Update()
 end
 
 -- ============================================================================
+-- FONT CUSTOMIZATION
+-- ============================================================================
+
+function Mailbox:ApplyMailFonts()
+    local fontPath = self.db.profile.fontCustomization.fontFace
+    local fontSize = self.db.profile.fontCustomization.fontSize
+    
+    -- Apply to all mail items
+    for i = 1, 7 do
+        local mailItem = _G["MailItem" .. i]
+        if mailItem then
+            -- Try to access the sender and subject text elements
+            local sender = mailItem.sender or _G["MailItem" .. i .. "Sender"]
+            local subject = mailItem.subject or _G["MailItem" .. i .. "Subject"]
+            
+            if sender and sender.SetFont then
+                sender:SetFont(fontPath, fontSize, "")
+            end
+            if subject and subject.SetFont then
+                subject:SetFont(fontPath, fontSize, "")
+            end
+            
+            -- Also try ButtonText which is sometimes used
+            local buttonText = _G["MailItem" .. i .. "ButtonText"]
+            if buttonText and buttonText.SetFont then
+                buttonText:SetFont(fontPath, fontSize, "")
+            end
+        end
+    end
+end
+
+-- ============================================================================
 -- OPTIONS/CONFIGURATION
 -- ============================================================================
 
@@ -1412,9 +1459,66 @@ function Mailbox:GetOptions()
         type = "group",
         name = "Mailbox",
         args = {
+            fontCustomization = {
+                type = "group",
+                name = "Font Customization",
+                inline = true,
+                order = 0,
+                args = {
+                    enabled = {
+                        type = "toggle",
+                        name = "Enable Custom Fonts",
+                        desc = "Use custom font for mail list text",
+                        order = 1,
+                        get = function() return self.db.profile.fontCustomization.enabled end,
+                        set = function(_, v)
+                            self.db.profile.fontCustomization.enabled = v
+                            if v then
+                                self:ApplyMailFonts()
+                            end
+                        end,
+                    },
+                    fontFace = {
+                        type = "select",
+                        name = "Font Face",
+                        order = 2,
+                        values = {
+                            ["Fonts\\FRIZQT__.TTF"] = "Friz Quadrata (Default)",
+                            ["Fonts\\ARIALN.TTF"] = "Arial Narrow",
+                            ["Fonts\\skurri.ttf"] = "Skurri",
+                            ["Fonts\\MORPHEUS.ttf"] = "Morpheus",
+                        },
+                        get = function() return self.db.profile.fontCustomization.fontFace end,
+                        set = function(_, v)
+                            self.db.profile.fontCustomization.fontFace = v
+                            if self.db.profile.fontCustomization.enabled then
+                                self:ApplyMailFonts()
+                            end
+                        end,
+                        disabled = function() return not self.db.profile.fontCustomization.enabled end,
+                    },
+                    fontSize = {
+                        type = "range",
+                        name = "Font Size",
+                        order = 3,
+                        min = 8,
+                        max = 20,
+                        step = 1,
+                        get = function() return self.db.profile.fontCustomization.fontSize end,
+                        set = function(_, v)
+                            self.db.profile.fontCustomization.fontSize = v
+                            if self.db.profile.fontCustomization.enabled then
+                                self:ApplyMailFonts()
+                            end
+                        end,
+                        disabled = function() return not self.db.profile.fontCustomization.enabled end,
+                    },
+                },
+            },
             openAll = {
                 type = "group",
                 name = "Open All",
+                inline = true,
                 order = 1,
                 args = {
                     enabled = {
@@ -1449,6 +1553,7 @@ function Mailbox:GetOptions()
             bulkSelect = {
                 type = "group",
                 name = "Bulk Select",
+                inline = true,
                 order = 2,
                 args = {
                     enabled = {
@@ -1463,6 +1568,7 @@ function Mailbox:GetOptions()
             addressBook = {
                 type = "group",
                 name = "Address Book",
+                inline = true,
                 order = 3,
                 args = {
                     enabled = {
@@ -1484,6 +1590,7 @@ function Mailbox:GetOptions()
             quickSend = {
                 type = "group",
                 name = "Quick Send",
+                inline = true,
                 order = 4,
                 args = {
                     enabled = {
@@ -1498,6 +1605,7 @@ function Mailbox:GetOptions()
             features = {
                 type = "group",
                 name = "Other Features",
+                inline = true,
                 order = 5,
                 args = {
                     carbonCopy = {
