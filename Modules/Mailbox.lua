@@ -1295,7 +1295,7 @@ function Mailbox:QuickAttach_Initialize()
     for i, cat in ipairs(categories) do
         local button = CreateFrame("Button", nil, SendMailFrame)
         button:SetSize(30, 30)
-        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", -45, 0 - ((i - 1) * 32))
+        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", -40, 0 - ((i - 1) * 32))
         button:SetNormalTexture(cat[3])
         button:SetScript("OnClick", function(self, btn)
             if btn == "LeftButton" then
