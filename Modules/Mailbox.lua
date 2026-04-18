@@ -563,7 +563,7 @@ function Mailbox:BulkSelect_Initialize()
     for i = 1, 7 do
         local checkbox = CreateFrame("CheckButton", "MailboxBulkCheck" .. i, InboxFrame, "UICheckButtonTemplate")
         checkbox:SetSize(18, 18)
-        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -22, 0)
+        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -12, 0)
         checkbox:SetScript("OnClick", function(self) Mailbox:BulkSelect_OnCheckClick(i, self:GetChecked()) end)
         
         -- Add number text
