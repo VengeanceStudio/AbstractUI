@@ -390,8 +390,8 @@ function Mailbox:OpenAll_Initialize()
     
     -- Create main button
     local button = CreateFrame("Button", "AbstractUI_MailOpenAll", InboxFrame, "UIPanelButtonTemplate")
-    button:SetSize(120, 25)
-    button:SetPoint("TOP", InboxFrame, "TOP", 0, -50)
+    button:SetSize(100, 22)
+    button:SetPoint("CENTER", InboxFrame, "TOP", -30, -35)
     button:SetText("Open All")
     button:SetScript("OnClick", function(self, btn)
         if btn == "LeftButton" then
@@ -406,8 +406,8 @@ function Mailbox:OpenAll_Initialize()
     
     -- Create filter menu button
     local filterButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
-    filterButton:SetSize(25, 25)
-    filterButton:SetPoint("LEFT", button, "RIGHT", 2, 0)
+    filterButton:SetSize(22, 22)
+    filterButton:SetPoint("LEFT", button, "RIGHT", 3, 0)
     filterButton:SetText("▼")
     filterButton:SetScript("OnClick", function(self, btn)
         Mailbox:OpenAll_ShowFilterMenu(self)
@@ -562,8 +562,8 @@ function Mailbox:BulkSelect_Initialize()
     -- Create checkboxes for each inbox slot
     for i = 1, 7 do
         local checkbox = CreateFrame("CheckButton", "MailboxBulkCheck" .. i, InboxFrame, "UICheckButtonTemplate")
-        checkbox:SetSize(20, 20)
-        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -25, 0)
+        checkbox:SetSize(18, 18)
+        checkbox:SetPoint("LEFT", "MailItem" .. i, "LEFT", -22, 0)
         checkbox:SetScript("OnClick", function(self) Mailbox:BulkSelect_OnCheckClick(i, self:GetChecked()) end)
         
         -- Add number text
@@ -576,14 +576,14 @@ function Mailbox:BulkSelect_Initialize()
     
     -- Create action buttons
     local openButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
-    openButton:SetSize(120, 25)
-    openButton:SetPoint("BOTTOMLEFT", InboxFrame, "BOTTOMLEFT", 20, 80)
+    openButton:SetSize(110, 22)
+    openButton:SetPoint("BOTTOMLEFT", InboxFrame, "BOTTOMLEFT", 25, 95)
     openButton:SetText("Open Selected")
     openButton:SetScript("OnClick", function() self:BulkSelect_OpenSelected() end)
     
     local returnButton = CreateFrame("Button", nil, InboxFrame, "UIPanelButtonTemplate")
-    returnButton:SetSize(120, 25)
-    returnButton:SetPoint("LEFT", openButton, "RIGHT", 5, 0)
+    returnButton:SetSize(110, 22)
+    returnButton:SetPoint("LEFT", openButton, "RIGHT", 4, 0)
     returnButton:SetText("Return Selected")
     returnButton:SetScript("OnClick", function() self:BulkSelect_ReturnSelected() end)
     
