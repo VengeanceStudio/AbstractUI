@@ -1459,198 +1459,216 @@ function Mailbox:GetOptions()
         type = "group",
         name = "Mailbox",
         args = {
-            fontCustomization = {
-                type = "group",
+            -- Font Customization Section
+            fontHeader = {
+                type = "header",
                 name = "Font Customization",
-                inline = true,
-                order = 0,
-                args = {
-                    enabled = {
-                        type = "toggle",
-                        name = "Enable Custom Fonts",
-                        desc = "Use custom font for mail list text",
-                        order = 1,
-                        get = function() return self.db.profile.fontCustomization.enabled end,
-                        set = function(_, v)
-                            self.db.profile.fontCustomization.enabled = v
-                            if v then
-                                self:ApplyMailFonts()
-                            end
-                        end,
-                    },
-                    fontFace = {
-                        type = "select",
-                        name = "Font Face",
-                        order = 2,
-                        values = {
-                            ["Fonts\\FRIZQT__.TTF"] = "Friz Quadrata (Default)",
-                            ["Fonts\\ARIALN.TTF"] = "Arial Narrow",
-                            ["Fonts\\skurri.ttf"] = "Skurri",
-                            ["Fonts\\MORPHEUS.ttf"] = "Morpheus",
-                        },
-                        get = function() return self.db.profile.fontCustomization.fontFace end,
-                        set = function(_, v)
-                            self.db.profile.fontCustomization.fontFace = v
-                            if self.db.profile.fontCustomization.enabled then
-                                self:ApplyMailFonts()
-                            end
-                        end,
-                        disabled = function() return not self.db.profile.fontCustomization.enabled end,
-                    },
-                    fontSize = {
-                        type = "range",
-                        name = "Font Size",
-                        order = 3,
-                        min = 8,
-                        max = 20,
-                        step = 1,
-                        get = function() return self.db.profile.fontCustomization.fontSize end,
-                        set = function(_, v)
-                            self.db.profile.fontCustomization.fontSize = v
-                            if self.db.profile.fontCustomization.enabled then
-                                self:ApplyMailFonts()
-                            end
-                        end,
-                        disabled = function() return not self.db.profile.fontCustomization.enabled end,
-                    },
-                },
-            },
-            openAll = {
-                type = "group",
-                name = "Open All",
-                inline = true,
                 order = 1,
-                args = {
-                    enabled = {
-                        type = "toggle",
-                        name = "Enable Open All",
-                        order = 1,
-                        get = function() return self.db.profile.openAll.enabled end,
-                        set = function(_, v) self.db.profile.openAll.enabled = v end,
-                    },
-                    speed = {
-                        type = "range",
-                        name = "Collection Speed (seconds)",
-                        order = 2,
-                        min = 0.1,
-                        max = 2.0,
-                        step = 0.1,
-                        get = function() return self.db.profile.openAll.speed end,
-                        set = function(_, v) self.db.profile.openAll.speed = v end,
-                    },
-                    keepFreeSpace = {
-                        type = "range",
-                        name = "Keep Free Bag Slots",
-                        order = 3,
-                        min = 0,
-                        max = 20,
-                        step = 1,
-                        get = function() return self.db.profile.openAll.keepFreeSpace end,
-                        set = function(_, v) self.db.profile.openAll.keepFreeSpace = v end,
-                    },
-                },
             },
-            bulkSelect = {
-                type = "group",
-                name = "Bulk Select",
-                inline = true,
+            fontEnabled = {
+                type = "toggle",
+                name = "Enable Custom Fonts",
+                desc = "Use custom font for mail list text",
+                order = 1.01,
+                get = function() return self.db.profile.fontCustomization.enabled end,
+                set = function(_, v)
+                    self.db.profile.fontCustomization.enabled = v
+                    if v then
+                        self:ApplyMailFonts()
+                    end
+                end,
+            },
+            fontFace = {
+                type = "select",
+                name = "Font Face",
+                order = 1.02,
+                values = {
+                    ["Fonts\\FRIZQT__.TTF"] = "Friz Quadrata (Default)",
+                    ["Fonts\\ARIALN.TTF"] = "Arial Narrow",
+                    ["Fonts\\skurri.ttf"] = "Skurri",
+                    ["Fonts\\MORPHEUS.ttf"] = "Morpheus",
+                },
+                get = function() return self.db.profile.fontCustomization.fontFace end,
+                set = function(_, v)
+                    self.db.profile.fontCustomization.fontFace = v
+                    if self.db.profile.fontCustomization.enabled then
+                        self:ApplyMailFonts()
+                    end
+                end,
+                disabled = function() return not self.db.profile.fontCustomization.enabled end,
+            },
+            fontSize = {
+                type = "range",
+                name = "Font Size",
+                order = 1.03,
+                min = 8,
+                max = 20,
+                step = 1,
+                get = function() return self.db.profile.fontCustomization.fontSize end,
+                set = function(_, v)
+                    self.db.profile.fontCustomization.fontSize = v
+                    if self.db.profile.fontCustomization.enabled then
+                        self:ApplyMailFonts()
+                    end
+                end,
+                disabled = function() return not self.db.profile.fontCustomization.enabled end,
+            },
+            
+            -- Open All Section
+            spacer1 = {
+                type = "description",
+                name = " ",
+                order = 1.9,
+            },
+            openAllHeader = {
+                type = "header",
+                name = "Open All",
                 order = 2,
-                args = {
-                    enabled = {
-                        type = "toggle",
-                        name = "Enable Bulk Select",
-                        order = 1,
-                        get = function() return self.db.profile.bulkSelect.enabled end,
-                        set = function(_, v) self.db.profile.bulkSelect.enabled = v end,
-                    },
-                },
             },
-            addressBook = {
-                type = "group",
-                name = "Address Book",
-                inline = true,
+            openAllEnabled = {
+                type = "toggle",
+                name = "Enable Open All",
+                order = 2.01,
+                get = function() return self.db.profile.openAll.enabled end,
+                set = function(_, v) self.db.profile.openAll.enabled = v end,
+            },
+            openAllSpeed = {
+                type = "range",
+                name = "Collection Speed (seconds)",
+                order = 2.02,
+                min = 0.1,
+                max = 2.0,
+                step = 0.1,
+                get = function() return self.db.profile.openAll.speed end,
+                set = function(_, v) self.db.profile.openAll.speed = v end,
+            },
+            openAllKeepFreeSpace = {
+                type = "range",
+                name = "Keep Free Bag Slots",
+                order = 2.03,
+                min = 0,
+                max = 20,
+                step = 1,
+                get = function() return self.db.profile.openAll.keepFreeSpace end,
+                set = function(_, v) self.db.profile.openAll.keepFreeSpace = v end,
+            },
+            
+            -- Bulk Select Section
+            spacer2 = {
+                type = "description",
+                name = " ",
+                order = 2.9,
+            },
+            bulkSelectHeader = {
+                type = "header",
+                name = "Bulk Select",
                 order = 3,
-                args = {
-                    enabled = {
-                        type = "toggle",
-                        name = "Enable Address Book",
-                        order = 1,
-                        get = function() return self.db.profile.addressBook.enabled end,
-                        set = function(_, v) self.db.profile.addressBook.enabled = v end,
-                    },
-                    autoFill = {
-                        type = "toggle",
-                        name = "Auto-fill Last Recipient",
-                        order = 2,
-                        get = function() return self.db.profile.addressBook.autoFill end,
-                        set = function(_, v) self.db.profile.addressBook.autoFill = v end,
-                    },
-                },
             },
-            quickSend = {
-                type = "group",
-                name = "Quick Send",
-                inline = true,
+            bulkSelectEnabled = {
+                type = "toggle",
+                name = "Enable Bulk Select",
+                order = 3.01,
+                get = function() return self.db.profile.bulkSelect.enabled end,
+                set = function(_, v) self.db.profile.bulkSelect.enabled = v end,
+            },
+            
+            -- Address Book Section
+            spacer3 = {
+                type = "description",
+                name = " ",
+                order = 3.9,
+            },
+            addressBookHeader = {
+                type = "header",
+                name = "Address Book",
                 order = 4,
-                args = {
-                    enabled = {
-                        type = "toggle",
-                        name = "Enable Quick Send",
-                        order = 1,
-                        get = function() return self.db.profile.quickSend.enabled end,
-                        set = function(_, v) self.db.profile.quickSend.enabled = v end,
-                    },
-                },
             },
-            features = {
-                type = "group",
-                name = "Other Features",
-                inline = true,
+            addressBookEnabled = {
+                type = "toggle",
+                name = "Enable Address Book",
+                order = 4.01,
+                get = function() return self.db.profile.addressBook.enabled end,
+                set = function(_, v) self.db.profile.addressBook.enabled = v end,
+            },
+            addressBookAutoFill = {
+                type = "toggle",
+                name = "Auto-fill Last Recipient",
+                order = 4.02,
+                get = function() return self.db.profile.addressBook.autoFill end,
+                set = function(_, v) self.db.profile.addressBook.autoFill = v end,
+            },
+            
+            -- Quick Send Section
+            spacer4 = {
+                type = "description",
+                name = " ",
+                order = 4.9,
+            },
+            quickSendHeader = {
+                type = "header",
+                name = "Quick Send",
                 order = 5,
-                args = {
-                    carbonCopy = {
-                        type = "toggle",
-                        name = "Carbon Copy (Copy Mail)",
-                        order = 1,
-                        get = function() return self.db.profile.carbonCopy.enabled end,
-                        set = function(_, v) self.db.profile.carbonCopy.enabled = v end,
-                    },
-                    doNotWant = {
-                        type = "toggle",
-                        name = "Do Not Want (Delete Icons)",
-                        order = 2,
-                        get = function() return self.db.profile.doNotWant.enabled end,
-                        set = function(_, v) self.db.profile.doNotWant.enabled = v end,
-                    },
-                    forward = {
-                        type = "toggle",
-                        name = "Forward Mail",
-                        order = 3,
-                        get = function() return self.db.profile.forward.enabled end,
-                        set = function(_, v) self.db.profile.forward.enabled = v end,
-                    },
-                    quickAttach = {
-                        type = "toggle",
-                        name = "Quick Attach (Category Buttons)",
-                        order = 4,
-                        get = function() return self.db.profile.quickAttach.enabled end,
-                        set = function(_, v) self.db.profile.quickAttach.enabled = v end,
-                    },
-                    rake = {
-                        type = "toggle",
-                        name = "Rake (Gold Tracking)",
-                        order = 5,
-                        get = function() return self.db.profile.rake.enabled end,
-                        set = function(_, v) self.db.profile.rake.enabled = v end,
-                    },
-                    tradeBlock = {
-                        type = "toggle",
-                        name = "Trade Block (Block Interruptions)",
-                        order = 6,
-                        get = function() return self.db.profile.tradeBlock.enabled end,
-                        set = function(_, v) self.db.profile.tradeBlock.enabled = v end,
-                    },
-                },
+            },
+            quickSendEnabled = {
+                type = "toggle",
+                name = "Enable Quick Send",
+                order = 5.01,
+                get = function() return self.db.profile.quickSend.enabled end,
+                set = function(_, v) self.db.profile.quickSend.enabled = v end,
+            },
+            
+            -- Other Features Section
+            spacer5 = {
+                type = "description",
+                name = " ",
+                order = 5.9,
+            },
+            featuresHeader = {
+                type = "header",
+                name = "Other Features",
+                order = 6,
+            },
+            carbonCopyEnabled = {
+                type = "toggle",
+                name = "Carbon Copy (Copy Mail)",
+                order = 6.01,
+                get = function() return self.db.profile.carbonCopy.enabled end,
+                set = function(_, v) self.db.profile.carbonCopy.enabled = v end,
+            },
+            doNotWantEnabled = {
+                type = "toggle",
+                name = "Do Not Want (Delete Icons)",
+                order = 6.02,
+                get = function() return self.db.profile.doNotWant.enabled end,
+                set = function(_, v) self.db.profile.doNotWant.enabled = v end,
+            },
+            forwardEnabled = {
+                type = "toggle",
+                name = "Forward Mail",
+                order = 6.03,
+                get = function() return self.db.profile.forward.enabled end,
+                set = function(_, v) self.db.profile.forward.enabled = v end,
+            },
+            quickAttachEnabled = {
+                type = "toggle",
+                name = "Quick Attach (Category Buttons)",
+                order = 6.04,
+                get = function() return self.db.profile.quickAttach.enabled end,
+                set = function(_, v) self.db.profile.quickAttach.enabled = v end,
+            },
+            rakeEnabled = {
+                type = "toggle",
+                name = "Rake (Gold Tracking)",
+                order = 6.05,
+                get = function() return self.db.profile.rake.enabled end,
+                set = function(_, v) self.db.profile.rake.enabled = v end,
+            },
+            tradeBlockEnabled = {
+                type = "toggle",
+                name = "Trade Block (Block Interruptions)",
+                order = 6.06,
+                get = function() return self.db.profile.tradeBlock.enabled end,
+                set = function(_, v) self.db.profile.tradeBlock.enabled = v end,
             },
         },
     }
