@@ -391,7 +391,7 @@ function Mailbox:OpenAll_Initialize()
     -- Create main button at bottom between Prev/Next
     local button = CreateFrame("Button", "AbstractUI_MailOpenAll", InboxFrame, "UIPanelButtonTemplate")
     button:SetSize(90, 22)
-    button:SetPoint("BOTTOM", InboxFrame, "BOTTOM", -30, 80)
+    button:SetPoint("BOTTOM", InboxFrame, "BOTTOM", -30, 105)
     button:SetText("Open All")
     button:SetScript("OnClick", function(self, btn)
         if btn == "LeftButton" then
