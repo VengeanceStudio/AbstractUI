@@ -979,7 +979,10 @@ function Mailbox:CarbonCopy_Initialize()
         C_Timer.After(0, function()
             if OpenMailFrame:IsShown() and Mailbox.carbonCopyButton then
                 -- OpenMailBodyText is a ScrollingMessageFrame, not a FontString
-                local bodyText = OpenMailBodyText:GetText and OpenMailBodyText:GetText() or ""
+                local bodyText = ""
+                if OpenMailBodyText and OpenMailBodyText.GetText then
+                    bodyText = OpenMailBodyText:GetText() or ""
+                end
                 if bodyText and bodyText ~= "" then
                     Mailbox.carbonCopyButton:Show()
                 else
