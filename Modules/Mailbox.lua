@@ -81,6 +81,12 @@ function Mailbox:OnInitialize()
 end
 
 function Mailbox:OnEnable()
+    -- Check if module is enabled in settings
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules or not AbstractUI.db.profile.modules.mailbox then
+        self:Disable()
+        return
+    end
+    
     self:RegisterEvent("MAIL_SHOW")
     self:RegisterEvent("MAIL_CLOSED")
     self:RegisterEvent("MAIL_INBOX_UPDATE")

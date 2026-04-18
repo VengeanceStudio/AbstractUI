@@ -1609,6 +1609,12 @@ function AddonManager:OnInitialize()
 end
 
 function AddonManager:OnEnable()
+    -- Check if module is enabled in settings
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules or not AbstractUI.db.profile.modules.addonmanager then
+        self:Disable()
+        return
+    end
+    
     -- Register event to hook game menu button after world enters
     if self.db.profile.replaceGameMenuButton then
         -- Try to hook immediately

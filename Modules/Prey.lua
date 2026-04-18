@@ -123,6 +123,12 @@ function Prey:OnInitialize()
 end
 
 function Prey:OnEnable()
+    -- Check if module is enabled in settings
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules or not AbstractUI.db.profile.modules.prey then
+        self:Disable()
+        return
+    end
+    
     if not self.db.profile.enabled then return end
     
     -- Hide old tracker frame if it exists

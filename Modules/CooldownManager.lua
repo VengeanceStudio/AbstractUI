@@ -83,6 +83,12 @@ function CooldownManager:OnInitialize()
 end
 
 function CooldownManager:OnEnable()
+    -- Check if module is enabled in settings
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules or not AbstractUI.db.profile.modules.cooldowns then
+        self:Disable()
+        return
+    end
+    
     if not self.db.profile.enabled then return end
     
     -- Initialize keybind cache (used to show keybinds during combat)

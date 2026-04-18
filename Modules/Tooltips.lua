@@ -84,6 +84,12 @@ function Tooltips:OnDisable()
 end
 
 function Tooltips:Initialize()
+    -- Check if module is enabled in settings
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules or not AbstractUI.db.profile.modules.tooltips then
+        self:Disable()
+        return
+    end
+    
     -- Only initialize once
     if self.initialized then return end
     
