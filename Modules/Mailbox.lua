@@ -781,7 +781,7 @@ function Mailbox:AddressBook_Initialize()
         local button = CreateFrame("Button", nil, SendMailFrame, "UIPanelButtonTemplate")
         button:SetSize(25, 25)
         button:SetPoint("LEFT", SendMailNameEditBox, "RIGHT", 2, 0)
-        button:SetText("▼")
+        button:SetText("...")
         button:SetScript("OnClick", function(self)
             Mailbox:AddressBook_ShowMenu(self)
         end)
@@ -1276,7 +1276,7 @@ function Mailbox:QuickAttach_Initialize()
     
     -- Category data: classID, subclassID, icon, name
     local categories = {
-        {5, 0, 4305420, "Cloth"},              -- Cloth
+        {5, 0, 132904, "Cloth"},              -- Cloth
         {7, 6, 134366, "Leather/Hide"},        -- Leather
         {7, 7, 134567, "Metal/Stone"},         -- Metal & Stone
         {7, 5, 133971, "Cooking"},             -- Meat / Cooking
@@ -1295,7 +1295,7 @@ function Mailbox:QuickAttach_Initialize()
     for i, cat in ipairs(categories) do
         local button = CreateFrame("Button", nil, SendMailFrame)
         button:SetSize(30, 30)
-        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", 5, -40 - ((i - 1) * 32))
+        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", 2, -40 - ((i - 1) * 32))
         button:SetNormalTexture(cat[3])
         button:SetScript("OnClick", function(self, btn)
             if btn == "LeftButton" then
