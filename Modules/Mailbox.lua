@@ -1013,7 +1013,7 @@ function Mailbox:CarbonCopy_Initialize()
     
     -- Create copy button on open mail frame - positioned to the left of Forward button
     local button = CreateFrame("Button", nil, OpenMailFrame, "UIPanelButtonTemplate")
-    button:SetSize(50, 22)
+    button:SetSize(60, 22)
     button:SetText("Copy")
     button:SetScript("OnClick", function()
         Mailbox:CarbonCopy_ShowFrame()
@@ -1184,7 +1184,7 @@ function Mailbox:Forward_Initialize()
     end
     
     local button = CreateFrame("Button", nil, OpenMailFrame, "UIPanelButtonTemplate")
-    button:SetSize(65, 22)
+    button:SetSize(60, 22)
     button:SetPoint("RIGHT", OpenMailReplyButton, "LEFT", -2, 0)
     button:SetText("Forward")
     button:SetScript("OnClick", function()
@@ -1193,9 +1193,9 @@ function Mailbox:Forward_Initialize()
     
     self.forwardButton = button
     
-    -- Resize Blizzard mail buttons to fit our additions
-    if OpenMailReplyButton then OpenMailReplyButton:SetSize(55, 22) end
-    if OpenMailReturnButton then OpenMailReturnButton:SetSize(65, 22) end
+    -- Resize all Blizzard mail buttons to uniform 60px
+    if OpenMailReplyButton then OpenMailReplyButton:SetSize(60, 22) end
+    if OpenMailReturnButton then OpenMailReturnButton:SetSize(60, 22) end
     if OpenMailDeleteButton then OpenMailDeleteButton:SetSize(60, 22) end
     if OpenMailCancelButton then OpenMailCancelButton:SetSize(60, 22) end
 end
