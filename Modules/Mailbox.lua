@@ -603,7 +603,7 @@ end
 function Mailbox:BulkSelect_UpdateCheckboxes()
     if not self.bulkSelectFrames then return end
     
-    local numItems = GetInboxNum Items()
+    local numItems = GetInboxNumItems()
     for i = 1, 7 do
         if i <= numItems then
             self.bulkSelectFrames[i]:Show()
