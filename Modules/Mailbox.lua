@@ -1426,46 +1426,32 @@ function Mailbox:ApplyMailFonts()
     local fontPath = self.db.profile.fontCustomization.fontFace
     local fontSize = self.db.profile.fontCustomization.fontSize
     
+    -- Helper function to recursively apply fonts to all FontStrings
+    local function ApplyToAllFontStrings(frame)
+        if not frame then return end
+        
+        -- Apply to regions
+        if frame.GetRegions then
+            local regions = {frame:GetRegions()}
+            for _, region in ipairs(regions) do
+                if region and region:GetObjectType() == "FontString" and region.SetFont then
+                    region:SetFont(fontPath, fontSize, "")
+                end
+            end
+        end
+        
+        -- Apply to children
+        local children = {frame:GetChildren()}
+        for _, child in ipairs(children) do
+            ApplyToAllFontStrings(child)
+        end
+    end
+    
     -- Apply to all mail items
     for i = 1, 7 do
         local mailItem = _G["MailItem" .. i]
         if mailItem then
-            -- Try to access all possible text elements
-            local sender = mailItem.sender or _G["MailItem" .. i .. "Sender"]
-            local subject = mailItem.subject or _G["MailItem" .. i .. "Subject"]
-            local buttonText = _G["MailItem" .. i .. "ButtonText"]
-            local expireTime = _G["MailItem" .. i .. "ExpireTime"]
-            
-            if sender and sender.SetFont then
-                sender:SetFont(fontPath, fontSize, "")
-            end
-            if subject and subject.SetFont then
-                subject:SetFont(fontPath, fontSize, "")
-            end
-            if buttonText and buttonText.SetFont then
-                buttonText:SetFont(fontPath, fontSize, "")
-            end
-            if expireTime and expireTime.SetFont then
-                expireTime:SetFont(fontPath, fontSize, "")
-            end
-            
-            -- Some mail items use numbered text regions
-            for j = 1, 4 do
-                local textRegion = _G["MailItem" .. i .. "ButtonText" .. j]
-                if textRegion and textRegion.SetFont then
-                    textRegion:SetFont(fontPath, fontSize, "")
-                end
-            end
-            
-            -- Try accessing via regions
-            if mailItem.GetRegions then
-                local regions = {mailItem:GetRegions()}
-                for _, region in ipairs(regions) do
-                    if region and region.SetFont and region:GetObjectType() == "FontString" then
-                        region:SetFont(fontPath, fontSize, "")
-                    end
-                end
-            end
+            ApplyToAllFontStrings(mailItem)
         end
     end
 end
