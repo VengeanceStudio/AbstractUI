@@ -1277,25 +1277,25 @@ function Mailbox:QuickAttach_Initialize()
     -- Category data: classID, subclassID, icon, name
     local categories = {
         {5, 0, 132907, "Cloth"},              -- Cloth
-        {7, 6, 134366, "Leather/Hide"},        -- Leather
-        {7, 7, 134567, "Metal/Stone"},         -- Metal & Stone
+        {7, 6, 134252, "Leather/Hide"},        -- Leather
+        {7, 7, 134566, "Metal/Stone"},         -- Metal & Stone
         {7, 5, 133971, "Cooking"},             -- Meat / Cooking
         {7, 9, 134192, "Herbs"},               -- Herb
         {7, 12, 132858, "Enchanting"},         -- Enchanting
         {7, 16, 237171, "Inscription"},        -- Inscription
         {7, 4, 134071, "Jewelcrafting"},       -- Jewelcrafting
         {7, 1, 136243, "Parts"},               -- Parts
-        {7, 10, 134437, "Elemental"},          -- Elemental
-        {7, 18, 4620673, "Optional Reagents"}, -- Optional Reagents
-        {7, 19, 4620676, "Finishing Reagents"},-- Finishing Reagents
-        {7, 0, 134939, "Other Trade"},         -- Other Trade Goods
+        {7, 10, 132838, "Elemental"},          -- Elemental
+        {7, 18, 4632784, "Optional Reagents"}, -- Optional Reagents
+        {7, 19, 4622304, "Finishing Reagents"},-- Finishing Reagents
+        {7, 0, 135436, "Other Trade"},         -- Other Trade Goods
         {nil, nil, 132763, "All Trade"},       -- All trade goods
     }
     
     for i, cat in ipairs(categories) do
         local button = CreateFrame("Button", nil, SendMailFrame)
         button:SetSize(30, 30)
-        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", 2, -40 - ((i - 1) * 32))
+        button:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", 2, -10 - ((i - 1) * 32))
         button:SetNormalTexture(cat[3])
         button:SetScript("OnClick", function(self, btn)
             if btn == "LeftButton" then
