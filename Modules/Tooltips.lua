@@ -445,6 +445,9 @@ end
 function Tooltips:OnTooltipShow(tooltip)
     if not self.FontKit or not tooltip then return end
     
+    -- Check if tooltip has required methods (some custom tooltips don't)
+    if not tooltip.NumLines or not tooltip.GetName then return end
+    
     -- Apply font to tooltip text
     local font, size = self.FontKit:GetFont("body", "small")
     local fontSize = self.db.profile.fontSize or 12
