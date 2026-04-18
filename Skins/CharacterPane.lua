@@ -628,8 +628,19 @@ local function UpdateEquipmentInfo(slotButton, slotID)
         [12] = true, -- finger
         [15] = false, -- back (not enchantable in WoW 12.0+)
         [16] = true, -- main hand
-        [17] = true, -- off hand
+        [17] = false, -- off hand (determined dynamically below)
     }
+    
+    -- Special check for offhand slot - only enchantable if it's a weapon
+    if slotID == 17 and itemLink then
+        local itemID = tonumber(itemLink:match("item:(%d+)"))
+        if itemID then
+            local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(itemID)
+            if classID == 2 then -- Class 2 = Weapon
+                enchantableSlots[17] = true
+            end
+        end
+    end
     
     if enchantableSlots[slotID] then
         if hasEnchant then
