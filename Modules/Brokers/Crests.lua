@@ -102,12 +102,13 @@ crestsObj = LDB:NewDataObject("AbstractCrests", {
             if info then
                 local count = info.quantity or 0
                 local maxQuantity = info.maxQuantity or 0
+                local quantityEarned = info.quantityEarned or 0
                 local icon = info.iconFileID or ""
                 
-                -- Build display string
+                -- Build display string: CurrentCount (Earned/Cap)
                 local displayStr = FormatNumber(count)
                 if maxQuantity > 0 then
-                    displayStr = displayStr .. " / " .. FormatNumber(maxQuantity)
+                    displayStr = displayStr .. " (" .. FormatNumber(quantityEarned) .. "/" .. FormatNumber(maxQuantity) .. ")"
                 end
                 
                 -- Add icon if available
