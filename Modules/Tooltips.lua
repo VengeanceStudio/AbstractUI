@@ -989,13 +989,15 @@ function Tooltips:OnTooltipSetUnit(tooltip)
         end
     end
     
-    -- Item Level (from cache)
+    -- Item Level (from cache or request inspect on mouseover)
     if self.db.profile.showItemLevel then
         local cachedIlvl = self:GetCachedItemLevel(guid)
         if cachedIlvl then
             tooltip:AddLine("Item Level: " .. cachedIlvl, 1, 0.82, 0)
+        else
+            -- Try to request inspect if conditions are met
+            self:RequestInspectOnMouseover(unit, guid)
         end
-        -- Don't request inspect here - handled by PLAYER_TARGET_CHANGED
     end
     
     -- Mythic+ Rating
@@ -1011,10 +1013,11 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     -- Mount information
     if self.db.profile.showMount then
         local mountID = self:GetUnitMountID(unit)
-        if mountID then
-            local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, 
-                  faction, shouldHideOnChar, isCollected = C_MountJournal.GetMountInfoByID(mountID)
-            if name then
+        if mountID and type(mountID) == "number" then
+            local success, name, spellID, icon, isActive, isUsable, sourceType, isFavorite, 
+                  isFactionSpecific, faction, shouldHideOnChar, isCollected, mountIDOut, isSteadyFlight = 
+                  pcall(C_MountJournal.GetMountInfoByID, mountID)
+            if success and name then
                 local collectedText = isCollected and "|cff00ff00(Collected)|r" or "|cffff0000(Not Collected)|r"
                 tooltip:AddLine("Mount: " .. name .. " " .. collectedText, 1, 0.82, 0)
             end
@@ -1027,6 +1030,11 @@ end
 function Tooltips:GetUnitMountID(unit)
     -- Skip mount lookup in instances/dungeons to avoid API restrictions
     if isInInstance then
+        return nil
+    end
+    
+    -- Skip mount lookup during combat to avoid API restrictions
+    if InCombatLockdown() then
         return nil
     end
     
@@ -1098,6 +1106,35 @@ function Tooltips:PLAYER_TARGET_CHANGED()
     end
     
     -- Don't spam the same player
+    if guid == self.lastInspectGUID and currentTime - self.lastInspectTime < 30 then
+        return
+    end
+    
+    -- Send inspect request (taint-safe)
+    self.lastInspectTime = currentTime
+    self.lastInspectGUID = guid
+    NotifyInspect(unit)
+end
+
+function Tooltips:RequestInspectOnMouseover(unit, guid)
+    -- Request inspection when mousing over a player (with restrictions)
+    
+    -- Don't inspect in combat
+    if InCombatLockdown() then return end
+    
+    -- Don't inspect in instances/dungeons/raids
+    if isInInstance then return end
+    
+    -- Check if we can inspect this unit
+    if not CanInspect(unit) then return end
+    
+    -- Throttle inspect requests (1.5 second cooldown)
+    local currentTime = GetTime()
+    if currentTime - self.lastInspectTime < self.inspectThrottle then
+        return
+    end
+    
+    -- Don't spam the same player within 30 seconds
     if guid == self.lastInspectGUID and currentTime - self.lastInspectTime < 30 then
         return
     end
