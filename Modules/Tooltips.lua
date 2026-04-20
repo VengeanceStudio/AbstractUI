@@ -1064,9 +1064,14 @@ function Tooltips:INSPECT_READY(event, guid)
     -- Cache item level from inspect data (GUID-based storage)
     local unit = self:GetUnitFromGUID(guid)
     if unit then
+        -- Get the actual character GUID from the unit token to avoid BNet account ID issues
+        local characterGUID = UnitGUID(unit)
+        if not characterGUID then return end
+        
         local avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel(unit)
         if avgItemLevelEquipped then
-            self.playerCache[guid] = {
+            -- Use the character-specific GUID, not the event GUID (which might be BNet account ID)
+            self.playerCache[characterGUID] = {
                 itemLevel = math.floor(avgItemLevelEquipped),
                 timestamp = GetTime()
             }
