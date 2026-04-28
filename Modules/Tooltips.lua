@@ -814,10 +814,17 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     end)
     if not ok or not isPlayer then return end
     
-    local name, realm = UnitName(unit)
-    local guid = UnitGUID(unit)
+    -- Skip all tooltip enhancements in dungeons/instances to avoid taint issues
+    -- World cursor tooltips use "secret" unit tokens in instances which cause Lua errors
+    if isInInstance then return end
     
-    if not name or not guid then return end
+    -- Get basic unit information (still needs pcall protection for world cursor tooltips outside instances)
+    local name, realm, guid
+    ok = pcall(function()
+        name, realm = UnitName(unit)
+        guid = UnitGUID(unit)
+    end)
+    if not ok or not name or not guid then return end
     
     -- Color the level/race line gold for players
     -- This is typically line 3 and contains "(Player)"
@@ -834,8 +841,11 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     
     -- Get class color for border (if enabled)
     local classColor = nil
-    local _, class = UnitClass(unit)
-    if class then
+    local class, localizedClassName
+    ok = pcall(function()
+        localizedClassName, class = UnitClass(unit)
+    end)
+    if ok and class then
         classColor = RAID_CLASS_COLORS[class]
         
         -- Class coloring for player names
@@ -848,7 +858,6 @@ function Tooltips:OnTooltipSetUnit(tooltip)
             
             -- Also color the spec/class line (typically line 4 for players with guild)
             -- Search for the line containing the class name
-            local localizedClassName = UnitClass(unit)
             if localizedClassName then
                 for i = 2, tooltip:NumLines() do
                     local leftText = _G[tooltip:GetName() .. "TextLeft" .. i]
@@ -871,8 +880,11 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     
     -- Guild information
     if self.db.profile.showGuild then
-        local guildName, guildRankName, guildRankIndex = GetGuildInfo(unit)
-        if guildName then
+        local guildName, guildRankName, guildRankIndex
+        ok = pcall(function()
+            guildName, guildRankName, guildRankIndex = GetGuildInfo(unit)
+        end)
+        if ok and guildName then
             local playerGuildName = GetGuildInfo("player")
             local color = self.db.profile.otherGuildColor
             
@@ -942,8 +954,11 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     
     -- Faction
     if self.db.profile.showFaction then
-        local faction = UnitFactionGroup(unit)
-        if faction then
+        local faction
+        ok = pcall(function()
+            faction = UnitFactionGroup(unit)
+        end)
+        if ok and faction then
             local color = faction == "Horde" and {r = 1, g = 0.1, b = 0.1} or {r = 0.1, g = 0.3, b = 1}
             
             -- Blizzard already adds faction to the tooltip, find it and color it instead of duplicating
@@ -970,17 +985,22 @@ function Tooltips:OnTooltipSetUnit(tooltip)
     -- Target of target
     if self.db.profile.showTargetOf then
         local target = unit .. "target"
-        -- Use UnitName to check existence (doesn't return secret values)
-        local targetName = UnitName(target)
-        if targetName then
+        local targetName
+        ok = pcall(function()
+            targetName = UnitName(target)
+        end)
+        if ok and targetName then
             tooltip:AddLine("Target: " .. targetName, 0.7, 0.7, 1)
         end
     end
     
     -- Role
     if self.db.profile.showRole then
-        local role = UnitGroupRolesAssigned(unit)
-        if role and role ~= "NONE" then
+        local role
+        ok = pcall(function()
+            role = UnitGroupRolesAssigned(unit)
+        end)
+        if ok and role and role ~= "NONE" then
             local roleText = role == "TANK" and "Tank" or role == "HEALER" and "Healer" or role == "DAMAGER" and "DPS" or role
             local roleColor = role == "TANK" and {r = 0.2, g = 0.6, b = 1} or 
                               role == "HEALER" and {r = 0.2, g = 1, b = 0.2} or 
@@ -1043,19 +1063,24 @@ function Tooltips:GetUnitMountID(unit)
         return nil 
     end
     
-    for i = 1, 40 do
-        local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
-        if not auraData then break end
-        
-        -- Use GetMountFromSpell to directly check if this spell is a mount
-        if auraData.spellId then
-            local mountID = C_MountJournal.GetMountFromSpell(auraData.spellId)
-            if mountID then
-                return mountID
+    -- Protect against tainted unit tokens (world cursor tooltips can be secret)
+    local mountID = nil
+    pcall(function()
+        for i = 1, 40 do
+            local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
+            if not auraData then return end
+            
+            -- Use GetMountFromSpell to directly check if this spell is a mount
+            if auraData.spellId then
+                local foundMountID = C_MountJournal.GetMountFromSpell(auraData.spellId)
+                if foundMountID then
+                    mountID = foundMountID
+                    return
+                end
             end
         end
-    end
-    return nil
+    end)
+    return mountID
 end
 
 function Tooltips:INSPECT_READY(event, guid)
@@ -1064,12 +1089,18 @@ function Tooltips:INSPECT_READY(event, guid)
     -- Cache item level from inspect data (GUID-based storage)
     local unit = self:GetUnitFromGUID(guid)
     if unit then
-        -- Get the actual character GUID from the unit token to avoid BNet account ID issues
-        local characterGUID = UnitGUID(unit)
-        if not characterGUID then return end
+        -- Protect against tainted unit tokens
+        local characterGUID, avgItemLevelEquipped
+        local ok = pcall(function()
+            -- Get the actual character GUID from the unit token to avoid BNet account ID issues
+            characterGUID = UnitGUID(unit)
+            if characterGUID then
+                local avgItemLevel
+                avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel(unit)
+            end
+        end)
         
-        local avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel(unit)
-        if avgItemLevelEquipped then
+        if ok and characterGUID and avgItemLevelEquipped then
             -- Use the character-specific GUID, not the event GUID (which might be BNet account ID)
             self.playerCache[characterGUID] = {
                 itemLevel = math.floor(avgItemLevelEquipped),
@@ -1085,24 +1116,31 @@ function Tooltips:PLAYER_TARGET_CHANGED()
     -- Target-based inspection with throttling
     if not self.db.profile.showItemLevel then return end
     
-    local unit = "target"
-    -- Use UnitGUID to check existence (doesn't return secret values)
-    local guid = UnitGUID(unit)
-    if not guid then return end
+    -- Skip inspection in dungeons/instances
+    if isInInstance then return end
     
-    -- Check if unit is a player (pcall to handle secret boolean during combat)
-    local isPlayer = false
-    pcall(function()
-        isPlayer = UnitIsPlayer(unit)
+    local unit = "target"
+    
+    -- Protect all unit API calls against tainted tokens
+    local guid, isPlayer, canInspect
+    local ok = pcall(function()
+        guid = UnitGUID(unit)
+        if guid then
+            isPlayer = UnitIsPlayer(unit)
+            if isPlayer then
+                canInspect = CanInspect(unit)
+            end
+        end
     end)
-    if not isPlayer then return end
+    
+    if not ok or not guid or not isPlayer then return end
     
     -- Check if we already have cached data
     local cached = self:GetCachedItemLevel(guid)
     if cached then return end
     
     -- Check if we can inspect
-    if not CanInspect(unit) then return end
+    if not canInspect then return end
     
     -- Throttle inspect requests (1.5 second cooldown)
     local currentTime = GetTime()
@@ -1115,10 +1153,10 @@ function Tooltips:PLAYER_TARGET_CHANGED()
         return
     end
     
-    -- Send inspect request (taint-safe)
+    -- Send inspect request (wrapped in pcall for safety)
     self.lastInspectTime = currentTime
     self.lastInspectGUID = guid
-    NotifyInspect(unit)
+    pcall(NotifyInspect, unit)
 end
 
 function Tooltips:RequestInspectOnMouseover(unit, guid)
@@ -1130,8 +1168,13 @@ function Tooltips:RequestInspectOnMouseover(unit, guid)
     -- Don't inspect in instances/dungeons/raids
     if isInInstance then return end
     
-    -- Check if we can inspect this unit
-    if not CanInspect(unit) then return end
+    -- Protect against tainted unit tokens (world cursor tooltips can be secret)
+    local canInspect
+    local ok = pcall(function()
+        canInspect = CanInspect(unit)
+    end)
+    
+    if not ok or not canInspect then return end
     
     -- Throttle inspect requests (1.5 second cooldown)
     local currentTime = GetTime()
@@ -1144,10 +1187,10 @@ function Tooltips:RequestInspectOnMouseover(unit, guid)
         return
     end
     
-    -- Send inspect request (taint-safe)
+    -- Send inspect request (wrapped in pcall for safety)
     self.lastInspectTime = currentTime
     self.lastInspectGUID = guid
-    NotifyInspect(unit)
+    pcall(NotifyInspect, unit)
 end
 
 function Tooltips:PLAYER_ENTERING_WORLD()
