@@ -1090,20 +1090,45 @@ function Tooltips:INSPECT_READY(event, guid)
     local unit = self:GetUnitFromGUID(guid)
     if unit then
         -- Protect against tainted unit tokens
-        local characterGUID, avgItemLevelEquipped
+        local characterGUID, calculatedIlvl
         local ok = pcall(function()
             -- Get the actual character GUID from the unit token to avoid BNet account ID issues
             characterGUID = UnitGUID(unit)
             if characterGUID then
-                local avgItemLevel
-                avgItemLevel, avgItemLevelEquipped = GetAverageItemLevel(unit)
+                -- Calculate equipped ilvl manually by scanning all equipment slots
+                -- This is more reliable than GetAverageItemLevel for inspected players
+                local totalIlvl = 0
+                local itemCount = 0
+                
+                -- Scan all equipment slots (1-18, excluding shirt(4) and tabard(19))
+                local slots = {1,2,3,5,6,7,8,9,10,11,12,13,14,15,16,17,18}
+                
+                for _, slotID in ipairs(slots) do
+                    local itemLink = GetInventoryItemLink(unit, slotID)
+                    if itemLink then
+                        -- Try to get current item level
+                        local itemLocation = ItemLocation:CreateFromUnit(unit, slotID)
+                        if itemLocation and itemLocation:IsValid() and C_Item.DoesItemExist(itemLocation) then
+                            local ilvl = C_Item.GetCurrentItemLevel(itemLocation)
+                            if ilvl and ilvl > 0 then
+                                totalIlvl = totalIlvl + ilvl
+                                itemCount = itemCount + 1
+                            end
+                        end
+                    end
+                end
+                
+                -- Calculate average if we have items
+                if itemCount > 0 then
+                    calculatedIlvl = totalIlvl / itemCount
+                end
             end
         end)
         
-        if ok and characterGUID and avgItemLevelEquipped then
+        if ok and characterGUID and calculatedIlvl then
             -- Use the character-specific GUID, not the event GUID (which might be BNet account ID)
             self.playerCache[characterGUID] = {
-                itemLevel = math.floor(avgItemLevelEquipped),
+                itemLevel = math.floor(calculatedIlvl),
                 timestamp = GetTime()
             }
         end
