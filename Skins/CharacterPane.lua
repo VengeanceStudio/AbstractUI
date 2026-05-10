@@ -885,7 +885,9 @@ end
 local function SkinItemSlot(button)
     if not button or button._abstractSkinned then return end
     
-    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    local colors = GetThemeColors()
+    local pr, pg, pb, pa = unpack(colors.primary)
+    local bgr, bgg, bgb, bga = unpack(colors.background)
     
     -- Hide Blizzard's background frame aggressively
     local frameName = button:GetName() .. "Frame"
@@ -1087,7 +1089,9 @@ end
 ---------------------------------------------------------------------------
 
 local function SkinCharacterTabs()
-    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    local colors = GetThemeColors()
+    local pr, pg, pb, pa = unpack(colors.primary)
+    local bgr, bgg, bgb, bga = unpack(colors.background)
     
     -- Bottom tabs (Character, Reputation, Currency)
     for i = 1, 3 do
@@ -1257,7 +1261,9 @@ end
 local function SkinCharacterFrameBackdrop()
     if not CharacterFrame or not CharacterFrame.NineSlice then return end
     
-    local pr, pg, pb, pa, bgr, bgg, bgb, bga = GetThemeColors()
+    local colors = GetThemeColors()
+    local pr, pg, pb, pa = unpack(colors.primary)
+    local bgr, bgg, bgb, bga = unpack(colors.background)
     
     -- Create custom backdrop with class-colored border and background
     if not CharacterFrame.AbstractBackdrop then
@@ -1600,7 +1606,8 @@ local function CreateStatsOverlay()
         local function CreateHeader(text, yOffset)
             local header = CreateText(text .. "Header", true)
             header:SetPoint("TOPLEFT", statsOverlay, "TOPLEFT", 0, yOffset)
-            local pr, pg, pb = GetThemeColors()
+            local colors = GetThemeColors()
+            local pr, pg, pb = unpack(colors.primary)
             header:SetTextColor(pr, pg, pb, 1)
             header:SetText(text)
             return yOffset - 18
