@@ -2208,8 +2208,6 @@ function AbstractUI:GetOptions()
             dbKey = "cursorTrail"
         elseif name == "Consumables" then
             dbKey = "consumables"
-        elseif name == "Skin" then
-            dbKey = "skins"
         else
             dbKey = string.lower(name)
         end

@@ -77,9 +77,31 @@ function Skin:OnDBReady()
             skinChatFrames = false,
             skinUnitFrames = false,  -- Disabled by default due to Blizzard conflicts
             skinBags = true,
-            skinBlizzardFrames = true,
             buttonBackgroundColor = {0.1, 0.1, 0.1, 0.8},
-            buttonBorderColor = {0, 0, 0, 1}
+            buttonBorderColor = {0, 0, 0, 1},
+            -- Individual Blizzard frame controls
+            frames = {
+                CharacterFrame = false,
+                SpellBookFrame = false,
+                PlayerSpellsFrame = false,
+                ProfessionsFrame = false,
+                CollectionsJournal = false,
+                AchievementFrame = false,
+                EncounterJournal = false,
+                FriendsFrame = false,
+                CommunitiesFrame = false,
+                GuildFrame = false,
+                PVPUIFrame = false,
+                PVEFrame = false,
+                QuestFrame = false,
+                GossipFrame = false,
+                PlayerChoiceFrame = false,
+                MerchantFrame = false,
+                MailFrame = false,
+                TradeFrame = false,
+                GameMenuFrame = false,
+                SettingsPanel = false,
+            }
         }
     })
     
@@ -660,10 +682,13 @@ end
 -- ============================================================================
 
 function Skin:SkinBlizzardFrames()
-    if not self.db or not self.db.profile or not self.db.profile.skinBlizzardFrames then return end
+    if not self.db or not self.db.profile or not self.db.profile.frames then return end
     
     -- Use WoW 12.0 API to find frames
     local function TrySkinFrame(frameName)
+        -- Check if this specific frame is enabled for skinning
+        if not self.db.profile.frames[frameName] then return end
+        
         local frame = _G[frameName]
         if frame and not frame.muiSkinned then
             Skin:ApplyFrameSkin(frame)
@@ -673,9 +698,6 @@ function Skin:SkinBlizzardFrames()
     
     -- Character & Equipment
     TrySkinFrame("CharacterFrame")
-    TrySkinFrame("PaperDollFrame")
-    TrySkinFrame("ReputationFrame")
-    TrySkinFrame("TokenFrame")
     
     -- Spellbook & Professions  
     TrySkinFrame("SpellBookFrame")
@@ -684,8 +706,6 @@ function Skin:SkinBlizzardFrames()
     
     -- Collections
     TrySkinFrame("CollectionsJournal")
-    -- Don't skin child frames (MountJournal, PetJournal, ToyBox, WardrobeFrame)
-    -- as they are part of CollectionsJournal and skinning them hides content
     
     -- Achievements & Encounters
     TrySkinFrame("AchievementFrame")
@@ -713,7 +733,6 @@ function Skin:SkinBlizzardFrames()
     -- System
     TrySkinFrame("GameMenuFrame")
     TrySkinFrame("SettingsPanel")
-    TrySkinFrame("AddonList")
 end
 
 -- ============================================================================
@@ -833,22 +852,7 @@ function Skin:GetOptions()
                     end
                 end
             },
-            skinBlizzardFrames = {
-                name = "Skin Blizzard UI Frames",
-                desc = "Apply skin to character panel, spellbook, talents, collections, etc.",
-                type = "toggle",
-                order = 14,
-                width = "full",
-                get = function() return self.db.profile.skinBlizzardFrames end,
-                set = function(_, v)
-                    self.db.profile.skinBlizzardFrames = v
-                    if v then
-                        self:SkinBlizzardFrames()
-                    else
-                        StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
-                    end
-                end
-            },
+
             skinTooltips = {
                 name = "Skin Tooltips",
                 desc = "Apply skin to game tooltips",
@@ -904,6 +908,261 @@ function Skin:GetOptions()
                 set = function(_, r, g, b, a)
                     self.db.profile.buttonBorderColor = {r, g, b, a}
                     self:SkinActionBarButtons()
+                end
+            },
+            spacer3 = { type = "header", name = "Blizzard Frame Skinning", order = 30 },
+            framesDesc = {
+                type = "description",
+                name = "Enable skinning for individual Blizzard frames. When disabled, frames display with their default Blizzard appearance.",
+                order = 31
+            },
+            -- Character & Equipment
+            CharacterFrame = {
+                name = "Character Frame",
+                desc = "Apply AbstractUI skin to the character panel",
+                type = "toggle",
+                order = 40,
+                width = "full",
+                get = function() return self.db.profile.frames.CharacterFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.CharacterFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Spellbook & Professions
+            SpellBookFrame = {
+                name = "Spellbook",
+                desc = "Apply AbstractUI skin to the spellbook",
+                type = "toggle",
+                order = 50,
+                width = "full",
+                get = function() return self.db.profile.frames.SpellBookFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.SpellBookFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            PlayerSpellsFrame = {
+                name = "Talents / Specialization",
+                desc = "Apply AbstractUI skin to the talents panel",
+                type = "toggle",
+                order = 51,
+                width = "full",
+                get = function() return self.db.profile.frames.PlayerSpellsFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.PlayerSpellsFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            ProfessionsFrame = {
+                name = "Professions",
+                desc = "Apply AbstractUI skin to the professions panel",
+                type = "toggle",
+                order = 52,
+                width = "full",
+                get = function() return self.db.profile.frames.ProfessionsFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.ProfessionsFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Collections
+            CollectionsJournal = {
+                name = "Collections (Mounts, Pets, Toys, Transmog)",
+                desc = "Apply AbstractUI skin to the collections journal. WARNING: Keep this OFF to see mount/pet icons properly.",
+                type = "toggle",
+                order = 60,
+                width = "full",
+                get = function() return self.db.profile.frames.CollectionsJournal end,
+                set = function(_, v)
+                    self.db.profile.frames.CollectionsJournal = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Achievements
+            AchievementFrame = {
+                name = "Achievements",
+                desc = "Apply AbstractUI skin to the achievements panel",
+                type = "toggle",
+                order = 70,
+                width = "full",
+                get = function() return self.db.profile.frames.AchievementFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.AchievementFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            EncounterJournal = {
+                name = "Encounter Journal",
+                desc = "Apply AbstractUI skin to the dungeon/raid journal",
+                type = "toggle",
+                order = 71,
+                width = "full",
+                get = function() return self.db.profile.frames.EncounterJournal end,
+                set = function(_, v)
+                    self.db.profile.frames.EncounterJournal = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Social
+            FriendsFrame = {
+                name = "Friends List",
+                desc = "Apply AbstractUI skin to the friends panel",
+                type = "toggle",
+                order = 80,
+                width = "full",
+                get = function() return self.db.profile.frames.FriendsFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.FriendsFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            CommunitiesFrame = {
+                name = "Communities / Groups",
+                desc = "Apply AbstractUI skin to the communities panel",
+                type = "toggle",
+                order = 81,
+                width = "full",
+                get = function() return self.db.profile.frames.CommunitiesFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.CommunitiesFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            GuildFrame = {
+                name = "Guild Panel",
+                desc = "Apply AbstractUI skin to the guild panel",
+                type = "toggle",
+                order = 82,
+                width = "full",
+                get = function() return self.db.profile.frames.GuildFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.GuildFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- PvP
+            PVPUIFrame = {
+                name = "PvP Panel",
+                desc = "Apply AbstractUI skin to the PvP panel",
+                type = "toggle",
+                order = 90,
+                width = "full",
+                get = function() return self.db.profile.frames.PVPUIFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.PVPUIFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            PVEFrame = {
+                name = "Dungeon Finder / Group Finder",
+                desc = "Apply AbstractUI skin to the dungeon finder",
+                type = "toggle",
+                order = 91,
+                width = "full",
+                get = function() return self.db.profile.frames.PVEFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.PVEFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Questing & NPCs
+            QuestFrame = {
+                name = "Quest Frame",
+                desc = "Apply AbstractUI skin to the quest panel",
+                type = "toggle",
+                order = 100,
+                width = "full",
+                get = function() return self.db.profile.frames.QuestFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.QuestFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            GossipFrame = {
+                name = "NPC Dialog",
+                desc = "Apply AbstractUI skin to NPC dialog windows",
+                type = "toggle",
+                order = 101,
+                width = "full",
+                get = function() return self.db.profile.frames.GossipFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.GossipFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            PlayerChoiceFrame = {
+                name = "Player Choice Dialog",
+                desc = "Apply AbstractUI skin to player choice dialogs",
+                type = "toggle",
+                order = 102,
+                width = "full",
+                get = function() return self.db.profile.frames.PlayerChoiceFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.PlayerChoiceFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- Trading
+            MerchantFrame = {
+                name = "Merchant / Vendor",
+                desc = "Apply AbstractUI skin to vendor windows",
+                type = "toggle",
+                order = 110,
+                width = "full",
+                get = function() return self.db.profile.frames.MerchantFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.MerchantFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            MailFrame = {
+                name = "Mailbox",
+                desc = "Apply AbstractUI skin to the mailbox",
+                type = "toggle",
+                order = 111,
+                width = "full",
+                get = function() return self.db.profile.frames.MailFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.MailFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            TradeFrame = {
+                name = "Trade Window",
+                desc = "Apply AbstractUI skin to the trade window",
+                type = "toggle",
+                order = 112,
+                width = "full",
+                get = function() return self.db.profile.frames.TradeFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.TradeFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            -- System
+            GameMenuFrame = {
+                name = "Game Menu",
+                desc = "Apply AbstractUI skin to the ESC menu",
+                type = "toggle",
+                order = 120,
+                width = "full",
+                get = function() return self.db.profile.frames.GameMenuFrame end,
+                set = function(_, v)
+                    self.db.profile.frames.GameMenuFrame = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            SettingsPanel = {
+                name = "Settings Panel",
+                desc = "Apply AbstractUI skin to the settings/options panel",
+                type = "toggle",
+                order = 121,
+                width = "full",
+                get = function() return self.db.profile.frames.SettingsPanel end,
+                set = function(_, v)
+                    self.db.profile.frames.SettingsPanel = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end
             }
         }
