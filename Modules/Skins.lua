@@ -684,10 +684,8 @@ function Skin:SkinBlizzardFrames()
     
     -- Collections
     TrySkinFrame("CollectionsJournal")
-    TrySkinFrame("MountJournal")
-    TrySkinFrame("PetJournal")
-    TrySkinFrame("ToyBox")
-    TrySkinFrame("WardrobeFrame")
+    -- Don't skin child frames (MountJournal, PetJournal, ToyBox, WardrobeFrame)
+    -- as they are part of CollectionsJournal and skinning them hides content
     
     -- Achievements & Encounters
     TrySkinFrame("AchievementFrame")
