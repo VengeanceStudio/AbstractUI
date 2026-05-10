@@ -61,16 +61,7 @@ function Skin:OnInitialize()
 end
 
 function Skin:OnDBReady()
-    print("|cff00ff00AbstractUI Skins:|r OnDBReady called")
-    print("  modules.skins =", AbstractUI.db.profile.modules.skins)
-    
-    -- TEMPORARY: Disable module completely for testing
-    print("|cffff0000AbstractUI Skins:|r MODULE DISABLED FOR TESTING")
-    self:Disable()
-    return
-    
     if not AbstractUI.db.profile.modules.skins then 
-        print("|cffff0000AbstractUI Skins:|r Module disabled, exiting")
         self:Disable()
         return 
     end
@@ -115,25 +106,6 @@ function Skin:OnDBReady()
     })
     
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    
-    -- Debug: Monitor CollectionsJournal for ANY modifications
-    C_Timer.After(2, function()
-        if CollectionsJournal then
-            print("|cff00ff00AbstractUI Debug:|r Monitoring CollectionsJournal for modifications...")
-            
-            -- Check current state
-            print("  muiSkinned:", CollectionsJournal.muiSkinned)
-            print("  Has SetBackdrop:", CollectionsJournal.SetBackdrop ~= nil)
-            
-            -- Hook to detect skinning attempts
-            if CollectionsJournal.HookScript then
-                CollectionsJournal:HookScript("OnShow", function()
-                    print("|cffff0000AbstractUI Debug:|r CollectionsJournal OnShow triggered")
-                    print("  muiSkinned:", CollectionsJournal.muiSkinned)
-                end)
-            end
-        end
-    end)
     
     -- Immediately trigger skinning since we may have already entered world
     C_Timer.After(0.1, function()
@@ -189,8 +161,6 @@ end
 function Skin:SetupDynamicSkinning()
     if self.dynamicHooksSetup then return end
     
-    print("|cff00ff00AbstractUI Debug:|r SetupDynamicSkinning called!")
-    
     -- Hook into frame show events to skin frames as they appear
     local function SkinFrameOnShow(frame)
         if frame.muiSkinned then return end
@@ -237,21 +207,11 @@ function Skin:SetupDynamicSkinning()
     
     -- Use hooksecurefunc to catch frames as they're created
     hooksecurefunc("ShowUIPanel", function(frame)
-        if frame then
+        if frame and not frame.muiSkinned then
             local frameName = frame:GetName()
-            if frameName == "CollectionsJournal" then
-                print("|cffff0000AbstractUI Debug:|r ShowUIPanel called on CollectionsJournal!")
-                print("  muiSkinned:", frame.muiSkinned)
-                print("  Checking if should skin...")
-            end
-            
-            if not frame.muiSkinned then
-                local frameName = frame:GetName()
-                if frameName and Skin.db and Skin.db.profile and Skin.db.profile.frames and Skin.db.profile.frames[frameName] then
-                    print("|cff00ff00AbstractUI Debug:|r  Frame enabled for skinning:", frameName)
-                    Skin:ApplyFrameSkin(frame)
-                    frame.muiSkinned = true
-                end
+            if frameName and Skin.db and Skin.db.profile and Skin.db.profile.frames and Skin.db.profile.frames[frameName] then
+                Skin:ApplyFrameSkin(frame)
+                frame.muiSkinned = true
             end
         end
     end)
@@ -275,13 +235,6 @@ end
 ]]
 function Skin:ApplyFrameSkin(frame, skinName)
     if not frame then return end
-    
-    -- Debug: Log if called on CollectionsJournal
-    local frameName = frame:GetName()
-    if frameName == "CollectionsJournal" then
-        print("|cffff0000AbstractUI Debug:|r ApplyFrameSkin called on CollectionsJournal!")
-        print("  Stack:", debugstack(2, 3, 3))
-    end
     
     -- Safety check: ensure database is initialized
     if not self.db or not self.db.profile then
