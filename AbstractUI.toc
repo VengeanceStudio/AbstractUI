@@ -1,6 +1,6 @@
 ## Interface: 120005
 ## Title: Abstract UI
-## Version: 12.0.5.24
+## Version: 12.0.5.25
 ## Notes: Complete Modern UI Replacement.
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
@@ -74,7 +74,7 @@ Modules\Chat.lua
 Modules\Skins.lua
 Skins\CharacterPane.lua
 Skins\SpellBookFrame.lua
-Skins\PlayerSpellsFrame.lua
+Skins\TalentsFrame.lua
 Skins\ProfessionsFrame.lua
 Skins\CollectionsJournal.lua
 Skins\AchievementFrame.lua
@@ -83,10 +83,10 @@ Skins\FriendsFrame.lua
 Skins\CommunitiesFrame.lua
 Skins\GuildFrame.lua
 Skins\PVPUIFrame.lua
-Skins\PVEFrame.lua
+Skins\LFG.lua
 Skins\QuestFrame.lua
 Skins\GossipFrame.lua
-Skins\PlayerChoiceFrame.lua
+Skins\DialogFrame.lua
 Skins\MerchantFrame.lua
 Skins\MailFrame.lua
 Skins\TradeFrame.lua

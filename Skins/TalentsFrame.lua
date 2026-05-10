@@ -1,14 +1,14 @@
--- Skins/PlayerSpellsFrame.lua
--- Custom skin for the Player Spells frame (modern talent UI)
+-- Skins/TalentsFrame.lua
+-- Custom skin for the Talents & Specialization UI
 
 local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
-local PlayerSpellsSkin = AbstractUI:NewModule("PlayerSpellsSkin", "AceEvent-3.0")
+local TalentsSkin = AbstractUI:NewModule("TalentsSkin", "AceEvent-3.0")
 
 local SkinFramework
 
 -- Work in progress dialog
-StaticPopupDialogs["ABSTRACTUI_PLAYERSPELLS_WIP"] = {
-    text = "The skinning for 'Player Spells' is not completed yet and is a work in progress.",
+StaticPopupDialogs["ABSTRACTUI_TALENTS_WIP"] = {
+    text = "The skinning for 'Talents' is not completed yet and is a work in progress.",
     button1 = "OK",
     timeout = 0,
     whileDead = true,
@@ -16,16 +16,16 @@ StaticPopupDialogs["ABSTRACTUI_PLAYERSPELLS_WIP"] = {
     preferredIndex = 3,
 }
 
-function PlayerSpellsSkin:OnInitialize()
+function TalentsSkin:OnInitialize()
     -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
-function PlayerSpellsSkin:OnEnable()
+function TalentsSkin:OnEnable()
     if not SkinFramework then return end
     
     -- Check if this frame is enabled for skinning
     if SkinFramework:IsFrameEnabled("PlayerSpellsFrame") then
-        StaticPopup_Show("ABSTRACTUI_PLAYERSPELLS_WIP")
+        StaticPopup_Show("ABSTRACTUI_TALENTS_WIP")
     end
 end
