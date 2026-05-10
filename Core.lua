@@ -84,11 +84,6 @@ function AbstractUI:OnInitialize()
 end
 
 function AbstractUI:OnEnable()
-    print("|cffff0000ABSTRACTUI DEBUG:|r OnEnable called - testing if Core.lua causes Collections issue")
-    print("|cffff0000ABSTRACTUI DEBUG:|r Doing NOTHING else - all functionality disabled for testing")
-    return  -- EXIT IMMEDIATELY - DO NOTHING
-    
-    --[[ ALL CODE BELOW IS DISABLED FOR TESTING
     -- Load custom themes FIRST before validating
     self:LoadCustomThemes()
     
@@ -136,7 +131,6 @@ function AbstractUI:OnEnable()
     if UnitFrames and UnitFrames.CreateFocusFrame then
         UnitFrames:CreateFocusFrame()
     end
-    --]]
 end
 
 function AbstractUI:SlashCommand(input)
