@@ -23,19 +23,11 @@ end
 function CharacterPane:OnDBReady()
     -- Get framework references
     SkinFramework = AbstractUI.SkinFramework
-    
-    if not SkinFramework then
-        print("|cffff0000AbstractUI CharacterPane:|r SkinFramework not available")
-        return
-    end
+    if not SkinFramework then return end
     
     ColorPalette = SkinFramework:GetColorPalette()
     FontKit = SkinFramework:GetFontKit()
-    
-    if not ColorPalette then
-        print("|cffff0000AbstractUI CharacterPane:|r ColorPalette not available")
-        return
-    end
+    if not ColorPalette then return end
     
     self:RegisterEvent("ADDON_LOADED")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -86,32 +78,17 @@ end
 local function IsEnabled()
     -- Use framework's centralized check
     if SkinFramework then
-        local result = SkinFramework:IsFrameEnabled("CharacterFrame")
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("|cff00ff00AbstractUI CharacterPane IsEnabled:|r Framework check =", result)
-        end
-        return result
-    end
-    
-    if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-        print("|cffff0000AbstractUI CharacterPane IsEnabled:|r SkinFramework not available, using fallback")
+        return SkinFramework:IsFrameEnabled("CharacterFrame")
     end
     
     -- Fallback check if framework not loaded
     if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules.skins then
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("  modules.skins =", AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.modules and AbstractUI.db.profile.modules.skins)
-        end
         return false
     end
     
     local SkinModule = AbstractUI:GetModule("Skin", true)
     if SkinModule and SkinModule.db and SkinModule.db.profile and SkinModule.db.profile.frames then
-        local result = SkinModule.db.profile.frames.CharacterFrame == true
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("  Skin module frames.CharacterFrame =", SkinModule.db.profile.frames.CharacterFrame)
-        end
-        return result
+        return SkinModule.db.profile.frames.CharacterFrame == true
     end
     
     return false
@@ -2864,38 +2841,8 @@ end
 ---------------------------------------------------------------------------
 
 function CharacterPane:ApplySkin()
-    local enabled = IsEnabled()
-    
-    -- Debug output
-    if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-        print("|cff00ff00AbstractUI CharacterPane:|r ApplySkin called")
-        print("  Enabled:", enabled)
-        print("  Already skinned:", skinned)
-        print("  CharacterFrame exists:", CharacterFrame ~= nil)
-    end
-    
-    if not enabled then
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("|cffff0000AbstractUI CharacterPane:|r Not enabled - skipping")
-        end
-        return
-    end
-    
-    if skinned then
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("|cffff0000AbstractUI CharacterPane:|r Already skinned - skipping")
-        end
-        return
-    end
-    
-    if not CharacterFrame then
-        if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.debug then
-            print("|cffff0000AbstractUI CharacterPane:|r CharacterFrame not found")
-        end
-        return
-    end
-    
-    print("|cff00ff00AbstractUI:|r Applying Character Frame skin...")
+    if not IsEnabled() or skinned then return end
+    if not CharacterFrame then return end
     
     -- Apply all skins
     StripBlizzardTextures()
@@ -2913,7 +2860,6 @@ function CharacterPane:ApplySkin()
     end)
     
     skinned = true
-    print("|cff00ff00AbstractUI:|r Character Frame skin applied successfully!")
     
     -- Listen for theme changes from framework
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
@@ -2926,12 +2872,4 @@ function CharacterPane:OnThemeChanged()
     -- Reapply skins with new theme colors
     skinned = false
     self:ApplySkin()
-end
-
--- Debug command to manually trigger skinning
-SLASH_AUSKINCHAR1 = "/auskinchar"
-SlashCmdList["AUSKINCHAR"] = function()
-    print("|cff00ff00AbstractUI:|r Manually triggering Character Frame skin...")
-    skinned = false
-    CharacterPane:ApplySkin()
 end
