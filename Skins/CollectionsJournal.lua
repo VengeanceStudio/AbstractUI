@@ -1,0 +1,31 @@
+-- Skins/CollectionsJournal.lua
+-- Custom skin for the Collections (Mounts/Pets/Toys) frame
+
+local _, AbstractUI = ...
+local CollectionsSkin = AbstractUI:NewModule("CollectionsSkin", "AceEvent-3.0")
+
+local SkinFramework
+
+-- Work in progress dialog
+StaticPopupDialogs["ABSTRACTUI_COLLECTIONS_WIP"] = {
+    text = "The skinning for 'Collections Journal' is not completed yet and is a work in progress.",
+    button1 = "OK",
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+function CollectionsSkin:OnInitialize()
+    -- Wait for SkinFramework to be available
+    SkinFramework = AbstractUI.SkinFramework
+end
+
+function CollectionsSkin:OnEnable()
+    if not SkinFramework then return end
+    
+    -- Check if this frame is enabled for skinning
+    if SkinFramework:IsFrameEnabled("CollectionsJournal") then
+        StaticPopup_Show("ABSTRACTUI_COLLECTIONS_WIP")
+    end
+end
