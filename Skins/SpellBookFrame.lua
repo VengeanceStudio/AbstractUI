@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_SPELLBOOK_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function SpellBookSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function SpellBookSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("SpellBookFrame") then
-        StaticPopup_Show("ABSTRACTUI_SPELLBOOK_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["SpellBookFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("SpellBookFrame") then
+                StaticPopup_Show("ABSTRACTUI_SPELLBOOK_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end

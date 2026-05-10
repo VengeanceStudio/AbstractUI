@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_TALENTS_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function TalentsSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function TalentsSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("PlayerSpellsFrame") then
-        StaticPopup_Show("ABSTRACTUI_TALENTS_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["PlayerSpellsFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("PlayerSpellsFrame") then
+                StaticPopup_Show("ABSTRACTUI_TALENTS_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end

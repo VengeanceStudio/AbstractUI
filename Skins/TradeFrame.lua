@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_TRADE_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function TradeSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function TradeSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("TradeFrame") then
-        StaticPopup_Show("ABSTRACTUI_TRADE_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["TradeFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("TradeFrame") then
+                StaticPopup_Show("ABSTRACTUI_TRADE_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end

@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_FRIENDS_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function FriendsSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function FriendsSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("FriendsFrame") then
-        StaticPopup_Show("ABSTRACTUI_FRIENDS_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["FriendsFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("FriendsFrame") then
+                StaticPopup_Show("ABSTRACTUI_FRIENDS_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end

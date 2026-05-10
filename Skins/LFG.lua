@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_LFG_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function LFGSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function LFGSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("PVEFrame") then
-        StaticPopup_Show("ABSTRACTUI_LFG_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["PVEFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("PVEFrame") then
+                StaticPopup_Show("ABSTRACTUI_LFG_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end

@@ -16,16 +16,23 @@ StaticPopupDialogs["ABSTRACTUI_PROFESSIONS_WIP"] = {
     preferredIndex = 3,
 }
 
+local hasShownPopup = false
+
 function ProfessionsSkin:OnInitialize()
-    -- Wait for SkinFramework to be available
     SkinFramework = AbstractUI.SkinFramework
 end
 
 function ProfessionsSkin:OnEnable()
     if not SkinFramework then return end
     
-    -- Check if this frame is enabled for skinning
-    if SkinFramework:IsFrameEnabled("ProfessionsFrame") then
-        StaticPopup_Show("ABSTRACTUI_PROFESSIONS_WIP")
+    -- Hook the frame to show popup when first opened
+    local frame = _G["ProfessionsFrame"]
+    if frame then
+        frame:HookScript("OnShow", function()
+            if not hasShownPopup and SkinFramework:IsFrameEnabled("ProfessionsFrame") then
+                StaticPopup_Show("ABSTRACTUI_PROFESSIONS_WIP")
+                hasShownPopup = true
+            end
+        end)
     end
 end
