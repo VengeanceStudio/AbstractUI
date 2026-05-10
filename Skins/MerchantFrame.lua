@@ -1,7 +1,7 @@
 -- Skins/MerchantFrame.lua
 -- Custom skin for the Merchant/Vendor frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local MerchantSkin = AbstractUI:NewModule("MerchantSkin", "AceEvent-3.0")
 
 local SkinFramework

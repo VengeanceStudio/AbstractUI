@@ -1,7 +1,7 @@
 -- Skins/MailFrame.lua
 -- Custom skin for the Mail/Mailbox frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local MailSkin = AbstractUI:NewModule("MailSkin", "AceEvent-3.0")
 
 local SkinFramework

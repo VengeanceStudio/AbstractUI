@@ -1,7 +1,7 @@
 -- Skins/PVPUIFrame.lua
 -- Custom skin for the PVP UI frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local PVPSkin = AbstractUI:NewModule("PVPSkin", "AceEvent-3.0")
 
 local SkinFramework

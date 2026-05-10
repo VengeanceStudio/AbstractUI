@@ -1,7 +1,7 @@
 -- Skins/CommunitiesFrame.lua
 -- Custom skin for the Communities & Guilds frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local CommunitiesSkin = AbstractUI:NewModule("CommunitiesSkin", "AceEvent-3.0")
 
 local SkinFramework

@@ -1,7 +1,7 @@
 -- Skins/GameMenuFrame.lua
 -- Custom skin for the Game Menu (ESC menu) frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local GameMenuSkin = AbstractUI:NewModule("GameMenuSkin", "AceEvent-3.0")
 
 local SkinFramework

@@ -1,7 +1,7 @@
 -- Skins/AchievementFrame.lua
 -- Custom skin for the Achievements frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local AchievementSkin = AbstractUI:NewModule("AchievementSkin", "AceEvent-3.0")
 
 local SkinFramework

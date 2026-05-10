@@ -1,7 +1,7 @@
 -- Skins/QuestFrame.lua
 -- Custom skin for the Quest frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local QuestSkin = AbstractUI:NewModule("QuestSkin", "AceEvent-3.0")
 
 local SkinFramework

@@ -1,7 +1,7 @@
 -- Skins/FriendsFrame.lua
 -- Custom skin for the Friends & Social frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local FriendsSkin = AbstractUI:NewModule("FriendsSkin", "AceEvent-3.0")
 
 local SkinFramework

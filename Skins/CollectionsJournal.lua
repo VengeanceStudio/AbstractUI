@@ -1,7 +1,7 @@
 -- Skins/CollectionsJournal.lua
 -- Custom skin for the Collections (Mounts/Pets/Toys) frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local CollectionsSkin = AbstractUI:NewModule("CollectionsSkin", "AceEvent-3.0")
 
 local SkinFramework

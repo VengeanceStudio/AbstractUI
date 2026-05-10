@@ -1,7 +1,7 @@
 -- Skins/ProfessionsFrame.lua
 -- Custom skin for the Professions crafting frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local ProfessionsSkin = AbstractUI:NewModule("ProfessionsSkin", "AceEvent-3.0")
 
 local SkinFramework

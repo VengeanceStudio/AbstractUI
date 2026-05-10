@@ -1,7 +1,7 @@
 -- Skins/SettingsPanel.lua
 -- Custom skin for the Settings Panel frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local SettingsSkin = AbstractUI:NewModule("SettingsSkin", "AceEvent-3.0")
 
 local SkinFramework

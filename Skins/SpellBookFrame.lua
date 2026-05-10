@@ -1,7 +1,7 @@
 -- Skins/SpellBookFrame.lua
 -- Custom skin for the Spell Book & Abilities frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local SpellBookSkin = AbstractUI:NewModule("SpellBookSkin", "AceEvent-3.0")
 
 local SkinFramework

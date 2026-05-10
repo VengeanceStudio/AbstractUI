@@ -1,7 +1,7 @@
 -- Skins/TradeFrame.lua
 -- Custom skin for the Trade frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local TradeSkin = AbstractUI:NewModule("TradeSkin", "AceEvent-3.0")
 
 local SkinFramework

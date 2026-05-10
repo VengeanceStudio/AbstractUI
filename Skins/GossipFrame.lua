@@ -1,7 +1,7 @@
 -- Skins/GossipFrame.lua
 -- Custom skin for the NPC Gossip frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local GossipSkin = AbstractUI:NewModule("GossipSkin", "AceEvent-3.0")
 
 local SkinFramework

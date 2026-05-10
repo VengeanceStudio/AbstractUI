@@ -1,7 +1,7 @@
 -- Skins/EncounterJournal.lua
 -- Custom skin for the Encounter Journal (dungeon/raid guide)
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local EncounterSkin = AbstractUI:NewModule("EncounterSkin", "AceEvent-3.0")
 
 local SkinFramework

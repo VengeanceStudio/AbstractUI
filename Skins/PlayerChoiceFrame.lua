@@ -1,7 +1,7 @@
 -- Skins/PlayerChoiceFrame.lua
 -- Custom skin for the Player Choice frame (story decisions)
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local PlayerChoiceSkin = AbstractUI:NewModule("PlayerChoiceSkin", "AceEvent-3.0")
 
 local SkinFramework

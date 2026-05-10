@@ -1,7 +1,7 @@
 -- Skins/PlayerSpellsFrame.lua
 -- Custom skin for the Player Spells frame (modern talent UI)
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local PlayerSpellsSkin = AbstractUI:NewModule("PlayerSpellsSkin", "AceEvent-3.0")
 
 local SkinFramework

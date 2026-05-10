@@ -1,7 +1,7 @@
 -- Skins/PVEFrame.lua
 -- Custom skin for the PVE (Dungeon Finder/LFG) frame
 
-local _, AbstractUI = ...
+local AbstractUI = LibStub("AceAddon-3.0"):GetAddon("AbstractUI")
 local PVESkin = AbstractUI:NewModule("PVESkin", "AceEvent-3.0")
 
 local SkinFramework
