@@ -940,7 +940,7 @@ function Skin:GetOptions()
             },
             -- Spellbook & Professions
             SpellBookFrame = {
-                name = "Spellbook",
+                name = "Spellbook (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the spellbook",
                 type = "toggle",
                 order = 50,
@@ -952,7 +952,7 @@ function Skin:GetOptions()
                 end
             },
             PlayerSpellsFrame = {
-                name = "Talents / Specialization",
+                name = "Talents / Specialization (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the talents panel",
                 type = "toggle",
                 order = 51,
@@ -964,7 +964,7 @@ function Skin:GetOptions()
                 end
             },
             ProfessionsFrame = {
-                name = "Professions",
+                name = "Professions (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the professions panel",
                 type = "toggle",
                 order = 52,
@@ -977,7 +977,7 @@ function Skin:GetOptions()
             },
             -- Collections
             CollectionsJournal = {
-                name = "Collections (Mounts, Pets, Toys, Transmog)",
+                name = "Collections (Mounts, Pets, Toys, Transmog) (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the collections journal. WARNING: Keep this OFF to see mount/pet icons properly.",
                 type = "toggle",
                 order = 60,
@@ -990,7 +990,7 @@ function Skin:GetOptions()
             },
             -- Achievements
             AchievementFrame = {
-                name = "Achievements",
+                name = "Achievements (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the achievements panel",
                 type = "toggle",
                 order = 70,
@@ -1002,7 +1002,7 @@ function Skin:GetOptions()
                 end
             },
             EncounterJournal = {
-                name = "Encounter Journal",
+                name = "Encounter Journal (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the dungeon/raid journal",
                 type = "toggle",
                 order = 71,
@@ -1015,7 +1015,7 @@ function Skin:GetOptions()
             },
             -- Social
             FriendsFrame = {
-                name = "Friends List",
+                name = "Friends List (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the friends panel",
                 type = "toggle",
                 order = 80,
@@ -1027,7 +1027,7 @@ function Skin:GetOptions()
                 end
             },
             CommunitiesFrame = {
-                name = "Communities / Groups",
+                name = "Communities / Groups (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the communities panel",
                 type = "toggle",
                 order = 81,
@@ -1039,7 +1039,7 @@ function Skin:GetOptions()
                 end
             },
             GuildFrame = {
-                name = "Guild Panel",
+                name = "Guild Panel (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the guild panel",
                 type = "toggle",
                 order = 82,
@@ -1052,7 +1052,7 @@ function Skin:GetOptions()
             },
             -- PvP
             PVPUIFrame = {
-                name = "PvP Panel",
+                name = "PvP Panel (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the PvP panel",
                 type = "toggle",
                 order = 90,
@@ -1064,7 +1064,7 @@ function Skin:GetOptions()
                 end
             },
             PVEFrame = {
-                name = "Dungeon Finder / Group Finder",
+                name = "Dungeon Finder / Group Finder (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the dungeon finder",
                 type = "toggle",
                 order = 91,
@@ -1077,7 +1077,7 @@ function Skin:GetOptions()
             },
             -- Questing & NPCs
             QuestFrame = {
-                name = "Quest Frame",
+                name = "Quest Frame (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the quest panel",
                 type = "toggle",
                 order = 100,
@@ -1089,7 +1089,7 @@ function Skin:GetOptions()
                 end
             },
             GossipFrame = {
-                name = "NPC Dialog",
+                name = "NPC Dialog (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to NPC dialog windows",
                 type = "toggle",
                 order = 101,
@@ -1101,7 +1101,7 @@ function Skin:GetOptions()
                 end
             },
             PlayerChoiceFrame = {
-                name = "Player Choice Dialog",
+                name = "Player Choice Dialog (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to player choice dialogs",
                 type = "toggle",
                 order = 102,
@@ -1114,7 +1114,7 @@ function Skin:GetOptions()
             },
             -- Trading
             MerchantFrame = {
-                name = "Merchant / Vendor",
+                name = "Merchant / Vendor (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to vendor windows",
                 type = "toggle",
                 order = 110,
@@ -1126,7 +1126,7 @@ function Skin:GetOptions()
                 end
             },
             MailFrame = {
-                name = "Mailbox",
+                name = "Mailbox (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the mailbox",
                 type = "toggle",
                 order = 111,
@@ -1138,7 +1138,7 @@ function Skin:GetOptions()
                 end
             },
             TradeFrame = {
-                name = "Trade Window",
+                name = "Trade Window (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the trade window",
                 type = "toggle",
                 order = 112,
@@ -1151,7 +1151,7 @@ function Skin:GetOptions()
             },
             -- System
             GameMenuFrame = {
-                name = "Game Menu",
+                name = "Game Menu (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the ESC menu",
                 type = "toggle",
                 order = 120,
@@ -1163,7 +1163,7 @@ function Skin:GetOptions()
                 end
             },
             SettingsPanel = {
-                name = "Settings Panel",
+                name = "Settings Panel (IN PROGRESS)",
                 desc = "Apply AbstractUI skin to the settings/options panel",
                 type = "toggle",
                 order = 121,
