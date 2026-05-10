@@ -4,9 +4,10 @@ local CharacterPane = AbstractUI:NewModule("CharacterPane", "AceEvent-3.0", "Ace
 ---------------------------------------------------------------------------
 -- CHARACTER PANEL SKIN
 -- Modern, transparent skin for Blizzard's character panel
--- Inspired by Aurora - works WITH Blizzard's frames, not against them
+-- Uses AbstractUI.SkinFramework for common functionality
 ---------------------------------------------------------------------------
 
+local SkinFramework = nil
 local ColorPalette = nil
 local FontKit = nil
 local skinned = false
@@ -20,18 +21,14 @@ function CharacterPane:OnInitialize()
 end
 
 function CharacterPane:OnDBReady()
-    ColorPalette = _G.AbstractUI_ColorPalette
-    FontKit = _G.AbstractUI_FontKit
+    -- Get framework references
+    SkinFramework = AbstractUI.SkinFramework
+    ColorPalette = SkinFramework:GetColorPalette()
+    FontKit = SkinFramework:GetFontKit()
     
     if not ColorPalette then return end
     
-    self.db = AbstractUI.db:RegisterNamespace("CharacterPane", {
-        profile = {
-            enabled = true,
-        }
-    })
-    
-   self:RegisterEvent("ADDON_LOADED")
+    self:RegisterEvent("ADDON_LOADED")
     
     if CharacterFrame then
         self:ApplySkin()
@@ -54,16 +51,34 @@ end
 ---------------------------------------------------------------------------
 
 local function GetThemeColors()
-    if not ColorPalette then
-        return 0.55, 0.60, 0.70, 0.85, 0.05, 0.05, 0.05, 0.65
+    if not SkinFramework then
+        return {
+            primary = {0.55, 0.60, 0.70, 0.85},
+            background = {0.05, 0.05, 0.05, 0.65},
+            border = {0.2, 0.2, 0.2, 1.0},
+            text = {1, 1, 1, 1}
+        }
     end
-    local pr, pg, pb, pa = ColorPalette:GetColor('primary')
-    local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
-    return pr, pg, pb, pa or 0.85, bgr, bgg, bgb, bga or 0.65
+    return SkinFramework:GetThemeColors()
 end
 
 local function IsEnabled()
-    return CharacterPane.db and CharacterPane.db.profile.enabled
+    -- Use framework's centralized check
+    if SkinFramework then
+        return SkinFramework:IsFrameEnabled("CharacterFrame")
+    end
+    
+    -- Fallback check if framework not loaded
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules.skins then
+        return false
+    end
+    
+    local SkinModule = AbstractUI:GetModule("Skin", true)
+    if SkinModule and SkinModule.db and SkinModule.db.profile and SkinModule.db.profile.frames then
+        return SkinModule.db.profile.frames.CharacterFrame == true
+    end
+    
+    return false
 end
 
 ---------------------------------------------------------------------------
@@ -2826,8 +2841,9 @@ function CharacterPane:ApplySkin()
     
     skinned = true
     
-    -- Listen for theme changes
+    -- Listen for theme changes from framework
     self:RegisterMessage("AbstractUI_THEME_CHANGED", "OnThemeChanged")
+    self:RegisterMessage("AbstractUI_SKIN_THEME_CHANGED", "OnThemeChanged")
 end
 
 function CharacterPane:OnThemeChanged()

@@ -1170,13 +1170,166 @@ function Skin:GetOptions()
 end
 
 -- ============================================================================
--- PUBLIC API
+-- THEME MANAGEMENT
+-- ============================================================================
+
+function Skin:BroadcastThemeChange()
+    -- Notify individual frame skins that theme has changed
+    if AbstractUI.SkinFramework then
+        AbstractUI.SkinFramework:NotifyThemeChange()
+    end
+end
+
+-- ============================================================================
+-- PUBLIC API / FRAMEWORK FOR INDIVIDUAL FRAME SKINS
+-- ============================================================================
+-- This section provides shared utilities that individual frame skin files
+-- (in /Skins/) can use to maintain consistency and avoid code duplication.
 -- ============================================================================
 
 -- Export skin definitions for other modules
 AbstractUI.Skins = SKINS
 
--- Export skinning function for other modules to use
+AbstractUI.SkinFramework = AbstractUI.SkinFramework or {}
+
+-- Check if a specific frame is enabled for skinning
+function AbstractUI.SkinFramework:IsFrameEnabled(frameName)
+    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules.skins then
+        return false
+    end
+    
+    local SkinModule = AbstractUI:GetModule("Skin", true)
+    if SkinModule and SkinModule.db and SkinModule.db.profile and SkinModule.db.profile.frames then
+        return SkinModule.db.profile.frames[frameName] == true
+    end
+    
+    return false
+end
+
+-- Get current theme colors for consistent styling
+function AbstractUI.SkinFramework:GetThemeColors()
+    local ColorPalette = _G.AbstractUI_ColorPalette
+    if not ColorPalette then
+        -- Fallback colors if ColorPalette not loaded
+        return {
+            primary = {0.55, 0.60, 0.70, 0.85},
+            background = {0.05, 0.05, 0.05, 0.65},
+            border = {0.2, 0.2, 0.2, 1.0},
+            text = {1, 1, 1, 1}
+        }
+    end
+    
+    local pr, pg, pb, pa = ColorPalette:GetColor('primary')
+    local bgr, bgg, bgb, bga = ColorPalette:GetColor('panel-bg')
+    local br, bg, bb, ba = ColorPalette:GetColor('border-primary')
+    local tr, tg, tb, ta = ColorPalette:GetColor('text-primary')
+    
+    return {
+        primary = {pr, pg, pb, pa or 0.85},
+        background = {bgr, bgg, bgb, bga or 0.65},
+        border = {br, bg, bb, ba or 1.0},
+        text = {tr, tg, tb, ta or 1.0}
+    }
+end
+
+-- Apply a standard AbstractUI backdrop to a frame
+function AbstractUI.SkinFramework:ApplyBackdrop(frame, opacity)
+    if not frame then return end
+    
+    -- Ensure BackdropTemplate is available
+    if not frame.SetBackdrop and BackdropTemplateMixin then
+        Mixin(frame, BackdropTemplateMixin)
+        if frame.OnBackdropLoaded then
+            frame:OnBackdropLoaded()
+        end
+    end
+    
+    if not frame.SetBackdrop then return end
+    
+    local colors = self:GetThemeColors()
+    opacity = opacity or colors.background[4]
+    
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        tile = false,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    
+    frame:SetBackdropColor(colors.background[1], colors.background[2], colors.background[3], opacity)
+    frame:SetBackdropBorderColor(colors.border[1], colors.border[2], colors.border[3], colors.border[4])
+end
+
+-- Strip Blizzard textures from a frame (common operation)
+function AbstractUI.SkinFramework:StripTextures(frame, keepPortrait)
+    if not frame then return end
+    
+    -- Strip texture regions
+    for i = 1, frame:GetNumRegions() do
+        local region = select(i, frame:GetRegions())
+        if region and region:GetObjectType() == "Texture" then
+            -- Keep portrait if requested
+            if not (keepPortrait and region == frame.portrait) then
+                region:SetAlpha(0)
+                region:Hide()
+            end
+        end
+    end
+    
+    -- Strip NineSlice (modern Blizzard border system)
+    if frame.NineSlice then
+        frame.NineSlice:SetAlpha(0)
+        frame.NineSlice:Hide()
+        
+        local pieces = {"TopEdge", "BottomEdge", "LeftEdge", "RightEdge",
+                       "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner", "Center"}
+        for _, piece in ipairs(pieces) do
+            if frame.NineSlice[piece] then
+                frame.NineSlice[piece]:SetAlpha(0)
+                frame.NineSlice[piece]:Hide()
+            end
+        end
+    end
+    
+    -- Strip Bg if present
+    if frame.Bg then
+        frame.Bg:SetAlpha(0)
+        frame.Bg:Hide()
+    end
+end
+
+-- Create a consistent close button style
+function AbstractUI.SkinFramework:SkinCloseButton(button)
+    if not button or button._abstractUISkinned then return end
+    
+    local colors = self:GetThemeColors()
+    
+    -- Keep the X text but restyle the button
+    -- This preserves Blizzard's functionality while applying our style
+    if button.SetNormalTexture then button:SetNormalTexture("") end
+    if button.SetHighlightTexture then button:SetHighlightTexture("") end
+    if button.SetPushedTexture then button:SetPushedTexture("") end
+    
+    button._abstractUISkinned = true
+end
+
+-- Get ColorPalette reference (convenience function)
+function AbstractUI.SkinFramework:GetColorPalette()
+    return _G.AbstractUI_ColorPalette
+end
+
+-- Get FontKit reference (convenience function)
+function AbstractUI.SkinFramework:GetFontKit()
+    return _G.AbstractUI_FontKit
+end
+
+-- Broadcast theme change to all individual frame skins
+function AbstractUI.SkinFramework:NotifyThemeChange()
+    AbstractUI:SendMessage("AbstractUI_SKIN_THEME_CHANGED")
+end
+
+-- Legacy/compatibility functions
 function AbstractUI:SkinFrame(frame, skinName)
     if Skin and Skin.ApplyFrameSkin then
         Skin:ApplyFrameSkin(frame, skinName)
