@@ -61,7 +61,16 @@ function Skin:OnInitialize()
 end
 
 function Skin:OnDBReady()
+    print("|cff00ff00AbstractUI Skins:|r OnDBReady called")
+    print("  modules.skins =", AbstractUI.db.profile.modules.skins)
+    
+    -- TEMPORARY: Disable module completely for testing
+    print("|cffff0000AbstractUI Skins:|r MODULE DISABLED FOR TESTING")
+    self:Disable()
+    return
+    
     if not AbstractUI.db.profile.modules.skins then 
+        print("|cffff0000AbstractUI Skins:|r Module disabled, exiting")
         self:Disable()
         return 
     end
