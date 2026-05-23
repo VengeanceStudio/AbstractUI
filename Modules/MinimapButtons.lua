@@ -684,6 +684,96 @@ function MinimapButtons:CollectMinimapButtons()
 end
 
 -- -----------------------------------------------------------------------------
+-- LAYOUT UPDATE (for settings changes without re-collection)
+-- -----------------------------------------------------------------------------
+function MinimapButtons:UpdateButtonBarLayout()
+    if not self.buttonBar or not self.buttonBar.buttons then return end
+    
+    local db = self.db.profile
+    local iconScale = db.iconScale or 0.5
+    local buttonSize = db.buttonSize or 32
+    local buttonsPerRow = db.buttonsPerRow or 1
+    local growthDirection = db.growthDirection or "right"
+    local spacing = db.spacing or 2
+    
+    -- Update bar position
+    self.buttonBar:ClearAllPoints()
+    self.buttonBar:SetPoint(db.anchor or "CENTER", UIParent, db.anchor or "CENTER", db.x or 0, db.y or 0)
+    
+    -- Convert buttons table to array for ordering
+    local buttons = {}
+    for button, data in pairs(self.buttonBar.buttons) do
+        if button then
+            table.insert(buttons, button)
+        end
+    end
+    
+    -- Re-layout all existing buttons
+    for i, button in ipairs(buttons) do
+        -- Update scale
+        button:SetScale(iconScale)
+        
+        -- Update size
+        button:SetSize(buttonSize, buttonSize)
+        
+        -- Calculate new position based on growth direction
+        local row = math.floor((i - 1) / buttonsPerRow)
+        local col = (i - 1) % buttonsPerRow
+        local originalWidth, originalHeight = button:GetSize()
+        local effectiveSize = math.max(originalWidth, originalHeight) * iconScale
+        local x, y
+        local barWidth, barHeight = 5, 30
+        
+        if growthDirection == "right" then
+            x = barWidth / 2 + col * (effectiveSize + spacing) + spacing + effectiveSize / 2
+            y = -row * (effectiveSize + spacing)
+        elseif growthDirection == "left" then
+            x = -barWidth / 2 - col * (effectiveSize + spacing) - spacing - effectiveSize / 2
+            y = -row * (effectiveSize + spacing)
+        elseif growthDirection == "down" then
+            x = col * (effectiveSize + spacing)
+            y = -barHeight / 2 - row * (effectiveSize + spacing) - spacing - effectiveSize / 2
+        elseif growthDirection == "up" then
+            x = col * (effectiveSize + spacing)
+            y = barHeight / 2 + row * (effectiveSize + spacing) + spacing + effectiveSize / 2
+        end
+        
+        -- Update intended position and size
+        button._abstractIntendedPosition = {x = x, y = y}
+        button._abstractIntendedSize = {width = buttonSize, height = buttonSize}
+        
+        -- Clear and reposition (using original functions to bypass locks)
+        if button._abstractOriginalClearAllPoints and button._abstractOriginalSetPoint then
+            button._abstractOriginalClearAllPoints(button)
+            button._abstractOriginalSetPoint(button, "CENTER", self.buttonBar, "CENTER", x, y)
+        end
+        
+        -- Update size (using original functions)
+        if button._abstractOriginalSetSize then
+            button._abstractOriginalSetSize(button, buttonSize, buttonSize)
+        end
+    end
+    
+    -- Recalculate expanded bar size
+    local numButtons = #buttons
+    if numButtons > 0 then
+        local rows = math.ceil(numButtons / buttonsPerRow)
+        local cols = math.min(numButtons, buttonsPerRow)
+        local firstButton = buttons[1]
+        local buttonWidth, buttonHeight = firstButton:GetSize()
+        local effectiveSize = math.max(buttonWidth, buttonHeight) * iconScale
+        self.buttonBar.expandedWidth = cols * (effectiveSize + spacing) + spacing
+        self.buttonBar.expandedHeight = rows * (effectiveSize + spacing) + spacing
+    end
+    
+    -- Update growth direction
+    self.buttonBar.growthDirection = growthDirection
+    
+    -- Reset cached anchor
+    self.buttonBar.collapsedAnchor = nil
+end
+
+-- -----------------------------------------------------------------------------
 -- EXPAND/COLLAPSE
 -- -----------------------------------------------------------------------------
 function MinimapButtons:ExpandButtonBar()
@@ -812,7 +902,7 @@ function MinimapButtons:GetOptions()
                 },
                 order = 12,
                 get = function() return self.db.profile.anchor or "CENTER" end,
-                set = function(_, v) self.db.profile.anchor = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.anchor = v; self:UpdateButtonBarLayout() end,
             },
             x = {
                 type = "range",
@@ -821,7 +911,7 @@ function MinimapButtons:GetOptions()
                 min = -500, max = 500, step = 1,
                 order = 13,
                 get = function() return self.db.profile.x or 0 end,
-                set = function(_, v) self.db.profile.x = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.x = v; self:UpdateButtonBarLayout() end,
             },
             y = {
                 type = "range",
@@ -830,7 +920,7 @@ function MinimapButtons:GetOptions()
                 min = -500, max = 500, step = 1,
                 order = 14,
                 get = function() return self.db.profile.y or 0 end,
-                set = function(_, v) self.db.profile.y = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.y = v; self:UpdateButtonBarLayout() end,
             },
             
             headerLayout = { type = "header", name = "Layout", order = 20},
@@ -841,7 +931,7 @@ function MinimapButtons:GetOptions()
                 min = 16, max = 48, step = 1,
                 order = 21,
                 get = function() return self.db.profile.buttonSize or 32 end,
-                set = function(_, v) self.db.profile.buttonSize = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.buttonSize = v; self:UpdateButtonBarLayout() end,
             },
             buttonsPerRow = {
                 type = "range",
@@ -850,7 +940,7 @@ function MinimapButtons:GetOptions()
                 min = 1, max = 10, step = 1,
                 order = 22,
                 get = function() return self.db.profile.buttonsPerRow or 1 end,
-                set = function(_, v) self.db.profile.buttonsPerRow = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.buttonsPerRow = v; self:UpdateButtonBarLayout() end,
             },
             collapsedSize = {
                 type = "range",
@@ -859,7 +949,7 @@ function MinimapButtons:GetOptions()
                 min = 10, max = 40, step = 1,
                 order = 23,
                 get = function() return self.db.profile.collapsedSize or 20 end,
-                set = function(_, v) self.db.profile.collapsedSize = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.collapsedSize = v; self:UpdateButtonBarLayout() end,
             },
             growthDirection = {
                 name = "Growth Direction",
@@ -873,7 +963,7 @@ function MinimapButtons:GetOptions()
                 },
                 order = 24,
                 get = function() return self.db.profile.growthDirection or "right" end,
-                set = function(_, v) self.db.profile.growthDirection = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.growthDirection = v; self:UpdateButtonBarLayout() end,
             },
             iconScale = {
                 type = "range",
@@ -883,7 +973,7 @@ function MinimapButtons:GetOptions()
                 min = 0.25, max = 1.5, step = 0.05,
                 order = 25,
                 get = function() return self.db.profile.iconScale or 0.5 end,
-                set = function(_, v) self.db.profile.iconScale = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.iconScale = v; self:UpdateButtonBarLayout() end,
             },
             spacing = {
                 type = "range",
@@ -893,7 +983,7 @@ function MinimapButtons:GetOptions()
                 min = 0, max = 10, step = 1,
                 order = 26,
                 get = function() return self.db.profile.spacing or 2 end,
-                set = function(_, v) self.db.profile.spacing = v; self:SetupButtonBar() end,
+                set = function(_, v) self.db.profile.spacing = v; self:UpdateButtonBarLayout() end,
             },
             
             headerAppearance = { type = "header", name = "Appearance", order = 30},
