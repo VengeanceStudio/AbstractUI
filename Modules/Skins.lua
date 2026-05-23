@@ -101,6 +101,7 @@ function Skin:OnDBReady()
                 TradeFrame = false,
                 GameMenuFrame = false,
                 SettingsPanel = false,
+                CompactRaidFrameManager = false,
             }
         }
     })
@@ -1171,6 +1172,18 @@ function Skin:GetOptions()
                 get = function() return self.db.profile.frames.SettingsPanel end,
                 set = function(_, v)
                     self.db.profile.frames.SettingsPanel = v
+                    StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
+                end
+            },
+            CompactRaidFrameManager = {
+                name = "Group Manager / Raid Frames",
+                desc = "Apply AbstractUI skin to the Compact Raid Frame Manager (via Group Manager module)",
+                type = "toggle",
+                order = 122,
+                width = "full",
+                get = function() return self.db.profile.frames.CompactRaidFrameManager end,
+                set = function(_, v)
+                    self.db.profile.frames.CompactRaidFrameManager = v
                     StaticPopup_Show("AbstractUI_RELOAD_CONFIRM")
                 end
             }
