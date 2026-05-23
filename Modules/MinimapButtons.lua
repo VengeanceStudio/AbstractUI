@@ -832,7 +832,11 @@ function MinimapButtons:CollapseButtonBar()
         end
     else
         local c = db.color or { r = 0.5, g = 0.5, b = 0.5, a = 1 }
-        r, g, b, a = c.r, c.g, c.b, c.a
+        -- Handle both keyed tables {r=..., g=..., b=..., a=...} and arrays {r, g, b, a}
+        r = (type(c.r) == "number" and c.r) or c[1] or 0.5
+        g = (type(c.g) == "number" and c.g) or c[2] or 0.5
+        b = (type(c.b) == "number" and c.b) or c[3] or 0.5
+        a = (type(c.a) == "number" and c.a) or c[4] or 1
     end
     
     self.buttonBarTab.bar:SetVertexColor(r, g, b, a)
@@ -857,7 +861,11 @@ function MinimapButtons:UpdateButtonBarColor()
         end
     else
         local c = db.color or { r = 0.5, g = 0.5, b = 0.5, a = 1 }
-        r, g, b, a = c.r, c.g, c.b, c.a
+        -- Handle both keyed tables {r=..., g=..., b=..., a=...} and arrays {r, g, b, a}
+        r = (type(c.r) == "number" and c.r) or c[1] or 0.5
+        g = (type(c.g) == "number" and c.g) or c[2] or 0.5
+        b = (type(c.b) == "number" and c.b) or c[3] or 0.5
+        a = (type(c.a) == "number" and c.a) or c[4] or 1
     end
     
     self.buttonBarTab.bar:SetVertexColor(r, g, b, a)
