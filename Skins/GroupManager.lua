@@ -77,6 +77,7 @@ function GroupManager:OnDBReady()
     -- Register events
     self:RegisterEvent("GROUP_ROSTER_UPDATE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self:RegisterEvent("ADDON_LOADED")
     
     -- Listen for move mode changes
     self:RegisterMessage("AbstractUI_MOVEMODE_CHANGED", "OnMoveModeChanged")
@@ -87,6 +88,44 @@ function GroupManager:OnDBReady()
         self:ApplySkin()
         self:UpdateVisibility()
     end)
+    
+    -- Also hook CompactRaidFrameManager if it already exists
+    if CompactRaidFrameManager then
+        self:HookFrameForSkinning()
+        -- If frame is already shown, apply skin immediately
+        if CompactRaidFrameManager:IsShown() then
+            C_Timer.After(0.6, function()
+                self:ApplySkin()
+            end)
+        end
+    end
+end
+
+---------------------------------------------------------------------------
+-- ADDON LOADED EVENT
+---------------------------------------------------------------------------
+
+function GroupManager:ADDON_LOADED(event, addon)
+    if addon == "Blizzard_CompactRaidFrames" then
+        C_Timer.After(0.2, function()
+            self:HookFrameForSkinning()
+            self:ApplySkin()
+        end)
+    end
+end
+
+function GroupManager:HookFrameForSkinning()
+    if not CompactRaidFrameManager then return end
+    if CompactRaidFrameManager.abstractUIHookedForSkin then return end
+    
+    -- Hook OnShow to ensure skin is applied when frame appears
+    CompactRaidFrameManager:HookScript("OnShow", function()
+        if not skinned and IsEnabled() then
+            GroupManager:ApplySkin()
+        end
+    end)
+    
+    CompactRaidFrameManager.abstractUIHookedForSkin = true
 end
 
 ---------------------------------------------------------------------------
@@ -94,15 +133,19 @@ end
 ---------------------------------------------------------------------------
 
 local function IsEnabled()
+    -- If the Group Manager module is enabled, always apply skinning
+    if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.modules then
+        if AbstractUI.db.profile.modules.groupManager == true then
+            return true
+        end
+    end
+    
+    -- Also check the separate skin toggle (for users who may want to skin without the toggle icon)
     if SkinFramework then
         return SkinFramework:IsFrameEnabled("CompactRaidFrameManager")
     end
     
-    if not AbstractUI.db or not AbstractUI.db.profile or not AbstractUI.db.profile.modules then
-        return false
-    end
-    
-    return AbstractUI.db.profile.modules.groupManager == true
+    return false
 end
 
 local function GetThemeColors()
@@ -286,15 +329,30 @@ end
 -- BLIZZARD FRAME SKINNING
 ---------------------------------------------------------------------------
 
-function GroupManager:ApplySkin()
-    if not IsEnabled() then return end
-    if skinned then return end
-    if not CompactRaidFrameManager then return end
+function GroupManager:ApplySkin(force)
+    if not IsEnabled() then 
+        print("|cffff0000AbstractUI GroupManager:|r Skinning not enabled")
+        return 
+    end
+    
+    if skinned and not force then 
+        return 
+    end
+    
+    if not CompactRaidFrameManager then 
+        print("|cffff0000AbstractUI GroupManager:|r CompactRaidFrameManager not found")
+        return 
+    end
+    
+    print("|cff00ff00AbstractUI GroupManager:|r Applying skin to CompactRaidFrameManager")
     
     blizzardManager = CompactRaidFrameManager
     local displayFrame = blizzardManager.displayFrame or CompactRaidFrameManagerDisplayFrame
     
-    if not displayFrame then return end
+    if not displayFrame then 
+        print("|cffff0000AbstractUI GroupManager:|r Display frame not found")
+        return 
+    end
     
     local colors = GetThemeColors()
     
@@ -305,6 +363,14 @@ function GroupManager:ApplySkin()
             parent = blizzardManager:GetParent(),
             strata = blizzardManager:GetFrameStrata(),
         }
+    end
+    
+    -- Ensure BackdropTemplate is available
+    if not blizzardManager.SetBackdrop and BackdropTemplateMixin then
+        Mixin(blizzardManager, BackdropTemplateMixin)
+        if blizzardManager.OnBackdropLoaded then
+            blizzardManager:OnBackdropLoaded()
+        end
     end
     
     -- Apply AbstractUI styling to the main frame
@@ -346,6 +412,14 @@ function GroupManager:ApplySkin()
                         region:SetAlpha(0)
                     end
                 end
+            end
+        end
+        
+        -- Ensure BackdropTemplate is available for display frame
+        if not displayFrame.SetBackdrop and BackdropTemplateMixin then
+            Mixin(displayFrame, BackdropTemplateMixin)
+            if displayFrame.OnBackdropLoaded then
+                displayFrame:OnBackdropLoaded()
             end
         end
         
@@ -652,6 +726,35 @@ function GroupManager:UpdateManagerFrame()
     
     managerFrame.toggleBtn:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
     managerFrame:SetSize(self.db.profile.compactWidth, self.db.profile.compactHeight)
+end
+
+---------------------------------------------------------------------------
+-- SLASH COMMANDS
+---------------------------------------------------------------------------
+
+SLASH_GROUPMANAGER1 = "/gmskin"
+SLASH_GROUPMANAGER2 = "/groupmanagerskin"
+SlashCmdList["GROUPMANAGER"] = function(msg)
+    if msg == "reskin" or msg == "" then
+        print("|cff00ff00AbstractUI:|r Force re-skinning Group Manager frame...")
+        if GroupManager then
+            skinned = false
+            GroupManager:ApplySkin(true)
+        end
+    elseif msg == "debug" then
+        print("|cff00ff00AbstractUI GroupManager Debug:|r")
+        print("  Module Enabled:", AbstractUI.db.profile.modules.groupManager)
+        print("  IsEnabled():", IsEnabled())
+        print("  Skinned:", skinned)
+        print("  CompactRaidFrameManager exists:", CompactRaidFrameManager ~= nil)
+        if CompactRaidFrameManager then
+            print("  Frame is shown:", CompactRaidFrameManager:IsShown())
+        end
+    else
+        print("|cff00ff00AbstractUI Group Manager Commands:|r")
+        print("  /gmskin reskin - Force re-apply skin")
+        print("  /gmskin debug - Show debug information")
+    end
 end
 
 return GroupManager
