@@ -86,15 +86,28 @@ local function CreateTeleportFrame()
         self.subtitle:SetFont(bodyFont, bodySize - 2, fontFlags)
         
         -- Don't recreate buttons - they were created in secure context
-        -- Just update their fonts if needed
-        for _, child in ipairs({self.scrollChild:GetChildren()}) do
-            if child.nameText then
+        -- Just update their fonts and colors based on current cooldown status
+        for i, child in ipairs({self.scrollChild:GetChildren()}) do
+            if child.nameText and DUNGEON_TELEPORTS[i] then
                 child.nameText:SetFont(bodyFont, bodySize, "OUTLINE")
+                
+                -- Update text color based on cooldown status (only for learned spells)
+                local dungeon = DUNGEON_TELEPORTS[i]
+                if dungeon.spellID and C_SpellBook.IsSpellInSpellBook(dungeon.spellID) then
+                    local cooldownInfo = C_Spell.GetSpellCooldown(dungeon.spellID)
+                    if cooldownInfo and cooldownInfo.startTime > 0 and cooldownInfo.duration > 0 then
+                        -- Spell is on cooldown - show in RED
+                        child.nameText:SetTextColor(1, 0, 0)
+                    else
+                        -- Spell is available - show in WHITE
+                        child.nameText:SetTextColor(1, 1, 1)
+                    end
+                end
             end
         end
     end)
     
-    -- Auto-hide on mouse leave
+    -- Auto-hide on mouse leave and update cooldown colors periodically
     teleportFrame:SetScript("OnUpdate", function(self, elapsed)
         if MouseIsOver(self) or (self.owner and MouseIsOver(self.owner)) then
             self.timer = 0
@@ -102,6 +115,29 @@ local function CreateTeleportFrame()
             self.timer = (self.timer or 0) + elapsed
             if self.timer > 0.2 then
                 self:Hide()
+            end
+        end
+        
+        -- Update cooldown colors every 0.5 seconds
+        self.colorUpdateTimer = (self.colorUpdateTimer or 0) + elapsed
+        if self.colorUpdateTimer > 0.5 then
+            self.colorUpdateTimer = 0
+            
+            -- Update text colors based on current cooldown status
+            for i, child in ipairs({self.scrollChild:GetChildren()}) do
+                if child.nameText and DUNGEON_TELEPORTS[i] then
+                    local dungeon = DUNGEON_TELEPORTS[i]
+                    if dungeon.spellID and C_SpellBook.IsSpellInSpellBook(dungeon.spellID) then
+                        local cooldownInfo = C_Spell.GetSpellCooldown(dungeon.spellID)
+                        if cooldownInfo and cooldownInfo.startTime > 0 and cooldownInfo.duration > 0 then
+                            -- Spell is on cooldown - show in RED
+                            child.nameText:SetTextColor(1, 0, 0)
+                        else
+                            -- Spell is available - show in WHITE
+                            child.nameText:SetTextColor(1, 1, 1)
+                        end
+                    end
+                end
             end
         end
     end)
@@ -218,7 +254,15 @@ function UpdateTeleportButtons()
         btn.nameText = nameText  -- Store reference for later font updates
         
         if hasSpell then
-            nameText:SetTextColor(1, 1, 1)
+            -- Check if spell is on cooldown
+            local cooldownInfo = C_Spell.GetSpellCooldown(dungeon.spellID)
+            if cooldownInfo and cooldownInfo.startTime > 0 and cooldownInfo.duration > 0 then
+                -- Spell is on cooldown - show in RED
+                nameText:SetTextColor(1, 0, 0)
+            else
+                -- Spell is available - show in WHITE
+                nameText:SetTextColor(1, 1, 1)
+            end
         else
             nameText:SetTextColor(0.5, 0.5, 0.5)
         end
@@ -227,6 +271,16 @@ function UpdateTeleportButtons()
         if hasSpell and dungeon.spellID > 0 then
             btn:SetScript("OnEnter", function(self)
                 self.bg:SetColorTexture(0.2, 0.2, 0.3, 0.9)
+                
+                -- Update text color based on current cooldown status
+                local cooldownInfo = C_Spell.GetSpellCooldown(dungeon.spellID)
+                if cooldownInfo and cooldownInfo.startTime > 0 and cooldownInfo.duration > 0 then
+                    -- Spell is on cooldown - show in RED
+                    nameText:SetTextColor(1, 0, 0)
+                else
+                    -- Spell is available - show in WHITE
+                    nameText:SetTextColor(1, 1, 1)
+                end
                 
                 -- Show tooltip with spell info
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
