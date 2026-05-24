@@ -1649,36 +1649,64 @@ function Tweaks:SetupTalentImportWhenReady()
         return
     end
     
-    print("|cff00FF7FAbstractUI Tweaks:|r Registering PLAYER_TALENT_UPDATE to detect talent UI opening")
+    print("|cff00FF7FAbstractUI Tweaks:|r Setting up talent frame detection...")
     
-    -- Use PLAYER_TALENT_UPDATE event which fires when talent UI is accessed
-    self:RegisterEvent("PLAYER_TALENT_UPDATE", function()
+    -- Try to find and hook the talent frame immediately
+    local talentFrame = PlayerSpellsFrame or ClassTalentFrame or PlayerTalentFrame
+    
+    if talentFrame then
+        print("|cff00FF7FAbstractUI Tweaks:|r Found talent frame:", talentFrame:GetName() or "UnnamedFrame")
+        self:HookTalentFrame(talentFrame)
+        
+        -- If already visible, start checking now
+        if talentFrame:IsVisible() then
+            print("|cff00FF7FAbstractUI Tweaks:|r Talent frame already open, checking for import dialog")
+            self:HookTalentFrameForPolling(talentFrame)
+        end
+    else
+        -- Frame doesn't exist yet - wait for ADDON_LOADED
+        print("|cff00FF7FAbstractUI Tweaks:|r Talent frame not found, waiting for Blizzard_PlayerSpells to load...")
+        self:RegisterEvent("ADDON_LOADED", function(event, addonName)
+            if addonName == "Blizzard_PlayerSpells" or addonName == "Blizzard_ClassTalentUI" then
+                C_Timer.After(0.2, function()
+                    local frame = PlayerSpellsFrame or ClassTalentFrame or PlayerTalentFrame
+                    if frame then
+                        print("|cff00FF7FAbstractUI Tweaks:|r Talent frame loaded:", frame:GetName() or "UnnamedFrame")
+                        self:HookTalentFrame(frame)
+                    end
+                end)
+            end
+        end)
+    end
+end
+
+function Tweaks:HookTalentFrame(talentFrame)
+    if self.talentFrameHooked then
+        return -- Already hooked
+    end
+    
+    print("|cff00FF7FAbstractUI Tweaks:|r Hooking Show event on:", talentFrame:GetName() or "UnnamedFrame")
+    
+    -- Hook the Show event to detect when talent UI opens
+    hooksecurefunc(talentFrame, "Show", function()
         if self.importCheckbox then
             return -- Already set up
         end
         
-        -- Delay slightly to let UI fully initialize
-        C_Timer.After(0.5, function()
-            -- Try to find any talent-related frame
-            local talentFrame = PlayerSpellsFrame or ClassTalentFrame or PlayerTalentFrame
-            
-            if talentFrame then
-                print("|cff00FF7FAbstractUI Tweaks:|r Talent UI opened, found frame:", talentFrame:GetName() or "UnnamedFrame")
-                
-                if ClassTalentLoadoutImportDialog then
-                    print("|cff00FF7FAbstractUI Tweaks:|r Import dialog exists, setting up now")
-                    self:SetupTalentImportHook()
-                else
-                    print("|cff00FF7FAbstractUI Tweaks:|r Hooking talent frame for import dialog detection")
-                    self:HookTalentFrameForPolling(talentFrame)
-                end
+        print("|cff00FF7FAbstractUI Tweaks:|r Talent frame opened!")
+        
+        -- Small delay to let UI fully initialize
+        C_Timer.After(0.3, function()
+            if ClassTalentLoadoutImportDialog then
+                print("|cff00FF7FAbstractUI Tweaks:|r Import dialog already exists")
+                self:SetupTalentImportHook()
             else
-                print("|cffFF6B6BAbstractUI Tweaks:|r PLAYER_TALENT_UPDATE fired but no talent frame found")
-                print("  Scanning UIParent for talent frames...")
-                self:ScanForTalentFrame()
+                self:HookTalentFrameForPolling(talentFrame)
             end
         end)
     end)
+    
+    self.talentFrameHooked = true
 end
 
 function Tweaks:ScanForTalentFrame()
