@@ -32,14 +32,22 @@ local defaults = {
 -- ============================================================================
 
 function MacroIconSelector:OnInitialize()
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r OnInitialize called")
     self:RegisterMessage("AbstractUI_DB_READY", "OnDBReady")
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r Registered for DB_READY message")
 end
 
 function MacroIconSelector:OnDBReady()
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r OnDBReady called")
+    print("  Module enabled:", AbstractUI.db.profile.modules.macroIconSelector)
+    
     if not AbstractUI.db.profile.modules.macroIconSelector then 
+        print("|cffFF6B6BAbstractUI MacroIconSelector:|r Module disabled, exiting")
         self:Disable()
         return 
     end
+    
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r Module is enabled, continuing initialization")
     
     self.db = AbstractUI.db:RegisterNamespace("MacroIconSelector", defaults)
     
@@ -203,10 +211,13 @@ function MacroIconSelector:OnDBReady()
     
     -- Check if already loaded
     if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI already loaded, calling InitializeBankIconPickers")
         InitializeBankIconPickers()
     else
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI not loaded, waiting for it")
         -- Wait for it to load
         EventUtil.ContinueOnAddOnLoaded("Blizzard_BankUI", function()
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded via EventUtil")
             InitializeBankIconPickers()
         end)
     end
@@ -239,6 +250,8 @@ function MacroIconSelector:OnDBReady()
             end)
         end
     end)
+    
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r OnDBReady completed successfully")
 end
 
 function MacroIconSelector:OnEnable()
