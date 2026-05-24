@@ -47,16 +47,19 @@ function MacroIconSelector:OnDBReady()
         self:Initialize(GearManagerPopupFrame)
     end
     if self.isMainline then
-        -- Bank frame might not be loaded yet, wait for it
-        if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
-            self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
-        else
-            -- Wait for bank frame to be available
-            EventRegistry:RegisterCallback("BankFrame.Show", function()
-                if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
-                    self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+        -- Hook into ALL icon selector popups when they're shown
+        -- This catches bank, warband, and any other icon pickers dynamically
+        if IconSelectorPopupFrameMixin and IconSelectorPopupFrameMixin.Show then
+            hooksecurefunc(IconSelectorPopupFrameMixin, "Show", function(popup)
+                if popup and not self.loadedFrames[popup] then
+                    local name = popup:GetName() or "UnknownIconPicker"
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker popup:", name)
+                    -- Initialize it on next frame to ensure it's fully set up
+                    C_Timer.After(0.05, function()
+                        self:Initialize(popup)
+                    end)
                 end
-            end, self)
+            end)
         end
     end
     
