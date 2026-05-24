@@ -70,18 +70,23 @@ function MacroIconSelector:OnDBReady()
             
             -- Look for any frame with IconPicker and IconSelector
             for name, frame in pairs(_G) do
-                if type(frame) == "table" and frame.IconPicker and frame.IconSelector and frame.GetName then
-                    local frameName = frame:GetName()
-                    if frameName and not self.loadedFrames[frame] and frameName:match("Bank") then
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Discovered bank icon picker:", frameName)
-                        self:Initialize(frame)
-                    end
+                if type(frame) == "table" and type(frame.GetName) == "function" then
+                    pcall(function()
+                        local frameName = frame:GetName()
+                        if frameName and frame.IconPicker and frame.IconSelector and not self.loadedFrames[frame] and frameName:match("Bank") then
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Discovered bank icon picker:", frameName)
+                            self:Initialize(frame)
+                        end
+                    end)
                 end
             end
+            
+            -- Schedule next scan
+            C_Timer.After(0.5, ScanForIconPickers)
         end
         
         -- Start scanning
-        C_Timer.NewTicker(0.5, ScanForIconPickers)
+        C_Timer.After(0.5, ScanForIconPickers)
         
         -- Approach 3: Hook common bank-related events
         self:RegisterEvent("BANKFRAME_OPENED")
@@ -140,12 +145,14 @@ function MacroIconSelector:BANKFRAME_OPENED()
     -- When bank opens, scan for icon pickers
     C_Timer.After(0.5, function()
         for name, frame in pairs(_G) do
-            if type(frame) == "table" and frame.IconPicker and frame.IconSelector and frame.GetName then
-                local frameName = frame:GetName()
-                if frameName and not self.loadedFrames[frame] then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank icon picker on BANKFRAME_OPENED:", frameName)
-                    self:Initialize(frame)
-                end
+            if type(frame) == "table" and type(frame.GetName) == "function" then
+                pcall(function()
+                    local frameName = frame:GetName()
+                    if frameName and frame.IconPicker and frame.IconSelector and not self.loadedFrames[frame] then
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank icon picker on BANKFRAME_OPENED:", frameName)
+                        self:Initialize(frame)
+                    end
+                end)
             end
         end
     end)
