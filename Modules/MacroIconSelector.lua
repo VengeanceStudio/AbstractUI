@@ -146,6 +146,21 @@ function MacroIconSelector:OnDBReady()
         local function InitializeBankIconPickers()
             local initialized = false
             
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Checking for bank icon pickers...")
+            print("  BankFrame exists:", BankFrame ~= nil)
+            if BankFrame then
+                print("  BankFrame.BankPanel exists:", BankFrame.BankPanel ~= nil)
+                print("  BankFrame.AccountBankPanel exists:", BankFrame.AccountBankPanel ~= nil)
+                print("  BankFrame.TabSettingsMenu exists:", BankFrame.TabSettingsMenu ~= nil)
+                
+                if BankFrame.BankPanel then
+                    print("  BankFrame.BankPanel.TabSettingsMenu exists:", BankFrame.BankPanel.TabSettingsMenu ~= nil)
+                end
+                if BankFrame.AccountBankPanel then
+                    print("  BankFrame.AccountBankPanel.TabSettingsMenu exists:", BankFrame.AccountBankPanel.TabSettingsMenu ~= nil)
+                end
+            end
+            
             -- Check for Character bank panel
             if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
                 print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.BankPanel.TabSettingsMenu, initializing")
@@ -165,6 +180,10 @@ function MacroIconSelector:OnDBReady()
                 print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.TabSettingsMenu, initializing")
                 self:Initialize(BankFrame.TabSettingsMenu)
                 initialized = true
+            end
+            
+            if not initialized then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r WARNING: No bank icon picker frames found!")
             end
             
             return initialized
