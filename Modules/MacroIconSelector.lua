@@ -77,17 +77,40 @@ function MacroIconSelector:OnDBReady()
         -- Continuous scanning: Always check UIParent children periodically for icon pickers
         local function CheckForNewIconPicker()
             local count = 0
+            local visibleFrames = {}
             for i = 1, UIParent:GetNumChildren() do
                 local child = select(i, UIParent:GetChildren())
                 -- Use pcall to safely check frames that may not support all methods
                 local success, isVisible = pcall(function() return child and child.IsVisible and child:IsVisible() end)
                 if success and isVisible then
                     count = count + 1
+                    local name = child:GetName() or "UnknownFrame"
+                    
+                    -- Debug: List all visible frames and their key properties
+                    local hasIconPicker = child.IconPicker ~= nil
+                    local hasIconSelector = child.IconSelector ~= nil
+                    local hasIconDataProvider = child.IconDataProvider ~= nil
+                    
+                    -- Check for any icon-related properties
+                    if hasIconPicker or hasIconSelector or hasIconDataProvider or name:match("Icon") then
+                        table.insert(visibleFrames, string.format("%s (IconPicker=%s, IconSelector=%s, IconDataProvider=%s)", 
+                            name, tostring(hasIconPicker), tostring(hasIconSelector), tostring(hasIconDataProvider)))
+                    end
+                    
                     if child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
-                        local name = child:GetName() or "UnknownIconPicker"
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", name)
+                        local frameName = child:GetName() or "UnknownIconPicker"
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", frameName)
                         self:Initialize(child)
                     end
+                end
+            end
+            
+            -- Debug output every 5 seconds if we have visible icon-related frames
+            self.scanCount = (self.scanCount or 0) + 1
+            if self.scanCount % 10 == 0 and #visibleFrames > 0 then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Visible icon-related frames (" .. #visibleFrames .. "):")
+                for _, frameInfo in ipairs(visibleFrames) do
+                    print("  - " .. frameInfo)
                 end
             end
             
