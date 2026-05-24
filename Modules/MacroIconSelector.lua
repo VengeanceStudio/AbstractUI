@@ -227,42 +227,28 @@ function MacroIconSelector:OnDBReady()
     end
     
     -- Check if already loaded
-    if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI already loaded, calling InitializeBankIconPickers")
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r Checking for bank frames...")
+    print("  Blizzard_BankUI addon loaded:", C_AddOns.IsAddOnLoaded("Blizzard_BankUI"))
+    print("  BankFrame exists:", BankFrame ~= nil)
+    
+    if BankFrame then
+        print("  BankFrame exists, initializing immediately")
         InitializeBankIconPickers()
     else
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI not loaded, waiting for it")
-        
-        -- Method 1: EventUtil callback
-        EventUtil.ContinueOnAddOnLoaded("Blizzard_BankUI", function()
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded via EventUtil")
-            InitializeBankIconPickers()
-        end)
-        
-        -- Method 2: Direct ADDON_LOADED event as backup
-        self:RegisterEvent("ADDON_LOADED", function(event, addonName)
-            if addonName == "Blizzard_BankUI" then
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded via ADDON_LOADED event")
-                self:UnregisterEvent("ADDON_LOADED")
-                C_Timer.After(0.2, function()
-                    InitializeBankIconPickers()
-                end)
-            end
-        end)
-        
-        -- Method 3: Check periodically for 30 seconds in case events fail
+        print("  BankFrame doesn't exist yet, will check when bank opens")
+        -- BankFrame doesn't exist yet - poll for it to appear
         local checkCount = 0
         local checkTimer
         checkTimer = C_Timer.NewTicker(1, function()
             checkCount = checkCount + 1
-            if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI detected via polling after", checkCount, "seconds")
+            if BankFrame then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r BankFrame detected after", checkCount, "seconds")
                 if checkTimer then
                     checkTimer:Cancel()
                 end
                 InitializeBankIconPickers()
-            elseif checkCount >= 30 then
-                print("|cffFF6B6BAbstractUI MacroIconSelector:|r Gave up waiting for Blizzard_BankUI after 30 seconds")
+            elseif checkCount >= 60 then
+                print("|cffFF6B6BAbstractUI MacroIconSelector:|r Gave up waiting for BankFrame after 60 seconds")
                 if checkTimer then
                     checkTimer:Cancel()
                 end
