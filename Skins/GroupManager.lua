@@ -444,6 +444,20 @@ function GroupManager:ApplySkin(force)
         end
     end
     
+    -- AGGRESSIVE: Strip all white backdrops from immediate children
+    for i = 1, blizzardManager:GetNumChildren() do
+        local child = select(i, blizzardManager:GetChildren())
+        if child.GetBackdropColor then
+            local r, g, b, a = child:GetBackdropColor()
+            if r and g and b and r > 0.85 and g > 0.85 and b > 0.85 then
+                -- White backdrop found - clear it
+                if child.SetBackdrop then
+                    child:SetBackdrop(nil)
+                end
+            end
+        end
+    end
+    
     -- Also hide textures on the display frame
     if displayFrame then
         for _, region in ipairs({displayFrame:GetRegions()}) do
@@ -455,6 +469,20 @@ function GroupManager:ApplySkin(force)
                         region:SetTexture(nil)
                         region:SetAlpha(0)
                         region:Hide()
+                    end
+                end
+            end
+        end
+        
+        -- AGGRESSIVE: Strip all white backdrops from display frame children
+        for i = 1, displayFrame:GetNumChildren() do
+            local child = select(i, displayFrame:GetChildren())
+            if child.GetBackdropColor then
+                local r, g, b, a = child:GetBackdropColor()
+                if r and g and b and r > 0.85 and g > 0.85 and b > 0.85 then
+                    -- White backdrop found - clear it
+                    if child.SetBackdrop then
+                        child:SetBackdrop(nil)
                     end
                 end
             end
@@ -618,6 +646,14 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
         
         -- Style Buttons (including icon buttons)
         if child:IsObjectType("Button") then
+            -- First, clear any existing white backdrop
+            if child.GetBackdropColor then
+                local r, g, b, a = child:GetBackdropColor()
+                if r and g and b and r > 0.9 and g > 0.9 and b > 0.9 then
+                    -- White backdrop detected - will be replaced below
+                end
+            end
+            
             -- Hide all default button textures
             local normalTexture = child:GetNormalTexture()
             if normalTexture then
@@ -629,7 +665,10 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
             end
             
             local pushedTexture = child:GetPushedTexture()
-            if pushedTexture then pushedTexture:SetAlpha(0) end
+            if pushedTexture then 
+                pushedTexture:SetTexture(nil)
+                pushedTexture:SetAlpha(0) 
+            end
             
             local highlightTexture = child:GetHighlightTexture()
             if highlightTexture then 
@@ -638,9 +677,12 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
             end
             
             local disabledTexture = child:GetDisabledTexture()
-            if disabledTexture then disabledTexture:SetAlpha(0) end
+            if disabledTexture then 
+                disabledTexture:SetTexture(nil)
+                disabledTexture:SetAlpha(0) 
+            end
             
-            -- Apply AbstractUI backdrop
+            -- FORCE AbstractUI backdrop on ALL buttons
             if child.SetBackdrop then
                 child:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -684,9 +726,37 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
         
         -- Style DropDown menus
         if childName and (childName:match("DropDown") or childName:match("Dropdown")) then
+            -- Ensure backdrop template
+            if not child.SetBackdrop and BackdropTemplateMixin then
+                Mixin(child, BackdropTemplateMixin)
+                if child.OnBackdropLoaded then
+                    child:OnBackdropLoaded()
+                end
+            end
+            
+            -- Style the main dropdown frame
+            if child.SetBackdrop then
+                child:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    tile = false,
+                    edgeSize = 1,
+                    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                })
+                child:SetBackdropColor(unpack(colors.secondary))
+                child:SetBackdropBorderColor(unpack(colors.border))
+            end
+            
             -- Style the dropdown button
             if child.Button then
                 local btn = child.Button
+                if not btn.SetBackdrop and BackdropTemplateMixin then
+                    Mixin(btn, BackdropTemplateMixin)
+                    if btn.OnBackdropLoaded then
+                        btn:OnBackdropLoaded()
+                    end
+                end
+                
                 if btn.SetBackdrop then
                     btn:SetBackdrop({
                         bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -723,20 +793,101 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
             end
         end
         
-        -- Style container Frames (but keep them slightly transparent)
-        if child:IsObjectType("Frame") and child.SetBackdrop and not child:IsObjectType("Button") then
-            local backdrop = child:GetBackdrop()
-            if backdrop then
+        -- Style EditBox (text input fields)
+        if child:IsObjectType("EditBox") then
+            if not child.SetBackdrop and BackdropTemplateMixin then
+                Mixin(child, BackdropTemplateMixin)
+                if child.OnBackdropLoaded then
+                    child:OnBackdropLoaded()
+                end
+            end
+            
+            if child.SetBackdrop then
                 child:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8X8",
                     edgeFile = "Interface\\Buttons\\WHITE8X8",
                     tile = false,
                     edgeSize = 1,
-                    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                    insets = { left = 2, right = 2, top = 2, bottom = 2 }
                 })
-                -- Very transparent background for container frames
-                child:SetBackdropColor(0, 0, 0, 0.1)
+                child:SetBackdropColor(unpack(colors.secondary))
                 child:SetBackdropBorderColor(unpack(colors.border))
+            end
+            
+            -- Style text color
+            child:SetTextColor(unpack(colors.textPrimary))
+        end
+        
+        -- Style container Frames - handle ALL frames, not just those with backdrops
+        if child:IsObjectType("Frame") and not child:IsObjectType("Button") and not child:IsObjectType("CheckButton") then
+            -- Check if frame already has a backdrop
+            local backdrop = child.SetBackdrop and child:GetBackdrop()
+            
+            if backdrop then
+                -- Frame has a backdrop - check if it's white/opaque and needs replacing
+                local r, g, b, a = child:GetBackdropColor()
+                
+                -- If backdrop is white or highly opaque, replace it
+                if (r and g and b and ((r > 0.9 and g > 0.9 and b > 0.9) or a > 0.5)) or backdrop.bgFile then
+                    child:SetBackdrop({
+                        bgFile = "Interface\\Buttons\\WHITE8X8",
+                        edgeFile = "Interface\\Buttons\\WHITE8X8",
+                        tile = false,
+                        edgeSize = 1,
+                        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                    })
+                    -- Very transparent background for container frames
+                    child:SetBackdropColor(0, 0, 0, 0.1)
+                    child:SetBackdropBorderColor(unpack(colors.border))
+                end
+            else
+                -- Frame doesn't have a backdrop - check if it's displaying white
+                -- by checking for white texture regions
+                local hasWhiteBackground = false
+                for _, region in ipairs({child:GetRegions()}) do
+                    if region:IsObjectType("Texture") then
+                        local r, g, b = region:GetVertexColor()
+                        local texPath = region:GetTexture()
+                        if texPath and ((r and g and b and r > 0.9 and g > 0.9 and b > 0.9) or tostring(texPath):match("WHITE")) then
+                            hasWhiteBackground = true
+                            -- Hide this white texture
+                            region:SetTexture(nil)
+                            region:SetAlpha(0)
+                            region:Hide()
+                        end
+                    end
+                end
+                
+                -- If we found white backgrounds, add a transparent AbstractUI backdrop
+                if hasWhiteBackground and child.SetBackdrop then
+                    child:SetBackdrop({
+                        bgFile = "Interface\\Buttons\\WHITE8X8",
+                        edgeFile = "Interface\\Buttons\\WHITE8X8",
+                        tile = false,
+                        edgeSize = 1,
+                        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                    })
+                    child:SetBackdropColor(0, 0, 0, 0.1)
+                    child:SetBackdropBorderColor(unpack(colors.border))
+                end
+            end
+        end
+        
+        -- Final aggressive cleanup: if this child still looks white/default, force styling
+        if child.SetBackdrop and child.GetBackdropColor then
+            local r, g, b, a = child:GetBackdropColor()
+            -- Check for white or very opaque backgrounds that slipped through
+            if r and g and b and a and r > 0.85 and g > 0.85 and b > 0.85 and a > 0.3 then
+                -- This is showing as white - force our styling
+                if not child:IsObjectType("Button") then
+                    -- For non-buttons, make it very transparent
+                    child:SetBackdropColor(0, 0, 0, 0.1)
+                    child:SetBackdropBorderColor(unpack(colors.border))
+                else
+                    -- For buttons, use secondary color
+                    child:SetBackdropColor(unpack(colors.secondary))
+                    child:SetBackdropBorderColor(unpack(colors.border))
+                end
             end
         end
         
