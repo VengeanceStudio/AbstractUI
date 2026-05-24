@@ -78,39 +78,59 @@ function MacroIconSelector:OnDBReady()
         local function CheckForNewIconPicker()
             local count = 0
             local visibleFrames = {}
+            local allFrames = {}
+            
             for i = 1, UIParent:GetNumChildren() do
                 local child = select(i, UIParent:GetChildren())
                 -- Use pcall to safely check frames that may not support all methods
                 local success, isVisible = pcall(function() return child and child.IsVisible and child:IsVisible() end)
                 if success and isVisible then
                     count = count + 1
-                    local name = child:GetName() or "UnknownFrame"
+                    local name = child:GetName() or "<unnamed>"
+                    local frameType = child:GetObjectType() or "unknown"
                     
                     -- Debug: List all visible frames and their key properties
                     local hasIconPicker = child.IconPicker ~= nil
                     local hasIconSelector = child.IconSelector ~= nil
                     local hasIconDataProvider = child.IconDataProvider ~= nil
+                    local hasBorderBox = child.BorderBox ~= nil
+                    local hasScrollBox = child.ScrollBox ~= nil
                     
-                    -- Check for any icon-related properties
-                    if hasIconPicker or hasIconSelector or hasIconDataProvider or name:match("Icon") then
-                        table.insert(visibleFrames, string.format("%s (IconPicker=%s, IconSelector=%s, IconDataProvider=%s)", 
-                            name, tostring(hasIconPicker), tostring(hasIconSelector), tostring(hasIconDataProvider)))
+                    -- Store info about all frames (for comprehensive debug)
+                    table.insert(allFrames, {name = name, type = frameType, hasIcon = hasIconPicker or hasIconSelector or hasIconDataProvider or name:match("Icon")})
+                    
+                    -- Check for any icon-related properties or names
+                    if hasIconPicker or hasIconSelector or hasIconDataProvider or hasBorderBox or name:match("Icon") or name:match("Popup") then
+                        table.insert(visibleFrames, string.format("%s [%s] (IconPicker=%s, IconSelector=%s, BorderBox=%s, ScrollBox=%s)", 
+                            name, frameType, tostring(hasIconPicker), tostring(hasIconSelector), tostring(hasBorderBox), tostring(hasScrollBox)))
                     end
                     
+                    -- Try standard icon picker detection
                     if child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
                         local frameName = child:GetName() or "UnknownIconPicker"
                         print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", frameName)
                         self:Initialize(child)
                     end
+                    
+                    -- Also try BorderBox pattern (like macro icon selector)
+                    if child.BorderBox and child.BorderBox.IconSelector and not self.loadedFrames[child] then
+                        local frameName = child:GetName() or "UnknownBorderBoxPicker"
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible BorderBox icon picker:", frameName)
+                        self:Initialize(child)
+                    end
                 end
             end
             
-            -- Debug output every 5 seconds if we have visible icon-related frames
+            -- Debug output every 5 seconds
             self.scanCount = (self.scanCount or 0) + 1
-            if self.scanCount % 10 == 0 and #visibleFrames > 0 then
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Visible icon-related frames (" .. #visibleFrames .. "):")
-                for _, frameInfo in ipairs(visibleFrames) do
-                    print("  - " .. frameInfo)
+            if self.scanCount % 10 == 0 then
+                if #visibleFrames > 0 then
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Visible icon-related frames (" .. #visibleFrames .. "):")
+                    for _, frameInfo in ipairs(visibleFrames) do
+                        print("  - " .. frameInfo)
+                    end
+                else
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r No icon-related frames visible (" .. count .. " total visible frames)")
                 end
             end
             
@@ -146,10 +166,19 @@ function MacroIconSelector:OnDBReady()
     
     if self.isMainline then
         EventUtil.ContinueOnAddOnLoaded("Baganator", function()
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator loaded, setting up API listener")
             Baganator.API.Skins.RegisterListener(function(details)
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator API callback - regionType:", details.regionType)
                 if details.regionType == "ButtonFrame" and details.tags and tIndexOf(details.tags, "bank") ~= nil then
-                    self:Initialize(details.region.Character.TabSettingsMenu)
-                    self:Initialize(details.region.Warband.TabSettingsMenu)
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank ButtonFrame")
+                    if details.region.Character and details.region.Character.TabSettingsMenu then
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Character.TabSettingsMenu")
+                        self:Initialize(details.region.Character.TabSettingsMenu)
+                    end
+                    if details.region.Warband and details.region.Warband.TabSettingsMenu then
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Warband.TabSettingsMenu")
+                        self:Initialize(details.region.Warband.TabSettingsMenu)
+                    end
                 end
             end)
         end)
