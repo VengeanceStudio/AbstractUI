@@ -53,7 +53,6 @@ local defaults = {
             tweaks = true,
             cursorTrail = true,
             macroIconSelector = true,
-            groupManager = false,  -- Disabled by default - user must enable
             setup = true,  -- Always enabled - manages initial setup wizard
             addonmanager = true,
             timePlayed = true,
@@ -1993,10 +1992,6 @@ function AbstractUI:GetOptions()
                         desc = "Display a custom player cast bar",
                         get = function() return self.db.profile.modules.castBar end,
                         set = function(_, v) self.db.profile.modules.castBar = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
-                    groupManager = { name = "Group Manager", type = "toggle", order = 2.73, width = "normal",
-                        desc = "Compact toggle icon that opens Blizzard's CompactRaidFrameManager with AbstractUI styling when clicked",
-                        get = function() return self.db.profile.modules.groupManager end,
-                        set = function(_, v) self.db.profile.modules.groupManager = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },
                     tweaks = { name = "Tweaks", type = "toggle", order = 9, width = "normal",
                         get = function() return self.db.profile.modules.tweaks end,
                         set = function(_, v) self.db.profile.modules.tweaks = v; StaticPopup_Show("AbstractUI_RELOAD_CONFIRM") end },

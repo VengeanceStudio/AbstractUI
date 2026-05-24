@@ -64,8 +64,8 @@ function GroupManager:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("GroupManager", defaults)
     
-    -- Check if enabled in module settings
-    if not AbstractUI.db.profile.modules.groupManager then
+    -- Check if enabled via skin toggle
+    if not IsEnabled() then
         return
     end
     
@@ -133,16 +133,19 @@ end
 ---------------------------------------------------------------------------
 
 local function IsEnabled()
-    -- If the Group Manager module is enabled, always apply skinning
-    if AbstractUI.db and AbstractUI.db.profile and AbstractUI.db.profile.modules then
-        if AbstractUI.db.profile.modules.groupManager == true then
-            return true
-        end
-    end
-    
-    -- Also check the separate skin toggle (for users who may want to skin without the toggle icon)
+    -- Check the skin toggle in Skinning settings
     if SkinFramework then
         return SkinFramework:IsFrameEnabled("CompactRaidFrameManager")
+    end
+    
+    -- Fallback check if SkinFramework not available
+    if not AbstractUI.db or not AbstractUI.db.profile then
+        return false
+    end
+    
+    local SkinModule = AbstractUI:GetModule("Skin", true)
+    if SkinModule and SkinModule.db and SkinModule.db.profile and SkinModule.db.profile.frames then
+        return SkinModule.db.profile.frames.CompactRaidFrameManager == true
     end
     
     return false
@@ -686,34 +689,21 @@ function GroupManager:GetOptions()
     return {
         type = "group",
         name = "Group Manager",
+        desc = "Enable/disable this skin in Blizzard Frames > Skinning > Group Manager / Raid Frames",
         get = function(info) return self.db.profile[info[#info]] end,
         set = function(info, value) 
             self.db.profile[info[#info]] = value
             self:UpdateManagerFrame()
         end,
         args = {
-            enabled = {
-                name = "Enable Group Manager",
-                desc = "Shows a compact toggle icon that opens Blizzard's CompactRaidFrameManager with AbstractUI styling.",
-                type = "toggle",
+            description = {
+                name = "Group Manager provides a compact toggle icon for Blizzard's CompactRaidFrameManager with AbstractUI styling.\n\n|cffFFD700To enable:|r Go to Blizzard Frames > Skinning and enable 'Group Manager / Raid Frames'",
+                type = "description",
                 order = 1,
-                set = function(info, value)
-                    self.db.profile.enabled = value
-                    AbstractUI.db.profile.modules.groupManager = value
-                    if value then
-                        self:OnDBReady()
-                    else
-                        if managerFrame then
-                            managerFrame:Hide()
-                        end
-                        if blizzardManager then
-                            blizzardManager:Hide()
-                        end
-                    end
-                end,
+                fontSize = "medium",
             },
             header1 = {
-                name = "Toggle Icon",
+                name = "Toggle Icon Size",
                 type = "header",
                 order = 2,
             },
@@ -761,7 +751,6 @@ SlashCmdList["GROUPMANAGER"] = function(msg)
         end
     elseif msg == "debug" then
         print("|cff00ff00AbstractUI GroupManager Debug:|r")
-        print("  Module Enabled:", AbstractUI.db.profile.modules.groupManager)
         print("  IsEnabled():", IsEnabled())
         print("  Skinned:", skinned)
         print("  CompactRaidFrameManager exists:", CompactRaidFrameManager ~= nil)
@@ -769,6 +758,13 @@ SlashCmdList["GROUPMANAGER"] = function(msg)
             print("  Frame is shown:", CompactRaidFrameManager:IsShown())
         end
         print("  ColorPalette exists:", ColorPalette ~= nil)
+        print("  SkinFramework exists:", SkinFramework ~= nil)
+        
+        -- Check skin module setting
+        local SkinModule = AbstractUI:GetModule("Skin", true)
+        if SkinModule and SkinModule.db and SkinModule.db.profile and SkinModule.db.profile.frames then
+            print("  Skin Toggle Setting:", SkinModule.db.profile.frames.CompactRaidFrameManager)
+        end
         
         -- Test color generation
         local colors = GetThemeColors()
