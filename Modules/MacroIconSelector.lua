@@ -96,25 +96,34 @@ function MacroIconSelector:OnDBReady()
     local function InitializeBankIconPickers()
         local initialized = false
         
-        -- Silent operation - remove debug spam
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Checking bank icon pickers...")
+        
         if BankFrame and BankFrame.BankPanel then
+            print("  BankFrame.BankPanel exists")
             -- Check if TabSettingsMenu already exists
             if BankFrame.BankPanel.TabSettingsMenu then
+                print("  TabSettingsMenu exists immediately, initializing")
                 self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
                 initialized = true
                 
                 -- Hook Show to re-initialize if needed
                 hooksecurefunc(BankFrame.BankPanel.TabSettingsMenu, "Show", function()
+                    print("  TabSettingsMenu Show hook fired!")
                     if not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
+                        print("  Not loaded yet, initializing now")
                         self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                    else
+                        print("  Already loaded, skipping")
                     end
                 end)
             else
+                print("  TabSettingsMenu doesn't exist yet, setting up detection")
                 -- TabSettingsMenu doesn't exist yet, hook its creation
                 -- Monitor BankPanel for when TabSettingsMenu gets added
                 local checkTimer
                 local function CheckForTabSettingsMenu()
                     if BankFrame.BankPanel.TabSettingsMenu then
+                        print("  TabSettingsMenu appeared!")
                         if checkTimer then
                             checkTimer:Cancel()
                             checkTimer = nil
@@ -122,13 +131,16 @@ function MacroIconSelector:OnDBReady()
                         
                         -- Hook the Show event immediately
                         hooksecurefunc(BankFrame.BankPanel.TabSettingsMenu, "Show", function()
+                            print("  TabSettingsMenu Show hook fired (delayed detection)!")
                             if not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
+                                print("  Initializing from delayed Show hook")
                                 self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
                             end
                         end)
                         
                         -- If it's already visible, initialize now
                         if BankFrame.BankPanel.TabSettingsMenu:IsVisible() then
+                            print("  TabSettingsMenu is already visible, initializing immediately")
                             self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
                         end
                     end
@@ -141,6 +153,7 @@ function MacroIconSelector:OnDBReady()
                     CheckForTabSettingsMenu()
                     attempts = attempts + 1
                     if attempts >= 20 then
+                        print("  Gave up waiting for TabSettingsMenu after 10 seconds")
                         checkTimer:Cancel()
                     end
                 end)
@@ -148,9 +161,12 @@ function MacroIconSelector:OnDBReady()
             
             -- Also hook ShowTabSettingsMenu if it exists (for vanilla behavior)
             if BankFrame.BankPanel.ShowTabSettingsMenu then
+                print("  Found ShowTabSettingsMenu function, hooking it")
                 hooksecurefunc(BankFrame.BankPanel, "ShowTabSettingsMenu", function()
+                    print("  ShowTabSettingsMenu function called!")
                     C_Timer.After(0.1, function()
                         if BankFrame.BankPanel.TabSettingsMenu and not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
+                            print("  Initializing from ShowTabSettingsMenu hook")
                             self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
                         end
                     end)
@@ -517,18 +533,27 @@ end
 function MacroIconSelector:CreateSearchBox(popup)
     -- Skip if search box already exists
     if popup.SearchBox then
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Search box already exists, skipping")
         return
     end
     
     local popupName = popup:GetName() or "UnknownPopup"
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r CreateSearchBox called for:", popupName)
+    print("  popup.IconSelector:", popup.IconSelector ~= nil)
+    print("  popup.IconPicker:", popup.IconPicker ~= nil)
+    print("  popup.BorderBox:", popup.BorderBox ~= nil)
     
     -- Determine the frame structure (different for bank frames vs macro frames)
     local isBankFrame = (popup.IconPicker ~= nil)
     local okayButton, cancelButton, iconSelectorEditBox, borderBox
     
+    print("  isBankFrame:", isBankFrame)
+    
     if isBankFrame then
+        print("  Using bank frame structure")
         -- Bank frame structure: uses IconPicker instead of BorderBox
         if not popup.IconPicker then
+            print("  ERROR: popup.IconPicker is nil")
             return
         end
         borderBox = popup.IconPicker
@@ -792,15 +817,23 @@ local ProviderTypes = {
 
 function MacroIconSelector:Initialize(popup)
     if not popup then 
+        print("|cffFF6B6BAbstractUI MacroIconSelector:|r Initialize called with nil popup")
         return 
     end
     
     local popupName = popup:GetName() or "UnknownPopup"
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r Initialize called for:", popupName)
+    print("  Has IconPicker:", popup.IconPicker ~= nil)
+    print("  Has BorderBox:", popup.BorderBox ~= nil)
+    print("  Has IconSelector:", popup.IconSelector ~= nil)
     
     popup:HookScript("OnShow", function()
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r OnShow fired for:", popupName)
         if not self.loadedFrames[popup] then
             self.loadedFrames[popup] = true
+            print("  First time setup")
         else
+            print("  Already loaded, updating")
             self:UpdateIconSelector(popup)
             return
         end
