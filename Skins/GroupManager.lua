@@ -394,7 +394,7 @@ function GroupManager:ApplySkin(force)
         end
     end
     
-    -- Apply AbstractUI styling to the main frame
+    -- Apply AbstractUI styling to the main frame with TRANSPARENT background
     if blizzardManager.SetBackdrop then
         blizzardManager:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -403,22 +403,43 @@ function GroupManager:ApplySkin(force)
             edgeSize = 2,
             insets = { left = 2, right = 2, top = 2, bottom = 2 }
         })
-        blizzardManager:SetBackdropColor(unpack(colors.primary))
+        -- Set fully transparent background with visible border
+        blizzardManager:SetBackdropColor(0, 0, 0, 0.15)
         blizzardManager:SetBackdropBorderColor(unpack(colors.border))
     end
     
-    -- Hide all Blizzard art textures on the main frame
+    -- Aggressively hide ALL Blizzard art textures on the main frame
     for _, region in ipairs({blizzardManager:GetRegions()}) do
         if region:IsObjectType("Texture") then
             local texPath = region:GetTexture()
             if texPath then
                 local texStr = tostring(texPath)
+                -- Hide everything except our white8x8 backdrop
                 if not texStr:match("WHITE8X8") then
+                    region:SetTexture(nil)
                     region:SetAlpha(0)
+                    region:Hide()
                 end
             end
         elseif region:IsObjectType("FontString") then
             region:SetTextColor(unpack(colors.textPrimary))
+        end
+    end
+    
+    -- Strip textures from all unnamed child frames (decorative elements)
+    for i = 1, blizzardManager:GetNumChildren() do
+        local child = select(i, blizzardManager:GetChildren())
+        local childName = child:GetName()
+        if not childName or childName == "" then
+            -- Hide decorative child frames
+            for j = 1, child:GetNumRegions and child:GetNumRegions() or 0 do
+                local region = select(j, child:GetRegions())
+                if region and region:IsObjectType("Texture") then
+                    region:SetTexture(nil)
+                    region:SetAlpha(0)
+                    region:Hide()
+                end
+            end
         end
     end
     
@@ -430,7 +451,9 @@ function GroupManager:ApplySkin(force)
                 if texPath then
                     local texStr = tostring(texPath)
                     if not texStr:match("WHITE8X8") then
+                        region:SetTexture(nil)
                         region:SetAlpha(0)
+                        region:Hide()
                     end
                 end
             end
@@ -444,7 +467,7 @@ function GroupManager:ApplySkin(force)
             end
         end
         
-        -- Apply backdrop to display frame
+        -- Apply transparent backdrop to display frame
         if displayFrame.SetBackdrop then
             displayFrame:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -453,13 +476,26 @@ function GroupManager:ApplySkin(force)
                 edgeSize = 1,
                 insets = { left = 1, right = 1, top = 1, bottom = 1 }
             })
-            displayFrame:SetBackdropColor(unpack(colors.tertiary))
+            displayFrame:SetBackdropColor(0, 0, 0, 0.1)
             displayFrame:SetBackdropBorderColor(unpack(colors.border))
         end
     end
     
     -- Reskin all buttons and UI elements
     self:ReskinBlizzardButtons(displayFrame, colors)
+    
+    -- Hook dropdown menus to skin them when they appear
+    if not self.dropdownHooked then
+        hooksecurefunc("ToggleDropDownMenu", function()
+            C_Timer.After(0.05, function()
+                GroupManager:SkinDropDownLists(colors)
+            end)
+        end)
+        self.dropdownHooked = true
+    end
+    
+    -- Skin specific known elements
+    self:SkinSpecificElements(blizzardManager, displayFrame, colors)
     
     -- Hide initially (will show when expanded)
     blizzardManager:Hide()
@@ -483,18 +519,36 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
         local child = select(i, frame:GetChildren())
         local childName = child:GetName() or ""
         
-        -- Hide default Blizzard art textures
+        -- Aggressively hide default Blizzard art textures
         for _, region in ipairs({child:GetRegions()}) do
             if region:IsObjectType("Texture") then
                 local texPath = region:GetTexture()
                 if texPath then
                     local texStr = tostring(texPath)
-                    if not (texStr:match("RaidTargetingIcon") or texStr:match("RaidIcon") or texStr:match("WHITE8X8")) then
+                    -- Hide all Blizzard UI textures except icons and our backdrops
+                    if not (texStr:match("RaidTargetingIcon") or 
+                           texStr:match("RaidIcon") or 
+                           texStr:match("WHITE8X8") or
+                           texStr:match("_ICON_") or
+                           texStr:match("Icon")) then
                         local regionName = region:GetName() or ""
-                        if regionName:match("Background") or regionName:match("Border") or regionName:match("Texture") or 
-                           regionName:match("Left") or regionName:match("Right") or regionName:match("Middle") or
-                           texStr:match("Interface\\FriendsFrame") or texStr:match("Interface\\ChatFrame") then
+                        -- Hide background, border, and decorative textures
+                        if regionName:match("Background") or 
+                           regionName:match("Border") or 
+                           regionName:match("Texture") or 
+                           regionName:match("Left") or 
+                           regionName:match("Right") or 
+                           regionName:match("Middle") or
+                           regionName:match("Top") or
+                           regionName:match("Bottom") or
+                           regionName == "" or
+                           texStr:match("Interface\\FriendsFrame") or 
+                           texStr:match("Interface\\ChatFrame") or
+                           texStr:match("Interface\\Buttons\\UI-") or
+                           texStr:match("Interface\\Common\\") then
+                            region:SetTexture(nil)
                             region:SetAlpha(0)
+                            region:Hide()
                         end
                     end
                 end
@@ -511,6 +565,14 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
             end
         end
         
+        -- Add BackdropTemplate if not present
+        if not child.SetBackdrop and BackdropTemplateMixin then
+            Mixin(child, BackdropTemplateMixin)
+            if child.OnBackdropLoaded then
+                child:OnBackdropLoaded()
+            end
+        end
+        
         -- Style CheckButtons
         if child:IsObjectType("CheckButton") then
             if child.SetBackdrop then
@@ -519,72 +581,149 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
                     edgeFile = "Interface\\Buttons\\WHITE8X8",
                     tile = false,
                     edgeSize = 1,
-                    insets = { left = 0, right = 0, top = 0, bottom = 0 }
+                    insets = { left = 1, right = 1, top = 1, bottom = 1 }
                 })
                 child:SetBackdropColor(unpack(colors.secondary))
                 child:SetBackdropBorderColor(unpack(colors.border))
             end
             
+            -- Hide default textures
+            local normalTexture = child:GetNormalTexture()
+            if normalTexture then 
+                normalTexture:SetTexture(nil)
+                normalTexture:SetAlpha(0) 
+            end
+            local pushedTexture = child:GetPushedTexture()
+            if pushedTexture then 
+                pushedTexture:SetTexture(nil)
+                pushedTexture:SetAlpha(0) 
+            end
+            local disabledCheckedTexture = child:GetDisabledCheckedTexture()
+            if disabledCheckedTexture then
+                disabledCheckedTexture:SetTexture(nil)
+                disabledCheckedTexture:SetAlpha(0)
+            end
+            
+            -- Create custom check texture
             local checkTexture = child:GetCheckedTexture()
             if checkTexture then
+                checkTexture:SetTexture("Interface\\Buttons\\WHITE8X8")
                 checkTexture:SetColorTexture(0.2, 0.8, 0.2, 1)
-                checkTexture:SetAllPoints()
+                checkTexture:ClearAllPoints()
+                checkTexture:SetPoint("TOPLEFT", child, "TOPLEFT", 2, -2)
+                checkTexture:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -2, 2)
             end
-            
-            local normalTexture = child:GetNormalTexture()
-            if normalTexture then normalTexture:SetAlpha(0) end
-            local pushedTexture = child:GetPushedTexture()
-            if pushedTexture then pushedTexture:SetAlpha(0) end
         end
         
-        -- Style Buttons
-        if child:IsObjectType("Button") and child.SetBackdrop then
-            child:SetBackdrop({
-                bgFile = "Interface\\Buttons\\WHITE8X8",
-                edgeFile = "Interface\\Buttons\\WHITE8X8",
-                tile = false,
-                edgeSize = 1,
-                insets = { left = 0, right = 0, top = 0, bottom = 0 }
-            })
-            child:SetBackdropColor(unpack(colors.secondary))
-            child:SetBackdropBorderColor(unpack(colors.border))
-            
-            if not child.abstractUIStyled then
-                child:HookScript("OnEnter", function(self)
-                    if self:IsEnabled() then
-                        self:SetBackdropColor(unpack(colors.hover))
-                    end
-                end)
-                
-                child:HookScript("OnLeave", function(self)
-                    self:SetBackdropColor(unpack(colors.secondary))
-                end)
-                
-                child.abstractUIStyled = true
-            end
-            
-            -- Hide default textures
-            for _, region in ipairs({child:GetRegions()}) do
-                if region:IsObjectType("Texture") and not region:GetName() then
-                    local texture = region:GetTexture()
-                    if texture then
-                        local texStr = tostring(texture)
-                        if not (texStr:match("RaidTargetingIcon") or texStr:match("RaidIcon") or texStr:match("WHITE8X8")) then
-                            region:SetAlpha(0)
-                        end
-                    end
+        -- Style Buttons (including icon buttons)
+        if child:IsObjectType("Button") then
+            -- Hide all default button textures
+            local normalTexture = child:GetNormalTexture()
+            if normalTexture then
+                local texPath = normalTexture:GetTexture()
+                if texPath and not tostring(texPath):match("_ICON_") and not tostring(texPath):match("RaidIcon") then
+                    normalTexture:SetTexture(nil)
+                    normalTexture:SetAlpha(0)
                 end
             end
             
+            local pushedTexture = child:GetPushedTexture()
+            if pushedTexture then pushedTexture:SetAlpha(0) end
+            
+            local highlightTexture = child:GetHighlightTexture()
+            if highlightTexture then 
+                highlightTexture:SetTexture("Interface\\Buttons\\WHITE8X8")
+                highlightTexture:SetVertexColor(1, 1, 1, 0.2)
+            end
+            
+            local disabledTexture = child:GetDisabledTexture()
+            if disabledTexture then disabledTexture:SetAlpha(0) end
+            
+            -- Apply AbstractUI backdrop
+            if child.SetBackdrop then
+                child:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    tile = false,
+                    edgeSize = 1,
+                    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                })
+                child:SetBackdropColor(unpack(colors.secondary))
+                child:SetBackdropBorderColor(unpack(colors.border))
+                
+                -- Add hover effects
+                if not child.abstractUIStyled then
+                    child:HookScript("OnEnter", function(self)
+                        if self:IsEnabled() then
+                            self:SetBackdropColor(unpack(colors.hover))
+                        end
+                    end)
+                    
+                    child:HookScript("OnLeave", function(self)
+                        self:SetBackdropColor(unpack(colors.secondary))
+                    end)
+                    
+                    child.abstractUIStyled = true
+                end
+            end
+            
+            -- Style button text
             local buttonText = child:GetFontString()
             if buttonText and not buttonText.abstractUIStyled then
                 buttonText:SetTextColor(unpack(colors.textPrimary))
                 buttonText.abstractUIStyled = true
             end
+            
+            -- Also check for Text property
+            if child.Text and not child.Text.abstractUIStyled then
+                child.Text:SetTextColor(unpack(colors.textPrimary))
+                child.Text.abstractUIStyled = true
+            end
         end
         
-        -- Style container Frames
-        if child:IsObjectType("Frame") and child.SetBackdrop then
+        -- Style DropDown menus
+        if childName and (childName:match("DropDown") or childName:match("Dropdown")) then
+            -- Style the dropdown button
+            if child.Button then
+                local btn = child.Button
+                if btn.SetBackdrop then
+                    btn:SetBackdrop({
+                        bgFile = "Interface\\Buttons\\WHITE8X8",
+                        edgeFile = "Interface\\Buttons\\WHITE8X8",
+                        tile = false,
+                        edgeSize = 1,
+                        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                    })
+                    btn:SetBackdropColor(unpack(colors.secondary))
+                    btn:SetBackdropBorderColor(unpack(colors.border))
+                end
+                
+                -- Hide default dropdown textures
+                if btn.NormalTexture then
+                    btn.NormalTexture:SetTexture(nil)
+                    btn.NormalTexture:SetAlpha(0)
+                end
+            end
+            
+            -- Style the dropdown text
+            if child.Text then
+                child.Text:SetTextColor(unpack(colors.textPrimary))
+            end
+            
+            -- Hide dropdown frame backgrounds
+            for _, region in ipairs({child:GetRegions()}) do
+                if region:IsObjectType("Texture") then
+                    local texPath = region:GetTexture()
+                    if texPath and not tostring(texPath):match("WHITE8X8") then
+                        region:SetTexture(nil)
+                        region:SetAlpha(0)
+                    end
+                end
+            end
+        end
+        
+        -- Style container Frames (but keep them slightly transparent)
+        if child:IsObjectType("Frame") and child.SetBackdrop and not child:IsObjectType("Button") then
             local backdrop = child:GetBackdrop()
             if backdrop then
                 child:SetBackdrop({
@@ -594,7 +733,8 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
                     edgeSize = 1,
                     insets = { left = 1, right = 1, top = 1, bottom = 1 }
                 })
-                child:SetBackdropColor(unpack(colors.primary))
+                -- Very transparent background for container frames
+                child:SetBackdropColor(0, 0, 0, 0.1)
                 child:SetBackdropBorderColor(unpack(colors.border))
             end
         end
@@ -602,6 +742,164 @@ function GroupManager:ReskinBlizzardButtons(frame, colors)
         -- Recurse into children
         self:ReskinBlizzardButtons(child, colors)
     end
+    
+    -- Also skin DropDownList frames when they appear
+    self:SkinDropDownLists(colors)
+end
+
+function GroupManager:SkinDropDownLists(colors)
+    -- Skin dropdown menu frames
+    for i = 1, UIDROPDOWNMENU_MAXLEVELS do
+        local listFrame = _G["DropDownList"..i.."MenuBackdrop"]
+        if listFrame then
+            if listFrame.SetBackdrop then
+                listFrame:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8X8",
+                    edgeFile = "Interface\\Buttons\\WHITE8X8",
+                    tile = false,
+                    edgeSize = 2,
+                    insets = { left = 2, right = 2, top = 2, bottom = 2 }
+                })
+                listFrame:SetBackdropColor(unpack(colors.primary))
+                listFrame:SetBackdropBorderColor(unpack(colors.border))
+            end
+        end
+        
+        local listFrameMain = _G["DropDownList"..i]
+        if listFrameMain then
+            -- Hide default backdrop
+            for _, region in ipairs({listFrameMain:GetRegions()}) do
+                if region:IsObjectType("Texture") then
+                    local texPath = region:GetTexture()
+                    if texPath and not tostring(texPath):match("WHITE8X8") then
+                        region:SetTexture(nil)
+                        region:SetAlpha(0)
+                    end
+                end
+            end
+            
+            -- Style buttons in dropdown
+            for j = 1, UIDROPDOWNMENU_MAXBUTTONS do
+                local button = _G["DropDownList"..i.."Button"..j]
+                if button then
+                    -- Style button background
+                    if button.SetBackdrop then
+                        button:SetBackdrop({
+                            bgFile = "Interface\\Buttons\\WHITE8X8",
+                            tile = false,
+                        })
+                        button:SetBackdropColor(0, 0, 0, 0)
+                    end
+                    
+                    -- Hide default highlight
+                    local highlight = button:GetHighlightTexture()
+                    if highlight then
+                        highlight:SetTexture("Interface\\Buttons\\WHITE8X8")
+                        highlight:SetVertexColor(unpack(colors.hover))
+                    end
+                    
+                    -- Hide default textures
+                    if button.NormalTexture then
+                        button.NormalTexture:SetAlpha(0)
+                    end
+                    
+                    -- Style button text
+                    local btnText = _G["DropDownList"..i.."Button"..j.."NormalText"]
+                    if btnText then
+                        btnText:SetTextColor(unpack(colors.textPrimary))
+                    end
+                end
+            end
+        end
+    end
+end
+
+function GroupManager:SkinSpecificElements(manager, displayFrame, colors)
+    if not manager or not displayFrame then return end
+    
+    -- Common elements to skin by pattern
+    local elementsToSkin = {
+        "RoleButton",
+        "GroupButton",
+        "FilterButton", 
+        "EveryoneIsAssist",
+        "Dropdown",
+        "DropDown",
+        "ToggleButton",
+        "LeaderOptions",
+        "RaidMarker"
+    }
+    
+    -- Recursively find and skin elements by name pattern
+    local function SkinByPattern(parent)
+        if not parent then return end
+        
+        for i = 1, parent:GetNumChildren() do
+            local child = select(i, parent:GetChildren())
+            local childName = child:GetName()
+            
+            if childName then
+                for _, pattern in ipairs(elementsToSkin) do
+                    if childName:match(pattern) then
+                        -- Ensure it has backdrop capability
+                        if not child.SetBackdrop and BackdropTemplateMixin then
+                            Mixin(child, BackdropTemplateMixin)
+                            if child.OnBackdropLoaded then
+                                child:OnBackdropLoaded()
+                            end
+                        end
+                        
+                        -- Apply AbstractUI styling
+                        if child:IsObjectType("Button") and child.SetBackdrop then
+                            child:SetBackdrop({
+                                bgFile = "Interface\\Buttons\\WHITE8X8",
+                                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                                tile = false,
+                                edgeSize = 1,
+                                insets = { left = 1, right = 1, top = 1, bottom = 1 }
+                            })
+                            child:SetBackdropColor(unpack(colors.secondary))
+                            child:SetBackdropBorderColor(unpack(colors.border))
+                            
+                            -- Hide button textures
+                            if child.GetNormalTexture and child:GetNormalTexture() then
+                                local normalTex = child:GetNormalTexture()
+                                local texPath = normalTex:GetTexture()
+                                -- Only hide if not an icon
+                                if texPath and not tostring(texPath):match("_ICON_") and not tostring(texPath):match("RaidIcon") then
+                                    normalTex:SetAlpha(0)
+                                end
+                            end
+                            if child.GetPushedTexture and child:GetPushedTexture() then
+                                child:GetPushedTexture():SetAlpha(0)
+                            end
+                            
+                            -- Add hover effect
+                            if not child.abstractUIHover then
+                                child:HookScript("OnEnter", function(self)
+                                    if self:IsEnabled() then
+                                        self:SetBackdropColor(unpack(colors.hover))
+                                    end
+                                end)
+                                child:HookScript("OnLeave", function(self)
+                                    self:SetBackdropColor(unpack(colors.secondary))
+                                end)
+                                child.abstractUIHover = true
+                            end
+                        end
+                        
+                        break
+                    end
+                end
+            end
+            
+            -- Recurse
+            SkinByPattern(child)
+        end
+    end
+    
+    SkinByPattern(manager)
+    SkinByPattern(displayFrame)
 end
 
 ---------------------------------------------------------------------------
