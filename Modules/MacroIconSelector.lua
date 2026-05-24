@@ -324,7 +324,6 @@ function MacroIconSelector:OnDBReady()
             eventFrame:SetScript("OnEvent", function(_, event)
                 if event == "BANKFRAME_OPENED" then
                     C_Timer.After(0.1, InitializeBaganatorBankFrames)
-                    end)
                 end
             end)
         end)
