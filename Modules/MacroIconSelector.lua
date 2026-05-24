@@ -47,20 +47,47 @@ function MacroIconSelector:OnDBReady()
         self:Initialize(GearManagerPopupFrame)
     end
     if self.isMainline then
-        -- Hook into ALL icon selector popups when they're shown
-        -- This catches bank, warband, and any other icon pickers dynamically
-        if IconSelectorPopupFrameMixin and IconSelectorPopupFrameMixin.Show then
-            hooksecurefunc(IconSelectorPopupFrameMixin, "Show", function(popup)
-                if popup and not self.loadedFrames[popup] then
-                    local name = popup:GetName() or "UnknownIconPicker"
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker popup:", name)
-                    -- Initialize it on next frame to ensure it's fully set up
-                    C_Timer.After(0.05, function()
-                        self:Initialize(popup)
+        -- Try multiple approaches to catch the bank icon picker
+        
+        -- Approach 1: Hook the frame's OnShow
+        local function HookIconPickerFrame(frameName)
+            local frame = _G[frameName]
+            if frame and frame.IconPicker then
+                if not self.loadedFrames[frame] then
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found frame via global:", frameName)
+                    C_Timer.After(0.1, function()
+                        self:Initialize(frame)
                     end)
                 end
-            end)
+            end
         end
+        
+        -- Approach 2: Scan for icon picker frames periodically
+        local scanAttempts = 0
+        local function ScanForIconPickers()
+            scanAttempts = scanAttempts + 1
+            if scanAttempts > 100 then return end -- Stop after 100 attempts
+            
+            -- Look for any frame with IconPicker and IconSelector
+            for name, frame in pairs(_G) do
+                if type(frame) == "table" and frame.IconPicker and frame.IconSelector and frame.GetName then
+                    local frameName = frame:GetName()
+                    if frameName and not self.loadedFrames[frame] and frameName:match("Bank") then
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Discovered bank icon picker:", frameName)
+                        self:Initialize(frame)
+                    end
+                end
+            end
+        end
+        
+        -- Start scanning
+        C_Timer.NewTicker(0.5, ScanForIconPickers)
+        
+        -- Approach 3: Hook common bank-related events
+        self:RegisterEvent("BANKFRAME_OPENED")
+        
+        -- Approach 4: Print when we're ready
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready and scanning for icon pickers")
     end
     
     EventUtil.ContinueOnAddOnLoaded("Blizzard_MacroUI", function()
@@ -107,6 +134,21 @@ function MacroIconSelector:OnEnable()
 end
 
 function MacroIconSelector:OnDisable()
+end
+
+function MacroIconSelector:BANKFRAME_OPENED()
+    -- When bank opens, scan for icon pickers
+    C_Timer.After(0.5, function()
+        for name, frame in pairs(_G) do
+            if type(frame) == "table" and frame.IconPicker and frame.IconSelector and frame.GetName then
+                local frameName = frame:GetName()
+                if frameName and not self.loadedFrames[frame] then
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank icon picker on BANKFRAME_OPENED:", frameName)
+                    self:Initialize(frame)
+                end
+            end
+        end
+    end)
 end
 
 -- ============================================================================
