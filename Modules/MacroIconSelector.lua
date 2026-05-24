@@ -62,8 +62,25 @@ function MacroIconSelector:OnDBReady()
             if MacroIconSelector.stopScanning then
                 MacroIconSelector.stopScanning()
             end
+        elseif msg == "bank" then
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Manual bank check:")
+            print("  BankFrame exists:", BankFrame ~= nil)
+            if BankFrame then
+                print("  BankFrame.BankPanel exists:", BankFrame.BankPanel ~= nil)
+                if BankFrame.BankPanel then
+                    print("  TabSettingsMenu exists:", BankFrame.BankPanel.TabSettingsMenu ~= nil)
+                    if BankFrame.BankPanel.TabSettingsMenu then
+                        print("  Attempting to initialize TabSettingsMenu now...")
+                        MacroIconSelector:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                    end
+                end
+            end
+            print("  Blizzard_BankUI loaded:", C_AddOns.IsAddOnLoaded("Blizzard_BankUI"))
         else
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Usage: /iconscan start or /iconscan stop")
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Usage:")
+            print("  /iconscan start - Start scanning")
+            print("  /iconscan stop - Stop scanning")
+            print("  /iconscan bank - Check bank frame and force init (open bank first)")
         end
     end
     
@@ -235,15 +252,20 @@ function MacroIconSelector:OnDBReady()
         
         -- Method 3: Check periodically for 30 seconds in case events fail
         local checkCount = 0
-        local checkTimer = C_Timer.NewTicker(1, function()
+        local checkTimer
+        checkTimer = C_Timer.NewTicker(1, function()
             checkCount = checkCount + 1
             if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
                 print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI detected via polling after", checkCount, "seconds")
-                checkTimer:Cancel()
+                if checkTimer then
+                    checkTimer:Cancel()
+                end
                 InitializeBankIconPickers()
             elseif checkCount >= 30 then
                 print("|cffFF6B6BAbstractUI MacroIconSelector:|r Gave up waiting for Blizzard_BankUI after 30 seconds")
-                checkTimer:Cancel()
+                if checkTimer then
+                    checkTimer:Cancel()
+                end
             end
         end)
     end
