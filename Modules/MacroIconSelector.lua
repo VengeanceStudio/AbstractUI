@@ -282,32 +282,13 @@ function MacroIconSelector:OnDBReady()
             
             -- Method 2: Directly search for Baganator bank frames by name
             -- Baganator creates frames like "Baganator_CategoryViewBankViewFrame1" or "Baganator_SingleViewBankViewFrame1"
+            local baganatorFramesInitialized = false
             local function InitializeBaganatorBankFrames()
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Searching for Baganator bank frames...")
+                if baganatorFramesInitialized then return end
                 
-                -- First, scan for ANY Baganator frames in the global namespace
-                local foundFrames = {}
-                for name, obj in pairs(_G) do
-                    if type(name) == "string" and name:match("^Baganator_") and type(obj) == "table" and obj.GetObjectType then
-                        foundFrames[name] = obj
-                    end
-                end
-                
-                local frameCount = 0
-                for _ in pairs(foundFrames) do frameCount = frameCount + 1 end
-                
-                if frameCount > 0 then
-                    print("  Found", frameCount, "Baganator frames in _G:")
-                    for name, _ in pairs(foundFrames) do
-                        print("    -", name)
-                    end
-                else
-                    print("  No Baganator frames found in _G (may not be created yet)")
-                end
-                
-                -- Try both view types and both frame groups
+                -- Scan for Baganator bank frames (they use "blizzard" as frame group suffix)
                 local viewTypes = {"CategoryView", "SingleView"}
-                local frameGroups = {"1", "2", ""} -- Also try without number
+                local frameGroups = {"blizzard", "1", "2", ""}
                 
                 for _, viewType in ipairs(viewTypes) do
                     for _, group in ipairs(frameGroups) do
@@ -315,119 +296,34 @@ function MacroIconSelector:OnDBReady()
                         local bankFrame = _G[frameName]
                         
                         if bankFrame then
-                            print("  Found Baganator bank frame:", frameName)
-                            
                             -- Check Character tab (personal bank tabs)
-                            if bankFrame.Character and bankFrame.Character.TabSettingsMenu then
-                                print("    Found Character.TabSettingsMenu, initializing")
+                            if bankFrame.Character and bankFrame.Character.TabSettingsMenu and not self.loadedFrames[bankFrame.Character.TabSettingsMenu] then
                                 self:Initialize(bankFrame.Character.TabSettingsMenu)
-                            elseif bankFrame.Character then
-                                print("    Character exists but no TabSettingsMenu yet, setting up watcher")
-                                -- Hook the Character frame's OnShow to detect when TabSettingsMenu appears
-                                bankFrame.Character:HookScript("OnShow", function()
-                                    C_Timer.After(0.1, function()
-                                        if bankFrame.Character.TabSettingsMenu and not self.loadedFrames[bankFrame.Character.TabSettingsMenu] then
-                                            print("    Character.TabSettingsMenu appeared on Show, initializing")
-                                            self:Initialize(bankFrame.Character.TabSettingsMenu)
-                                        end
-                                    end)
-                                end)
-                                
-                                -- If already visible, check now
-                                if bankFrame.Character:IsVisible() and bankFrame.Character.TabSettingsMenu then
-                                    print("    Character is visible with TabSettingsMenu, initializing immediately")
-                                    self:Initialize(bankFrame.Character.TabSettingsMenu)
-                                end
                             end
                             
                             -- Check Warband tab
-                            if bankFrame.Warband and bankFrame.Warband.TabSettingsMenu then
-                                print("    Found Warband.TabSettingsMenu, initializing")
+                            if bankFrame.Warband and bankFrame.Warband.TabSettingsMenu and not self.loadedFrames[bankFrame.Warband.TabSettingsMenu] then
                                 self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                            elseif bankFrame.Warband then
-                                print("    Warband exists but no TabSettingsMenu yet, setting up watcher")
-                                bankFrame.Warband:HookScript("OnShow", function()
-                                    C_Timer.After(0.1, function()
-                                        if bankFrame.Warband.TabSettingsMenu and not self.loadedFrames[bankFrame.Warband.TabSettingsMenu] then
-                                            print("    Warband.TabSettingsMenu appeared on Show, initializing")
-                                            self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                                        end
-                                    end)
-                                end)
-                                
-                                if bankFrame.Warband:IsVisible() and bankFrame.Warband.TabSettingsMenu then
-                                    print("    Warband is visible with TabSettingsMenu, initializing immediately")
-                                    self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                                end
                             end
                         end
                     end
                 end
                 
-                -- Also check all found Baganator frames for bank-related frames with TabSettingsMenu
-                for frameName, bankFrame in pairs(foundFrames) do
-                    if frameName:match("Bank") and bankFrame then
-                        -- Check Character tab (personal bank tabs)
-                        if bankFrame.Character and bankFrame.Character.TabSettingsMenu then
-                            print("  Found Character.TabSettingsMenu in", frameName, "(via scan)")
-                            self:Initialize(bankFrame.Character.TabSettingsMenu)
-                        elseif bankFrame.Character then
-                            -- Hook for when TabSettingsMenu appears
-                            bankFrame.Character:HookScript("OnShow", function()
-                                C_Timer.After(0.1, function()
-                                    if bankFrame.Character.TabSettingsMenu and not self.loadedFrames[bankFrame.Character.TabSettingsMenu] then
-                                        print("  Character.TabSettingsMenu appeared on Show in", frameName)
-                                        self:Initialize(bankFrame.Character.TabSettingsMenu)
-                                    end
-                                end)
-                            end)
-                            
-                            if bankFrame.Character:IsVisible() and bankFrame.Character.TabSettingsMenu then
-                                print("  Character is visible with TabSettingsMenu in", frameName)
-                                self:Initialize(bankFrame.Character.TabSettingsMenu)
-                            end
-                        end
-                        
-                        -- Check Warband tab
-                        if bankFrame.Warband and bankFrame.Warband.TabSettingsMenu then
-                            print("  Found Warband.TabSettingsMenu in", frameName, "(via scan)")
-                            self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                        elseif bankFrame.Warband then
-                            bankFrame.Warband:HookScript("OnShow", function()
-                                C_Timer.After(0.1, function()
-                                    if bankFrame.Warband.TabSettingsMenu and not self.loadedFrames[bankFrame.Warband.TabSettingsMenu] then
-                                        print("  Warband.TabSettingsMenu appeared on Show in", frameName)
-                                        self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                                    end
-                                end)
-                            end)
-                            
-                            if bankFrame.Warband:IsVisible() and bankFrame.Warband.TabSettingsMenu then
-                                print("  Warband is visible with TabSettingsMenu in", frameName)
-                                self:Initialize(bankFrame.Warband.TabSettingsMenu)
-                            end
-                        end
-                    end
-                end
+                baganatorFramesInitialized = true
             end
             
             -- Try immediately
             InitializeBaganatorBankFrames()
             
             -- Also set up a delayed check in case frames aren't created yet
-            C_Timer.After(2, function()
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Delayed Baganator check (2s)")
-                InitializeBaganatorBankFrames()
-            end)
+            C_Timer.After(2, InitializeBaganatorBankFrames)
             
-            -- And listen for bank open event to check again
+            -- Listen for bank open event to check one more time
             local eventFrame = CreateFrame("Frame")
             eventFrame:RegisterEvent("BANKFRAME_OPENED")
             eventFrame:SetScript("OnEvent", function(_, event)
                 if event == "BANKFRAME_OPENED" then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_OPENED - checking Baganator frames")
-                    C_Timer.After(0.5, function()
-                        InitializeBaganatorBankFrames()
+                    C_Timer.After(0.1, InitializeBaganatorBankFrames)
                     end)
                 end
             end)
@@ -741,46 +637,28 @@ function MacroIconSelector:CreateSearchBox(popup)
         return
     end
     
-    local popupName = popup:GetName() or "UnknownPopup"
-    print("|cff00FF7FAbstractUI MacroIconSelector:|r CreateSearchBox called for:", popupName)
-    print("  popup.IconSelector:", popup.IconSelector ~= nil)
-    print("  popup.IconPicker:", popup.IconPicker ~= nil)
-    print("  popup.BorderBox:", popup.BorderBox ~= nil)
-    
     -- Determine the frame structure (different for bank frames vs macro frames)
     local isBankFrame = (popup.IconPicker ~= nil)
     local okayButton, cancelButton, iconSelectorEditBox, borderBox
     
-    print("  isBankFrame:", isBankFrame)
-    
     if isBankFrame then
-        print("  Using bank frame structure")
         -- Bank frame structure: uses IconPicker instead of BorderBox
-        if not popup.IconPicker then
-            print("  ERROR: popup.IconPicker is nil")
-            return
-        end
+        if not popup.IconPicker then return end
         borderBox = popup.IconPicker
         iconSelectorEditBox = popup.IconPicker.IconSelectorEditBox
         
         -- Find the Okay and Cancel buttons - they should be children of the popup
-        -- Try multiple methods to find them
         local children = {popup:GetChildren()}
-        print("  Found", #children, "children")
         for i, child in ipairs(children) do
             if child:IsObjectType("Button") then
                 local text = child:GetText()
-                local childName = child:GetName() or "unnamed"
-                print("    Button", i, ":", childName, "text:", text)
                 if text then
                     -- Check for Okay button (various localizations)
                     if text:find("Okay") or text == OKAY or text:find("OK") then
                         okayButton = child
-                        print("      -> This is Okay button")
                     -- Check for Cancel button
                     elseif text:find("Cancel") or text == CANCEL then
                         cancelButton = child
-                        print("      -> This is Cancel button")
                     end
                 end
             end
@@ -789,19 +667,13 @@ function MacroIconSelector:CreateSearchBox(popup)
         -- Fallback: find buttons by name
         if not okayButton then
             okayButton = popup.OkayButton or popup.Okay or _G[popup:GetName().."OkayButton"]
-            if okayButton then
-                print("  Found Okay button via fallback")
-            end
         end
         if not cancelButton then
             cancelButton = popup.CancelButton or popup.Cancel or _G[popup:GetName().."CancelButton"]
         end
     else
         -- Standard structure (macro frame, guild bank, etc.)
-        if not popup.BorderBox or not popup.BorderBox.OkayButton then
-            print("  ERROR: Missing BorderBox or OkayButton")
-            return
-        end
+        if not popup.BorderBox or not popup.BorderBox.OkayButton then return end
         borderBox = popup.BorderBox
         okayButton = popup.BorderBox.OkayButton
         cancelButton = popup.BorderBox.CancelButton
@@ -809,12 +681,7 @@ function MacroIconSelector:CreateSearchBox(popup)
     end
     
     -- Must have at least an okay button to position the search box
-    if not okayButton then
-        print("  ERROR: Could not find Okay button")
-        return
-    end
-    
-    print("  SUCCESS: Creating search box")
+    if not okayButton then return end
     
     local sb = CreateFrame("EditBox", "$parentSearchBox", popup, "InputBoxTemplate")
     sb:SetPoint("BOTTOMLEFT", 74, 15)
@@ -1020,24 +887,12 @@ local ProviderTypes = {
 }
 
 function MacroIconSelector:Initialize(popup)
-    if not popup then 
-        print("|cffFF6B6BAbstractUI MacroIconSelector:|r Initialize called with nil popup")
-        return 
-    end
-    
-    local popupName = popup:GetName() or "UnknownPopup"
-    print("|cff00FF7FAbstractUI MacroIconSelector:|r Initialize called for:", popupName)
-    print("  Has IconPicker:", popup.IconPicker ~= nil)
-    print("  Has BorderBox:", popup.BorderBox ~= nil)
-    print("  Has IconSelector:", popup.IconSelector ~= nil)
+    if not popup then return end
     
     popup:HookScript("OnShow", function()
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r OnShow fired for:", popupName)
         if not self.loadedFrames[popup] then
             self.loadedFrames[popup] = true
-            print("  First time setup")
         else
-            print("  Already loaded, updating")
             self:UpdateIconSelector(popup)
             return
         end
