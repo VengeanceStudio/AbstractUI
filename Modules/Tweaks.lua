@@ -171,19 +171,31 @@ function Tweaks:OnDBReady()
         self:HookAutoDelete()
     end
     
-    -- Setup talent import - wait for addon to load
+    -- Setup talent import - check if addon is already loaded or wait for it
     if self.db.profile.importOverwriteEnabled then
-        EventUtil.ContinueOnAddOnLoaded("Blizzard_ClassTalentUI", function()
-            -- Wait a frame for the UI to be fully initialized
+        if C_AddOns.IsAddOnLoaded("Blizzard_ClassTalentUI") then
+            -- Already loaded, set up immediately
             C_Timer.After(0.1, function()
                 if ClassTalentLoadoutImportDialog then
-                    print("|cff00FF7FAbstractUI Tweaks:|r Talent import dialog found, setting up overwrite checkbox")
+                    print("|cff00FF7FAbstractUI Tweaks:|r Talent import dialog found (already loaded), setting up overwrite checkbox")
                     self:SetupTalentImportHook()
                 else
-                    print("|cffFF6B6BAbstractUI Tweaks:|r ClassTalentLoadoutImportDialog not found after addon load")
+                    print("|cffFF6B6BAbstractUI Tweaks:|r Blizzard_ClassTalentUI loaded but ClassTalentLoadoutImportDialog not found")
                 end
             end)
-        end)
+        else
+            -- Wait for it to load
+            EventUtil.ContinueOnAddOnLoaded("Blizzard_ClassTalentUI", function()
+                C_Timer.After(0.1, function()
+                    if ClassTalentLoadoutImportDialog then
+                        print("|cff00FF7FAbstractUI Tweaks:|r Talent import dialog found (after load), setting up overwrite checkbox")
+                        self:SetupTalentImportHook()
+                    else
+                        print("|cffFF6B6BAbstractUI Tweaks:|r ClassTalentLoadoutImportDialog not found after addon load")
+                    end
+                end)
+            end)
+        end
     end
     
     -- Setup auto keystone insertion (will hook when Blizzard_ChallengesUI loads)
