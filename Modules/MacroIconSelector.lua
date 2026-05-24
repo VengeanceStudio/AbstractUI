@@ -47,102 +47,54 @@ function MacroIconSelector:OnDBReady()
         self:Initialize(GearManagerPopupFrame)
     end
     if self.isMainline then
-        -- Universal icon picker detection that works with ANY bag addon (Baginator, Baganator, Bagnon, etc.)
+        -- Hook directly into IconSelectorPopupFrameMixin or IconDataProviderMixin Show methods
+        -- This should catch ANY icon picker, including those created by bag addons
         print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin exists:", IconSelectorPopupFrameMixin ~= nil)
         
-        -- Hook IconSelectorPopupFrameMixin:Show() to detect when ANY icon picker appears
-        if IconSelectorPopupFrameMixin and IconSelectorPopupFrameMixin.Show then
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Setting up IconSelectorPopupFrameMixin hook")
-            hooksecurefunc(IconSelectorPopupFrameMixin, "Show", function(frame)
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin:Show called!")
-                -- Start checking for this icon picker
-                C_Timer.After(0.1, function()
-                    local hasIconPicker = frame.IconPicker ~= nil
-                    local hasIconSelector = frame.IconSelector ~= nil
-                    local isVis = frame:IsVisible()
-                    local isLoaded = self.loadedFrames[frame] ~= nil
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Frame check: IconPicker=" .. tostring(hasIconPicker) .. ", IconSelector=" .. tostring(hasIconSelector) .. ", Visible=" .. tostring(isVis) .. ", AlreadyLoaded=" .. tostring(isLoaded))
-                    
-                    if frame and frame:IsVisible() and frame.IconPicker and frame.IconSelector and not self.loadedFrames[frame] then
-                        local name = frame:GetName() or "UnknownIconPicker"
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker via Show hook:", name)
-                        self:Initialize(frame)
-                    end
+        -- Try hooking the OnLoad/OnShow for icon selector frames
+        if IconSelectorPopupFrameMixin then
+            if IconSelectorPopupFrameMixin.OnLoad then
+                hooksecurefunc(IconSelectorPopupFrameMixin, "OnLoad", function(frame)
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin OnLoad called!")
+                    C_Timer.After(0.1, function()
+                        if not self.loadedFrames[frame] then
+                            local name = frame:GetName() or "UnknownIconPicker"
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from OnLoad:", name)
+                            self:Initialize(frame)
+                        end
+                    end)
                 end)
-            end)
-        else
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r WARNING: IconSelectorPopupFrameMixin not available!")
-        end
-        
-        -- Continuous scanning: Always check UIParent children periodically for icon pickers
-        local function CheckForNewIconPicker()
-            local count = 0
-            local visibleFrames = {}
-            local allFrames = {}
-            
-            for i = 1, UIParent:GetNumChildren() do
-                local child = select(i, UIParent:GetChildren())
-                -- Use pcall to safely check frames that may not support all methods
-                local success, isVisible = pcall(function() return child and child.IsVisible and child:IsVisible() end)
-                if success and isVisible then
-                    count = count + 1
-                    local name = child:GetName() or "<unnamed>"
-                    local frameType = child:GetObjectType() or "unknown"
-                    
-                    -- Debug: List all visible frames and their key properties
-                    local hasIconPicker = child.IconPicker ~= nil
-                    local hasIconSelector = child.IconSelector ~= nil
-                    local hasIconDataProvider = child.IconDataProvider ~= nil
-                    local hasBorderBox = child.BorderBox ~= nil
-                    local hasScrollBox = child.ScrollBox ~= nil
-                    
-                    -- Store info about all frames (for comprehensive debug)
-                    table.insert(allFrames, {name = name, type = frameType, hasIcon = hasIconPicker or hasIconSelector or hasIconDataProvider or name:match("Icon")})
-                    
-                    -- Check for any icon-related properties or names
-                    if hasIconPicker or hasIconSelector or hasIconDataProvider or hasBorderBox or name:match("Icon") or name:match("Popup") then
-                        table.insert(visibleFrames, string.format("%s [%s] (IconPicker=%s, IconSelector=%s, BorderBox=%s, ScrollBox=%s)", 
-                            name, frameType, tostring(hasIconPicker), tostring(hasIconSelector), tostring(hasBorderBox), tostring(hasScrollBox)))
-                    end
-                    
-                    -- Try standard icon picker detection
-                    if child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
-                        local frameName = child:GetName() or "UnknownIconPicker"
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", frameName)
-                        self:Initialize(child)
-                    end
-                    
-                    -- Also try BorderBox pattern (like macro icon selector)
-                    if child.BorderBox and child.BorderBox.IconSelector and not self.loadedFrames[child] then
-                        local frameName = child:GetName() or "UnknownBorderBoxPicker"
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible BorderBox icon picker:", frameName)
-                        self:Initialize(child)
-                    end
-                end
             end
             
-            -- Debug output every 5 seconds
-            self.scanCount = (self.scanCount or 0) + 1
-            if self.scanCount % 10 == 0 then
-                if #visibleFrames > 0 then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Visible icon-related frames (" .. #visibleFrames .. "):")
-                    for _, frameInfo in ipairs(visibleFrames) do
-                        print("  - " .. frameInfo)
-                    end
-                else
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r No icon-related frames visible (" .. count .. " total visible frames)")
-                end
+            if IconSelectorPopupFrameMixin.OnShow then
+                hooksecurefunc(IconSelectorPopupFrameMixin, "OnShow", function(frame)
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin OnShow called!")
+                    C_Timer.After(0.1, function()
+                        if not self.loadedFrames[frame] then
+                            local name = frame:GetName() or "UnknownIconPicker"
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from OnShow:", name)
+                            self:Initialize(frame)
+                        end
+                    end)
+                end)
             end
             
-            -- Always keep checking (every 0.5 seconds)
-            C_Timer.After(0.5, CheckForNewIconPicker)
+            -- Also try the ShowIconSelector function if it exists
+            if IconSelectorPopupFrameMixin.ShowIconSelector then
+                hooksecurefunc(IconSelectorPopupFrameMixin, "ShowIconSelector", function(frame)
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin ShowIconSelector called!")
+                    C_Timer.After(0.1, function()
+                        if not self.loadedFrames[frame] then
+                            local name = frame:GetName() or "UnknownIconPicker"
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from ShowIconSelector:", name)
+                            self:Initialize(frame)
+                        end
+                    end)
+                end)
+            end
         end
         
-        -- Start continuous scanning
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Starting continuous icon picker scanning")
-        CheckForNewIconPicker()
-        
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - will detect icon pickers from any source")
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - hooked into IconSelectorPopupFrameMixin")
     end
     
     EventUtil.ContinueOnAddOnLoaded("Blizzard_MacroUI", function()
@@ -168,16 +120,19 @@ function MacroIconSelector:OnDBReady()
         EventUtil.ContinueOnAddOnLoaded("Baganator", function()
             print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator loaded, setting up API listener")
             Baganator.API.Skins.RegisterListener(function(details)
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator API callback - regionType:", details.regionType)
-                if details.regionType == "ButtonFrame" and details.tags and tIndexOf(details.tags, "bank") ~= nil then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank ButtonFrame")
-                    if details.region.Character and details.region.Character.TabSettingsMenu then
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Character.TabSettingsMenu")
-                        self:Initialize(details.region.Character.TabSettingsMenu)
-                    end
-                    if details.region.Warband and details.region.Warband.TabSettingsMenu then
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Warband.TabSettingsMenu")
-                        self:Initialize(details.region.Warband.TabSettingsMenu)
+                -- Only log ButtonFrame types to reduce spam
+                if details.regionType == "ButtonFrame" then
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator ButtonFrame detected")
+                    if details.tags and tIndexOf(details.tags, "bank") ~= nil then
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank ButtonFrame")
+                        if details.region.Character and details.region.Character.TabSettingsMenu then
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Character.TabSettingsMenu")
+                            self:Initialize(details.region.Character.TabSettingsMenu)
+                        end
+                        if details.region.Warband and details.region.Warband.TabSettingsMenu then
+                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Warband.TabSettingsMenu")
+                            self:Initialize(details.region.Warband.TabSettingsMenu)
+                        end
                     end
                 end
             end)
