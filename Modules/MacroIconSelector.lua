@@ -48,11 +48,21 @@ function MacroIconSelector:OnDBReady()
     end
     if self.isMainline then
         -- Universal icon picker detection that works with ANY bag addon (Baginator, Baganator, Bagnon, etc.)
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin exists:", IconSelectorPopupFrameMixin ~= nil)
+        
         -- Hook IconSelectorPopupFrameMixin:Show() to detect when ANY icon picker appears
         if IconSelectorPopupFrameMixin and IconSelectorPopupFrameMixin.Show then
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Setting up IconSelectorPopupFrameMixin hook")
             hooksecurefunc(IconSelectorPopupFrameMixin, "Show", function(frame)
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin:Show called!")
                 -- Start checking for this icon picker
                 C_Timer.After(0.1, function()
+                    local hasIconPicker = frame.IconPicker ~= nil
+                    local hasIconSelector = frame.IconSelector ~= nil
+                    local isVis = frame:IsVisible()
+                    local isLoaded = self.loadedFrames[frame] ~= nil
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Frame check: IconPicker=" .. tostring(hasIconPicker) .. ", IconSelector=" .. tostring(hasIconSelector) .. ", Visible=" .. tostring(isVis) .. ", AlreadyLoaded=" .. tostring(isLoaded))
+                    
                     if frame and frame:IsVisible() and frame.IconPicker and frame.IconSelector and not self.loadedFrames[frame] then
                         local name = frame:GetName() or "UnknownIconPicker"
                         print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker via Show hook:", name)
@@ -60,42 +70,34 @@ function MacroIconSelector:OnDBReady()
                     end
                 end)
             end)
+        else
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r WARNING: IconSelectorPopupFrameMixin not available!")
         end
         
-        -- Fallback: Also check UIParent children periodically when any icon picker might be visible
+        -- Continuous scanning: Always check UIParent children periodically for icon pickers
         local function CheckForNewIconPicker()
+            local count = 0
             for i = 1, UIParent:GetNumChildren() do
                 local child = select(i, UIParent:GetChildren())
                 -- Use pcall to safely check frames that may not support all methods
                 local success, isVisible = pcall(function() return child and child.IsVisible and child:IsVisible() end)
-                if success and isVisible and child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
-                    local name = child:GetName() or "UnknownIconPicker"
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", name)
-                    self:Initialize(child)
+                if success and isVisible then
+                    count = count + 1
+                    if child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
+                        local name = child:GetName() or "UnknownIconPicker"
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", name)
+                        self:Initialize(child)
+                    end
                 end
             end
             
-            -- Schedule next check if still active
-            if self.checkingActive then
-                C_Timer.After(0.5, CheckForNewIconPicker)
-            end
+            -- Always keep checking (every 0.5 seconds)
+            C_Timer.After(0.5, CheckForNewIconPicker)
         end
         
-        -- Start checking when bank opens (works with default UI and some addons)
-        self:RegisterEvent("BANKFRAME_OPENED")
-        self:RegisterEvent("BANKFRAME_CLOSED")
-        self.checkingActive = false
-        
-        self.checkForIconPickers = function()
-            if not self.checkingActive then
-                self.checkingActive = true
-                CheckForNewIconPicker()
-            end
-        end
-        
-        self.stopCheckingForIconPickers = function()
-            self.checkingActive = false
-        end
+        -- Start continuous scanning
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Starting continuous icon picker scanning")
+        CheckForNewIconPicker()
         
         print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - will detect icon pickers from any source")
     end
