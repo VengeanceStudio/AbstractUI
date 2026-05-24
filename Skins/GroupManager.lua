@@ -432,7 +432,8 @@ function GroupManager:ApplySkin(force)
         local childName = child:GetName()
         if not childName or childName == "" then
             -- Hide decorative child frames
-            for j = 1, child:GetNumRegions and child:GetNumRegions() or 0 do
+            local numRegions = child.GetNumRegions and child:GetNumRegions() or 0
+            for j = 1, numRegions do
                 local region = select(j, child:GetRegions())
                 if region and region:IsObjectType("Texture") then
                     region:SetTexture(nil)
