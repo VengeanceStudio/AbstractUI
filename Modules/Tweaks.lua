@@ -1673,6 +1673,18 @@ function Tweaks:SetupTalentImportWhenReady()
                     if frame then
                         print("|cff00FF7FAbstractUI Tweaks:|r Talent frame loaded:", frame:GetName() or "UnnamedFrame")
                         self:HookTalentFrame(frame)
+                        
+                        -- Check if frame is already visible (opened before hook)
+                        if frame:IsVisible() then
+                            print("|cff00FF7FAbstractUI Tweaks:|r Talent frame already open, starting detection")
+                            C_Timer.After(0.3, function()
+                                if ClassTalentLoadoutImportDialog then
+                                    self:SetupTalentImportHook()
+                                else
+                                    self:HookTalentFrameForPolling(frame)
+                                end
+                            end)
+                        end
                     end
                 end)
             end
@@ -1747,14 +1759,37 @@ function Tweaks:HookTalentFrameForPolling(talentFrame)
     -- Poll while frame is visible (only while actively open, not continuously)
     local checkCount = 0
     local function CheckForDialog()
-        if self.importCheckbox or not talentFrame:IsVisible() then
-            return -- Already set up or frame closed
+        if self.importCheckbox then
+            print("|cff00FF7FAbstractUI Tweaks:|r Polling stopped - already set up")
+            return -- Already set up
+        end
+        
+        if not talentFrame:IsVisible() then
+            print("|cff00FF7FAbstractUI Tweaks:|r Polling stopped - frame closed after", checkCount, "checks")
+            return -- Frame closed
         end
         
         checkCount = checkCount + 1
         
+        if checkCount % 10 == 1 then  -- Log every second (10 checks)
+            print("|cff00FF7FAbstractUI Tweaks:|r Checking for import dialog... (check", checkCount, ")")
+        end
+        
+        -- At check 5, scan for dialog frames to help debug
+        if checkCount == 5 then
+            print("|cff00FF7FAbstractUI Tweaks:|r Scanning for import dialog frames...")
+            for _, child in ipairs({UIParent:GetChildren()}) do
+                if child.GetName then
+                    local name = child:GetName()
+                    if name and (name:match("Import") or name:match("Loadout")) and child:IsVisible() then
+                        print("  Found visible frame:", name)
+                    end
+                end
+            end
+        end
+        
         if ClassTalentLoadoutImportDialog then
-            print("|cff00FF7FAbstractUI Tweaks:|r Import dialog detected!")
+            print("|cff00FF7FAbstractUI Tweaks:|r Import dialog detected after", checkCount * 0.1, "seconds!")
             self:SetupTalentImportHook()
             return
         end
