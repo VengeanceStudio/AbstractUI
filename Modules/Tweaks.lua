@@ -171,31 +171,9 @@ function Tweaks:OnDBReady()
         self:HookAutoDelete()
     end
     
-    -- Setup talent import - check if addon is already loaded or wait for it
+    -- Setup talent import - hook when talent UI is ready
     if self.db.profile.importOverwriteEnabled then
-        if C_AddOns.IsAddOnLoaded("Blizzard_ClassTalentUI") then
-            -- Already loaded, set up immediately
-            C_Timer.After(0.1, function()
-                if ClassTalentLoadoutImportDialog then
-                    print("|cff00FF7FAbstractUI Tweaks:|r Talent import dialog found (already loaded), setting up overwrite checkbox")
-                    self:SetupTalentImportHook()
-                else
-                    print("|cffFF6B6BAbstractUI Tweaks:|r Blizzard_ClassTalentUI loaded but ClassTalentLoadoutImportDialog not found")
-                end
-            end)
-        else
-            -- Wait for it to load
-            EventUtil.ContinueOnAddOnLoaded("Blizzard_ClassTalentUI", function()
-                C_Timer.After(0.1, function()
-                    if ClassTalentLoadoutImportDialog then
-                        print("|cff00FF7FAbstractUI Tweaks:|r Talent import dialog found (after load), setting up overwrite checkbox")
-                        self:SetupTalentImportHook()
-                    else
-                        print("|cffFF6B6BAbstractUI Tweaks:|r ClassTalentLoadoutImportDialog not found after addon load")
-                    end
-                end)
-            end)
-        end
+        self:SetupTalentImportWhenReady()
     end
     
     -- Setup auto keystone insertion (will hook when Blizzard_ChallengesUI loads)
@@ -1127,24 +1105,7 @@ function Tweaks:GetOptions()
                 set = function(_, v) 
                     self.db.profile.importOverwriteEnabled = v
                     if v then
-                        -- Wait for addon to load if not already loaded
-                        if C_AddOns.IsAddOnLoaded("Blizzard_ClassTalentUI") then
-                            if ClassTalentLoadoutImportDialog then
-                                print("|cff00FF7FAbstractUI Tweaks:|r Setting up talent import overwrite")
-                                self:SetupTalentImportHook()
-                            else
-                                print("|cffFF6B6BAbstractUI Tweaks:|r Talent import dialog not ready yet")
-                            end
-                        else
-                            EventUtil.ContinueOnAddOnLoaded("Blizzard_ClassTalentUI", function()
-                                C_Timer.After(0.1, function()
-                                    if ClassTalentLoadoutImportDialog then
-                                        print("|cff00FF7FAbstractUI Tweaks:|r Setting up talent import overwrite")
-                                        self:SetupTalentImportHook()
-                                    end
-                                end)
-                            end)
-                        end
+                        self:SetupTalentImportWhenReady()
                     else
                         self:DisableTalentImportHook()
                     end
@@ -1668,13 +1629,99 @@ end
 -- TALENT IMPORT OVERWRITE FUNCTIONALITY
 -- ============================================================================
 
-function Tweaks:SetupTalentImportHook()
-    if not ClassTalentLoadoutImportDialog then
-        print("|cffFF6B6BAbstractUI Tweaks:|r ClassTalentLoadoutImportDialog not found, cannot setup import hook")
+function Tweaks:SetupTalentImportWhenReady()
+    local function TrySetup()
+        if ClassTalentLoadoutImportDialog then
+            print("|cff00FF7FAbstractUI Tweaks:|r ClassTalentLoadoutImportDialog found, setting up import overwrite")
+            self:SetupTalentImportHook()
+            return true
+        end
+        return false
+    end
+    
+    -- Check if Blizzard_ClassTalentUI is loaded
+    if C_AddOns.IsAddOnLoaded("Blizzard_ClassTalentUI") then
+        -- Try immediate setup
+        if not TrySetup() then
+            -- Dialog doesn't exist yet, set up polling that activates when talent UI opens
+            print("|cff00FF7FAbstractUI Tweaks:|r Will set up import dialog when talent UI is opened")
+            self:HookTalentFrameForPolling()
+        end
+    else
+        -- Wait for addon to load first
+        print("|cff00FF7FAbstractUI Tweaks:|r Waiting for Blizzard_ClassTalentUI to load")
+        EventUtil.ContinueOnAddOnLoaded("Blizzard_ClassTalentUI", function()
+            C_Timer.After(0.1, function()
+                if not TrySetup() then
+                    print("|cff00FF7FAbstractUI Tweaks:|r Will set up import dialog when talent UI is opened")
+                    self:HookTalentFrameForPolling()
+                end
+            end)
+        end)
+    end
+end
+
+function Tweaks:HookTalentFrameForPolling()
+    -- Hook the talent frame (PlayerSpellsFrame in modern WoW) to detect when it opens
+    local talentFrame = PlayerSpellsFrame or ClassTalentFrame
+    if not talentFrame then
+        print("|cffFF6B6BAbstractUI Tweaks:|r Could not find talent frame to hook")
         return
     end
     
-    print("|cff00FF7FAbstractUI Tweaks:|r Setting up talent import overwrite checkbox")
+    local isPolling = false
+    
+    local function StartPolling()
+        if isPolling or self.importCheckbox then
+            return -- Already polling or already set up
+        end
+        
+        isPolling = true
+        print("|cff00FF7FAbstractUI Tweaks:|r Talent UI opened, polling for import dialog...")
+        
+        local function CheckForDialog()
+            if not isPolling then
+                return -- Stopped polling
+            end
+            
+            if ClassTalentLoadoutImportDialog then
+                print("|cff00FF7FAbstractUI Tweaks:|r Import dialog detected!")
+                self:SetupTalentImportHook()
+                isPolling = false
+                return
+            end
+            
+            -- Continue polling while talent UI is open
+            if talentFrame:IsVisible() then
+                C_Timer.After(0.5, CheckForDialog)
+            else
+                isPolling = false
+                print("|cff00FF7FAbstractUI Tweaks:|r Talent UI closed, stopped polling")
+            end
+        end
+        
+        CheckForDialog()
+    end
+    
+    -- Hook the Show event
+    if not self:IsHooked(talentFrame, "Show") then
+        self:SecureHookScript(talentFrame, "OnShow", function()
+            StartPolling()
+        end)
+    end
+    
+    -- If talent frame is already open, start polling immediately
+    if talentFrame:IsVisible() then
+        StartPolling()
+    end
+end
+
+function Tweaks:SetupTalentImportHook()
+    if not ClassTalentLoadoutImportDialog then
+        print("|cffFF6B6BAbstractUI Tweaks:|r SetupTalentImportHook called but ClassTalentLoadoutImportDialog doesn't exist")
+        return
+    end
+    
     local dialog = ClassTalentLoadoutImportDialog
     self:CreateImportCheckbox(dialog)
     self:CreateImportAcceptButton(dialog)
@@ -1683,6 +1730,8 @@ function Tweaks:SetupTalentImportHook()
         self.importCheckbox:SetChecked(false)
         self:OnImportCheckboxClick(self.importCheckbox)
     end
+    
+    print("|cff00FF7FAbstractUI Tweaks:|r Talent import overwrite is now ready!")
 end
 
 function Tweaks:DisableTalentImportHook()
