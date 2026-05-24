@@ -262,16 +262,107 @@ function MacroIconSelector:OnDBReady()
     
     if self.isMainline then
         EventUtil.ContinueOnAddOnLoaded("Baganator", function()
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator loaded, setting up hooks")
+            
+            -- Method 1: Use Baganator's skin listener API
             Baganator.API.Skins.RegisterListener(function(details)
                 if details.regionType == "ButtonFrame" then
                     if details.tags and tIndexOf(details.tags, "bank") ~= nil then
                         if details.region.Character and details.region.Character.TabSettingsMenu then
+                            print("  Baganator skin listener: Found Character TabSettingsMenu")
                             self:Initialize(details.region.Character.TabSettingsMenu)
                         end
                         if details.region.Warband and details.region.Warband.TabSettingsMenu then
+                            print("  Baganator skin listener: Found Warband TabSettingsMenu")
                             self:Initialize(details.region.Warband.TabSettingsMenu)
                         end
                     end
+                end
+            end)
+            
+            -- Method 2: Directly search for Baganator bank frames by name
+            -- Baganator creates frames like "Baganator_CategoryViewBankViewFrame1" or "Baganator_SingleViewBankViewFrame1"
+            local function InitializeBaganatorBankFrames()
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Searching for Baganator bank frames...")
+                
+                -- Try both view types and both frame groups
+                local viewTypes = {"CategoryView", "SingleView"}
+                local frameGroups = {"1", "2"}
+                
+                for _, viewType in ipairs(viewTypes) do
+                    for _, group in ipairs(frameGroups) do
+                        local frameName = "Baganator_" .. viewType .. "BankViewFrame" .. group
+                        local bankFrame = _G[frameName]
+                        
+                        if bankFrame then
+                            print("  Found Baganator bank frame:", frameName)
+                            
+                            -- Check Character tab (personal bank tabs)
+                            if bankFrame.Character and bankFrame.Character.TabSettingsMenu then
+                                print("    Found Character.TabSettingsMenu, initializing")
+                                self:Initialize(bankFrame.Character.TabSettingsMenu)
+                            elseif bankFrame.Character then
+                                print("    Character exists but no TabSettingsMenu yet, setting up watcher")
+                                -- Hook the Character frame's OnShow to detect when TabSettingsMenu appears
+                                bankFrame.Character:HookScript("OnShow", function()
+                                    C_Timer.After(0.1, function()
+                                        if bankFrame.Character.TabSettingsMenu and not self.loadedFrames[bankFrame.Character.TabSettingsMenu] then
+                                            print("    Character.TabSettingsMenu appeared on Show, initializing")
+                                            self:Initialize(bankFrame.Character.TabSettingsMenu)
+                                        end
+                                    end)
+                                end)
+                                
+                                -- If already visible, check now
+                                if bankFrame.Character:IsVisible() and bankFrame.Character.TabSettingsMenu then
+                                    print("    Character is visible with TabSettingsMenu, initializing immediately")
+                                    self:Initialize(bankFrame.Character.TabSettingsMenu)
+                                end
+                            end
+                            
+                            -- Check Warband tab
+                            if bankFrame.Warband and bankFrame.Warband.TabSettingsMenu then
+                                print("    Found Warband.TabSettingsMenu, initializing")
+                                self:Initialize(bankFrame.Warband.TabSettingsMenu)
+                            elseif bankFrame.Warband then
+                                print("    Warband exists but no TabSettingsMenu yet, setting up watcher")
+                                bankFrame.Warband:HookScript("OnShow", function()
+                                    C_Timer.After(0.1, function()
+                                        if bankFrame.Warband.TabSettingsMenu and not self.loadedFrames[bankFrame.Warband.TabSettingsMenu] then
+                                            print("    Warband.TabSettingsMenu appeared on Show, initializing")
+                                            self:Initialize(bankFrame.Warband.TabSettingsMenu)
+                                        end
+                                    end)
+                                end)
+                                
+                                if bankFrame.Warband:IsVisible() and bankFrame.Warband.TabSettingsMenu then
+                                    print("    Warband is visible with TabSettingsMenu, initializing immediately")
+                                    self:Initialize(bankFrame.Warband.TabSettingsMenu)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- Try immediately
+            InitializeBaganatorBankFrames()
+            
+            -- Also set up a delayed check in case frames aren't created yet
+            C_Timer.After(2, function()
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Delayed Baganator check (2s)")
+                InitializeBaganatorBankFrames()
+            end)
+            
+            -- And listen for bank open event to check again
+            local eventFrame = CreateFrame("Frame")
+            eventFrame:RegisterEvent("BANKFRAME_OPENED")
+            eventFrame:SetScript("OnEvent", function(_, event)
+                if event == "BANKFRAME_OPENED" then
+                    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_OPENED - checking Baganator frames")
+                    C_Timer.After(0.5, function()
+                        InitializeBaganatorBankFrames()
+                    end)
                 end
             end)
         end)
@@ -902,6 +993,31 @@ function MacroIconSelector:Initialize(popup)
         self:CreateIconTooltip(popup)
         self:UpdateIconSelector(popup)
     end)
+    
+    -- If frame is already visible (e.g., with Baganator), trigger setup immediately
+    if popup:IsVisible() then
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Frame is already visible, triggering setup immediately")
+        if not self.loadedFrames[popup] then
+            self.loadedFrames[popup] = true
+            
+            popup:HookScript("OnHide", function()
+                if popup.iconDataProvider then
+                    popup.iconDataProvider:Release()
+                end
+            end)
+            
+            self:LoadIconFileData()
+            self:InitSearch()
+            
+            if popup ~= MacroPopupFrame then
+                self:SetFrameMovable(popup)
+            end
+            
+            self:CreateSearchBox(popup)
+            self:CreateIconTooltip(popup)
+            self:UpdateIconSelector(popup)
+        end
+    end
 end
 
 function MacroIconSelector:SetFrameMovable(popup)
