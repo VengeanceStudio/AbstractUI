@@ -158,10 +158,13 @@ function GroupManager:OnDBReady()
     -- Also hook CompactRaidFrameManager if it already exists
     if CompactRaidFrameManager then
         self:HookFrameForSkinning()
-        -- If frame is already shown, apply skin immediately
+        -- If frame is already shown, apply skin immediately but then hide it
         if CompactRaidFrameManager:IsShown() then
             C_Timer.After(0.6, function()
                 self:ApplySkin()
+                -- Force hide even if it was already shown - user must click our toggle
+                CompactRaidFrameManager:Hide()
+                isExpanded = false
             end)
         end
     end
@@ -176,6 +179,11 @@ function GroupManager:ADDON_LOADED(event, addon)
         C_Timer.After(0.2, function()
             self:HookFrameForSkinning()
             self:ApplySkin()
+            -- Ensure frame is hidden - user must click our toggle to open it
+            if CompactRaidFrameManager then
+                CompactRaidFrameManager:Hide()
+                isExpanded = false
+            end
         end)
     end
 end
@@ -184,12 +192,40 @@ function GroupManager:HookFrameForSkinning()
     if not CompactRaidFrameManager then return end
     if CompactRaidFrameManager.abstractUIHookedForSkin then return end
     
-    -- Hook OnShow to ensure skin is applied when frame appears
+    -- Hook OnShow to ensure skin is applied when frame appears (but only if WE show it)
     CompactRaidFrameManager:HookScript("OnShow", function()
         if not skinned and IsEnabled() then
             GroupManager:ApplySkin()
         end
     end)
+    
+    -- Store original Show function
+    if not CompactRaidFrameManager.abstractUIOriginalShow then
+        CompactRaidFrameManager.abstractUIOriginalShow = CompactRaidFrameManager.Show
+    end
+    
+    -- Override Show to prevent Blizzard from showing it automatically
+    CompactRaidFrameManager.Show = function(self)
+        -- Only allow showing if we explicitly request it via our toggle
+        if GroupManager.allowShow then
+            CompactRaidFrameManager.abstractUIOriginalShow(self)
+        end
+    end
+    
+    -- Also override SetShown to prevent Blizzard from showing it
+    if not CompactRaidFrameManager.abstractUIOriginalSetShown then
+        CompactRaidFrameManager.abstractUIOriginalSetShown = CompactRaidFrameManager.SetShown
+    end
+    
+    CompactRaidFrameManager.SetShown = function(self, show)
+        -- Only allow showing if we explicitly request it
+        if show and not GroupManager.allowShow then
+            -- Blizzard wants to show it, but we don't allow it
+            return
+        else
+            CompactRaidFrameManager.abstractUIOriginalSetShown(self, show)
+        end
+    end
     
     CompactRaidFrameManager.abstractUIHookedForSkin = true
 end
@@ -527,6 +563,7 @@ function GroupManager:ApplySkin(force)
     self:SkinSpecificElements(blizzardManager, displayFrame, colors)
     
     -- Hide initially (will show when expanded)
+    self.allowShow = false
     blizzardManager:Hide()
     blizzardManager:SetMovable(false)
     blizzardManager:EnableMouse(false)
@@ -1087,7 +1124,10 @@ function GroupManager:ToggleExpanded()
     
     if isExpanded then
         self:UpdateBlizzardManagerPosition()
+        -- Set flag to allow showing the frame
+        self.allowShow = true
         blizzardManager:Show()
+        self.allowShow = false
     else
         blizzardManager:Hide()
     end
