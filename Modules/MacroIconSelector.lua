@@ -43,58 +43,84 @@ function MacroIconSelector:OnDBReady()
     
     self.db = AbstractUI.db:RegisterNamespace("MacroIconSelector", defaults)
     
+    -- Add slash command for manual scanning
+    SLASH_ABSTRACTUI_ICONSCAN1 = "/iconscan"
+    SlashCmdList["ABSTRACTUI_ICONSCAN"] = function(msg)
+        if msg == "start" then
+            if MacroIconSelector.startScanning then
+                MacroIconSelector.startScanning()
+            end
+        elseif msg == "stop" then
+            if MacroIconSelector.stopScanning then
+                MacroIconSelector.stopScanning()
+            end
+        else
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Usage: /iconscan start or /iconscan stop")
+        end
+    end
+    
     if not self.isVanilla and not self.isTBC then
         self:Initialize(GearManagerPopupFrame)
     end
     if self.isMainline then
-        -- Hook directly into IconSelectorPopupFrameMixin or IconDataProviderMixin Show methods
-        -- This should catch ANY icon picker, including those created by bag addons
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin exists:", IconSelectorPopupFrameMixin ~= nil)
-        
-        -- Try hooking the OnLoad/OnShow for icon selector frames
-        if IconSelectorPopupFrameMixin then
-            if IconSelectorPopupFrameMixin.OnLoad then
-                hooksecurefunc(IconSelectorPopupFrameMixin, "OnLoad", function(frame)
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin OnLoad called!")
-                    C_Timer.After(0.1, function()
-                        if not self.loadedFrames[frame] then
-                            local name = frame:GetName() or "UnknownIconPicker"
-                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from OnLoad:", name)
-                            self:Initialize(frame)
-                        end
-                    end)
-                end)
-            end
-            
-            if IconSelectorPopupFrameMixin.OnShow then
-                hooksecurefunc(IconSelectorPopupFrameMixin, "OnShow", function(frame)
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin OnShow called!")
-                    C_Timer.After(0.1, function()
-                        if not self.loadedFrames[frame] then
-                            local name = frame:GetName() or "UnknownIconPicker"
-                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from OnShow:", name)
-                            self:Initialize(frame)
-                        end
-                    end)
-                end)
-            end
-            
-            -- Also try the ShowIconSelector function if it exists
-            if IconSelectorPopupFrameMixin.ShowIconSelector then
-                hooksecurefunc(IconSelectorPopupFrameMixin, "ShowIconSelector", function(frame)
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r IconSelectorPopupFrameMixin ShowIconSelector called!")
-                    C_Timer.After(0.1, function()
-                        if not self.loadedFrames[frame] then
-                            local name = frame:GetName() or "UnknownIconPicker"
-                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing icon picker from ShowIconSelector:", name)
-                            self:Initialize(frame)
-                        end
-                    end)
+        -- Hook into frame creation to detect icon pickers as they're created
+        -- Use hooksecurefunc on CreateFrame to catch new frames
+        local OriginalCreateFrame = CreateFrame
+        local function CheckForIconPicker(frame)
+            if frame and not self.loadedFrames[frame] then
+                C_Timer.After(0.2, function()
+                    if frame and (frame.IconPicker or frame.BorderBox) and frame.IconSelector then
+                        local name = frame:GetName() or "UnknownIconPicker"
+                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker frame:", name)
+                        self:Initialize(frame)
+                    end
                 end)
             end
         end
         
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - hooked into IconSelectorPopupFrameMixin")
+        -- Also set up BANKFRAME_OPENED event to trigger aggressive scanning
+        self:RegisterEvent("BANKFRAME_OPENED")
+        self:RegisterEvent("BANKFRAME_CLOSED")
+        
+        -- Add a continuous light scanner for icon pickers (only checks when needed)
+        local scanEnabled = false
+        local function ScanForIconPickers()
+            if not scanEnabled then return end
+            
+            for i = 1, UIParent:GetNumChildren() do
+                local child = select(i, UIParent:GetChildren())
+                if child then
+                    local success = pcall(function()
+                        if child:IsVisible() and not self.loadedFrames[child] then
+                            if (child.IconPicker or child.BorderBox) and child.IconSelector then
+                                local name = child:GetName() or "UnknownIconPicker"
+                                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found icon picker via scan:", name)
+                                self:Initialize(child)
+                            end
+                        end
+                    end)
+                end
+            end
+            
+            if scanEnabled then
+                C_Timer.After(0.3, ScanForIconPickers)
+            end
+        end
+        
+        self.startScanning = function()
+            if not scanEnabled then
+                scanEnabled = true
+                ScanForIconPickers()
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Started scanning for icon pickers")
+            end
+        end
+        
+        self.stopScanning = function()
+            scanEnabled = false
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Stopped scanning for icon pickers")
+        end
+        
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - will detect icon pickers")
     end
     
     EventUtil.ContinueOnAddOnLoaded("Blizzard_MacroUI", function()
@@ -197,21 +223,18 @@ function MacroIconSelector:FindAndInitializeBankIconPicker()
 end
 
 function MacroIconSelector:BANKFRAME_OPENED()
-    -- When bank opens, look for icon pickers
-    C_Timer.After(0.3, function()
-        self:FindAndInitializeBankIconPicker()
-    end)
-    
-    -- Start checking for icon pickers while bank is open
-    if self.checkForIconPickers then
-        self.checkForIconPickers()
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_OPENED event fired")
+    -- When bank opens, start continuous scanning for icon pickers
+    if self.startScanning then
+        self.startScanning()
     end
 end
 
 function MacroIconSelector:BANKFRAME_CLOSED()
-    -- Stop checking when bank closes
-    if self.stopCheckingForIconPickers then
-        self.stopCheckingForIconPickers()
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_CLOSED event fired")
+    -- Stop scanning when bank closes
+    if self.stopScanning then
+        self.stopScanning()
     end
 end
 
