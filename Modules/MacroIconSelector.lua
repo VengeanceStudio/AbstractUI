@@ -340,17 +340,43 @@ function MacroIconSelector:LoadIconFileData()
 end
 
 function MacroIconSelector:CreateSearchBox(popup)
-    -- Verify the popup has the expected structure before creating search box
-    if not popup.BorderBox or not popup.BorderBox.OkayButton then
-        -- Frame doesn't have the expected structure, skip search box creation
+    -- Determine the frame structure (different for bank frames vs macro frames)
+    local isBankFrame = (popup.IconPicker ~= nil)
+    local okayButton, iconSelectorEditBox, borderBox
+    
+    if isBankFrame then
+        -- Bank frame structure: uses IconPicker instead of BorderBox
+        if not popup.IconPicker then
+            return
+        end
+        borderBox = popup.IconPicker
+        -- Find the Okay button - it should be a child of the popup
+        for _, child in ipairs({popup:GetChildren()}) do
+            if child:IsObjectType("Button") and child:GetText() and child:GetText():find("Okay") then
+                okayButton = child
+                break
+            end
+        end
+        iconSelectorEditBox = popup.IconPicker.IconSelectorEditBox
+    else
+        -- Standard structure (macro frame, guild bank, etc.)
+        if not popup.BorderBox or not popup.BorderBox.OkayButton then
+            return
+        end
+        borderBox = popup.BorderBox
+        okayButton = popup.BorderBox.OkayButton
+        iconSelectorEditBox = popup.BorderBox.IconSelectorEditBox
+    end
+    
+    if not okayButton then
         return
     end
     
     local sb = CreateFrame("EditBox", "$parentSearchBox", popup, "InputBoxTemplate")
     sb:SetPoint("BOTTOMLEFT", 74, 15)
-    sb:SetPoint("RIGHT", popup.BorderBox.OkayButton, "LEFT", 0, 0)
+    sb:SetPoint("RIGHT", okayButton, "LEFT", 0, 0)
     sb:SetHeight(15)
-    sb:SetFrameLevel(popup.BorderBox:GetFrameLevel()+1)
+    sb:SetFrameLevel((borderBox:GetFrameLevel() or 1) + 1)
     
     sb.searchLabel = sb:CreateFontString()
     sb.searchLabel:SetPoint("RIGHT", sb, "LEFT", -8, 0)
@@ -358,7 +384,7 @@ function MacroIconSelector:CreateSearchBox(popup)
     sb.searchLabel:SetText(SEARCH..":")
     
     sb.linkLabel = sb:CreateFontString()
-    sb.linkLabel:SetPoint("RIGHT", popup.BorderBox.OkayButton, "LEFT", -5, -1)
+    sb.linkLabel:SetPoint("RIGHT", okayButton, "LEFT", -5, -1)
     sb.linkLabel:SetFontObject("GameFontNormal")
     sb.linkLabel:SetTextColor(.62, .62, .62)
     
@@ -367,11 +393,15 @@ function MacroIconSelector:CreateSearchBox(popup)
     end)
     
     sb:SetScript("OnEscapePressed", function()
-        popup.BorderBox.IconSelectorEditBox:SetFocus()
+        if iconSelectorEditBox then
+            iconSelectorEditBox:SetFocus()
+        end
     end)
     
     sb:SetScript("OnEnterPressed", function()
-        popup.BorderBox.IconSelectorEditBox:SetFocus()
+        if iconSelectorEditBox then
+            iconSelectorEditBox:SetFocus()
+        end
     end)
     
     sb.spinner = CreateFrame("Frame", nil, sb, "LoadingSpinnerTemplate")
@@ -444,12 +474,28 @@ end
 
 function MacroIconSelector:SetSearchData(popup)
     -- Hack because "All Icons" shows everything double
-    if popup.BorderBox.IconTypeDropdown then
-        popup.BorderBox.IconTypeDropdown:Increment()
-        popup.BorderBox.IconTypeDropdown:Increment()
+    local iconTypeDropdown
+    if popup.IconPicker and popup.IconPicker.IconTypeDropdown then
+        iconTypeDropdown = popup.IconPicker.IconTypeDropdown
+    elseif popup.BorderBox and popup.BorderBox.IconTypeDropdown then
+        iconTypeDropdown = popup.BorderBox.IconTypeDropdown
+    end
+    
+    if iconTypeDropdown then
+        iconTypeDropdown:Increment()
+        iconTypeDropdown:Increment()
     else -- cata/vanilla
-        popup.BorderBox.IconTypeDropDown:SetSelectedValue(IconSelectorPopupFrameIconFilterTypes.Item)
-        popup.BorderBox.IconTypeDropDown:SetSelectedValue(IconSelectorPopupFrameIconFilterTypes.Spell)
+        local iconTypeDropDown
+        if popup.IconPicker and popup.IconPicker.IconTypeDropDown then
+            iconTypeDropDown = popup.IconPicker.IconTypeDropDown
+        elseif popup.BorderBox and popup.BorderBox.IconTypeDropDown then
+            iconTypeDropDown = popup.BorderBox.IconTypeDropDown
+        end
+        
+        if iconTypeDropDown then
+            iconTypeDropDown:SetSelectedValue(IconSelectorPopupFrameIconFilterTypes.Item)
+            iconTypeDropDown:SetSelectedValue(IconSelectorPopupFrameIconFilterTypes.Spell)
+        end
     end
 
     wipe(popup.iconDataProvider.extraIcons)
@@ -486,9 +532,16 @@ function MacroIconSelector:SearchBox_OnTextChanged(sb, userInput)
             sb.linkLabel:SetText(self.FileData[fileID])
             
             -- More hacks so the searched icon doesn't show double
-            if popup.BorderBox.IconTypeDropdown then
-                popup.BorderBox.IconTypeDropdown:Decrement()
-                popup.BorderBox.IconTypeDropdown:Increment()
+            local iconTypeDropdown
+            if popup.IconPicker and popup.IconPicker.IconTypeDropdown then
+                iconTypeDropdown = popup.IconPicker.IconTypeDropdown
+            elseif popup.BorderBox and popup.BorderBox.IconTypeDropdown then
+                iconTypeDropdown = popup.BorderBox.IconTypeDropdown
+            end
+            
+            if iconTypeDropdown then
+                iconTypeDropdown:Decrement()
+                iconTypeDropdown:Increment()
             end
             
             self:SetSearchData(popup)
@@ -564,26 +617,41 @@ function MacroIconSelector:SetFrameMovable(popup)
 end
 
 function MacroIconSelector:CreateIconTooltip(popup)
-    for _, btn in pairs(popup.IconSelector.ScrollBox:GetFrames()) do
-        btn:HookScript("OnEnter", function(self)
-            MacroIconSelector:ShowTooltip(self)
-        end)
-        btn:HookScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+    -- Handle icon selector scroll box
+    if popup.IconSelector and popup.IconSelector.ScrollBox then
+        for _, btn in pairs(popup.IconSelector.ScrollBox:GetFrames()) do
+            btn:HookScript("OnEnter", function(self)
+                MacroIconSelector:ShowTooltip(self)
+            end)
+            btn:HookScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
     end
     
-    popup.BorderBox.SelectedIconArea.SelectedIconButton:HookScript("OnEnter", function(btn)
-        local fileid = btn:GetIconTexture()
-        MacroIconSelector:SetIconTooltip(btn, function()
-            if fileid ~= 134400 then
-                GameTooltip:AddLine(format("|cff71D5FF%s|r", fileid))
-                if MacroIconSelector.FileData and MacroIconSelector.FileData[fileid] then
-                    GameTooltip:AddLine(MacroIconSelector.FileData[fileid], 1, 1, 1)
+    -- Handle selected icon button - different structure for bank vs macro frames
+    local selectedIconButton
+    if popup.IconPicker and popup.IconPicker.SelectedIconArea then
+        -- Bank frame structure
+        selectedIconButton = popup.IconPicker.SelectedIconArea.SelectedIconButton
+    elseif popup.BorderBox and popup.BorderBox.SelectedIconArea then
+        -- Macro frame structure
+        selectedIconButton = popup.BorderBox.SelectedIconArea.SelectedIconButton
+    end
+    
+    if selectedIconButton then
+        selectedIconButton:HookScript("OnEnter", function(btn)
+            local fileid = btn:GetIconTexture()
+            MacroIconSelector:SetIconTooltip(btn, function()
+                if fileid ~= 134400 then
+                    GameTooltip:AddLine(format("|cff71D5FF%s|r", fileid))
+                    if MacroIconSelector.FileData and MacroIconSelector.FileData[fileid] then
+                        GameTooltip:AddLine(MacroIconSelector.FileData[fileid], 1, 1, 1)
+                    end
                 end
-            end
+            end)
         end)
-    end)
+    end
 end
 
 function MacroIconSelector:ShowTooltip(btn)
@@ -616,13 +684,40 @@ function MacroIconSelector:UpdateIconSelector(popup)
 end
 
 function MacroIconSelector:UpdatePopup(popup)
-    local text = popup.BorderBox.IconSelectorEditBox:GetText()
-    local selectedIcon = popup.BorderBox.SelectedIconArea.SelectedIconButton:GetIconTexture()
+    -- Handle both bank frame and macro frame structures
+    local iconSelectorEditBox, selectedIconButton
+    
+    if popup.IconPicker then
+        -- Bank frame structure
+        iconSelectorEditBox = popup.IconPicker.IconSelectorEditBox
+        if popup.IconPicker.SelectedIconArea then
+            selectedIconButton = popup.IconPicker.SelectedIconArea.SelectedIconButton
+        end
+    elseif popup.BorderBox then
+        -- Macro frame structure
+        iconSelectorEditBox = popup.BorderBox.IconSelectorEditBox
+        if popup.BorderBox.SelectedIconArea then
+            selectedIconButton = popup.BorderBox.SelectedIconArea.SelectedIconButton
+        end
+    end
+    
+    local text = iconSelectorEditBox and iconSelectorEditBox:GetText() or ""
+    local selectedIcon = selectedIconButton and selectedIconButton:GetIconTexture()
+    
     popup.Update(popup)
-    popup.BorderBox.IconSelectorEditBox:SetText(text)
-    popup.BorderBox.SelectedIconArea.SelectedIconButton:SetIconTexture(selectedIcon)
-    local index = popup.iconDataProvider:GetIndexOfIcon(selectedIcon)
-    popup.IconSelector:SetSelectedIndex(index)
+    
+    if iconSelectorEditBox then
+        iconSelectorEditBox:SetText(text)
+    end
+    if selectedIconButton and selectedIcon then
+        selectedIconButton:SetIconTexture(selectedIcon)
+    end
+    
+    if selectedIcon then
+        local index = popup.iconDataProvider:GetIndexOfIcon(selectedIcon)
+        popup.IconSelector:SetSelectedIndex(index)
+    end
+    
     popup:SetSelectedIconText()
 end
 
