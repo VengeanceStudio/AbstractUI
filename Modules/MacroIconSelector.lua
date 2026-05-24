@@ -47,7 +47,17 @@ function MacroIconSelector:OnDBReady()
         self:Initialize(GearManagerPopupFrame)
     end
     if self.isMainline then
-        self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+        -- Bank frame might not be loaded yet, wait for it
+        if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
+            self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+        else
+            -- Wait for bank frame to be available
+            EventRegistry:RegisterCallback("BankFrame.Show", function()
+                if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
+                    self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                end
+            end, self)
+        end
     end
     
     EventUtil.ContinueOnAddOnLoaded("Blizzard_MacroUI", function()
@@ -340,41 +350,85 @@ function MacroIconSelector:LoadIconFileData()
 end
 
 function MacroIconSelector:CreateSearchBox(popup)
+    -- Skip if search box already exists
+    if popup.SearchBox then
+        return
+    end
+    
+    local popupName = popup:GetName() or "UnknownPopup"
+    
     -- Determine the frame structure (different for bank frames vs macro frames)
     local isBankFrame = (popup.IconPicker ~= nil)
-    local okayButton, iconSelectorEditBox, borderBox
+    local okayButton, cancelButton, iconSelectorEditBox, borderBox
+    
+    print("|cff00FF7FAbstractUI MacroIconSelector:|r Creating search box for", popupName)
+    print("  isBankFrame:", isBankFrame)
     
     if isBankFrame then
         -- Bank frame structure: uses IconPicker instead of BorderBox
         if not popup.IconPicker then
+            print("  ERROR: popup.IconPicker is nil")
             return
         end
         borderBox = popup.IconPicker
-        -- Find the Okay button - it should be a child of the popup
-        for _, child in ipairs({popup:GetChildren()}) do
-            if child:IsObjectType("Button") and child:GetText() and child:GetText():find("Okay") then
-                okayButton = child
-                break
+        iconSelectorEditBox = popup.IconPicker.IconSelectorEditBox
+        
+        -- Find the Okay and Cancel buttons - they should be children of the popup
+        -- Try multiple methods to find them
+        local children = {popup:GetChildren()}
+        print("  Found", #children, "children")
+        for i, child in ipairs(children) do
+            if child:IsObjectType("Button") then
+                local text = child:GetText()
+                local childName = child:GetName() or "unnamed"
+                print("    Button", i, ":", childName, "text:", text)
+                if text then
+                    -- Check for Okay button (various localizations)
+                    if text:find("Okay") or text == OKAY or text:find("OK") then
+                        okayButton = child
+                        print("      -> This is Okay button")
+                    -- Check for Cancel button
+                    elseif text:find("Cancel") or text == CANCEL then
+                        cancelButton = child
+                        print("      -> This is Cancel button")
+                    end
+                end
             end
         end
-        iconSelectorEditBox = popup.IconPicker.IconSelectorEditBox
+        
+        -- Fallback: find buttons by name
+        if not okayButton then
+            okayButton = popup.OkayButton or popup.Okay or _G[popup:GetName().."OkayButton"]
+            if okayButton then
+                print("  Found Okay button via fallback")
+            end
+        end
+        if not cancelButton then
+            cancelButton = popup.CancelButton or popup.Cancel or _G[popup:GetName().."CancelButton"]
+        end
     else
         -- Standard structure (macro frame, guild bank, etc.)
         if not popup.BorderBox or not popup.BorderBox.OkayButton then
+            print("  ERROR: Missing BorderBox or OkayButton")
             return
         end
         borderBox = popup.BorderBox
         okayButton = popup.BorderBox.OkayButton
+        cancelButton = popup.BorderBox.CancelButton
         iconSelectorEditBox = popup.BorderBox.IconSelectorEditBox
     end
     
+    -- Must have at least an okay button to position the search box
     if not okayButton then
+        print("  ERROR: Could not find Okay button")
         return
     end
     
+    print("  SUCCESS: Creating search box")
+    
     local sb = CreateFrame("EditBox", "$parentSearchBox", popup, "InputBoxTemplate")
     sb:SetPoint("BOTTOMLEFT", 74, 15)
-    sb:SetPoint("RIGHT", okayButton, "LEFT", 0, 0)
+    sb:SetPoint("RIGHT", okayButton, "LEFT", -5, 0)
     sb:SetHeight(15)
     sb:SetFrameLevel((borderBox:GetFrameLevel() or 1) + 1)
     
@@ -576,11 +630,22 @@ local ProviderTypes = {
 }
 
 function MacroIconSelector:Initialize(popup)
-    if not popup then return end
+    if not popup then 
+        print("|cffFF6B6BAbstractUI MacroIconSelector:|r Initialize called with nil popup")
+        return 
+    end
+    
+    local popupName = popup:GetName() or "UnknownPopup"
     
     popup:HookScript("OnShow", function()
         if not self.loadedFrames[popup] then
             self.loadedFrames[popup] = true
+            
+            -- Debug output
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing popup:", popupName)
+            print("  Has BorderBox:", popup.BorderBox ~= nil)
+            print("  Has IconPicker:", popup.IconPicker ~= nil)
+            print("  Has IconSelector:", popup.IconSelector ~= nil)
         else
             self:UpdateIconSelector(popup)
             return
