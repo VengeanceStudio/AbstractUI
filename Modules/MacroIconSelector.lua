@@ -285,9 +285,29 @@ function MacroIconSelector:OnDBReady()
             local function InitializeBaganatorBankFrames()
                 print("|cff00FF7FAbstractUI MacroIconSelector:|r Searching for Baganator bank frames...")
                 
+                -- First, scan for ANY Baganator frames in the global namespace
+                local foundFrames = {}
+                for name, obj in pairs(_G) do
+                    if type(name) == "string" and name:match("^Baganator_") and type(obj) == "table" and obj.GetObjectType then
+                        foundFrames[name] = obj
+                    end
+                end
+                
+                local frameCount = 0
+                for _ in pairs(foundFrames) do frameCount = frameCount + 1 end
+                
+                if frameCount > 0 then
+                    print("  Found", frameCount, "Baganator frames in _G:")
+                    for name, _ in pairs(foundFrames) do
+                        print("    -", name)
+                    end
+                else
+                    print("  No Baganator frames found in _G (may not be created yet)")
+                end
+                
                 -- Try both view types and both frame groups
                 local viewTypes = {"CategoryView", "SingleView"}
-                local frameGroups = {"1", "2"}
+                local frameGroups = {"1", "2", ""} -- Also try without number
                 
                 for _, viewType in ipairs(viewTypes) do
                     for _, group in ipairs(frameGroups) do
@@ -339,6 +359,52 @@ function MacroIconSelector:OnDBReady()
                                     print("    Warband is visible with TabSettingsMenu, initializing immediately")
                                     self:Initialize(bankFrame.Warband.TabSettingsMenu)
                                 end
+                            end
+                        end
+                    end
+                end
+                
+                -- Also check all found Baganator frames for bank-related frames with TabSettingsMenu
+                for frameName, bankFrame in pairs(foundFrames) do
+                    if frameName:match("Bank") and bankFrame then
+                        -- Check Character tab (personal bank tabs)
+                        if bankFrame.Character and bankFrame.Character.TabSettingsMenu then
+                            print("  Found Character.TabSettingsMenu in", frameName, "(via scan)")
+                            self:Initialize(bankFrame.Character.TabSettingsMenu)
+                        elseif bankFrame.Character then
+                            -- Hook for when TabSettingsMenu appears
+                            bankFrame.Character:HookScript("OnShow", function()
+                                C_Timer.After(0.1, function()
+                                    if bankFrame.Character.TabSettingsMenu and not self.loadedFrames[bankFrame.Character.TabSettingsMenu] then
+                                        print("  Character.TabSettingsMenu appeared on Show in", frameName)
+                                        self:Initialize(bankFrame.Character.TabSettingsMenu)
+                                    end
+                                end)
+                            end)
+                            
+                            if bankFrame.Character:IsVisible() and bankFrame.Character.TabSettingsMenu then
+                                print("  Character is visible with TabSettingsMenu in", frameName)
+                                self:Initialize(bankFrame.Character.TabSettingsMenu)
+                            end
+                        end
+                        
+                        -- Check Warband tab
+                        if bankFrame.Warband and bankFrame.Warband.TabSettingsMenu then
+                            print("  Found Warband.TabSettingsMenu in", frameName, "(via scan)")
+                            self:Initialize(bankFrame.Warband.TabSettingsMenu)
+                        elseif bankFrame.Warband then
+                            bankFrame.Warband:HookScript("OnShow", function()
+                                C_Timer.After(0.1, function()
+                                    if bankFrame.Warband.TabSettingsMenu and not self.loadedFrames[bankFrame.Warband.TabSettingsMenu] then
+                                        print("  Warband.TabSettingsMenu appeared on Show in", frameName)
+                                        self:Initialize(bankFrame.Warband.TabSettingsMenu)
+                                    end
+                                end)
+                            end)
+                            
+                            if bankFrame.Warband:IsVisible() and bankFrame.Warband.TabSettingsMenu then
+                                print("  Warband is visible with TabSettingsMenu in", frameName)
+                                self:Initialize(bankFrame.Warband.TabSettingsMenu)
                             end
                         end
                     end
