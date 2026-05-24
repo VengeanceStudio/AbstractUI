@@ -215,10 +215,36 @@ function MacroIconSelector:OnDBReady()
         InitializeBankIconPickers()
     else
         print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI not loaded, waiting for it")
-        -- Wait for it to load
+        
+        -- Method 1: EventUtil callback
         EventUtil.ContinueOnAddOnLoaded("Blizzard_BankUI", function()
             print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded via EventUtil")
             InitializeBankIconPickers()
+        end)
+        
+        -- Method 2: Direct ADDON_LOADED event as backup
+        self:RegisterEvent("ADDON_LOADED", function(event, addonName)
+            if addonName == "Blizzard_BankUI" then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded via ADDON_LOADED event")
+                self:UnregisterEvent("ADDON_LOADED")
+                C_Timer.After(0.2, function()
+                    InitializeBankIconPickers()
+                end)
+            end
+        end)
+        
+        -- Method 3: Check periodically for 30 seconds in case events fail
+        local checkCount = 0
+        local checkTimer = C_Timer.NewTicker(1, function()
+            checkCount = checkCount + 1
+            if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI detected via polling after", checkCount, "seconds")
+                checkTimer:Cancel()
+                InitializeBankIconPickers()
+            elseif checkCount >= 30 then
+                print("|cffFF6B6BAbstractUI MacroIconSelector:|r Gave up waiting for Blizzard_BankUI after 30 seconds")
+                checkTimer:Cancel()
+            end
         end)
     end
     
