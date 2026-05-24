@@ -150,12 +150,30 @@ end
 
 local function GetThemeColors()
     if ColorPalette then
+        -- Get color tables and convert to arrays for unpack()
+        local primary = ColorPalette:GetColorTable('background-primary')
+        local secondary = ColorPalette:GetColorTable('background-secondary')
+        local tertiary = ColorPalette:GetColorTable('background-tertiary')
+        local border = ColorPalette:GetColorTable('border-primary')
+        local hover = ColorPalette:GetColorTable('background-hover')
+        
+        -- Helper function to safely convert color table to array
+        local function toColorArray(t, fallback)
+            if not t then return fallback end
+            return {
+                t.r or t[1] or fallback[1],
+                t.g or t[2] or fallback[2],
+                t.b or t[3] or fallback[3],
+                t.a or t[4] or fallback[4]
+            }
+        end
+        
         return {
-            primary = ColorPalette:GetColorTable('background-primary'),
-            secondary = ColorPalette:GetColorTable('background-secondary'),
-            tertiary = ColorPalette:GetColorTable('background-tertiary'),
-            border = ColorPalette:GetColorTable('border-primary'),
-            hover = ColorPalette:GetColorTable('background-hover'),
+            primary = toColorArray(primary, {0.1, 0.1, 0.1, 0.75}),
+            secondary = toColorArray(secondary, {0.15, 0.15, 0.15, 0.75}),
+            tertiary = toColorArray(tertiary, {0.2, 0.2, 0.2, 0.75}),
+            border = toColorArray(border, {0.3, 0.3, 0.3, 1}),
+            hover = toColorArray(hover, {0.25, 0.25, 0.35, 0.9}),
             textPrimary = {ColorPalette:GetColor('text-primary')},
             textSecondary = {ColorPalette:GetColor('text-secondary')},
         }
@@ -750,6 +768,13 @@ SlashCmdList["GROUPMANAGER"] = function(msg)
         if CompactRaidFrameManager then
             print("  Frame is shown:", CompactRaidFrameManager:IsShown())
         end
+        print("  ColorPalette exists:", ColorPalette ~= nil)
+        
+        -- Test color generation
+        local colors = GetThemeColors()
+        print("  Colors generated:")
+        print("    Primary:", unpack(colors.primary))
+        print("    Border:", unpack(colors.border))
     else
         print("|cff00ff00AbstractUI Group Manager Commands:|r")
         print("  /gmskin reskin - Force re-apply skin")
