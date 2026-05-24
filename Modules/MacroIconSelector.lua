@@ -138,6 +138,54 @@ function MacroIconSelector:OnDBReady()
         end
     end)
     
+    -- Add support for regular bank icon picker (personal bank tabs)
+    EventUtil.ContinueOnAddOnLoaded("Blizzard_BankUI", function()
+        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded")
+        
+        -- Try to find bank icon picker frames (Character bank and Warband bank may have separate ones)
+        local function InitializeBankIconPickers()
+            local initialized = false
+            
+            -- Check for Character bank panel
+            if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.BankPanel.TabSettingsMenu, initializing")
+                self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                initialized = true
+            end
+            
+            -- Check for Warband/Account bank panel
+            if BankFrame and BankFrame.AccountBankPanel and BankFrame.AccountBankPanel.TabSettingsMenu then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.AccountBankPanel.TabSettingsMenu, initializing")
+                self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
+                initialized = true
+            end
+            
+            -- Fallback: Check for direct TabSettingsMenu
+            if BankFrame and BankFrame.TabSettingsMenu then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.TabSettingsMenu, initializing")
+                self:Initialize(BankFrame.TabSettingsMenu)
+                initialized = true
+            end
+            
+            return initialized
+        end
+        
+        -- Try immediate initialization
+        if BankFrame then
+            local success = InitializeBankIconPickers()
+            
+            -- If nothing found yet, hook bank show to catch it later
+            if not success then
+                print("|cff00FF7FAbstractUI MacroIconSelector:|r Bank icon pickers not found yet, hooking Show")
+                hooksecurefunc(BankFrame, "Show", function()
+                    C_Timer.After(0.3, InitializeBankIconPickers)
+                end)
+            end
+        else
+            print("|cff00FF7FAbstractUI MacroIconSelector:|r WARNING: BankFrame not found!")
+        end
+    end)
+    
     EventUtil.ContinueOnAddOnLoaded("Blizzard_Transmog", function()
         self:Initialize(TransmogFrame.OutfitPopup)
     end)
