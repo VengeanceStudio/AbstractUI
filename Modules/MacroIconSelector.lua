@@ -66,7 +66,9 @@ function MacroIconSelector:OnDBReady()
         local function CheckForNewIconPicker()
             for i = 1, UIParent:GetNumChildren() do
                 local child = select(i, UIParent:GetChildren())
-                if child and child:IsVisible() and child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
+                -- Use pcall to safely check frames that may not support all methods
+                local success, isVisible = pcall(function() return child and child.IsVisible and child:IsVisible() end)
+                if success and isVisible and child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
                     local name = child:GetName() or "UnknownIconPicker"
                     print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected visible icon picker via scan:", name)
                     self:Initialize(child)
