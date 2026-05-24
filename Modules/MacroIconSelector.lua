@@ -70,57 +70,11 @@ function MacroIconSelector:OnDBReady()
             if frame and not self.loadedFrames[frame] then
                 C_Timer.After(0.2, function()
                     if frame and (frame.IconPicker or frame.BorderBox) and frame.IconSelector then
-                        local name = frame:GetName() or "UnknownIconPicker"
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Detected icon picker frame:", name)
                         self:Initialize(frame)
                     end
                 end)
             end
         end
-        
-        -- Also set up BANKFRAME_OPENED event to trigger aggressive scanning
-        self:RegisterEvent("BANKFRAME_OPENED")
-        self:RegisterEvent("BANKFRAME_CLOSED")
-        
-        -- Add a continuous light scanner for icon pickers (only checks when needed)
-        local scanEnabled = false
-        local function ScanForIconPickers()
-            if not scanEnabled then return end
-            
-            for i = 1, UIParent:GetNumChildren() do
-                local child = select(i, UIParent:GetChildren())
-                if child then
-                    local success = pcall(function()
-                        if child:IsVisible() and not self.loadedFrames[child] then
-                            if (child.IconPicker or child.BorderBox) and child.IconSelector then
-                                local name = child:GetName() or "UnknownIconPicker"
-                                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found icon picker via scan:", name)
-                                self:Initialize(child)
-                            end
-                        end
-                    end)
-                end
-            end
-            
-            if scanEnabled then
-                C_Timer.After(0.3, ScanForIconPickers)
-            end
-        end
-        
-        self.startScanning = function()
-            if not scanEnabled then
-                scanEnabled = true
-                ScanForIconPickers()
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Started scanning for icon pickers")
-            end
-        end
-        
-        self.stopScanning = function()
-            scanEnabled = false
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Stopped scanning for icon pickers")
-        end
-        
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Ready - will detect icon pickers")
     end
     
     EventUtil.ContinueOnAddOnLoaded("Blizzard_MacroUI", function()
@@ -142,72 +96,90 @@ function MacroIconSelector:OnDBReady()
     local function InitializeBankIconPickers()
         local initialized = false
         
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Checking for bank icon pickers...")
-        print("  BankFrame exists:", BankFrame ~= nil)
-        if BankFrame then
-            print("  BankFrame.BankPanel exists:", BankFrame.BankPanel ~= nil)
-            print("  BankFrame.AccountBankPanel exists:", BankFrame.AccountBankPanel ~= nil)
-            print("  BankFrame.TabSettingsMenu exists:", BankFrame.TabSettingsMenu ~= nil)
-            
-            if BankFrame.BankPanel then
-                print("  BankFrame.BankPanel.TabSettingsMenu exists:", BankFrame.BankPanel.TabSettingsMenu ~= nil)
+        -- Silent operation - remove debug spam
+        if BankFrame and BankFrame.BankPanel then
+            -- Check if TabSettingsMenu already exists
+            if BankFrame.BankPanel.TabSettingsMenu then
+                self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                initialized = true
                 
-                -- Hook the function that shows the icon picker if it exists
-                if BankFrame.BankPanel.ShowTabSettingsMenu then
-                    print("  Found BankFrame.BankPanel.ShowTabSettingsMenu, hooking it")
-                    hooksecurefunc(BankFrame.BankPanel, "ShowTabSettingsMenu", function()
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r ShowTabSettingsMenu called!")
-                        C_Timer.After(0.1, function()
-                            if BankFrame.BankPanel.TabSettingsMenu and not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
-                                print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing BankPanel.TabSettingsMenu after ShowTabSettingsMenu")
+                -- Hook Show to re-initialize if needed
+                hooksecurefunc(BankFrame.BankPanel.TabSettingsMenu, "Show", function()
+                    if not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
+                        self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                    end
+                end)
+            else
+                -- TabSettingsMenu doesn't exist yet, hook its creation
+                -- Monitor BankPanel for when TabSettingsMenu gets added
+                local checkTimer
+                local function CheckForTabSettingsMenu()
+                    if BankFrame.BankPanel.TabSettingsMenu then
+                        if checkTimer then
+                            checkTimer:Cancel()
+                            checkTimer = nil
+                        end
+                        
+                        -- Hook the Show event immediately
+                        hooksecurefunc(BankFrame.BankPanel.TabSettingsMenu, "Show", function()
+                            if not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
                                 self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
                             end
                         end)
-                    end)
+                        
+                        -- If it's already visible, initialize now
+                        if BankFrame.BankPanel.TabSettingsMenu:IsVisible() then
+                            self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                        end
+                    end
                 end
-            end
-            if BankFrame.AccountBankPanel then
-                print("  BankFrame.AccountBankPanel.TabSettingsMenu exists:", BankFrame.AccountBankPanel.TabSettingsMenu ~= nil)
                 
-                -- Hook for account/warband bank too
-                if BankFrame.AccountBankPanel.ShowTabSettingsMenu then
-                    print("  Found BankFrame.AccountBankPanel.ShowTabSettingsMenu, hooking it")
-                    hooksecurefunc(BankFrame.AccountBankPanel, "ShowTabSettingsMenu", function()
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r AccountBank ShowTabSettingsMenu called!")
-                        C_Timer.After(0.1, function()
-                            if BankFrame.AccountBankPanel.TabSettingsMenu and not self.loadedFrames[BankFrame.AccountBankPanel.TabSettingsMenu] then
-                                print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing AccountBankPanel.TabSettingsMenu after ShowTabSettingsMenu")
-                                self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
-                            end
-                        end)
+                -- Check immediately and then every 0.5s for up to 10 seconds
+                CheckForTabSettingsMenu()
+                local attempts = 0
+                checkTimer = C_Timer.NewTicker(0.5, function()
+                    CheckForTabSettingsMenu()
+                    attempts = attempts + 1
+                    if attempts >= 20 then
+                        checkTimer:Cancel()
+                    end
+                end)
+            end
+            
+            -- Also hook ShowTabSettingsMenu if it exists (for vanilla behavior)
+            if BankFrame.BankPanel.ShowTabSettingsMenu then
+                hooksecurefunc(BankFrame.BankPanel, "ShowTabSettingsMenu", function()
+                    C_Timer.After(0.1, function()
+                        if BankFrame.BankPanel.TabSettingsMenu and not self.loadedFrames[BankFrame.BankPanel.TabSettingsMenu] then
+                            self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
+                        end
                     end)
-                end
+                end)
             end
         end
         
-        -- Check for Character bank panel (if already open)
-        if BankFrame and BankFrame.BankPanel and BankFrame.BankPanel.TabSettingsMenu then
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.BankPanel.TabSettingsMenu, initializing")
-            self:Initialize(BankFrame.BankPanel.TabSettingsMenu)
-            initialized = true
-        end
-        
-        -- Check for Warband/Account bank panel (if already open)
-        if BankFrame and BankFrame.AccountBankPanel and BankFrame.AccountBankPanel.TabSettingsMenu then
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.AccountBankPanel.TabSettingsMenu, initializing")
-            self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
-            initialized = true
-        end
-        
-        -- Fallback: Check for direct TabSettingsMenu
-        if BankFrame and BankFrame.TabSettingsMenu then
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Found BankFrame.TabSettingsMenu, initializing")
-            self:Initialize(BankFrame.TabSettingsMenu)
-            initialized = true
-        end
-        
-        if not initialized then
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r No bank icon picker frames found yet (may appear when clicking tab icon)")
+        -- Same for AccountBankPanel (warband bank)
+        if BankFrame and BankFrame.AccountBankPanel then
+            if BankFrame.AccountBankPanel.TabSettingsMenu then
+                self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
+                initialized = true
+                
+                hooksecurefunc(BankFrame.AccountBankPanel.TabSettingsMenu, "Show", function()
+                    if not self.loadedFrames[BankFrame.AccountBankPanel.TabSettingsMenu] then
+                        self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
+                    end
+                end)
+            end
+            
+            if BankFrame.AccountBankPanel.ShowTabSettingsMenu then
+                hooksecurefunc(BankFrame.AccountBankPanel, "ShowTabSettingsMenu", function()
+                    C_Timer.After(0.1, function()
+                        if BankFrame.AccountBankPanel.TabSettingsMenu and not self.loadedFrames[BankFrame.AccountBankPanel.TabSettingsMenu] then
+                            self:Initialize(BankFrame.AccountBankPanel.TabSettingsMenu)
+                        end
+                    end)
+                end)
+            end
         end
         
         return initialized
@@ -215,12 +187,10 @@ function MacroIconSelector:OnDBReady()
     
     -- Check if already loaded
     if C_AddOns.IsAddOnLoaded("Blizzard_BankUI") then
-        print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI already loaded, initializing now")
         InitializeBankIconPickers()
     else
         -- Wait for it to load
         EventUtil.ContinueOnAddOnLoaded("Blizzard_BankUI", function()
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Blizzard_BankUI loaded")
             InitializeBankIconPickers()
         end)
     end
@@ -231,19 +201,13 @@ function MacroIconSelector:OnDBReady()
     
     if self.isMainline then
         EventUtil.ContinueOnAddOnLoaded("Baganator", function()
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator loaded, setting up API listener")
             Baganator.API.Skins.RegisterListener(function(details)
-                -- Only log ButtonFrame types to reduce spam
                 if details.regionType == "ButtonFrame" then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Baganator ButtonFrame detected")
                     if details.tags and tIndexOf(details.tags, "bank") ~= nil then
-                        print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank ButtonFrame")
                         if details.region.Character and details.region.Character.TabSettingsMenu then
-                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Character.TabSettingsMenu")
                             self:Initialize(details.region.Character.TabSettingsMenu)
                         end
                         if details.region.Warband and details.region.Warband.TabSettingsMenu then
-                            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing Warband.TabSettingsMenu")
                             self:Initialize(details.region.Warband.TabSettingsMenu)
                         end
                     end
@@ -285,7 +249,6 @@ function MacroIconSelector:FindAndInitializeBankIconPicker()
             if child and child.IconPicker and child.IconSelector then
                 local name = child:GetName() or "UnnamedBankIconPicker"
                 if not self.loadedFrames[child] then
-                    print("|cff00FF7FAbstractUI MacroIconSelector:|r Found bank icon picker:", name)
                     self:Initialize(child)
                     return true
                 end
@@ -299,7 +262,6 @@ function MacroIconSelector:FindAndInitializeBankIconPicker()
         if child and child.IconPicker and child.IconSelector and not self.loadedFrames[child] then
             local name = child:GetName()
             if name and (name:match("Bank") or name:match("Tab")) then
-                print("|cff00FF7FAbstractUI MacroIconSelector:|r Found icon picker on UIParent:", name)
                 self:Initialize(child)
                 return true
             end
@@ -307,22 +269,6 @@ function MacroIconSelector:FindAndInitializeBankIconPicker()
     end
     
     return false
-end
-
-function MacroIconSelector:BANKFRAME_OPENED()
-    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_OPENED event fired")
-    -- When bank opens, start continuous scanning for icon pickers
-    if self.startScanning then
-        self.startScanning()
-    end
-end
-
-function MacroIconSelector:BANKFRAME_CLOSED()
-    print("|cff00FF7FAbstractUI MacroIconSelector:|r BANKFRAME_CLOSED event fired")
-    -- Stop scanning when bank closes
-    if self.stopScanning then
-        self.stopScanning()
-    end
 end
 
 -- ============================================================================
@@ -580,13 +526,9 @@ function MacroIconSelector:CreateSearchBox(popup)
     local isBankFrame = (popup.IconPicker ~= nil)
     local okayButton, cancelButton, iconSelectorEditBox, borderBox
     
-    print("|cff00FF7FAbstractUI MacroIconSelector:|r Creating search box for", popupName)
-    print("  isBankFrame:", isBankFrame)
-    
     if isBankFrame then
         -- Bank frame structure: uses IconPicker instead of BorderBox
         if not popup.IconPicker then
-            print("  ERROR: popup.IconPicker is nil")
             return
         end
         borderBox = popup.IconPicker
@@ -850,7 +792,6 @@ local ProviderTypes = {
 
 function MacroIconSelector:Initialize(popup)
     if not popup then 
-        print("|cffFF6B6BAbstractUI MacroIconSelector:|r Initialize called with nil popup")
         return 
     end
     
@@ -859,12 +800,6 @@ function MacroIconSelector:Initialize(popup)
     popup:HookScript("OnShow", function()
         if not self.loadedFrames[popup] then
             self.loadedFrames[popup] = true
-            
-            -- Debug output
-            print("|cff00FF7FAbstractUI MacroIconSelector:|r Initializing popup:", popupName)
-            print("  Has BorderBox:", popup.BorderBox ~= nil)
-            print("  Has IconPicker:", popup.IconPicker ~= nil)
-            print("  Has IconSelector:", popup.IconSelector ~= nil)
         else
             self:UpdateIconSelector(popup)
             return
