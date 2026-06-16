@@ -1,8 +1,8 @@
 ## Interface: 120007, 120005
 ## Title: Abstract UI
-## Version: 12.0.7.2
+## Version: 12.0.7.3
 ## Notes: Complete Modern UI Replacement.
-## Category-enUI: Interface Enhancements
+## Category: Interface Enhancements
 ## Author: Vengeance
 ## X-Website: https://github.com/VengeanceStudio/AbstractUI
 ## X-Curse-Project-ID: 1474403
